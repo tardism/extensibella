@@ -1,0 +1,2 @@
+grammar extensibella:fromAbella:abstractSyntax;
+

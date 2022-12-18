@@ -1,0 +1,14 @@
+
+# Generated Silver files
+*.jar
+build.xml
+*.copperdump.html
+
+# Compiled Abella files
+*.thc
+
+# Output from compiling Abella files
+*.out
+
+# Emacs autosave
+*~
