@@ -5,7 +5,7 @@ grammar extensibella:toAbella:abstractSyntax;
   they could mean some theorem or theorems which appear in the file
   are not actually part of what is being proven.
 -}
-monoid attribute fileErrors::[Error] with [], ++;
+monoid attribute fileErrors::[Message] with [], ++;
 propagate fileErrors on
    {-ListOfCommands,-} AnyCommand, TopCommand, ProofCommand, NoOpCommand;
 

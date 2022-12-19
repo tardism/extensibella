@@ -13,7 +13,9 @@ synthesized attribute currentSubgoal::[Integer];
 nonterminal ProofState with
    pp,
    hypList, currentSubgoal, goal,
+   languageCtx,
    usedNames;
+propagate languageCtx on ProofState;
 
 abstract production proofInProgress
 top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal futureGoals::[Subgoal]
@@ -105,7 +107,9 @@ top::ProofState ::= currentProofState::ProofState
 nonterminal CurrentGoal with
    pp,
    hypList, goal,
+   languageCtx,
    usedNames;
+propagate languageCtx on CurrentGoal;
 
 abstract production currentGoal
 top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
@@ -113,12 +117,18 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
   local varsString::String =
         if null(vars)
         then ""
-        else "Variables: " ++ foldr1(\ x::String y::String -> x ++ " " ++ y, vars) ++ "\n";
-  top.pp = varsString ++ ctx.pp ++ "============================\n " ++ goal.pp ++ "\n";
+        else "Variables: " ++ foldr1(\ x::String y::String ->
+                                       x ++ " " ++ y, vars) ++ "\n";
+  top.pp = varsString ++ ctx.pp ++
+          "============================\n " ++
+           goal.pp ++ "\n";
 
   top.hypList = ctx.hypList;
 
   top.goal = just(new(goal));
+
+  ctx.boundNames = vars;
+  goal.boundNames = vars;
 }
 
 
@@ -126,7 +136,10 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
 --A context is the hypotheses available for proving the current goal
 nonterminal Context with
    pp, hypList,
-   usedNames;
+   languageCtx,
+   boundNames, usedNames;
+propagate languageCtx on Context;
+propagate boundNames on Context;
 
 abstract production emptyContext
 top::Context ::=
@@ -159,8 +172,11 @@ top::Context ::= c1::Context c2::Context
 
 nonterminal Hypothesis with
    pp,
-   hypList, shouldHide,
-   usedNames;
+   hypList,
+   languageCtx,
+   boundNames, usedNames;
+propagate languageCtx on Hypothesis;
+propagate boundNames on Hypothesis;
 
 abstract production metatermHyp
 top::Hypothesis ::= name::String body::Metaterm
@@ -168,8 +184,6 @@ top::Hypothesis ::= name::String body::Metaterm
   top.pp = name ++ " : " ++ body.pp;
 
   top.hypList = [(name, new(body))];
-
-  top.shouldHide = body.shouldHide;
 }
 
 

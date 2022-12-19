@@ -37,9 +37,6 @@ terminal Star_t        '*'       lexer classes {TOKEN}, precedence=10, associati
 
 terminal Id_t  /[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
 terminal Number_t  /[0-9]+/;
---Qname_t is a qualified name as in Silver
---The grammar part is a Silver name, so it only needs Silver-allowed characters
-terminal Qname_t  /([A-Za-z0-9_]+:)+[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
 
 
 --These are the things which we are adding to Abella for Silver

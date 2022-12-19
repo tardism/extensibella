@@ -1,7 +1,7 @@
 grammar extensibella:toAbella:abstractSyntax;
 
 
-nonterminal SearchWitness with pp;
+nonterminal SearchWitness with pp, toAbella<SearchWitness>;
 
 abstract production trueSearchWitness
 top::SearchWitness ::=

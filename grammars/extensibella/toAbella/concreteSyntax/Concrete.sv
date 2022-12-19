@@ -152,13 +152,13 @@ concrete productions top::PureTopCommand_c
 | 'Close' al::ATyList_c '.'
   { top.ast = anyTopCommand(closeCommand(al.ast)); }
 | 'Split' name::Id_t '.'
-  { top.ast = anyTopCommand(splitTheorem(name.lexeme, [])); }
+  { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), [])); }
 | 'Split' name::Id_t 'as' il::IdList_c '.'
-  { top.ast = anyTopCommand(splitTheorem(name.lexeme, il.ast)); }
+  { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), il.ast)); }
 | 'Split' name::Qname_t '.'
-  { top.ast = anyTopCommand(splitTheorem(name.lexeme, [])); }
+  { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), [])); }
 | 'Split' name::Qname_t 'as' il::IdList_c '.'
-  { top.ast = anyTopCommand(splitTheorem(name.lexeme, il.ast)); }
+  { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), il.ast)); }
 --New for Silver
 | 'Extensible_Theorem' thms::TheoremStmts_c '.'
   { top.ast =
@@ -243,6 +243,11 @@ concrete productions top::Exp_c
   { top.ast = intTerm(toInteger(i.lexeme)); }
 
 
+concrete productions top::PAId_c
+| l::Qname_t
+  { top.ast = nameTerm(toQName(l.lexeme), nothing()); }
+
+
 
 
 
@@ -278,6 +283,16 @@ concrete productions top::ATyList_c
   { top.ast = [a.ast]; }
 | a::ATy_c ',' rest::ATyList_c
   { top.ast = a.ast::rest.ast; }
+
+
+concrete productions top::PTy_c
+| i::Qname_t
+  { top.ast = nameType(toQName(i.lexeme)); }
+
+
+concrete productions top::ATy_c
+| i::Qname_t
+  { top.ast = nameType(toQName(i.lexeme)); }
 
 
 
@@ -455,13 +470,13 @@ concrete productions top::HHint_c
 
 concrete productions top::Clearable_c
 | h::Hyp_c m::MaybeInst_c
-  { top.ast = clearable(false, h.ast, m.ast); }
+  { top.ast = clearable(false, baseName(h.ast), m.ast); }
 | '*' h::Hyp_c m::MaybeInst_c
-  { top.ast = clearable(true, h.ast, m.ast); }
+  { top.ast = clearable(true, baseName(h.ast), m.ast); }
 | name::Qname_t m::MaybeInst_c
-  { top.ast = clearable(false, name.lexeme, m.ast); }
+  { top.ast = clearable(false, toQName(name.lexeme), m.ast); }
 | '*' name::Qname_t m::MaybeInst_c
-  { top.ast = clearable(true, name.lexeme, m.ast); }
+  { top.ast = clearable(true, toQName(name.lexeme), m.ast); }
 
 
 concrete productions top::Withs_c
@@ -545,7 +560,7 @@ concrete productions top::ClauseSel_c
 | n::Number_t
   { top.ast = unfoldStepsTactic(toInteger(n.lexeme), _); }
 | si::Id_t
-  { top.ast = unfoldIdentifierTactic(si.lexeme, _); }
+  { top.ast = unfoldIdentifierTactic(baseName(si.lexeme), _); }
 
 
 concrete productions top::SolSel_c

@@ -9,13 +9,13 @@ synthesized attribute isAtomic::Boolean;
 flowtype isAtomic {} on Metaterm, Term;
 
 
+--Pass around information about the language with which we are working
+--Decorated for efficiency
+inherited attribute languageCtx::Decorated LanguageCtx;
+
+
 --The arguments in a TermList, but in an actual list
 synthesized attribute argList::[Term];
-
-
---Whether a premise should be hidden
---We include this here because we need it in both toAbella and fromAbella
-synthesized attribute shouldHide::Boolean;
 
 
 --The goal we are currently trying to prove, if there is one
@@ -30,6 +30,9 @@ propagate usedNames on
    Metaterm, Term, TermList, ListContents, PairContents,
       Hypothesis, Context, CurrentGoal, ProofState
    excluding bindingMetaterm, nameTerm;
+
+--Names bound by a binder
+inherited attribute boundNames::[String];
 
 
 

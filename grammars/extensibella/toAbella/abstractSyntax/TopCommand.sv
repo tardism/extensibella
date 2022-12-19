@@ -6,7 +6,9 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal TopCommand with
    --pp should always end with a newline
-   pp;
+   pp,
+   toAbella<[AnyCommand]>,
+   languageCtx, proverState;
 
 
 
@@ -23,6 +25,8 @@ top::TopCommand ::= depth::Integer thms::[(String, Metaterm, String)]
             thm ++ " : " ++ body.pp ++ " on " ++ tr ++ ", " ++ join(t)
           end;
   top.pp = "Extensible_Theorem " ++ join(thms) ++ ".\n";
+
+  top.toAbella = error("extensibleTheoremDeclaration.toAbella");
 }
 
 
@@ -30,6 +34,8 @@ abstract production proveObligations
 top::TopCommand ::= names::[String]
 {
   top.pp = "Prove " ++ implode(", ", names) ++ ".\n";
+
+  top.toAbella = error("proveObligations.toAbella");
 }
 
 
@@ -52,6 +58,9 @@ top::TopCommand ::= name::String params::[String] body::Metaterm
   top.pp =
       "Theorem " ++ name ++ " " ++ paramsString ++
       " : " ++ body.pp ++ ".\n";
+
+  top.toAbella =
+      [anyTopCommand(theoremDeclaration(name, params, body.toAbella))];
 }
 
 
@@ -92,6 +101,8 @@ top::TopCommand ::= preds::[(String, Type)] defs::Defs
      then error("CoDefinition should not be empty; codefinitionDeclaration")
      else buildPreds(preds);
   top.pp = "CoDefine " ++ predsString ++ " by " ++ defs.pp ++ ".";
+
+  top.toAbella = error("codefinitionDeclaration.toAbella");
 }
 
 
@@ -99,21 +110,42 @@ abstract production queryCommand
 top::TopCommand ::= m::Metaterm
 {
   top.pp = "Query " ++ m.pp ++ ".\n";
+
+  top.toAbella = [anyTopCommand(queryCommand(m.toAbella))];
 }
 
 
 abstract production splitTheorem
-top::TopCommand ::= theoremName::String newTheoremNames::[String]
+top::TopCommand ::= theoremName::QName newTheoremNames::[String]
 {
   local namesString::String =
      if null(newTheoremNames)
      then ""
      else " as " ++ implode(", ", newTheoremNames);
-  top.pp = "Split " ++ theoremName ++ namesString ++ ".\n";
+  top.pp = "Split " ++ theoremName.pp ++ namesString ++ ".\n";
+
+  top.toAbella =
+      [anyTopCommand(splitTheorem(head(thm).1, expandedNames))];
+  --
+  production thm::[(QName, Metaterm)] =
+     findTheorem(theoremName, top.proverState);
+  production splitThm::[Metaterm] = splitMetaterm(head(thm).2);
+  --Need to add module to given names and make up names for rest
+  local qedNewNames::[QName] =
+     map(addQNameBase(top.languageCtx.currentModule, _),
+         newTheoremNames);
+  local moreNames::[QName] =
+        foldr(\ m::Metaterm rest::[QName] ->
+                addQNameBase(top.languageCtx.currentModule,
+                             theoremName.shortName ++ "_" ++
+                             toString(genInt()))::rest,
+              [], drop(length(newTheoremNames), splitThm));
+  --this isn't quite right because it outputs colons
+  production expandedNames::[String] =
+     map((.pp), qedNewNames ++ moreNames);
 }
 
 
---I'm not sure we need new kinds and types declared by the user, but I'll put it in
 abstract production kindDeclaration
 top::TopCommand ::= names::[String] k::Kind
 {
@@ -122,6 +154,11 @@ top::TopCommand ::= names::[String] k::Kind
      then ""
      else " " ++ implode(", ", names);
   top.pp = "Kind " ++ namesString ++ "   " ++ k.pp ++ ".\n";
+
+  top.toAbella = [anyTopCommand(kindDeclaration(newNames, k))];
+  local newNames::[String] =
+     map((.pp),
+         map(addQNameBase(top.languageCtx.currentModule, _), names));
 }
 
 
@@ -133,6 +170,12 @@ top::TopCommand ::= names::[String] ty::Type
      then ""
      else implode(", ", names);
   top.pp = "Type " ++ namesString ++ "   " ++ ty.pp ++ ".\n";
+
+  top.toAbella =
+      [anyTopCommand(typeDeclaration(newNames, ty.toAbella))];
+  local newNames::[String] =
+     map((.pp),
+         map(addQNameBase(top.languageCtx.currentModule, _), names));
 }
 
 
@@ -141,8 +184,10 @@ top::TopCommand ::= tys::[Type]
 {
   local typesString::String =
      if null(tys)
-     then error("Close commands should not be devoid of tyes")
+     then error("Close commands should not be devoid of types")
      else implode(", ", map((.pp), tys));
   top.pp = "Close " ++ typesString ++ ".\n";
+
+  top.toAbella = error("closeCommand.toAbella");
 }
 

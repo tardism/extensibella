@@ -4,15 +4,17 @@ grammar extensibella:common:abstractSyntax;
 
 
 nonterminal Metaterm with
-   pp, isAtomic, shouldHide,
-   usedNames;
+   pp, isAtomic,
+   languageCtx,
+   boundNames, usedNames;
+propagate languageCtx on Metaterm;
+propagate boundNames on Metaterm excluding bindingMetaterm;
 
 abstract production termMetaterm
 top::Metaterm ::= t::Term r::Restriction
 {
   top.pp = t.pp ++ r.pp;
   top.isAtomic = true;
-  top.shouldHide = t.shouldHide;
 }
 
 abstract production trueMetaterm
@@ -20,7 +22,6 @@ top::Metaterm ::=
 {
   top.pp = "true";
   top.isAtomic = true;
-  top.shouldHide = false;
 }
 
 abstract production falseMetaterm
@@ -28,7 +29,6 @@ top::Metaterm ::=
 {
   top.pp = "false";
   top.isAtomic = true;
-  top.shouldHide = false;
 }
 
 abstract production eqMetaterm
@@ -36,7 +36,6 @@ top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = t1.pp ++ " = " ++ t2.pp;
   top.isAtomic = true;
-  top.shouldHide = false;
 }
 
 abstract production impliesMetaterm
@@ -46,7 +45,6 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
             then t1.pp
             else "(" ++ t1.pp ++ ")") ++ " -> " ++ t2.pp;
   top.isAtomic = false;
-  top.shouldHide = false;
 }
 
 abstract production orMetaterm
@@ -60,7 +58,6 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
       then t2.pp
       else "(" ++ t2.pp ++ ")" );
   top.isAtomic = false;
-  top.shouldHide = false;
 }
 
 abstract production andMetaterm
@@ -74,11 +71,11 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
       then t2.pp
       else "(" ++ t2.pp ++ ")" );
   top.isAtomic = false;
-  top.shouldHide = false;
 }
 
 abstract production bindingMetaterm
-top::Metaterm ::= b::Binder nameBindings::[Pair<String Maybe<Type>>] body::Metaterm
+top::Metaterm ::= b::Binder nameBindings::[(String, Maybe<Type>)]
+                  body::Metaterm
 {
   local bindings::[String] =
         map(\ p::Pair<String Maybe<Type>> ->
@@ -89,14 +86,16 @@ top::Metaterm ::= b::Binder nameBindings::[Pair<String Maybe<Type>>] body::Metat
             nameBindings);
   local bindingsString::String =
      if null(bindings)
-     then error("Empty bindings not allowed; production bindingsMetaterm (" ++ body.pp ++ ")")
+     then error("Empty bindings not allowed; bindingMetaterm (" ++
+                body.pp ++ ")")
      else foldr1(\ a::String b::String -> a ++ " " ++ b, bindings);
   top.pp = b.pp ++ " " ++ bindingsString ++ ", " ++ body.pp;
   top.isAtomic = false;
-  top.shouldHide = false;
 
   --Want ALL names which occur, even if only in bindings
   top.usedNames := map(fst, nameBindings) ++ body.usedNames;
+
+  body.boundNames = top.boundNames ++ map(fst, nameBindings);
 }
 
 
@@ -161,17 +160,15 @@ top::Binder::=
 
 
 nonterminal Term with
-   pp, isAtomic, shouldHide,
-   usedNames;
+   pp, isAtomic,
+   languageCtx,
+   boundNames, usedNames;
+propagate languageCtx on Term;
+propagate boundNames on Term;
 
 --Easy equality check
 attribute compareTo, isEqual occurs on Type;
 propagate compareTo, isEqual on Type;
---Everything is put in the pp, so checking that is sufficient
---See Silver's strategy attributes extension for a precedent for this
-instance Eq Term {
-  eq = \ t1::Term t2::Term -> t1.pp == t2.pp;
-}
 
 abstract production applicationTerm
 top::Term ::= f::Term args::TermList
@@ -181,26 +178,19 @@ top::Term ::= f::Term args::TermList
       then f.pp
       else "(" ++ f.pp ++ ")" ) ++ " " ++ args.pp;
   top.isAtomic = false;
-  top.shouldHide =
-      case f of
-      | nameTerm(name, _) ->
-        startsWith("$wpd_", name)
-      | _ -> false
-      end;
 }
 
 abstract production nameTerm
-top::Term ::= name::String ty::Maybe<Type>
+top::Term ::= name::QName ty::Maybe<Type>
 {
   top.pp =
       case ty of
-      | just(t) -> "(" ++ name ++ " : " ++ t.pp ++ ")"
-      | nothing() -> name
+      | just(t) -> "(" ++ name.pp ++ " : " ++ t.pp ++ ")"
+      | nothing() -> name.pp
       end;
   top.isAtomic = true;
-  top.shouldHide = false;
 
-  top.usedNames := [name];
+  top.usedNames := if name.isQualified then [] else [name.shortName];
 }
 
 abstract production consTerm
@@ -214,7 +204,6 @@ top::Term ::= t1::Term t2::Term
       then t2.pp
       else "(" ++ t2.pp ++ ")" );
   top.isAtomic = false;
-  top.shouldHide = false;
 }
 
 abstract production nilTerm
@@ -222,7 +211,6 @@ top::Term ::=
 {
   top.pp = "nil";
   top.isAtomic = true;
-  top.shouldHide = false;
 }
 
 abstract production underscoreTerm
@@ -235,7 +223,6 @@ top::Term ::= ty::Maybe<Type>
       end;
 
   top.isAtomic = true;
-  top.shouldHide = false;
 }
 
 
@@ -243,7 +230,9 @@ top::Term ::= ty::Maybe<Type>
 
 nonterminal TermList with
    pp, argList,
+   languageCtx,
    usedNames;
+propagate languageCtx on TermList;
 
 abstract production singleTermList
 top::TermList ::= t::Term

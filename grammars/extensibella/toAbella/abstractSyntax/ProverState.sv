@@ -15,13 +15,13 @@ nonterminal ProverState with
 
 
 synthesized attribute state::ProofState;
-synthesized attribute provingThms::[(String, String, Metaterm)];
+synthesized attribute provingThms::[(QName, Metaterm)];
 synthesized attribute debug::Boolean;
 synthesized attribute clean::Boolean;
 
 --Theorems we have proven and available
---(short name, grammar name, statement)
-synthesized attribute knownTheorems::[(String, String, Metaterm)];
+--(qualified name, statement)
+synthesized attribute knownTheorems::[(QName, Metaterm)];
 
 --
 synthesized attribute remainingObligations::[String]; --[ThmElement];
@@ -29,9 +29,9 @@ synthesized attribute remainingObligations::[String]; --[ThmElement];
 
 abstract production proverState
 top::ProverState ::=
-   state::ProofState provingThms::[(String, String, Metaterm)]
+   state::ProofState provingThms::[(QName, Metaterm)]
    debugMode::Boolean cleanMode::Boolean
-   thms::[(String, String, Metaterm)]
+   thms::[(QName, Metaterm)]
    obligations::[String] --[ThmElement]
 {
   top.state = state;
@@ -195,32 +195,21 @@ ProverState ::= obligations::[String] --[ThmElement]
      [
       ("is_list_member", "silver:core", trueMetaterm()),
       ("is_list_append", "silver:core", trueMetaterm()),
-      ("symmetry", "silver:core", trueMetaterm()),
-      ("attr_unique", "silver:core", trueMetaterm()),
-      ("attr_is", "silver:core", trueMetaterm())
+      ("symmetry", "silver:core", trueMetaterm())
      ];
-  return proverState(noProof(), [], false, true, knownThms,
+  return proverState(noProof(), [], false, true, [], --knownThms,
                      obligations);
 }
 
 
 --(full name, statement)
 function findTheorem
-[(String, Metaterm)] ::= name::String state::ProverState
+[(QName, Metaterm)] ::= name::QName state::ProverState
 {
   return
-     if isFullyQualifiedName(name)
-     then let splitName::(String, String) =
-              splitQualifiedName(name)
-          in
-          let found::[(String, Metaterm)] =
-              lookupAll(splitName.2, state.knownTheorems)
-          in
-            case findAssociated(splitName.1, found) of
-            | nothing() -> []
-            | just(stmt) -> [(name, stmt)]
-            end
-          end end
-     else map(\ p::(String, Metaterm) -> (p.1 ++ ":" ++ name, p.2),
-              lookupAll(name, state.knownTheorems));
+     filter(
+        if name.isQualified
+        then \ p::(QName, Metaterm) -> p.1 == name
+        else \ p::(QName, Metaterm) -> p.1.shortName == name.shortName,
+        state.knownTheorems);
 }

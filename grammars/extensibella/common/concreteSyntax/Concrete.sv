@@ -230,11 +230,9 @@ concrete productions top::ListBody_c
 
 concrete productions top::PAId_c
 | l::Id_t
-  { top.ast = nameTerm(l.lexeme, nothing()); }
-| l::Qname_t
-  { top.ast = nameTerm(l.lexeme, nothing()); }
+  { top.ast = nameTerm(baseName(l.lexeme), nothing()); }
 | '(' l::Id_t ':' t::Ty_c ')'
-  { top.ast = nameTerm(l.lexeme, just(t.ast)); }
+  { top.ast = nameTerm(baseName(l.lexeme), just(t.ast)); }
 | '_'
   { top.ast = underscoreTerm(nothing()); }
 | '(' '_' ':' t::Ty_c ')'
@@ -251,18 +249,14 @@ closed nonterminal Ty_c with ast<Type>;
 
 concrete productions top::PTy_c
 | i::Id_t
-  { top.ast = nameType(i.lexeme); }
-| i::Qname_t
-  { top.ast = nameType(i.lexeme); }
+  { top.ast = nameType(baseName(i.lexeme)); }
 | '(' t::Ty_c ')'
   { top.ast = t.ast; }
 
 
 concrete productions top::ATy_c
 | i::Id_t
-  { top.ast = nameType(i.lexeme); }
-| i::Qname_t
-  { top.ast = nameType(i.lexeme); }
+  { top.ast = nameType(baseName(i.lexeme)); }
 | a::ATy_c p::PTy_c
   { top.ast = functorType(a.ast, p.ast); }
 

@@ -6,6 +6,11 @@ imports extensibella:common:abstractSyntax;
 imports extensibella:common:concreteSyntax;
 
 
+--Qname_t is a qualified name as in Silver
+--The module part is a Silver name, so it only needs Silver-allowed characters
+terminal Qname_t  /([A-Za-z0-9_]+:)+[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
+
+
 lexer class COMMAND dominates Id_t;
 
 
