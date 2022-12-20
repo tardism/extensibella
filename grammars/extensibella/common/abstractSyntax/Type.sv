@@ -36,3 +36,24 @@ top::Type ::=
   top.isAtomic = true;
 }
 
+
+
+
+
+nonterminal TypeList with pp, languageCtx;
+propagate languageCtx on TypeList;
+
+abstract production emptyTypeList
+top::TypeList ::=
+{
+  top.pp = "";
+}
+
+
+abstract production addTypeList
+top::TypeList ::= ty::Type rest::TypeList
+{
+  top.pp = if rest.pp == ""
+           then ty.pp
+           else ty.pp ++ ", " ++ rest.pp;
+}

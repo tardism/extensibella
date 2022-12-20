@@ -9,9 +9,9 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal AnyCommand with
    pp,
-   toAbella<[AnyCommand]>,
+   toAbella<[AnyCommand]>, toAbellaMsgs,
    languageCtx, proverState;
-propagate languageCtx, proverState on AnyCommand;
+propagate languageCtx, proverState, toAbellaMsgs on AnyCommand;
 
 
 abstract production anyTopCommand

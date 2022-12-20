@@ -205,7 +205,9 @@ concrete productions top::CommonCommand_c
 | 'Set' opt::Id_t 'on' '.'
   { top.ast = setCommand(opt.lexeme, "on"); }
 | 'Show' name::Id_t '.'
-  { top.ast = showCommand(name.lexeme); }
+  { top.ast = showCommand(baseName(name.lexeme)); }
+| 'Show' name::Qname_t '.'
+  { top.ast = showCommand(toQName(name.lexeme)); }
 | 'Quit' '.'
   { top.ast = quitCommand(); }
 | b::Backs_c

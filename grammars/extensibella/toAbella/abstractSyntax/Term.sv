@@ -2,10 +2,10 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 attribute
-   toAbella<Metaterm>,
+   toAbella<Metaterm>, toAbellaMsgs,
    proverState
 occurs on Metaterm;
-propagate proverState on Metaterm;
+propagate proverState, toAbellaMsgs on Metaterm;
 
 aspect production termMetaterm
 top::Metaterm ::= t::Term r::Restriction
@@ -276,10 +276,10 @@ top::Metaterm ::= t::Term result::Term
 
 
 attribute
-   toAbella<Term>,
+   toAbella<Term>, toAbellaMsgs,
    proverState, expectRel
 occurs on Term;
-propagate proverState on Term;
+propagate proverState, toAbellaMsgs on Term;
 propagate expectRel on Term, TermList, PairContents, ListContents
    excluding applicationTerm;
 
@@ -315,6 +315,13 @@ top::Term ::= name::QName ty::Maybe<Type>
       then nameTerm(name.fullRel, transTy)
       else --if not expecting a rel and not bound, assume prod
            nameTerm(name.fullProd, transTy);
+
+  top.toAbellaMsgs <-
+      if contains(name.shortName, top.boundNames)
+      then []
+      else if top.expectRel
+      then name.relErrors
+      else name.prodErrors;
 }
 
 

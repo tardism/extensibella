@@ -7,7 +7,7 @@ nonterminal ProofCommand with
    --pp should end with two spaces
    pp,
    languageCtx, proverState,
-   toAbella<[ProofCommand]>;
+   toAbella<[ProofCommand]>, toAbellaMsgs;
 propagate languageCtx, proverState on ProofCommand;
 
 
@@ -17,6 +17,9 @@ top::ProofCommand ::= h::HHint nl::[Integer]
   top.pp = h.pp ++ "induction on " ++ implode(" ", map(toString, nl)) ++ ".  ";
 
   top.toAbella = [top];
+
+  --Need to check none of the numbers correspond to extensible relations
+  --Only way for induction on those should be extensible theorems, I think
 }
 
 
@@ -112,6 +115,9 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
   top.pp = h.pp ++ "case " ++ hyp ++ if keep then " (keep).  " else ".  ";
 
   top.toAbella = [top];
+
+  --need to check hyp isn't an extensible relation or
+  --it has its PC filled in
 }
 
 
@@ -327,6 +333,8 @@ top::ProofCommand ::= id::QName all::Boolean
   top.pp = "unfold " ++ id.pp ++ if all then "(all).  " else ".  ";
 
   top.toAbella = [unfoldIdentifierTactic(id.fullRel, all)];
+
+  top.toAbellaMsgs <- id.relErrors;
 }
 
 
@@ -344,32 +352,44 @@ top::ProofCommand ::= all::Boolean
 
 nonterminal Clearable with
    pp,
-   toAbella<Clearable>,
+   toAbella<Clearable>, toAbellaMsgs,
    proverState;
+propagate toAbellaMsgs, proverState, languageCtx on Clearable;
 
 --I don't know what the star is, but some have it
 abstract production clearable
-top::Clearable ::= star::Boolean hyp::QName instantiation::[Type]
+top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 {
   local instString::String =
-     if null(instantiation)
+     if instantiation.pp == ""
      then ""
-     else "[" ++ foldr1(\a::String b::String -> a ++ ", " ++ b,
-                        map((.pp), instantiation)) ++ "]";
+     else "[" ++ instantiation.pp ++ "]";
   top.pp = (if star then "*" else "") ++ hyp.pp ++ instString;
 
   production hypFound::Boolean =
      foldr(\ p::(String, Metaterm) found::Boolean ->
              found || p.1 == hyp.shortName,
            false, top.proverState.state.hypList);
-  production possibleHyps::[(QName, Metaterm)] =
+  production possibleThms::[(QName, Metaterm)] =
      findTheorem(hyp, top.proverState);
   top.toAbella =
       clearable(star,
                 if hyp.isQualified || hypFound
                 then hyp
-                else head(possibleHyps).1, map((.toAbella),
+                else head(possibleThms).1, map((.toAbella),
                 instantiation));
+
+  top.toAbellaMsgs <-
+      if hypFound
+      then []
+      else case possibleThms of
+           | [] -> [errorMsg("Unknown hypothesis or theorem " ++
+                             hyp.pp)]
+           | [_] -> []
+           | l -> [errorMsg("Indeterminate theorem " ++ hyp.pp ++
+                            "; possibilities are " ++
+                            implode(", ", map((.pp), map(fst, l))))]
+           end;
 }
 
 
@@ -378,41 +398,32 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::[Type]
 
 nonterminal ApplyArg with
    pp,
-   toAbella<ApplyArg>,
-   languageCtx;
+   toAbella<ApplyArg>, toAbellaMsgs,
+   languageCtx, proverState;
+propagate languageCtx, proverState, toAbellaMsgs on ApplyArg;
 
 abstract production hypApplyArg
-top::ApplyArg ::= hyp::String instantiation::[Type]
+top::ApplyArg ::= hyp::String instantiation::TypeList
 {
   local instString::String =
-     if null(instantiation)
+     if instantiation.pp == ""
      then ""
-     else "[" ++ foldr1(\a::String b::String -> a ++ ", " ++ b,
-                        map((.pp), instantiation)) ++ "]";
+     else "[" ++ instantiation.pp ++ "]";
   top.pp = hyp ++ instString;
 
-  local transInst::[Type] =
-        map(\ t::Type -> decorate t with {
-                            languageCtx = top.languageCtx;
-                         }.toAbella, instantiation);
-  top.toAbella = hypApplyArg(hyp, transInst);
+  top.toAbella = hypApplyArg(hyp, instantiation.toAbella);
 }
 
 abstract production starApplyArg
-top::ApplyArg ::= name::String instantiation::[Type]
+top::ApplyArg ::= name::String instantiation::TypeList
 {
   local instString::String =
-     if null(instantiation)
+     if instantiation.pp == ""
      then ""
-     else "[" ++ foldr1(\a::String b::String -> a ++ ", " ++ b,
-                        map((.pp), instantiation)) ++ "]";
+     else "[" ++ instantiation.pp ++ "]";
   top.pp = "*" ++ name ++ instString;
 
-  local transInst::[Type] =
-        map(\ t::Type -> decorate t with {
-                            languageCtx = top.languageCtx;
-                         }.toAbella, instantiation);
-  top.toAbella = starApplyArg(name, transInst);
+  top.toAbella = starApplyArg(name, instantiation.toAbella);
 }
 
 
@@ -421,9 +432,9 @@ top::ApplyArg ::= name::String instantiation::[Type]
 
 nonterminal EWitness with
    pp,
-   languageCtx,
-   toAbella<EWitness>;
-propagate languageCtx on EWitness;
+   languageCtx, proverState,
+   toAbella<EWitness>, toAbellaMsgs;
+propagate languageCtx, proverState, toAbellaMsgs on EWitness;
 
 abstract production termEWitness
 top::EWitness ::= t::Term

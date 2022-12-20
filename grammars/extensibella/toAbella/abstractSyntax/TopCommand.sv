@@ -146,6 +146,31 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[String]
 }
 
 
+abstract production closeCommand
+top::TopCommand ::= tys::[Type]
+{
+  local typesString::String =
+     if null(tys)
+     then error("Close commands should not be devoid of types")
+     else implode(", ", map((.pp), tys));
+  top.pp = "Close " ++ typesString ++ ".\n";
+
+  top.toAbella = error("closeCommand.toAbella");
+}
+
+
+
+{-
+  We disallow these at the moment because of the difficulties in
+  handling them.  It would be difficult to tell the difference between
+  an Extensibella-declared type/constructor and one that is part of
+  the language.  We would need to check both possibilities for names
+  and make sure we didn't treat one as the other.  Since I don't know
+  that new types and constructors are needed as part of the proofs
+  that you wouldn't include in the language itself, disallowing them
+  is sensible.
+-}
+
 abstract production kindDeclaration
 top::TopCommand ::= names::[String] k::Kind
 {
@@ -159,6 +184,9 @@ top::TopCommand ::= names::[String] k::Kind
   local newNames::[String] =
      map((.pp),
          map(addQNameBase(top.languageCtx.currentModule, _), names));
+
+  top.toAbellaMsgs <-
+      [errorMsg("No new types currently allowed to be defined")];
 }
 
 
@@ -176,18 +204,12 @@ top::TopCommand ::= names::[String] ty::Type
   local newNames::[String] =
      map((.pp),
          map(addQNameBase(top.languageCtx.currentModule, _), names));
-}
 
-
-abstract production closeCommand
-top::TopCommand ::= tys::[Type]
-{
-  local typesString::String =
-     if null(tys)
-     then error("Close commands should not be devoid of types")
-     else implode(", ", map((.pp), tys));
-  top.pp = "Close " ++ typesString ++ ".\n";
-
-  top.toAbella = error("closeCommand.toAbella");
+  top.toAbellaMsgs <-
+      [errorMsg("No new constructors currently allowed to be defined")];
+  --If we change and allow this, we need to check the type being
+  --built is a type declared by a Kind declaration in Extensibella
+  --rather than as part of the language.  Adding productions in
+  --Extensibella would not make sense in an extensible language.
 }
 
