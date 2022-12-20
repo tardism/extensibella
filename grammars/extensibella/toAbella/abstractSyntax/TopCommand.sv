@@ -7,9 +7,9 @@ grammar extensibella:toAbella:abstractSyntax;
 nonterminal TopCommand with
    --pp should always end with a newline
    pp,
-   toAbella<[AnyCommand]>,
+   toAbella<[AnyCommand]>, toAbellaMsgs,
    languageCtx, proverState;
-
+propagate toAbellaMsgs on TopCommand;
 
 
 abstract production extensibleTheoremDeclaration
@@ -147,13 +147,9 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[String]
 
 
 abstract production closeCommand
-top::TopCommand ::= tys::[Type]
+top::TopCommand ::= tys::TypeList
 {
-  local typesString::String =
-     if null(tys)
-     then error("Close commands should not be devoid of types")
-     else implode(", ", map((.pp), tys));
-  top.pp = "Close " ++ typesString ++ ".\n";
+  top.pp = "Close " ++ tys.pp ++ ".\n";
 
   top.toAbella = error("closeCommand.toAbella");
 }

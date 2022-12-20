@@ -111,14 +111,14 @@ concrete productions top::SubMetaterm_c
   { top.ast = divideMetaterm(t1.ast, t2.ast, t3.ast); }
 | t1::Term_c 'mod' t2::Term_c '=' t3::Term_c
   { top.ast = modulusMetaterm(t1.ast, t2.ast, t3.ast); }
-| t1::Term_c '<' t2::Term_c '=' t3::Term_c
-  { top.ast = lessMetaterm(t1.ast, t2.ast, t3.ast); }
-| t1::Term_c '<=' t2::Term_c '=' t3::Term_c
-  { top.ast = lessEqMetaterm(t1.ast, t2.ast, t3.ast); }
-| t1::Term_c '>' t2::Term_c '=' t3::Term_c
-  { top.ast = greaterMetaterm(t1.ast, t2.ast, t3.ast); }
-| t1::Term_c '>=' t2::Term_c '=' t3::Term_c
-  { top.ast = greaterEqMetaterm(t1.ast, t2.ast, t3.ast); }
+| t1::Term_c '<' t2::Term_c
+  { top.ast = lessMetaterm(t1.ast, t2.ast); }
+| t1::Term_c '<=' t2::Term_c
+  { top.ast = lessEqMetaterm(t1.ast, t2.ast); }
+| t1::Term_c '>' t2::Term_c
+  { top.ast = greaterMetaterm(t1.ast, t2.ast); }
+| t1::Term_c '>=' t2::Term_c
+  { top.ast = greaterEqMetaterm(t1.ast, t2.ast); }
 | t1::Term_c '++' t2::Term_c '=' t3::Term_c
   { top.ast = appendMetaterm(t1.ast, t2.ast, t3.ast); }
 | t1::Term_c '||' t2::Term_c '=' t3::Term_c
@@ -138,14 +138,14 @@ concrete productions top::SubMetaterm_c
   { top.ast = divideMetaterm(t1.ast, t2.ast, t3.ast); }
 | t3::Term_c '=' t1::Term_c 'mod' t2::Term_c
   { top.ast = modulusMetaterm(t1.ast, t2.ast, t3.ast); }
-| t3::Term_c '=' t1::Term_c '<' t2::Term_c
-  { top.ast = lessMetaterm(t1.ast, t2.ast, t3.ast); }
-| t3::Term_c '=' t1::Term_c '<=' t2::Term_c
-  { top.ast = lessEqMetaterm(t1.ast, t2.ast, t3.ast); }
-| t3::Term_c '=' t1::Term_c '>' t2::Term_c
-  { top.ast = greaterMetaterm(t1.ast, t2.ast, t3.ast); }
-| t3::Term_c '=' t1::Term_c '>=' t2::Term_c
-  { top.ast = greaterEqMetaterm(t1.ast, t2.ast, t3.ast); }
+| t1::Term_c '<' t2::Term_c
+  { top.ast = lessMetaterm(t1.ast, t2.ast); }
+| t1::Term_c '<=' t2::Term_c
+  { top.ast = lessEqMetaterm(t1.ast, t2.ast); }
+| t1::Term_c '>' t2::Term_c
+  { top.ast = greaterMetaterm(t1.ast, t2.ast); }
+| t1::Term_c '>=' t2::Term_c
+  { top.ast = greaterEqMetaterm(t1.ast, t2.ast); }
 | t3::Term_c '=' t1::Term_c '++' t2::Term_c
   { top.ast = appendMetaterm(t1.ast, t2.ast, t3.ast); }
 | t3::Term_c '=' t1::Term_c '||' t2::Term_c

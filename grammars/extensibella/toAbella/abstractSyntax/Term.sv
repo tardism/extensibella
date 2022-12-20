@@ -162,57 +162,53 @@ top::Metaterm ::= t::Term result::Term
 
 
 aspect production lessMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
   t1.expectRel = false;
   t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
       termMetaterm(
          buildApplication(nameTerm(baseName(integerLessName), nothing()),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
+            [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
 
 
 aspect production lessEqMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
   t1.expectRel = false;
   t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
       termMetaterm(
          buildApplication(nameTerm(baseName(integerLessEqName), nothing()),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
+            [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
 
 
 aspect production greaterMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
   t1.expectRel = false;
   t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
       termMetaterm(
          buildApplication(nameTerm(baseName(integerGreaterName), nothing()),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
+            [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
 
 
 aspect production greaterEqMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
   t1.expectRel = false;
   t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
       termMetaterm(
          buildApplication(nameTerm(baseName(integerGreaterEqName), nothing()),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
+            [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
 

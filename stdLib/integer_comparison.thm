@@ -8,162 +8,82 @@ Import "integer_multiplication".
 %                                LESS                                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $less_integer : integer -> integer -> bool -> prop by
-  $less_integer ($posInt $zero) ($posInt $zero) $bfalse;
-  $less_integer ($posInt $zero) ($posInt ($succ N2)) $btrue;
-  $less_integer ($posInt ($succ N1)) ($posInt $zero) $bfalse;
-  $less_integer ($posInt ($succ N1)) ($posInt ($succ N2)) B :=
-     $less_integer ($posInt N1) ($posInt N2) B;
+Define $less_integer : integer -> integer -> prop by
+  $less_integer ($posInt $zero) ($posInt ($succ N2));
+  $less_integer ($posInt ($succ N1)) ($posInt ($succ N2)) :=
+     $less_integer ($posInt N1) ($posInt N2);
   %
-  $less_integer ($negSuccInt N1) ($posInt N2) $btrue;
-  $less_integer ($posInt N1) ($negSuccInt N2) $bfalse;
+  $less_integer ($negSuccInt N1) ($posInt N2);
   %
-  $less_integer ($negSuccInt $zero) ($negSuccInt $zero) $bfalse;
-  $less_integer ($negSuccInt ($succ N1)) ($negSuccInt $zero) $btrue;
-  $less_integer ($negSuccInt $zero) ($negSuccInt ($succ N2)) $bfalse;
-  $less_integer ($negSuccInt ($succ N1)) ($negSuccInt ($succ N2)) B :=
-     $less_integer ($negSuccInt N1) ($negSuccInt N2) B.
-
-%unique
-Theorem extensibella-$-stdLib-$-less_integer_unique : forall N1 N2 B B',
-  $less_integer N1 N2 B -> $less_integer N1 N2 B' -> B = B'.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   case H2. search.
-  %Subgoal 2
-   case H2. search.
-  %Subgoal 3
-   case H2. search.
-  %Subgoal 4
-   case H2. apply IH to H3 H4. search.
-  %Subgoal 5
-   case H2. search.
-  %Subgoal 6
-   case H2. search.
-  %Subgoal 7
-   case H2. search.
-  %Subgoal 8
-   case H2. search.
-  %Subgoal 9
-   case H2. search.
-  %Subgoal 10
-   case H2. apply IH to H3 H4. search.
-
-%total
-Theorem extensibella-$-stdLib-$-less_integer_total : forall N1 N2,
-  is_integer N1 -> is_integer N2 ->
-  exists B, $less_integer N1 N2 B.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   case H2.
-     %Subgoal 1.1
-      exists $bfalse. search.
-     %Subgoal 1.1
-      exists $btrue. search.
-     %Subgoal 1.1
-      exists $bfalse. search.
-     %Subgoal 1.1
-      exists $bfalse. search.
-  %Subgoal 2
-   case H2.
-     %Subgoal 2.1
-      exists $bfalse. search.
-     %Subgoal 2.2
-      apply IH to H3 H4. exists B. search.
-     %Subgoal 2.3
-      exists $bfalse. search.
-     %Subgoal 2.4
-      exists $bfalse. search.
-  %Subgoal 3
-   case H2.
-     %Subgoal 3.1
-      exists $btrue. search.
-     %Subgoal 3.2
-      exists $btrue. search.
-     %Subgoal 3.3
-      exists $bfalse. search.
-     %Subgoal 3.4
-      exists $bfalse. search.
-  %Subgoal 4
-   case H2.
-     %Subgoal 4.1
-      exists $btrue. search.
-     %Subgoal 4.2
-      exists $btrue. search.
-     %Subgoal 4.3
-      exists $btrue. search.
-     %Subgoal 4.4
-      apply IH to H3 H4. exists B. search.
-
-%creates $is_bool
-Theorem extensibella-$-stdLib-$-less_integer_is_bool : forall N1 N2 B,
-  $less_integer N1 N2 B -> is_bool B.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   search.
-  %Subgoal 2
-   search.
-  %Subgoal 3
-   search.
-  %Subgoal 4
-   apply IH to H2. search.
-  %Subgoal 5
-   search.
-  %Subgoal 6
-   search.
-  %Subgoal 7
-   search.
-  %Subgoal 8
-   search.
-  %Subgoal 9
-   search.
-  %Subgoal 10
-   apply IH to H2. search.
-
-%other things?
-
-Theorem $less_integer_true_flip : forall N1 N2,
-  $less_integer N1 N2 $btrue -> $less_integer N2 N1 $bfalse.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   search.
-  %Subgoal 2
-   apply IH to H2. search.
-  %Subgoal 3
-   search.
-  %Subgoal 4
-   search.
-  %Subgoal 5
-   apply IH to H2. search.
-
-Theorem $less_integer_false_flip : forall N1 N2,
-  $less_integer N1 N2 $bfalse -> (N1 = N2 -> false) ->
-  $less_integer N2 N1 $btrue.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   assert ($posInt $zero = $posInt $zero). apply H2 to H3.
-  %Subgoal 2
-   search.
-  %Subgoal 3
-   assert ($posInt N3 = $posInt N4 -> false).
-      intros. backchain H2. case H4. search.
-   apply IH to H3 H4. search.
-  %Subgoal 4
-   search.
-  %Subgoal 5
-   assert ($negSuccInt $zero = $negSuccInt $zero). apply H2 to H3.
-  %Subgoal 6
-   search.
-  %Subgoal 7
-   assert ($negSuccInt N3 = $negSuccInt N4 -> false).
-      intros. backchain H2. case H4. search.
-   apply IH to H3 H4. search.
+  $less_integer ($negSuccInt ($succ N1)) ($negSuccInt $zero);
+  $less_integer ($negSuccInt ($succ N1)) ($negSuccInt ($succ N2)) :=
+     $less_integer ($negSuccInt N1) ($negSuccInt N2).
 
 Theorem $less_integer_negSuccInt_left_step : forall A B,
-  $less_integer ($negSuccInt A) B $btrue ->
-  $less_integer ($negSuccInt ($succ A)) B $btrue.
+  $less_integer ($negSuccInt A) B ->
+  $less_integer ($negSuccInt ($succ A)) B.
 induction on 1. intros L. case L (keep). search. search.
  apply IH to H1. search.
+
+Theorem $less_integer_add_1_neg_left : forall N,
+  $is_nat N ->
+  $less_integer ($negSuccInt ($succ N)) ($negSuccInt N).
+induction on 1. intros IsN. IsN: case IsN.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to IsN. search.
+
+Theorem $less_integer_drop_succ_pos_left : forall A B,
+  $less_integer ($posInt ($succ A)) B ->
+  $less_integer ($posInt A) B.
+induction on 1. intros L. L: case L. L': case L (keep).
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+
+Theorem $less_integer_posInt : forall M N,
+  $less_integer ($posInt M) N ->
+  exists N', N = $posInt N'.
+intros L. case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   search.
+
+Theorem $less_integer_negSuccInt_is_nat : forall N1 N2,
+  $less_integer N1 ($negSuccInt N2) -> $is_nat N2.
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+
+Theorem extensibella-$-stdLib-$-less_integer_transitive :
+  forall A B C,
+    $less_integer A B -> $less_integer B C -> $less_integer A C.
+induction on 2. intros LAB LBC. LBC: case LBC.
+  %Subgoal 1
+   case LAB. search.
+  %Subgoal 2
+   LAB': case LAB (keep).
+     %Subgoal 2.1
+      search.
+     %Subgoal 2.2
+      apply IH to LAB' LBC. search.
+     %Subgoal 2.3
+      search.
+  %Subgoal 3
+   case LAB.
+     %Subgoal 3.1
+      search.
+     %Subgoal 3.2
+      search.
+  %Subgoal 4
+   case LAB. search.
+  %Subgoal 5
+   LAB': case LAB. apply IH to LAB' LBC. search.
 
 
 
@@ -171,171 +91,114 @@ induction on 1. intros L. case L (keep). search. search.
 %                               LESSEQ                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $lesseq_integer : integer -> integer -> bool -> prop by
-  $lesseq_integer ($posInt $zero) ($posInt $zero) $btrue;
-  $lesseq_integer ($posInt $zero) ($posInt ($succ N2)) $btrue;
-  $lesseq_integer ($posInt ($succ N1)) ($posInt $zero) $bfalse;
-  $lesseq_integer ($posInt ($succ N1)) ($posInt ($succ N2)) B :=
-     $lesseq_integer ($posInt N1) ($posInt N2) B;
+Define $lesseq_integer : integer -> integer -> prop by
+  $lesseq_integer ($posInt $zero) ($posInt $zero);
+  $lesseq_integer ($posInt $zero) ($posInt ($succ N2));
+  $lesseq_integer ($posInt ($succ N1)) ($posInt ($succ N2)) :=
+     $lesseq_integer ($posInt N1) ($posInt N2);
   %
-  $lesseq_integer ($negSuccInt N1) ($posInt N2) $btrue;
-  $lesseq_integer ($posInt N1) ($negSuccInt N2) $bfalse;
+  $lesseq_integer ($negSuccInt N1) ($posInt N2);
   %
-  $lesseq_integer ($negSuccInt $zero) ($negSuccInt $zero) $btrue;
-  $lesseq_integer ($negSuccInt ($succ N1)) ($negSuccInt $zero) $btrue;
-  $lesseq_integer ($negSuccInt $zero) ($negSuccInt ($succ N2)) $bfalse;
-  $lesseq_integer ($negSuccInt ($succ N1)) ($negSuccInt ($succ N2)) B :=
-     $lesseq_integer ($negSuccInt N1) ($negSuccInt N2) B.
+  $lesseq_integer ($negSuccInt $zero) ($negSuccInt $zero);
+  $lesseq_integer ($negSuccInt ($succ N1)) ($negSuccInt $zero);
+  $lesseq_integer ($negSuccInt ($succ N1)) ($negSuccInt ($succ N2)) :=
+     $lesseq_integer ($negSuccInt N1) ($negSuccInt N2).
 
-%unique
-Theorem extensibella-$-stdLib-$-lesseq_integer_unique : forall N1 N2 B B',
-  $lesseq_integer N1 N2 B -> $lesseq_integer N1 N2 B' -> B = B'.
-induction on 1. intros. case H1.
+Theorem $lesseq_integer_posInt : forall M N,
+  $lesseq_integer ($posInt M) N ->
+  exists N', N = $posInt N'.
+intros LEq. case LEq (keep). search. search. search.
+
+Theorem $lesseq_negSuccInt_left_step : forall A B,
+  $lesseq_integer ($negSuccInt A) B ->
+  $lesseq_integer ($negSuccInt ($succ A)) B.
+induction on 1. intros L. L: case L.
   %Subgoal 1
-   case H2. search.
+   search.
   %Subgoal 2
-   case H2. search.
+   search.
   %Subgoal 3
-   case H2. search.
+   search.
   %Subgoal 4
-   case H2. apply IH to H3 H4. search.
-  %Subgoal 5
-   case H2. search.
-  %Subgoal 6
-   case H2. search.
-  %Subgoal 7
-   case H2. search.
-  %Subgoal 8
-   case H2. search.
-  %Subgoal 9
-   case H2. search.
-  %Subgoal 10
-   case H2. apply IH to H3 H4. search.
+   apply IH to L. search.
 
-%total
-Theorem extensibella-$-stdLib-$-lesseq_integer_total : forall N1 N2,
-  is_integer N1 -> is_integer N2 ->
-  exists B, $lesseq_integer N1 N2 B.
-induction on 1. intros. case H1.
+Theorem extensibella-$-stdLib-$-lesseq_integer_less_or_eq :
+  forall A B,
+    $lesseq_integer A B -> $less_integer A B \/ A = B.
+induction on 1. intros L. L: case L.
   %Subgoal 1
-   case H2.
-     %Subgoal 1.1
-      search.
-     %Subgoal 1.2
-      search.
-     %Subgoal 1.3
-      search.
-     %Subgoal 1.4
-      search.
+   search.
   %Subgoal 2
-   case H2.
-     %Subgoal 2.1
-      search.
-     %Subgoal 2.2
-      apply IH to H3 H4. search.
-     %Subgoal 2.3
-      search.
-     %Subgoal 2.4
-      search.
+   search.
   %Subgoal 3
-   case H2.
+   Or: apply IH to L. case Or. search. search.
+  %Subgoal 4
+   search.
+  %Subgoal 5
+   search.
+  %Subgoal 6
+   search.
+  %Subgoal 7
+   Or: apply IH to L. case Or. search. search.
+
+Theorem extensibella-$-stdLib-$-less_integer_lesseq : forall A B,
+  $less_integer A B -> $lesseq_integer A B.
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+  %Subgoal 3
+   search.
+  %Subgoal 4
+   search.
+  %Subgoal 5
+   apply IH to L. search.
+
+Theorem extensibella-$-stdLib-$-is_integer_lesseq : forall A,
+  is_integer A -> $lesseq_integer A A.
+ induction on 1. intros IsA. Is: case IsA.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to Is. search.
+  %Subgoal 3
+   search.
+  %Subgoal 4
+   apply IH to Is. search.
+
+Theorem extensibella-$-stdLib-$-lesseq_integer_transitive :
+  forall A B C,
+    $lesseq_integer A B -> $lesseq_integer B C -> $lesseq_integer A C.
+induction on 2. intros LAB LBC. LBC': case LBC.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   case LAB. search. search.
+  %Subgoal 3
+   LAB': case LAB.
      %Subgoal 3.1
       search.
      %Subgoal 3.2
-      search.
+      apply IH to LAB' LBC'. search.
      %Subgoal 3.3
       search.
-     %Subgoal 3.4
-      search.
   %Subgoal 4
-   case H2.
-     %Subgoal 4.1
-      search.
-     %Subgoal 4.2
-      search.
-     %Subgoal 4.3
-      search.
-     %Subgoal 4.4
-      apply IH to H3 H4. search.
-
-%creates $is_bool
-Theorem extensibella-$-stdLib-$-lesseq_integer_is_bool : forall N1 N2 B,
-  $lesseq_integer N1 N2 B -> is_bool B.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   search.
-  %Subgoal 2
-   search.
-  %Subgoal 3
-   search.
-  %Subgoal 4
-   apply IH to H2. search.
+   case LAB. search. search. search.
   %Subgoal 5
    search.
   %Subgoal 6
-   search.
+   case LAB. search.
   %Subgoal 7
-   search.
-  %Subgoal 8
-   search.
-  %Subgoal 9
-   search.
-  %Subgoal 10
-   apply IH to H2. search.
-
-%other things?
-
-Theorem extensibella-$-stdLib-$-eq_to_lesseq_integer : forall N,
-  is_integer N -> $lesseq_integer N N $btrue.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   search.
-  %Subgoal 2
-   apply IH to H2. search.
-  %Subgoal 3
-   search.
-  %Subgoal 4
-   apply IH to H2. search.
-
-Theorem extensibella-$-stdLib-$-less_to_lesseq_integer : forall N1 N2,
-  $less_integer N1 N2 $btrue -> $lesseq_integer N1 N2 $btrue.
-induction on 1. intros. case H1.
-  %Subgoal 1
-   search.
-  %Subgoal 2
-   apply IH to H2. search.
-  %Subgoal 3
-   search.
-  %Subgoal 4
-   search.
-  %Subgoal 5
-   apply IH to H2. search.
-
-Theorem $lesseq_integer_0_posInt : forall N,
-  $lesseq_integer ($posInt $zero) N $btrue ->
-  exists N', N = $posInt N'.
-induction on 1. intros LEq. case LEq (keep). search. search.
-
-Theorem $lesseq_negSuccInt_left_step : forall A B,
-  $lesseq_integer ($negSuccInt A) B $btrue ->
-  $lesseq_integer ($negSuccInt ($succ A)) B $btrue.
-induction on 1. intros L. case L (keep).
-  %Subgoal 1
-   search.
-  %Subgoal 2
-   search.
-  %Subgoal 3
-   search.
-  %Subgoal 4
-   apply IH to H1. search.
+   LAB': case LAB. apply IH to LAB' LBC'. search.
 
 Theorem extensibella-$-stdLib-$-less_integer__add_positive :
   forall N1 N2 Base Sum,
-    $less_integer Base N1 $btrue ->
-    $lesseq_integer ($posInt $zero) N2 $btrue ->
-    $plus_integer N1 N2 Sum -> $less_integer Base Sum $btrue.
+    $less_integer Base N1 ->
+    $lesseq_integer ($posInt $zero) N2 ->
+    $plus_integer N1 N2 Sum -> $less_integer Base Sum.
 induction on 1. intros L1 L2 Plus.
-apply $lesseq_integer_0_posInt to L2. case L1 (keep).
+apply $lesseq_integer_posInt to L2. case L1 (keep).
   %Subgoal 1:  0 < N2
    case Plus. search.
   %Subgoal 2:  0 < N3 + 1
@@ -346,17 +209,17 @@ apply $lesseq_integer_0_posInt to L2. case L1 (keep).
    case Plus. search. search.
   %Subgoal 5
    case Plus. search.
-   LEq: assert $lesseq_integer ($posInt $zero) ($posInt N6) $btrue.
+   LEq: assert $lesseq_integer ($posInt $zero) ($posInt N6).
            case H2. search. search. search.
    apply IH to H1 LEq H2. backchain $less_integer_negSuccInt_left_step.
 
 Theorem extensibella-$-stdLib-$-lesseq_integer__add_positive :
   forall N1 N2 Base Sum,
-    $lesseq_integer Base N1 $btrue ->
-    $lesseq_integer ($posInt $zero) N2 $btrue ->
-    $plus_integer N1 N2 Sum -> $lesseq_integer Base Sum $btrue.
+    $lesseq_integer Base N1 ->
+    $lesseq_integer ($posInt $zero) N2 ->
+    $plus_integer N1 N2 Sum -> $lesseq_integer Base Sum.
 induction on 1. intros L1 L2 Plus.
-apply $lesseq_integer_0_posInt to L2. case L1 (keep).
+apply $lesseq_integer_posInt to L2. case L1 (keep).
   %Subgoal 1:  B = 0, N1 = 0
    case Plus. search.
   %Subgoal 2:  B = 0, N1 = posInt (succ N3)
@@ -384,7 +247,7 @@ apply $lesseq_integer_0_posInt to L2. case L1 (keep).
      %Subgoal 7.1:  N2 = posInt 0
       search.
      %Subgoal 7.2:  N2 = posInt (succ N6)
-      L': assert $lesseq_integer ($posInt $zero) ($posInt N6) $btrue.
+      L': assert $lesseq_integer ($posInt $zero) ($posInt N6).
              case L2 (keep). case H2. search. search. search.
       apply IH to H1 L' H2. backchain $lesseq_negSuccInt_left_step.
 
@@ -393,52 +256,39 @@ apply $lesseq_integer_0_posInt to L2. case L1 (keep).
 %                              GREATER                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $greater_integer : integer -> integer -> bool -> prop by
-  $greater_integer N1 N2 B := $less_integer N2 N1 B.
-
-%unique
-Theorem extensibella-$-stdLib-$-greater_integer_unique : forall N1 N2 B B',
-  $greater_integer N1 N2 B -> $greater_integer N1 N2 B' -> B = B'.
-intros. case H1. case H2. backchain extensibella-$-stdLib-$-less_integer_unique.
-
-%total
-Theorem extensibella-$-stdLib-$-greater_integer_total : forall N1 N2,
-  is_integer N1 -> is_integer N2 ->
-  exists B, $greater_integer N1 N2 B.
-intros. apply extensibella-$-stdLib-$-less_integer_total to H2 H1. search.
-
-%creates $is_bool
-Theorem extensibella-$-stdLib-$-greater_integer_is_bool : forall N1 N2 B,
-  $greater_integer N1 N2 B -> is_bool B.
-intros. case H1. apply extensibella-$-stdLib-$-less_integer_is_bool to H2. search.
-
-%other things?
-
-Theorem $greater_integer_true_flip : forall N1 N2,
-  $greater_integer N1 N2 $btrue -> $greater_integer N2 N1 $bfalse.
-intros. case H1. apply $less_integer_true_flip to H2. search.
-
-Theorem $greater_integer_false_flip : forall N1 N2,
-  $greater_integer N1 N2 $bfalse -> $greater_integer N2 N1 $btrue.
-intros. case H1. abort. %apply $less_integer_false_flip to H2. search.
+Define $greater_integer : integer -> integer -> prop by
+  $greater_integer N1 N2 := $less_integer N2 N1.
 
 Theorem $greater_true_flip_less_integer : forall N1 N2,
-  $greater_integer N1 N2 $btrue -> $less_integer N1 N2 $bfalse.
-induction on 1. intros. case H1.
- apply $less_integer_true_flip to H2. search.
-
-Theorem $greater_false_flip_less_integer : forall N1 N2,
-  $greater_integer N1 N2 $bfalse -> $less_integer N1 N2 $btrue.
-induction on 1. intros. case H1.
-abort. % apply $less_integer_false_flip to H2. search.
+  $greater_integer N1 N2 -> $less_integer N1 N2 -> false.
+induction on 2. intros G L. L': case L.
+  %Subgoal 1
+   G': case G. case G'.
+  %Subgoal 2
+   G': case G. case G'. apply IH to _ L'.
+  %Subgoal 3
+   G': case G. case G'.
+  %Subgoal 4
+   G': case G. case G'.
+  %Subgoal 5
+   G': case G. case G'. apply IH to _ L'.
 
 Theorem extensibella-$-stdLib-$-greater_integer__add_positive :
   forall N1 N2 Base Sum,
-    $greater_integer N1 Base $btrue ->
-    $lesseq_integer ($posInt $zero) N2 $btrue ->
-    $plus_integer N1 N2 Sum -> $greater_integer Sum Base $btrue.
+    $greater_integer N1 Base ->
+    $lesseq_integer ($posInt $zero) N2 ->
+    $plus_integer N1 N2 Sum -> $greater_integer Sum Base.
 intros G L Plus. case G.
-apply extensibella-$-stdLib-$-less_integer__add_positive to H1 L Plus. search.
+apply extensibella-$-stdLib-$-less_integer__add_positive to H1 L Plus.
+search.
+
+Theorem extensibella-$-stdLib-$-greater_integer_transitive :
+  forall A B C,
+    $greater_integer A B -> $greater_integer B C ->
+    $greater_integer A C.
+intros GAB GBC. LBA: case GAB. LCB: case GBC.
+apply extensibella-$-stdLib-$-less_integer_transitive to LCB LBA.
+search.
 
 
 
@@ -446,42 +296,25 @@ apply extensibella-$-stdLib-$-less_integer__add_positive to H1 L Plus. search.
 %                             GREATEREQ                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $greatereq_integer : integer -> integer -> bool -> prop by
-  $greatereq_integer N1 N2 B := $lesseq_integer N2 N1 B.
-
-%unique
-Theorem extensibella-$-stdLib-$-greatereq_integer_unique : forall N1 N2 B B',
-  $greatereq_integer N1 N2 B -> $greatereq_integer N1 N2 B' -> B = B'.
-intros. case H1. case H2. backchain extensibella-$-stdLib-$-lesseq_integer_unique.
-
-%total
-Theorem extensibella-$-stdLib-$-greatereq_integer_total : forall N1 N2,
-  is_integer N1 -> is_integer N2 ->
-  exists B, $greatereq_integer N1 N2 B.
-intros. apply extensibella-$-stdLib-$-lesseq_integer_total to H2 H1. search.
-
-%creates $is_bool
-Theorem extensibella-$-stdLib-$-greatereq_integer_is_bool : forall N1 N2 B,
-  $greatereq_integer N1 N2 B -> is_bool B.
-intros. case H1. apply extensibella-$-stdLib-$-lesseq_integer_is_bool to H2. search.
-
-%other things?
-
-Theorem extensibella-$-stdLib-$-eq_to_greatereq_integer : forall N,
-  is_integer N -> $greatereq_integer N N $btrue.
-intros. apply extensibella-$-stdLib-$-eq_to_lesseq_integer to H1. search.
-
-Theorem extensibella-$-stdLib-$-greater_to_greatereq_integer : forall N1 N2,
-  $greater_integer N1 N2 $btrue -> $greatereq_integer N1 N2 $btrue.
-intros. case H1. apply extensibella-$-stdLib-$-less_to_lesseq_integer to H2. search.
+Define $greatereq_integer : integer -> integer -> prop by
+  $greatereq_integer N1 N2 := $lesseq_integer N2 N1.
 
 Theorem extensibella-$-stdLib-$-greatereq_integer__add_positive :
   forall N1 N2 Base Sum,
-    $greatereq_integer N1 Base $btrue ->
-    $greatereq_integer N2 ($posInt $zero) $btrue ->
-    $plus_integer N1 N2 Sum -> $greatereq_integer Sum Base $btrue.
+    $greatereq_integer N1 Base ->
+    $greatereq_integer N2 ($posInt $zero) ->
+    $plus_integer N1 N2 Sum -> $greatereq_integer Sum Base.
 intros G1 G2 Plus. case G1. case G2.
-apply extensibella-$-stdLib-$-lesseq_integer__add_positive to H1 H2 Plus. search.
+apply extensibella-$-stdLib-$-lesseq_integer__add_positive to
+  H1 H2 Plus. search.
+
+Theorem extensibella-$-stdLib-$-greatereq_integer_transitive :
+  forall A B C,
+    $greatereq_integer A B -> $greatereq_integer B C ->
+    $greatereq_integer A C.
+intros GAB GBC. LBA: case GAB. LCB: case GBC.
+apply extensibella-$-stdLib-$-lesseq_integer_transitive to LCB LBA.
+search.
 
 
 %combinations of <, <=, >, >= and addition, subtraction, multiplication, division, whatever

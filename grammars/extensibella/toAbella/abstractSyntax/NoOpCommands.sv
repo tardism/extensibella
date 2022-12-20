@@ -7,8 +7,9 @@ nonterminal NoOpCommand with
    --pp should always end with a newline
    pp,
    toAbella<Maybe<NoOpCommand>>, --maybe because we might send nothing
-   toAbellaMsgs;
-propagate toAbellaMsgs on NoOpCommand;
+   toAbellaMsgs,
+   proverState;
+propagate proverState, toAbellaMsgs on NoOpCommand;
 
 --because we only intend to pass these through to Abella, we don't
 --   need to actually know anything about the option or its value
@@ -51,7 +52,7 @@ top::NoOpCommand ::= opt::String val::String
 abstract production showCommand
 top::NoOpCommand ::= theoremName::QName
 {
-  top.pp = "Show " ++ theoremName ++ ".\n";
+  top.pp = "Show " ++ theoremName.pp ++ ".\n";
 
   local possibleThms::[(QName, Metaterm)] =
      findTheorem(theoremName, top.proverState);

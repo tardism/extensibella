@@ -353,7 +353,7 @@ top::ProofCommand ::= all::Boolean
 nonterminal Clearable with
    pp,
    toAbella<Clearable>, toAbellaMsgs,
-   proverState;
+   languageCtx, proverState;
 propagate toAbellaMsgs, proverState, languageCtx on Clearable;
 
 --I don't know what the star is, but some have it
@@ -376,8 +376,7 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
       clearable(star,
                 if hyp.isQualified || hypFound
                 then hyp
-                else head(possibleThms).1, map((.toAbella),
-                instantiation));
+                else head(possibleThms).1, instantiation.toAbella);
 
   top.toAbellaMsgs <-
       if hypFound

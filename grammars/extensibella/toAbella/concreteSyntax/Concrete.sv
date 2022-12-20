@@ -255,8 +255,8 @@ concrete productions top::PAId_c
 
 closed nonterminal Knd_c with ast<Kind>;
 closed nonterminal UTy_c with ast<Type>;
-closed nonterminal UTyList_c with ast<[Type]>;
-closed nonterminal ATyList_c with ast<[Type]>;
+closed nonterminal UTyList_c with ast<TypeList>;
+closed nonterminal ATyList_c with ast<TypeList>;
 
 
 concrete productions top::Knd_c
@@ -275,16 +275,16 @@ concrete productions top::UTy_c
 
 concrete productions top::UTyList_c
 | u::UTy_c
-  { top.ast = [u.ast]; }
+  { top.ast = addTypeList(u.ast, emptyTypeList()); }
 | u::UTy_c ',' rest::UTyList_c
-  { top.ast = u.ast::rest.ast; }
+  { top.ast = addTypeList(u.ast, rest.ast); }
 
 
 concrete productions top::ATyList_c
 | a::ATy_c
-  { top.ast = [a.ast]; }
+  { top.ast = addTypeList(a.ast, emptyTypeList()); }
 | a::ATy_c ',' rest::ATyList_c
-  { top.ast = a.ast::rest.ast; }
+  { top.ast = addTypeList(a.ast, rest.ast); }
 
 
 concrete productions top::PTy_c
@@ -512,13 +512,13 @@ concrete productions top::HypList_c
 
 
 
-closed nonterminal MaybeInst_c with ast<[Type]>;
+closed nonterminal MaybeInst_c with ast<TypeList>;
 closed nonterminal MaybeDepth_c with ast<Maybe<Integer>>;
 
 
 concrete productions top::MaybeInst_c
 |
-  { top.ast = []; }
+  { top.ast = emptyTypeList(); }
 | '[' u::UTyList_c ']'
   { top.ast = u.ast; }
 

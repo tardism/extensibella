@@ -21,13 +21,33 @@ top::Kind ::= k::Kind
 
 
 attribute
-   toAbella<Type>
+   toAbella<Type>, toAbellaMsgs
 occurs on Type;
+propagate toAbellaMsgs on Type;
 
 aspect production arrowType
 top::Type ::= ty1::Type ty2::Type
 {
   top.toAbella = arrowType(ty1.toAbella, ty2.toAbella);
+}
+
+
+attribute
+   toAbella<TypeList>, toAbellaMsgs
+occurs on TypeList;
+propagate toAbellaMsgs on TypeList;
+
+aspect production emptyTypeList
+top::TypeList ::=
+{
+  top.toAbella = emptyTypeList();
+}
+
+
+aspect production addTypeList
+top::TypeList ::= ty::Type rest::TypeList
+{
+  top.toAbella = addTypeList(ty.toAbella, rest.toAbella);
 }
 
 

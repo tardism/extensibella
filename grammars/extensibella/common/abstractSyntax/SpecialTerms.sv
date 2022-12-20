@@ -56,30 +56,30 @@ top::Metaterm ::= t::Term result::Term
 }
 
 abstract production lessMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " < " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp = t1.pp ++ " < " ++ t2.pp;
   top.isAtomic = true;
 }
 
 abstract production lessEqMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " <= " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp = t1.pp ++ " <= " ++ t2.pp;
   top.isAtomic = true;
 }
 
 abstract production greaterMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " > " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp = t1.pp ++ " > " ++ t2.pp;
   top.isAtomic = true;
 }
 
 abstract production greaterEqMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " >= " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp = t1.pp ++ " >= " ++ t2.pp;
   top.isAtomic = true;
 }
 
