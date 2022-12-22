@@ -1,8 +1,10 @@
 grammar extensibella:common:abstractSyntax;
 
 
-nonterminal Type with pp, isAtomic, languageCtx;
-propagate languageCtx on Type;
+nonterminal Type with
+   pp, isAtomic,
+   typeEnv;
+propagate typeEnv on Type;
 
 abstract production arrowType
 top::Type ::= ty1::Type ty2::Type
@@ -40,13 +42,19 @@ top::Type ::=
 
 
 
-nonterminal TypeList with pp, languageCtx;
-propagate languageCtx on TypeList;
+nonterminal TypeList with
+   pp,
+   toList<Type>, len,
+   typeEnv;
+propagate typeEnv on TypeList;
 
 abstract production emptyTypeList
 top::TypeList ::=
 {
   top.pp = "";
+
+  top.toList = [];
+  top.len = 0;
 }
 
 
@@ -56,4 +64,34 @@ top::TypeList ::= ty::Type rest::TypeList
   top.pp = if rest.pp == ""
            then ty.pp
            else ty.pp ++ ", " ++ rest.pp;
+
+  top.toList = ty::rest.toList;
+  top.len = 1 + rest.len;
+}
+
+
+
+
+
+nonterminal MaybeType with
+   pp,
+   typeEnv,
+   isJust;
+propagate typeEnv on MaybeType;
+
+abstract production nothingType
+top::MaybeType ::=
+{
+  top.pp = "";
+
+  top.isJust = false;
+}
+
+
+abstract production justType
+top::MaybeType ::= ty::Type
+{
+  top.pp = ty.pp;
+
+  top.isJust = true;
 }

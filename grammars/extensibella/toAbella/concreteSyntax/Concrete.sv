@@ -47,7 +47,8 @@ closed nonterminal PureTopCommand_c with ast<AnyCommand>; --to handle common par
 closed nonterminal AnyCommand_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
    with ast<AnyCommand>;
-closed nonterminal TheoremStmts_c with ast<Either<String [(String, Metaterm, String)]>>;
+closed nonterminal TheoremStmts_c with ast<Either<String ExtThms>>;
+closed nonterminal ExtBody_c with ast<ExtBody>;
 closed nonterminal QnameList_c with ast<[String]>;
 
 concrete productions top::AnyCommand_c
@@ -63,16 +64,21 @@ concrete productions top::PureCommand_c
   { top.ast = inductionTactic(h.ast, nl.ast); }
 | h::HHint_c 'coinduction' '.'
   { top.ast = coinductionTactic(h.ast); }
-| h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'to' a::ApplyArgs_c '.'
-  { top.ast = applyTactic(h.ast, md.ast, c.ast, a.ast, []); }
-| h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'to' a::ApplyArgs_c 'with' w::Withs_c '.'
+| h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'to'
+  a::ApplyArgs_c '.'
+  { top.ast = applyTactic(h.ast, md.ast, c.ast, a.ast, endWiths()); }
+| h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'to'
+  a::ApplyArgs_c 'with' w::Withs_c '.'
   { top.ast = applyTactic(h.ast, md.ast, c.ast, a.ast, w.ast); }
-| h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'with' w::Withs_c '.'
-  { top.ast = applyTactic(h.ast, md.ast, c.ast, [], w.ast); }
+| h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'with'
+  w::Withs_c '.'
+  { top.ast = applyTactic(h.ast, md.ast, c.ast, endApplyArgs(),
+                          w.ast); }
 | h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c '.'
-  { top.ast = applyTactic(h.ast, md.ast, c.ast, [], []); }
+  { top.ast = applyTactic(h.ast, md.ast, c.ast, endApplyArgs(),
+                          endWiths()); }
 | 'backchain' md::MaybeDepth_c c::Clearable_c '.'
-  { top.ast = backchainTactic(md.ast, c.ast, []); }
+  { top.ast = backchainTactic(md.ast, c.ast, endWiths()); }
 | 'backchain' md::MaybeDepth_c c::Clearable_c 'with' w::Withs_c '.'
   { top.ast = backchainTactic(md.ast, c.ast, w.ast); }
 | h::HHint_c 'case' hy::Hyp_c '.'
@@ -164,7 +170,8 @@ concrete productions top::PureTopCommand_c
   { top.ast =
         case thms.ast of
         | left(msg) -> anyParseFailure(msg)
-        | right(lst) -> anyTopCommand(extensibleTheoremDeclaration(1, lst))
+        | right(lst) ->
+          anyTopCommand(extensibleTheoremDeclaration(1, lst))
         end; }
 | 'Prove' thms::QnameList_c '.'
   { top.ast = anyTopCommand(proveObligations(thms.ast)); }
@@ -172,20 +179,45 @@ concrete productions top::PureTopCommand_c
   { top.ast =
         case newthms.ast of
         | left(msg) -> anyParseFailure(msg)
-        | right(lst) -> error("Not done yet")
+        | right(lst) -> error("Adding extensible theorems to groups not done yet")
         end; }
 
 
 concrete productions top::TheoremStmts_c
-| name::Id_t ':' body::Metaterm_c
-  { top.ast = right([(toString(name.lexeme), body.ast, "")]); }
-| name::Id_t ':' body::Metaterm_c ',' rest::TheoremStmts_c
+| name::Id_t ':' body::ExtBody_c 'on' label::Id_t
+  { top.ast = right(addExtThms(toString(name.lexeme), body.ast,
+                               toString(label.lexeme), endExtThms())); }
+| name::Id_t ':' body::ExtBody_c 'on' label::Id_t ',' rest::TheoremStmts_c
   { top.ast =
         case rest.ast of
         | left(msg) -> left(msg)
-        | right(lst) ->
-          right((toString(name.lexeme), body.ast, "")::lst)
+        | right(rst) ->
+          right(addExtThms(toString(name.lexeme), body.ast,
+                           toString(label.lexeme), rst))
         end; }
+  --These are to get errors which are more helpful, because I forget
+  --   the labels a lot and can't figure out why it doesn't work.
+| name::Id_t ':' body::ExtBody_c
+  { top.ast =
+        left("Must include relation on which to do induction for theorem " ++
+             toString(name.lexeme)); }
+| name::Id_t ':' body::ExtBody_c ',' rest::TheoremStmts_c
+  { top.ast =
+        left("Must include relation on which to do induction for theorem " ++
+              toString(name.lexeme) ++ "\n" ++
+             case rest.ast of
+             | left(msg) -> msg
+             | right(_) -> ""
+             end); }
+
+
+concrete productions top::ExtBody_c
+| conc::Metaterm_c
+  { top.ast = endExtBody(conc.ast); }
+| label::Id_t ':' m::Metaterm_c '->' rest::ExtBody_c
+  { top.ast = addLabelExtBody(toString(label.lexeme), m.ast, rest.ast); }
+| m::Metaterm_c '->' rest::ExtBody_c
+  { top.ast = addBasicExtBody(m.ast, rest.ast); }
 
 
 concrete productions top::QnameList_c
@@ -247,7 +279,7 @@ concrete productions top::Exp_c
 
 concrete productions top::PAId_c
 | l::Qname_t
-  { top.ast = nameTerm(toQName(l.lexeme), nothing()); }
+  { top.ast = nameTerm(toQName(l.lexeme), nothingType()); }
 
 
 
@@ -402,15 +434,15 @@ concrete productions top::EWitness_c
 
 
 
-closed nonterminal ApplyArgs_c with ast<[ApplyArg]>;
+closed nonterminal ApplyArgs_c with ast<ApplyArgs>;
 closed nonterminal ApplyArg_c with ast<ApplyArg>;
 
 
 concrete productions top::ApplyArgs_c
 | a::ApplyArg_c rest::ApplyArgs_c
-  { top.ast = a.ast::rest.ast; }
+  { top.ast = addApplyArgs(a.ast, rest.ast); }
 | a::ApplyArg_c
-  { top.ast = [a.ast]; }
+  { top.ast = addApplyArgs(a.ast, endApplyArgs()); }
 
 
 concrete productions top::ApplyArg_c
@@ -430,7 +462,7 @@ concrete productions top::ExistsBinds_c
 |
   { top.ast = []; }
 | w::Withs_c
-  { top.ast = w.ast; }
+  { top.ast = w.ast.toList; }
 
 
 
@@ -441,7 +473,7 @@ closed nonterminal IdTy_c with ast<Pair<String Type>>;
 closed nonterminal IdTys_c with ast<[Pair<String Type>]>;
 closed nonterminal HHint_c with ast<HHint>;
 closed nonterminal Clearable_c with ast<Clearable>;
-closed nonterminal Withs_c with ast<[Pair<String Term>]>;
+closed nonterminal Withs_c with ast<Withs>;
 
 
 concrete productions top::IdList_c
@@ -483,9 +515,9 @@ concrete productions top::Clearable_c
 
 concrete productions top::Withs_c
 | i::Id_t '=' t::Term_c ',' rest::Withs_c
-  { top.ast = pair(i.lexeme, t.ast)::rest.ast; }
+  { top.ast = addWiths(i.lexeme, t.ast, rest.ast); }
 | i::Id_t '=' t::Term_c
-  { top.ast = [pair(i.lexeme, t.ast)]; }
+  { top.ast = addWiths(i.lexeme, t.ast, endWiths()); }
 
 
 

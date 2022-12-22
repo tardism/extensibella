@@ -2,14 +2,14 @@ grammar extensibella:common:abstractSyntax;
 
 nonterminal QName with
    pp,
-   languageCtx,
+   typeEnv, constructorEnv, relationEnv,
    shortName, moduleName, isQualified,
    addBase, baseAdded,
-   ntErrors, ntFound, fullNT,
-   prodErrors, prodFound, fullProd, prodArgs, prodBuilds,
-   transErrors, transFound, fullTransNT, transType,
-   relErrors, relFound, fullRel, relArgs, relIsExt,
+   typeErrors, typeFound, fullType,
+   constrErrors, constrFound, fullConstr,
+   relErrors, relFound, fullRel,
    compareTo, isEqual;
+propagate typeEnv, constructorEnv, relationEnv on QName;
 
 synthesized attribute shortName::String;
 synthesized attribute moduleName::QName;
@@ -19,30 +19,20 @@ synthesized attribute isQualified::Boolean;
 inherited attribute addBase::String;
 synthesized attribute baseAdded::QName;
 
---lookup as a nonterminal
-synthesized attribute ntErrors::[Message];
-synthesized attribute ntFound::Boolean;
-synthesized attribute fullNT::QName;
+--lookup as a type
+synthesized attribute typeErrors::[Message];
+synthesized attribute typeFound::Boolean;
+synthesized attribute fullType::TypeEnvItem;
 
---lookup as a production
-synthesized attribute prodErrors::[Message];
-synthesized attribute prodFound::Boolean;
-synthesized attribute fullProd::QName;
-synthesized attribute prodArgs::[Type];
-synthesized attribute prodBuilds::QName;
-
---lookup the translation of the nonterminal
-synthesized attribute transErrors::[Message];
-synthesized attribute transFound::Boolean;
-synthesized attribute fullTransNT::QName;
-synthesized attribute transType::[Type];
+--lookup as a constructor
+synthesized attribute constrErrors::[Message];
+synthesized attribute constrFound::Boolean;
+synthesized attribute fullConstr::ConstructorEnvItem;
 
 --lookup as a relation
 synthesized attribute relErrors::[Message];
 synthesized attribute relFound::Boolean;
-synthesized attribute fullRel::QName;
-synthesized attribute relArgs::[Type];
-synthesized attribute relIsExt::Boolean;
+synthesized attribute fullRel::RelationEnvItem;
 
 
 abstract production baseName
@@ -57,56 +47,40 @@ top::QName ::= name::String
   top.baseAdded = addModule(name, baseName(top.addBase));
 
   --lookup name as a nonterminal
-  production attribute possibleNTs::[QName] =
-     findNT(top, top.languageCtx);
-  top.ntErrors =
-      case possibleNTs of
-      | [] -> [errorMsg("Unknown nonterminal " ++ top.pp)]
+  production attribute possibleTys::[TypeEnvItem] =
+     lookupEnv(top, top.typeEnv);
+  top.typeErrors =
+      case possibleTys of
+      | [] -> [errorMsg("Unknown type " ++ top.pp)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate nonterminal " ++ top.pp ++ "; " ++
+        [errorMsg("Indeterminate type " ++ top.pp ++ "; " ++
                   "possibilities are " ++
-                  implode(", ", map((.pp), possibleNTs)))]
+                  implode(", ", map((.pp),
+                                map((.name), possibleTys))))]
       end;
-  top.ntFound = length(possibleNTs) == 1;
-  top.fullNT = head(possibleNTs);
+  top.typeFound = length(possibleTys) == 1;
+  top.fullType = head(possibleTys);
 
-  --lookup name as a production
-  production attribute possibleProds::[(QName, [Type], QName)] =
-     findProd(top, top.languageCtx);
-  top.prodErrors =
-      case possibleProds of
-      | [] -> [errorMsg("Unknown production " ++ top.pp)]
+  --lookup name as a constructor
+  production attribute possibleConstrs::[ConstructorEnvItem] =
+     lookupEnv(top, top.constructorEnv);
+  top.constrErrors =
+      case possibleConstrs of
+      | [] -> [errorMsg("Unknown constructor " ++ top.pp)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate production " ++ top.pp ++ "; " ++
+        [errorMsg("Indeterminate constructor " ++ top.pp ++ "; " ++
                   "possibilities are " ++
-                  implode(", ", map((.pp), map(fst, possibleProds))))]
+                  implode(", ", map((.pp),
+                                map((.name), possibleConstrs))))]
       end;
-  top.prodFound = length(possibleProds) == 1;
-  top.fullProd = head(possibleProds).1;
-  top.prodArgs = head(possibleProds).2;
-  top.prodBuilds = head(possibleProds).3;
-
-  --lookup name as a nonterminal to get translations
-  production attribute possibleTrans::[(QName, [Type])] =
-     findTrans(top, top.languageCtx);
-  top.transErrors =
-      case possibleTrans of
-      | [] -> [errorMsg("Unknown translation nonterminal " ++ top.pp)]
-      | [_] -> []
-      | l ->
-        [errorMsg("Indeterminate translation nonterminal " ++
-                  top.pp ++ "; possibilities are " ++
-                  implode(", ", map((.pp), map(fst, possibleTrans))))]
-      end;
-  top.transFound = length(possibleTrans) == 1;
-  top.fullTransNT = head(possibleTrans).1;
-  top.transType = head(possibleTrans).2;
+  top.constrFound = length(possibleConstrs) == 1;
+  top.fullConstr = head(possibleConstrs).1;
 
   --lookup name as a relation
-  production attribute possibleRels::[(QName, [Type], Boolean)] =
-     findRel(top, top.languageCtx);
+  production attribute possibleRels::[RelationEnvItem] =
+     lookupEnv(top, top.relationEnv);
   top.relErrors =
       case possibleRels of
       | [] -> [errorMsg("Unknown relation " ++ top.pp)]
@@ -114,11 +88,10 @@ top::QName ::= name::String
       | l ->
         [errorMsg("Indeterminate relation " ++ top.pp ++
                   "; possibilities are " ++
-                  implode(", ", map((.pp), map(fst, possibleRels))))]
+                  implode(", ", map((.pp),
+                                map((.name), possibleRels))))]
       end;
   top.relFound = length(possibleRels) == 1;
-  top.relArgs = head(possibleRels).2;
-  top.relIsExt = head(possibleRels).3;
 
   propagate compareTo, isEqual;
 }
@@ -128,8 +101,6 @@ abstract production addModule
 top::QName ::= name::String rest::QName
 {
   top.pp = name ++ ":" ++ rest.pp;
-
-  rest.languageCtx = top.languageCtx;
 
   top.isQualified = true;
   top.shortName = rest.shortName;
@@ -142,56 +113,40 @@ top::QName ::= name::String rest::QName
   top.baseAdded = addModule(name, rest.baseAdded);
 
   --lookup name as a nonterminal
-  production attribute possibleNTs::[QName] =
-     findNT(top, top.languageCtx);
-  top.ntErrors =
-      case possibleNTs of
-      | [] -> [errorMsg("Unknown nonterminal " ++ top.pp)]
-      | [_] -> []
-      | l -> --should be 0 or 1, but catch in case
-        [errorMsg("Indeterminate nonterminal " ++ top.pp ++ "; " ++
-                  "possibilities are " ++
-                  implode(", ", map((.pp), possibleNTs)))]
-      end;
-  top.ntFound = length(possibleNTs) == 1;
-  top.fullNT = head(possibleNTs);
-
-  --lookup name as a production
-  production attribute possibleProds::[(QName, [Type], QName)] =
-     findProd(top, top.languageCtx);
-  top.prodErrors =
-      case possibleProds of
-      | [] -> [errorMsg("Unknown production " ++ top.pp)]
+  production attribute possibleTys::[TypeEnvItem] =
+     lookupEnv(top, top.typeEnv);
+  top.typeErrors =
+      case possibleTys of
+      | [] -> [errorMsg("Unknown type " ++ top.pp)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate production " ++ top.pp ++ "; " ++
+        [errorMsg("Indeterminate type " ++ top.pp ++ "; " ++
                   "possibilities are " ++
-                  implode(", ", map((.pp), map(fst, possibleProds))))]
+                  implode(", ", map((.pp),
+                                map((.name), possibleTys))))]
       end;
-  top.prodFound = length(possibleProds) == 1;
-  top.fullProd = head(possibleProds).1;
-  top.prodArgs = head(possibleProds).2;
-  top.prodBuilds = head(possibleProds).3;
+  top.typeFound = length(possibleTys) == 1;
+  top.fullType = head(possibleTys);
 
-  --lookup name as a nonterminal to get translations
-  production attribute possibleTrans::[(QName, [Type])] =
-     findTrans(top, top.languageCtx);
-  top.transErrors =
-      case possibleTrans of
-      | [] -> [errorMsg("Unknown translation nonterminal " ++ top.pp)]
+  --lookup name as a constructor
+  production attribute possibleConstrs::[ConstructorEnvItem] =
+     lookupEnv(top, top.constructorEnv);
+  top.constrErrors =
+      case possibleConstrs of
+      | [] -> [errorMsg("Unknown constructor " ++ top.pp)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate translation nonterminal " ++
-                  top.pp ++ "; possibilities are " ++
-                  implode(", ", map((.pp), map(fst, possibleTrans))))]
+        [errorMsg("Indeterminate constructor " ++ top.pp ++ "; " ++
+                  "possibilities are " ++
+                  implode(", ", map((.pp),
+                                map((.name), possibleConstrs))))]
       end;
-  top.transFound = length(possibleTrans) == 1;
-  top.fullTransNT = head(possibleTrans).1;
-  top.transType = head(possibleTrans).2;
+  top.constrFound = length(possibleConstrs) == 1;
+  top.fullConstr = head(possibleConstrs).1;
 
   --lookup name as a relation
-  production attribute possibleRels::[(QName, [Type], Boolean)] =
-     findRel(top, top.languageCtx);
+  production attribute possibleRels::[RelationEnvItem] =
+     lookupEnv(top, top.relationEnv);
   top.relErrors =
       case possibleRels of
       | [] -> [errorMsg("Unknown relation " ++ top.pp)]
@@ -199,11 +154,10 @@ top::QName ::= name::String rest::QName
       | l ->
         [errorMsg("Indeterminate relation " ++ top.pp ++
                   "; possibilities are " ++
-                  implode(", ", map((.pp), map(fst, possibleRels))))]
+                  implode(", ", map((.pp),
+                                map((.name), possibleRels))))]
       end;
   top.relFound = length(possibleRels) == 1;
-  top.relArgs = head(possibleRels).2;
-  top.relIsExt = head(possibleRels).3;
 
   propagate compareTo, isEqual;
 }

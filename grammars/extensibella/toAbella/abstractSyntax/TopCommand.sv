@@ -8,35 +8,9 @@ nonterminal TopCommand with
    --pp should always end with a newline
    pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
-   languageCtx, proverState;
-propagate toAbellaMsgs on TopCommand;
-
-
-abstract production extensibleTheoremDeclaration
-top::TopCommand ::= depth::Integer thms::[(String, Metaterm, String)]
-{
-  local join::(String ::= [(String, Metaterm, String)]) =
-        \ l::[(String, Metaterm, String)] ->
-          case l of
-          | [] -> ""
-          | [(thm, body, tr)] ->
-            thm ++ " : " ++ body.pp ++ " on " ++ tr
-          | (thm, body, tr)::t ->
-            thm ++ " : " ++ body.pp ++ " on " ++ tr ++ ", " ++ join(t)
-          end;
-  top.pp = "Extensible_Theorem " ++ join(thms) ++ ".\n";
-
-  top.toAbella = error("extensibleTheoremDeclaration.toAbella");
-}
-
-
-abstract production proveObligations
-top::TopCommand ::= names::[String]
-{
-  top.pp = "Prove " ++ implode(", ", names) ++ ".\n";
-
-  top.toAbella = error("proveObligations.toAbella");
-}
+   currentModule, typeEnv, constructorEnv, relationEnv, proverState;
+propagate typeEnv, constructorEnv, relationEnv, currentModule,
+          toAbellaMsgs on TopCommand;
 
 
 abstract production theoremDeclaration
@@ -132,11 +106,11 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[String]
   production splitThm::[Metaterm] = splitMetaterm(head(thm).2);
   --Need to add module to given names and make up names for rest
   local qedNewNames::[QName] =
-     map(addQNameBase(top.languageCtx.currentModule, _),
+     map(addQNameBase(top.currentModule, _),
          newTheoremNames);
   local moreNames::[QName] =
         foldr(\ m::Metaterm rest::[QName] ->
-                addQNameBase(top.languageCtx.currentModule,
+                addQNameBase(top.currentModule,
                              theoremName.shortName ++ "_" ++
                              toString(genInt()))::rest,
               [], drop(length(newTheoremNames), splitThm));
@@ -155,18 +129,6 @@ top::TopCommand ::= tys::TypeList
 }
 
 
-
-{-
-  We disallow these at the moment because of the difficulties in
-  handling them.  It would be difficult to tell the difference between
-  an Extensibella-declared type/constructor and one that is part of
-  the language.  We would need to check both possibilities for names
-  and make sure we didn't treat one as the other.  Since I don't know
-  that new types and constructors are needed as part of the proofs
-  that you wouldn't include in the language itself, disallowing them
-  is sensible.
--}
-
 abstract production kindDeclaration
 top::TopCommand ::= names::[String] k::Kind
 {
@@ -176,13 +138,26 @@ top::TopCommand ::= names::[String] k::Kind
      else " " ++ implode(", ", names);
   top.pp = "Kind " ++ namesString ++ "   " ++ k.pp ++ ".\n";
 
-  top.toAbella = [anyTopCommand(kindDeclaration(newNames, k))];
-  local newNames::[String] =
-     map((.pp),
-         map(addQNameBase(top.languageCtx.currentModule, _), names));
+  top.toAbella =
+      [anyTopCommand(kindDeclaration(map((.pp), newNames), k))];
+  local newNames::[QName] =
+        map(addQNameBase(top.currentModule, _), names);
 
+  --redifining a previously-defined type from this module
   top.toAbellaMsgs <-
-      [errorMsg("No new types currently allowed to be defined")];
+      foldr(\ q::QName rest::[Message] ->
+              case lookupEnv(q, top.typeEnv) of
+              | [] -> rest
+              | _ ->
+                errorMsg("Type " ++ q.pp ++ " already exists " ++
+                   "and cannot be defined again")::rest
+              end,
+            [], newNames);
+  --two of the same name in this declaration
+  top.toAbellaMsgs <-
+      if length(names) == length(nub(names))
+      then [] --no duplicates
+      else [errorMsg("Cannot declare same type twice")];
 }
 
 
@@ -196,16 +171,24 @@ top::TopCommand ::= names::[String] ty::Type
   top.pp = "Type " ++ namesString ++ "   " ++ ty.pp ++ ".\n";
 
   top.toAbella =
-      [anyTopCommand(typeDeclaration(newNames, ty.toAbella))];
-  local newNames::[String] =
-     map((.pp),
-         map(addQNameBase(top.languageCtx.currentModule, _), names));
+      [anyTopCommand(typeDeclaration(map((.pp), newNames), ty.toAbella))];
+  local newNames::[QName] =
+         map(addQNameBase(top.currentModule, _), names);
 
+  --redifining a previously-defined type from this module
   top.toAbellaMsgs <-
-      [errorMsg("No new constructors currently allowed to be defined")];
-  --If we change and allow this, we need to check the type being
-  --built is a type declared by a Kind declaration in Extensibella
-  --rather than as part of the language.  Adding productions in
-  --Extensibella would not make sense in an extensible language.
+      foldr(\ q::QName rest::[Message] ->
+              case lookupEnv(q, top.constructorEnv) of
+              | [] -> rest
+              | _ ->
+                errorMsg("Constructor " ++ q.pp ++ " already" ++
+                   " exists and cannot be defined again")::rest
+              end,
+            [], newNames);
+  --two of the same name in this declaration
+  top.toAbellaMsgs <-
+      if length(names) == length(nub(names))
+      then [] --no duplicates
+      else [errorMsg("Cannot declare same constructor twice")];
 }
 

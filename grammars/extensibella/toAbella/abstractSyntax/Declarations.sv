@@ -32,6 +32,28 @@ top::Type ::= ty1::Type ty2::Type
 }
 
 
+aspect production nameType
+top::Type ::= name::QName
+{
+  --need to account for built-in types
+  top.toAbella = nameType(name.fullType.name);
+}
+
+
+aspect production functorType
+top::Type ::= functorTy::Type argTy::Type
+{
+  top.toAbella = functorType(functorTy.toAbella, argTy.toAbella);
+}
+
+
+aspect production underscoreType
+top::Type ::=
+{
+  top.toAbella = top;
+}
+
+
 attribute
    toAbella<TypeList>, toAbellaMsgs
 occurs on TypeList;
@@ -51,31 +73,32 @@ top::TypeList ::= ty::Type rest::TypeList
 }
 
 
-aspect production nameType
-top::Type ::= name::QName
+attribute
+   toAbella<MaybeType>, toAbellaMsgs
+occurs on MaybeType;
+propagate toAbellaMsgs on MaybeType;
+
+aspect production nothingType
+top::MaybeType ::=
 {
-  top.toAbella = nameType(name.fullNT); --need to account for built-in types
+  top.toAbella = nothingType();
 }
 
 
-aspect production functorType
-top::Type ::= functorTy::Type argTy::Type
+aspect production justType
+top::MaybeType ::= ty::Type
 {
-  top.toAbella = functorType(functorTy.toAbella, argTy.toAbella);
-}
-
-
-aspect production underscoreType
-top::Type ::=
-{
-  top.toAbella = top;
+  top.toAbella = justType(ty.toAbella);
 }
 
 
 
 
 
-nonterminal Defs with pp;
+nonterminal Defs with
+   pp,
+   toAbella<Defs>, toAbellaMsgs,
+   typeEnv, constructorEnv, relationEnv;
 
 abstract production singleDefs
 top::Defs ::= d::Def
@@ -94,7 +117,10 @@ top::Defs ::= d::Def rest::Defs
 
 
 
-nonterminal Def with pp;
+nonterminal Def with
+   pp,
+   toAbella<Def>, toAbellaMsgs,
+   typeEnv, constructorEnv, relationEnv;
 
 abstract production factDef
 top::Def ::= clausehead::Metaterm

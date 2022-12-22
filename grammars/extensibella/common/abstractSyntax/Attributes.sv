@@ -9,13 +9,12 @@ synthesized attribute isAtomic::Boolean;
 flowtype isAtomic {} on Metaterm, Term;
 
 
---Pass around information about the language with which we are working
---Decorated for efficiency
-inherited attribute languageCtx::Decorated LanguageCtx;
+inherited attribute currentModule::QName;
 
 
---The arguments in a TermList, but in an actual list
-synthesized attribute argList::[Term];
+inherited attribute typeEnv::Env<TypeEnvItem>;
+inherited attribute constructorEnv::Env<ConstructorEnvItem>;
+inherited attribute relationEnv::Env<RelationEnvItem>;
 
 
 --The goal we are currently trying to prove, if there is one
@@ -39,4 +38,19 @@ inherited attribute boundNames::[String];
 --We often only want to replace the state and leave everything else
 inherited attribute replaceState::ProofState;
 synthesized attribute replacedState<a>::a;
+
+
+--Turn a list-like thing into a list
+synthesized attribute toList<a>::[a];
+--Length of list-like things
+synthesized attribute len::Integer;
+
+
+
+synthesized attribute name::QName;
+
+synthesized attribute type::Type;
+synthesized attribute types::TypeList;
+
+synthesized attribute isExtensible::Boolean;
 

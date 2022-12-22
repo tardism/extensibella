@@ -45,3 +45,13 @@ global andName::String = "$and_bool";
 global notName::String = "$not_bool";
 global trueName::String = "$btrue";
 global falseName::String = "$bfalse";
+
+
+
+
+-- ~99% of the time, this is what we want
+function basicNameTerm
+Term ::= name::String
+{
+  return nameTerm(toQName(name), nothingType());
+}

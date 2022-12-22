@@ -6,15 +6,17 @@ grammar extensibella:toAbella:abstractSyntax;
 nonterminal ProofCommand with
    --pp should end with two spaces
    pp,
-   languageCtx, proverState,
+   currentModule, typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<[ProofCommand]>, toAbellaMsgs;
-propagate languageCtx, proverState on ProofCommand;
+propagate typeEnv, constructorEnv, relationEnv,
+          currentModule, proverState on ProofCommand;
 
 
 abstract production inductionTactic
 top::ProofCommand ::= h::HHint nl::[Integer]
 {
-  top.pp = h.pp ++ "induction on " ++ implode(" ", map(toString, nl)) ++ ".  ";
+  top.pp = h.pp ++ "induction on " ++
+           implode(" ", map(toString, nl)) ++ ".  ";
 
   top.toAbella = [top];
 
@@ -47,43 +49,29 @@ top::ProofCommand ::= names::[String]
 
 abstract production applyTactic
 top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
-                      args::[ApplyArg] withs::[(String, Term)]
+                      args::ApplyArgs withs::Withs
 {
   local depthString::String =
      case depth of
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
-  local argsString::String =
-     if null(args)
-     then ""
-     else " to " ++ implode(" ", map((.pp), args));
   local withsString::String =
-     if null(withs)
+     if withs.len == 0
      then ""
-     else " with " ++
-          implode(", ", map(\ p::(String, Term) ->
-                              p.1 ++ " = " ++ p.2.pp, withs));
+     else " with " ++ withs.pp;
   top.pp = h.pp ++ "apply " ++ depthString ++ theorem.pp ++
-           argsString ++ withsString ++ ".  ";
+           args.pp ++ withsString ++ ".  ";
 
-  local transArgs::[ApplyArg] =
-        map(\ a::ApplyArg -> decorate a with {
-                                languageCtx = top.languageCtx;
-                             }.toAbella, args);
-  local transWiths::[(String, Term)] =
-        map(\ p::(String, Term) ->
-              (p.1, decorate p.2 with {
-                       languageCtx = top.languageCtx;
-                    }.toAbella), withs);
   top.toAbella =
-      [applyTactic(h, depth, theorem.toAbella, transArgs, transWiths)];
+      [applyTactic(h, depth, theorem.toAbella,
+                   args.toAbella, withs.toAbella)];
 }
 
 
 abstract production backchainTactic
 top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
-                      withs::[Pair<String Term>]
+                      withs::Withs
 {
   local depthString::String =
      case depth of
@@ -91,21 +79,14 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
      | nothing() -> ""
      end;
   local withsString::String =
-     if null(withs)
+     if withs.len == 0
      then ""
-     else " with " ++
-          implode(", ", map(\ p::(String, Term) ->
-                              p.1 ++ " = " ++ p.2.pp, withs));
+     else " with " ++ withs.pp;
   top.pp = "backchain " ++ depthString ++ theorem.pp ++
            withsString ++ ".  ";
 
-  local transWiths::[(String, Term)] =
-        map(\ p::(String, Term) ->
-              (p.1, decorate p.2 with {
-                       languageCtx = top.languageCtx;
-                    }.toAbella), withs);
   top.toAbella =
-      [backchainTactic(depth, theorem.toAbella, transWiths)];
+      [backchainTactic(depth, theorem.toAbella, withs.toAbella)];
 }
 
 
@@ -332,7 +313,7 @@ top::ProofCommand ::= id::QName all::Boolean
 {
   top.pp = "unfold " ++ id.pp ++ if all then "(all).  " else ".  ";
 
-  top.toAbella = [unfoldIdentifierTactic(id.fullRel, all)];
+  top.toAbella = [unfoldIdentifierTactic(id.fullRel.name, all)];
 
   top.toAbellaMsgs <- id.relErrors;
 }
@@ -353,8 +334,9 @@ top::ProofCommand ::= all::Boolean
 nonterminal Clearable with
    pp,
    toAbella<Clearable>, toAbellaMsgs,
-   languageCtx, proverState;
-propagate toAbellaMsgs, proverState, languageCtx on Clearable;
+   typeEnv, constructorEnv, relationEnv, proverState;
+propagate toAbellaMsgs, proverState,
+          typeEnv, constructorEnv, relationEnv on Clearable;
 
 --I don't know what the star is, but some have it
 abstract production clearable
@@ -395,11 +377,48 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 
 
 
+nonterminal ApplyArgs with
+   pp,
+   toList<ApplyArg>, len,
+   toAbella<ApplyArgs>, toAbellaMsgs,
+   typeEnv, constructorEnv, relationEnv, proverState;
+propagate typeEnv, constructorEnv, relationEnv,
+          proverState, toAbellaMsgs on ApplyArgs;
+
+abstract production endApplyArgs
+top::ApplyArgs ::=
+{
+  top.pp = "";
+
+  top.toList = [];
+  top.len = 0;
+
+  top.toAbella = endApplyArgs();
+}
+
+
+abstract production addApplyArgs
+top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
+{
+  top.pp = a.pp ++ if rest.pp == "" then "" else " " ++ rest.pp;
+
+  top.toList = a::rest.toList;
+  top.len = 1 + rest.len;
+
+  top.toAbella = addApplyArgs(a.toAbella, rest.toAbella);
+}
+
+
+
+
+
+
 nonterminal ApplyArg with
    pp,
    toAbella<ApplyArg>, toAbellaMsgs,
-   languageCtx, proverState;
-propagate languageCtx, proverState, toAbellaMsgs on ApplyArg;
+   typeEnv, constructorEnv, relationEnv, proverState;
+propagate typeEnv, constructorEnv, relationEnv,
+          proverState, toAbellaMsgs on ApplyArg;
 
 abstract production hypApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
@@ -429,11 +448,48 @@ top::ApplyArg ::= name::String instantiation::TypeList
 
 
 
+nonterminal Withs with
+   pp,
+   toList<(String, Term)>, len,
+   typeEnv, constructorEnv, relationEnv, currentModule, proverState,
+   toAbella<Withs>, toAbellaMsgs;
+propagate typeEnv, constructorEnv, relationEnv, currentModule,
+          proverState, toAbellaMsgs on Withs;
+
+abstract production endWiths
+top::Withs ::=
+{
+  top.pp = "";
+
+  top.toList = [];
+  top.len = 0;
+
+  top.toAbella = endWiths();
+}
+
+
+abstract production addWiths
+top::Withs ::= name::String term::Term rest::Withs
+{
+  top.pp = name ++ " = " ++ term.pp ++
+           if rest.len == 0 then "" else ", " ++ rest.pp;
+
+  top.toList = (name, term)::rest.toList;
+  top.len = 1 + rest.len;
+
+  top.toAbella = addWiths(name, term.toAbella, rest.toAbella);
+}
+
+
+
+
+
 nonterminal EWitness with
    pp,
-   languageCtx, proverState,
+   typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<EWitness>, toAbellaMsgs;
-propagate languageCtx, proverState, toAbellaMsgs on EWitness;
+propagate typeEnv, constructorEnv, relationEnv,
+          proverState, toAbellaMsgs on EWitness;
 
 abstract production termEWitness
 top::EWitness ::= t::Term

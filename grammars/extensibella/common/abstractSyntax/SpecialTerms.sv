@@ -169,41 +169,47 @@ top::Term ::= char::String
 
 
 nonterminal ListContents with
-   pp, argList, languageCtx, usedNames;
-propagate languageCtx on ListContents;
+   pp,
+   toList<Term>,
+   typeEnv, constructorEnv, relationEnv,
+   usedNames;
+propagate typeEnv, constructorEnv, relationEnv on ListContents;
 
 abstract production emptyListContents
 top::ListContents ::=
 {
   top.pp = "";
-  top.argList = [];
+  top.toList = [];
 }
 
 abstract production addListContents
 top::ListContents ::= t::Term rest::ListContents
 {
   top.pp = t.pp ++ (if rest.pp == "" then "" else ", " ++ rest.pp);
-  top.argList = t::rest.argList;
+  top.toList = t::rest.toList;
 }
 
 
 
 
 nonterminal PairContents with
-   pp, argList, languageCtx, usedNames;
-propagate languageCtx on PairContents;
+   pp,
+   toList<Term>,
+   typeEnv, constructorEnv, relationEnv,
+   usedNames;
+propagate typeEnv, constructorEnv, relationEnv on PairContents;
 
 abstract production singlePairContents
 top::PairContents ::= t::Term
 {
   top.pp = t.pp;
-  top.argList = [t];
+  top.toList = [t];
 }
 
 abstract production addPairContents
 top::PairContents ::= t::Term rest::PairContents
 {
   top.pp = t.pp ++ ", " ++ rest.pp;
-  top.argList = t::rest.argList;
+  top.toList = t::rest.toList;
 }
 

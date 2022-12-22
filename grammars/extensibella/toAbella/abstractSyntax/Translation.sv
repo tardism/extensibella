@@ -16,9 +16,9 @@ Term ::= i::Integer
 {
   return
      if i >= 0
-     then buildApplication(nameTerm(baseName("$posInt"), nothing()),
+     then buildApplication(basicNameTerm("$posInt"),
                            [integerToNatTerm(i)])
-     else buildApplication(nameTerm(baseName("$negSuccInt"), nothing()),
+     else buildApplication(basicNameTerm("$negSuccInt"),
                            [integerToNatTerm((i * -1) - 1)]);
 }
 
@@ -27,8 +27,8 @@ Term ::= i::Integer
 {
   return
      if i == 0
-     then nameTerm(baseName(natZeroName), nothing())
-     else buildApplication(nameTerm(baseName(natSuccName), nothing()),
+     then basicNameTerm(natZeroName)
+     else buildApplication(basicNameTerm(natSuccName),
                            [integerToNatTerm(i-1)]);
 }
 

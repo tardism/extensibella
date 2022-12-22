@@ -230,13 +230,13 @@ concrete productions top::ListBody_c
 
 concrete productions top::PAId_c
 | l::Id_t
-  { top.ast = nameTerm(baseName(l.lexeme), nothing()); }
+  { top.ast = nameTerm(baseName(l.lexeme), nothingType()); }
 | '(' l::Id_t ':' t::Ty_c ')'
-  { top.ast = nameTerm(baseName(l.lexeme), just(t.ast)); }
+  { top.ast = nameTerm(baseName(l.lexeme), justType(t.ast)); }
 | '_'
-  { top.ast = underscoreTerm(nothing()); }
+  { top.ast = underscoreTerm(nothingType()); }
 | '(' '_' ':' t::Ty_c ')'
-  { top.ast = underscoreTerm(just(t.ast)); }
+  { top.ast = underscoreTerm(justType(t.ast)); }
 
 
 
@@ -274,8 +274,8 @@ concrete productions top::Ty_c
 
 
 closed nonterminal Binder_c with ast<Binder>;
-closed nonterminal BindingList_c with ast<[Pair<String Maybe<Type>>]>;
-closed nonterminal BindingOne_c with ast<[Pair<String Maybe<Type>>]>;
+closed nonterminal BindingList_c with ast<Bindings>;
+closed nonterminal BindingOne_c with ast<[(String, MaybeType)]>;
 closed nonterminal BindingVars_c with ast<[String]>;
 
 
@@ -290,16 +290,21 @@ concrete productions top::Binder_c
 
 concrete productions top::BindingList_c
 | b::BindingOne_c
-  { top.ast = b.ast; }
+  { top.ast = foldr(\ p::(String, MaybeType) rest::Bindings ->
+                      addBindings(p.1, p.2, rest),
+                    oneBinding(head(b.ast).1, head(b.ast).2),
+                    tail(b.ast)); }
 | b::BindingOne_c rest::BindingList_c
-  { top.ast = b.ast ++ rest.ast; }
+  { top.ast = foldr(\ p::(String, MaybeType) rest::Bindings ->
+                      addBindings(p.1, p.2, rest),
+                    rest.ast, b.ast); }
 
 
 concrete productions top::BindingOne_c
 | i::Id_t
-  { top.ast = [pair(i.lexeme, nothing())]; }
+  { top.ast = [(i.lexeme, nothingType())]; }
 | '(' bv::BindingVars_c ':' t::Ty_c ')'
-  { top.ast = map(\x::String -> pair(x, just(t.ast)), bv.ast); }
+  { top.ast = map(\x::String -> (x, justType(t.ast)), bv.ast); }
 
 
 concrete productions top::BindingVars_c

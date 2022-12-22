@@ -60,21 +60,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 
 
 aspect production bindingMetaterm
-top::Metaterm ::= b::Binder bindings::[(String, Maybe<Type>)] body::Metaterm
+top::Metaterm ::= b::Binder bindings::Bindings body::Metaterm
 {
-  --Map toAbella over the bindings for the types
-  --(to-ed bindings, as in "to" has been done to them)
-  local toedBindings::[(String, Maybe<Type>)] =
-        map(\ p::(String, Maybe<Type>) ->
-              (p.1, case p.2 of
-                    | nothing() -> nothing()
-                    | just(ty) ->
-                      just(decorate ty with {
-                              languageCtx = top.languageCtx;
-                           }.toAbella)
-                    end),
-            bindings);
-  top.toAbella = bindingMetaterm(b, toedBindings, body.toAbella);
+  top.toAbella = bindingMetaterm(b, bindings.toAbella, body.toAbella);
 }
 
 
@@ -86,7 +74,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerAdditionName), nothing()),
+         buildApplication(basicNameTerm(integerAdditionName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -100,7 +88,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerSubtractionName), nothing()),
+         buildApplication(basicNameTerm(integerSubtractionName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -114,7 +102,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerMultiplicationName), nothing()),
+         buildApplication(basicNameTerm(integerMultiplicationName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -128,7 +116,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerDivisionName), nothing()),
+         buildApplication(basicNameTerm(integerDivisionName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -142,7 +130,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerModulusName), nothing()),
+         buildApplication(basicNameTerm(integerModulusName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -155,7 +143,7 @@ top::Metaterm ::= t::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerNegateName), nothing()),
+         buildApplication(basicNameTerm(integerNegateName),
             [t.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -168,7 +156,7 @@ top::Metaterm ::= t1::Term t2::Term
   t2.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerLessName), nothing()),
+         buildApplication(basicNameTerm(integerLessName),
             [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
@@ -181,7 +169,7 @@ top::Metaterm ::= t1::Term t2::Term
   t2.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerLessEqName), nothing()),
+         buildApplication(basicNameTerm(integerLessEqName),
             [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
@@ -194,7 +182,7 @@ top::Metaterm ::= t1::Term t2::Term
   t2.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerGreaterName), nothing()),
+         buildApplication(basicNameTerm(integerGreaterName),
             [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
@@ -207,7 +195,7 @@ top::Metaterm ::= t1::Term t2::Term
   t2.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(integerGreaterEqName), nothing()),
+         buildApplication(basicNameTerm(integerGreaterEqName),
             [t1.toAbella, t2.toAbella]),
             emptyRestriction());
 }
@@ -221,7 +209,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(appendName), nothing()),
+         buildApplication(basicNameTerm(appendName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -235,7 +223,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(orName), nothing()),
+         buildApplication(basicNameTerm(orName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -249,7 +237,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(andName), nothing()),
+         buildApplication(basicNameTerm(andName),
             [t1.toAbella, t2.toAbella, result.toAbella]),
             emptyRestriction());
 }
@@ -262,9 +250,31 @@ top::Metaterm ::= t::Term result::Term
   result.expectRel = false;
   top.toAbella =
       termMetaterm(
-         buildApplication(nameTerm(baseName(notName), nothing()),
+         buildApplication(basicNameTerm(notName),
             [t.toAbella, result.toAbella]),
             emptyRestriction());
+}
+
+
+
+
+
+attribute
+   toAbella<Bindings>, toAbellaMsgs
+occurs on Bindings;
+propagate toAbellaMsgs on Bindings;
+
+aspect production oneBinding
+top::Bindings ::= name::String mty::MaybeType
+{
+  top.toAbella = oneBinding(name, mty.toAbella);
+}
+
+
+aspect production addBindings
+top::Bindings ::= name::String mty::MaybeType rest::Bindings
+{
+  top.toAbella = addBindings(name, mty.toAbella, rest.toAbella);
 }
 
 
@@ -293,31 +303,24 @@ top::Term ::= f::Term args::TermList
 
 
 aspect production nameTerm
-top::Term ::= name::QName ty::Maybe<Type>
+top::Term ::= name::QName mty::MaybeType
 {
-  local transTy::Maybe<Type> =
-        case ty of
-        | nothing() -> nothing()
-        | just(t) -> just(decorate t with {
-                             languageCtx = top.languageCtx;
-                          }.toAbella)
-        end;
   top.toAbella =
       if name.isQualified
-      then nameTerm(name, transTy) --assume correctly qualified
+      then nameTerm(name, mty.toAbella) --assume correctly qualified
       else if contains(name.shortName, top.boundNames)
-      then nameTerm(name, transTy) --assume it refers to the binding
+      then nameTerm(name, mty.toAbella) --assume it refers to the binding
       else if top.expectRel
-      then nameTerm(name.fullRel, transTy)
+      then nameTerm(name.fullRel.name, mty.toAbella)
       else --if not expecting a rel and not bound, assume prod
-           nameTerm(name.fullProd, transTy);
+           nameTerm(name.fullConstr.name, mty.toAbella);
 
   top.toAbellaMsgs <-
       if contains(name.shortName, top.boundNames)
       then []
       else if top.expectRel
       then name.relErrors
-      else name.prodErrors;
+      else name.constrErrors;
 }
 
 
@@ -336,16 +339,9 @@ top::Term ::=
 
 
 aspect production underscoreTerm
-top::Term ::= ty::Maybe<Type>
+top::Term ::= mty::MaybeType
 {
-  local transTy::Maybe<Type> =
-        case ty of
-        | nothing() -> nothing()
-        | just(t) -> just(decorate t with {
-                             languageCtx = top.languageCtx;
-                          }.toAbella)
-        end;
-  top.toAbella = underscoreTerm(transTy);
+  top.toAbella = underscoreTerm(mty.toAbella);
 }
 
 
@@ -361,8 +357,7 @@ top::Term ::= contents::String
 {
   local charOrdinals::[Integer] = stringToChars(contents);
   local charConstants::[String] = map(ordinalToCharConstructor, charOrdinals);
-  local charQs::[QName] = map(baseName, charConstants);
-  local charTerms::[Term] = map(nameTerm(_, nothing()), charQs);
+  local charTerms::[Term] = map(basicNameTerm(_), charConstants);
   top.toAbella = foldr(consTerm, nilTerm(), charTerms);
 }
 
@@ -370,14 +365,14 @@ top::Term ::= contents::String
 aspect production trueTerm
 top::Term ::=
 {
-  top.toAbella = nameTerm(baseName(trueName), nothing());
+  top.toAbella = basicNameTerm(trueName);
 }
 
 
 aspect production falseTerm
 top::Term ::=
 {
-  top.toAbella = nameTerm(baseName(falseName), nothing());
+  top.toAbella = basicNameTerm(falseName);
 }
 
 
@@ -446,7 +441,7 @@ top::PairContents ::= t::Term rest::PairContents
 {
   top.toAbella =
       buildApplication(
-         nameTerm(baseName(pairConstructorName), nothing()),
+         basicNameTerm(pairConstructorName),
          [t.toAbella, rest.toAbella]);
 }
 

@@ -13,9 +13,9 @@ synthesized attribute currentSubgoal::[Integer];
 nonterminal ProofState with
    pp,
    hypList, currentSubgoal, goal,
-   languageCtx,
+   typeEnv, constructorEnv, relationEnv,
    usedNames;
-propagate languageCtx on ProofState;
+propagate typeEnv, constructorEnv, relationEnv on ProofState;
 
 abstract production proofInProgress
 top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal futureGoals::[Subgoal]
@@ -107,9 +107,9 @@ top::ProofState ::= currentProofState::ProofState
 nonterminal CurrentGoal with
    pp,
    hypList, goal,
-   languageCtx,
+   typeEnv, constructorEnv, relationEnv,
    usedNames;
-propagate languageCtx on CurrentGoal;
+propagate typeEnv, constructorEnv, relationEnv on CurrentGoal;
 
 abstract production currentGoal
 top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
@@ -136,9 +136,9 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
 --A context is the hypotheses available for proving the current goal
 nonterminal Context with
    pp, hypList,
-   languageCtx,
+   typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
-propagate languageCtx on Context;
+propagate typeEnv, constructorEnv, relationEnv on Context;
 propagate boundNames on Context;
 
 abstract production emptyContext
@@ -173,9 +173,9 @@ top::Context ::= c1::Context c2::Context
 nonterminal Hypothesis with
    pp,
    hypList,
-   languageCtx,
+   typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
-propagate languageCtx on Hypothesis;
+propagate typeEnv, constructorEnv, relationEnv on Hypothesis;
 propagate boundNames on Hypothesis;
 
 abstract production metatermHyp

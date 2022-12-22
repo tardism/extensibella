@@ -1,13 +1,11 @@
 grammar extensibella:common:abstractSyntax;
 
 
-
-
 nonterminal Metaterm with
    pp, isAtomic,
-   languageCtx,
+   typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
-propagate languageCtx on Metaterm;
+propagate typeEnv, constructorEnv, relationEnv on Metaterm;
 propagate boundNames on Metaterm excluding bindingMetaterm;
 
 abstract production termMetaterm
@@ -74,28 +72,55 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 }
 
 abstract production bindingMetaterm
-top::Metaterm ::= b::Binder nameBindings::[(String, Maybe<Type>)]
-                  body::Metaterm
+top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
 {
-  local bindings::[String] =
-        map(\ p::Pair<String Maybe<Type>> ->
-              case p of
-              | (name, just(ty)) -> "(" ++ name ++ " : " ++ ty.pp ++ ")"
-              | (name, nothing()) -> name
-              end,
-            nameBindings);
-  local bindingsString::String =
-     if null(bindings)
-     then error("Empty bindings not allowed; bindingMetaterm (" ++
-                body.pp ++ ")")
-     else foldr1(\ a::String b::String -> a ++ " " ++ b, bindings);
-  top.pp = b.pp ++ " " ++ bindingsString ++ ", " ++ body.pp;
+  top.pp = b.pp ++ " " ++ nameBindings.pp ++ ", " ++ body.pp;
   top.isAtomic = false;
 
   --Want ALL names which occur, even if only in bindings
-  top.usedNames := map(fst, nameBindings) ++ body.usedNames;
+  top.usedNames := nameBindings.usedNames ++ body.usedNames;
 
-  body.boundNames = top.boundNames ++ map(fst, nameBindings);
+  body.boundNames = top.boundNames ++ nameBindings.usedNames;
+}
+
+
+
+
+
+nonterminal Bindings with
+   pp,
+   toList<(String, MaybeType)>, len,
+   usedNames,
+   typeEnv;
+propagate typeEnv on Bindings;
+
+abstract production oneBinding
+top::Bindings ::= name::String mty::MaybeType
+{
+  top.pp =
+      if mty.isJust
+      then "(" ++ name ++ " : " ++ mty.pp ++ ")"
+      else name;
+
+  top.toList = [(name, mty)];
+  top.len = 1;
+
+  top.usedNames := [name];
+}
+
+
+abstract production addBindings
+top::Bindings ::= name::String mty::MaybeType rest::Bindings
+{
+  top.pp =
+      ( if mty.isJust
+        then "(" ++ name ++ " : " ++ mty.pp ++ ")"
+        else name ) ++ " " ++ rest.pp;
+
+  top.toList = (name, mty)::rest.toList;
+  top.len = 1 + rest.len;
+
+  top.usedNames := name::rest.usedNames;
 }
 
 
@@ -161,9 +186,9 @@ top::Binder::=
 
 nonterminal Term with
    pp, isAtomic,
-   languageCtx,
+   typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
-propagate languageCtx on Term;
+propagate typeEnv, constructorEnv, relationEnv on Term;
 propagate boundNames on Term;
 
 --Easy equality check
@@ -181,13 +206,12 @@ top::Term ::= f::Term args::TermList
 }
 
 abstract production nameTerm
-top::Term ::= name::QName ty::Maybe<Type>
+top::Term ::= name::QName mty::MaybeType
 {
   top.pp =
-      case ty of
-      | just(t) -> "(" ++ name.pp ++ " : " ++ t.pp ++ ")"
-      | nothing() -> name.pp
-      end;
+      if mty.isJust
+      then "(" ++ name.pp ++ " : " ++ mty.pp ++ ")"
+      else name.pp;
   top.isAtomic = true;
 
   top.usedNames := if name.isQualified then [] else [name.shortName];
@@ -214,13 +238,12 @@ top::Term ::=
 }
 
 abstract production underscoreTerm
-top::Term ::= ty::Maybe<Type>
+top::Term ::= mty::MaybeType
 {
   top.pp =
-      case ty of
-      | just(t) -> "(_ : " ++ t.pp ++ ")"
-      | nothing() -> "_"
-      end;
+      if mty.isJust
+      then "(_ : " ++ mty.pp ++ ")"
+      else "_";
 
   top.isAtomic = true;
 }
@@ -229,17 +252,17 @@ top::Term ::= ty::Maybe<Type>
 
 
 nonterminal TermList with
-   pp, argList,
-   languageCtx,
+   pp, toList<Term>,
+   typeEnv, constructorEnv, relationEnv,
    usedNames;
-propagate languageCtx on TermList;
+propagate typeEnv, constructorEnv, relationEnv on TermList;
 
 abstract production singleTermList
 top::TermList ::= t::Term
 {
   top.pp = if t.isAtomic then t.pp else "(" ++ t.pp ++ ")";
 
-  top.argList = [t];
+  top.toList = [t];
 }
 
 abstract production consTermList
@@ -247,7 +270,7 @@ top::TermList ::= t::Term rest::TermList
 {
   top.pp = (if t.isAtomic then t.pp else "(" ++ t.pp ++ ")") ++ " " ++ rest.pp;
 
-  top.argList = t::rest.argList;
+  top.toList = t::rest.toList;
 }
 
 abstract production emptyTermList
@@ -255,6 +278,6 @@ top::TermList ::=
 {
   top.pp = "";
 
-  top.argList = [];
+  top.toList = [];
 }
 

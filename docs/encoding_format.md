@@ -80,13 +80,14 @@ modules that add new productions building the type `Nt`.  These are in
 contrast to fixed relations that cannot have new rules added.
 
 An extensible relation `mod:rel` is defined as a relation in Abella.
-If `mod:rel` takes arguments of types `a`, `b`, and `c`, we give a
-definition as
+If `mod:rel` takes arguments of types `a`, `b`, and `c` where `b` is
+the primary component, we give a definition as
 ```
-Define $ext__mod-$-rel : a -> b -> c -> prop by
+Define $ext__1__mod-$-rel : a -> b -> c -> prop by
 ...
 ```
-where we fill in the clauses as appropriate.
+where we fill in the clauses as appropriate.  Notice that the relation
+name includes the zero-based index of the primary component.
 
 Because these relations are extensible, and therefore new rules might
 introduce new dependencies between relations that were formerly
@@ -94,9 +95,9 @@ independent, all extensible relations must be defined in the same
 definition block.  That is, if we have extensible relations `a`, `b`,
 and `c`, they must be defined as
 ```
-Define $ext__a : <args a> -> prop,
-       $ext__b : <args b> -> prop,
-       $ext__c : <args c> -> prop by
+Define $ext__pca__a : <args a> -> prop,
+       $ext__pcb__b : <args b> -> prop,
+       $ext__pcc__c : <args c> -> prop by
 ...
 ```
 The clauses for all the extensible relations are then filled in as
