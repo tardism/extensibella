@@ -10,6 +10,13 @@ grammar extensibella:fromAbella:abstractSyntax;
 -}
 
 
+aspect production translationMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+{
+  top.fromAbella = error("Should never be translating a translationMetaterm");
+}
+
+
 {-
   INTEGER OPERATIONS
 -}
@@ -17,70 +24,70 @@ grammar extensibella:fromAbella:abstractSyntax;
 aspect production plusMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating an plusMetaterm");
+  top.fromAbella = error("Should never be translating a plusMetaterm");
 }
 
 
 aspect production minusMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating an minusMetaterm");
+  top.fromAbella = error("Should never be translating a minusMetaterm");
 }
 
 
 aspect production multiplyMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating an multiplyMetaterm");
+  top.fromAbella = error("Should never be translating a multiplyMetaterm");
 }
 
 
 aspect production divideMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating an divideMetaterm");
+  top.fromAbella = error("Should never be translating a divideMetaterm");
 }
 
 
 aspect production modulusMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating an modulusMetaterm");
+  top.fromAbella = error("Should never be translating a modulusMetaterm");
 }
 
 
 aspect production lessMetaterm
-top::Metaterm ::= arg1::Term arg2::Term result::Term
+top::Metaterm ::= arg1::Term arg2::Term
 {
-  --top.translation = error("Should never be translating an lessMetaterm");
+  top.fromAbella = error("Should never be translating a lessMetaterm");
 }
 
 
 aspect production lessEqMetaterm
-top::Metaterm ::= arg1::Term arg2::Term result::Term
+top::Metaterm ::= arg1::Term arg2::Term
 {
-  --top.translation = error("Should never be translating an lessEqMetaterm");
+  top.fromAbella = error("Should never be translating a lessEqMetaterm");
 }
 
 
 aspect production greaterMetaterm
-top::Metaterm ::= arg1::Term arg2::Term result::Term
+top::Metaterm ::= arg1::Term arg2::Term
 {
-  --top.translation = error("Should never be translating an greaterMetaterm");
+  top.fromAbella = error("Should never be translating a greaterMetaterm");
 }
 
 
 aspect production greaterEqMetaterm
-top::Metaterm ::= arg1::Term arg2::Term result::Term
+top::Metaterm ::= arg1::Term arg2::Term
 {
-  --top.translation = error("Should never be translating an greaterEqMetaterm");
+  top.fromAbella = error("Should never be translating a greaterEqMetaterm");
 }
 
 
 aspect production negateMetaterm
 top::Metaterm ::= arg::Term result::Term
 {
-  --top.translation = error("Should never be translating an negateMetaterm");
+  top.fromAbella = error("Should never be translating a negateMetaterm");
 }
 
 
@@ -93,7 +100,7 @@ top::Metaterm ::= arg::Term result::Term
 aspect production appendMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating an appendMetaterm");
+  top.fromAbella = error("Should never be translating an appendMetaterm");
 }
 
 
@@ -106,21 +113,21 @@ top::Metaterm ::= arg1::Term arg2::Term result::Term
 aspect production orBoolMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating a orBoolMetaterm");
+  top.fromAbella = error("Should never be translating an orBoolMetaterm");
 }
 
 
 aspect production andBoolMetaterm
 top::Metaterm ::= arg1::Term arg2::Term result::Term
 {
-  --top.translation = error("Should never be translating a andBoolMetaterm");
+  top.fromAbella = error("Should never be translating an andBoolMetaterm");
 }
 
 
 aspect production notBoolMetaterm
 top::Metaterm ::= arg::Term result::Term
 {
-  --top.translation = error("Should never be translating a notBoolMetaterm");
+  top.fromAbella = error("Should never be translating a notBoolMetaterm");
 }
 
 
@@ -133,14 +140,14 @@ top::Metaterm ::= arg::Term result::Term
 aspect production trueTerm
 top::Term ::=
 {
-  --top.translation = error("Should never be translatiing a trueTerm");
+  top.fromAbella = error("Should never be translatiing a trueTerm");
 }
 
 
 aspect production falseTerm
 top::Term ::=
 {
-  --top.translation = error("Should never be translatiing a falseTerm");
+  top.fromAbella = error("Should never be translatiing a falseTerm");
 }
 
 
@@ -155,7 +162,7 @@ top::Term ::=
 aspect production intTerm
 top::Term ::= i::Integer
 {
-  --top.translation = error("Should never be translating an intTerm");
+  top.fromAbella = error("Should never be translating an intTerm");
 }
 
 
@@ -168,7 +175,7 @@ top::Term ::= i::Integer
 aspect production listTerm
 top::Term ::= contents::ListContents
 {
-  --top.translation = error("Should never be translating a listTerm");
+  top.fromAbella = error("Should never be translating a listTerm");
 }
 
 
@@ -181,7 +188,7 @@ top::Term ::= contents::ListContents
 aspect production pairTerm
 top::Term ::= contents::PairContents
 {
-  --top.translation = error("Should never be translating a pairTerm");
+  top.fromAbella = error("Should never be translating a pairTerm");
 }
 
 
@@ -194,7 +201,7 @@ top::Term ::= contents::PairContents
 aspect production stringTerm
 top::Term ::= contents::String
 {
-  --top.translation = error("Should never be translating a stringTerm");
+  top.fromAbella = error("Should never be translating a stringTerm");
 }
 
 
@@ -202,6 +209,6 @@ top::Term ::= contents::String
 aspect production charTerm
 top::Term ::= char::String
 {
-  --top.translation = error("Should never be translating a charTerm");
+  top.fromAbella = error("Should never be translating a charTerm");
 }
 

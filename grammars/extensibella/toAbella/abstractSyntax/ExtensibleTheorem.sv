@@ -54,7 +54,7 @@ top::ExtThms ::= name::String body::ExtBody onLabel::String
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem
   local introsNames::[String] =
-        foldr(\ p::(Maybe<String>, Metaterm) rest::[String] ->
+        foldr(\ p::(Maybe<String>, Decorated Metaterm) rest::[String] ->
                 if p.1.isJust
                 then p.1.fromJust::rest
                 else makeUniqueNameFromBase("H", rest ++ labels)::rest,

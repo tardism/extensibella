@@ -1,7 +1,9 @@
 grammar extensibella:fromAbella:abstractSyntax;
 
-
 imports extensibella:common:abstractSyntax;
+
+--translation to show results to user
+synthesized attribute fromAbella<a>::a;
 
 
 --Whether a proof state is during a proof or not

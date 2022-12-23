@@ -7,11 +7,12 @@ attribute
 occurs on Metaterm;
 propagate proverState, toAbellaMsgs on Metaterm;
 
-aspect production termMetaterm
-top::Metaterm ::= t::Term r::Restriction
+aspect production relationMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  t.expectRel = true;
-  top.toAbella = termMetaterm(t.toAbella, r);
+  top.toAbella = relationMetaterm(rel.fullRel.name, args.toAbella, r);
+
+  top.toAbellaMsgs <- rel.relErrors;
 }
 
 
@@ -32,8 +33,6 @@ top::Metaterm ::=
 aspect production eqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
   top.toAbella = eqMetaterm(t1.toAbella, t2.toAbella);
 }
 
@@ -66,193 +65,186 @@ top::Metaterm ::= b::Binder bindings::Bindings body::Metaterm
 }
 
 
+aspect production translationMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+{
+  top.toAbella =
+      relationMetaterm(
+         transName(ty.fullType.name),
+         buildApplicationArgs(args.toAbella.toList ++
+                              [orig.toAbella, trans.toAbella]),
+         emptyRestriction());
+
+  top.toAbellaMsgs <- ty.typeErrors;
+  top.toAbellaMsgs <-
+      if !ty.typeFound
+      then [] --covered by ty.typeErrors
+      else if ty.fullType.isLangType
+      then [] --translatable
+      else [errorMsg("Type " ++ ty.fullType.name.pp ++ " is not " ++
+               "part of the language and cannot be translated")];
+}
+
+
 aspect production plusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerAdditionName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerAdditionName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production minusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerSubtractionName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerSubtractionName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production multiplyMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerMultiplicationName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerMultiplicationName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production divideMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerDivisionName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerDivisionName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production modulusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerModulusName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerModulusName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production negateMetaterm
 top::Metaterm ::= t::Term result::Term
 {
-  t.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerNegateName),
-            [t.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerNegateName),
+         buildApplicationArgs([t.toAbella, result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production lessMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerLessName),
-            [t1.toAbella, t2.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerLessName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production lessEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerLessEqName),
-            [t1.toAbella, t2.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerLessEqName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production greaterMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerGreaterName),
-            [t1.toAbella, t2.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerGreaterName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production greaterEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(integerGreaterEqName),
-            [t1.toAbella, t2.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(integerGreaterEqName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production appendMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(appendName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(appendName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production orBoolMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(orName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(orName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production andBoolMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  t1.expectRel = false;
-  t2.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(andName),
-            [t1.toAbella, t2.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(andName),
+         buildApplicationArgs([t1.toAbella, t2.toAbella,
+                              result.toAbella]),
+         emptyRestriction());
 }
 
 
 aspect production notBoolMetaterm
 top::Metaterm ::= t::Term result::Term
 {
-  t.expectRel = false;
-  result.expectRel = false;
   top.toAbella =
-      termMetaterm(
-         buildApplication(basicNameTerm(notName),
-            [t.toAbella, result.toAbella]),
-            emptyRestriction());
+      relationMetaterm(
+         baseName(notName),
+         buildApplicationArgs([t.toAbella, result.toAbella]),
+         emptyRestriction());
 }
 
 
@@ -283,22 +275,14 @@ top::Bindings ::= name::String mty::MaybeType rest::Bindings
 
 attribute
    toAbella<Term>, toAbellaMsgs,
-   proverState, expectRel
+   proverState
 occurs on Term;
 propagate proverState, toAbellaMsgs on Term;
-propagate expectRel on Term, TermList, PairContents, ListContents
-   excluding applicationTerm;
-
---whether we expect a term to be a relation or not
-inherited attribute expectRel::Boolean;
 
 aspect production applicationTerm
 top::Term ::= f::Term args::TermList
 {
   top.toAbella = applicationTerm(f.toAbella, args.toAbella);
-
-  f.expectRel = top.expectRel;
-  args.expectRel = false;
 }
 
 
@@ -307,19 +291,15 @@ top::Term ::= name::QName mty::MaybeType
 {
   top.toAbella =
       if name.isQualified
-      then nameTerm(name, mty.toAbella) --assume correctly qualified
+      then nameTerm(name, mty.toAbella)
       else if contains(name.shortName, top.boundNames)
-      then nameTerm(name, mty.toAbella) --assume it refers to the binding
-      else if top.expectRel
-      then nameTerm(name.fullRel.name, mty.toAbella)
-      else --if not expecting a rel and not bound, assume prod
+      then nameTerm(name, mty.toAbella) --assume it refers to binding
+      else --if not bound, assume constructor
            nameTerm(name.fullConstr.name, mty.toAbella);
 
   top.toAbellaMsgs <-
       if contains(name.shortName, top.boundNames)
       then []
-      else if top.expectRel
-      then name.relErrors
       else name.constrErrors;
 }
 
@@ -402,7 +382,7 @@ top::Term ::= contents::ListContents
 
 attribute
    toAbella<Term>,
-   proverState, expectRel
+   proverState
 occurs on ListContents;
 propagate proverState on ListContents;
 
@@ -425,7 +405,7 @@ top::ListContents ::= hd::Term tl::ListContents
 
 attribute
    toAbella<Term>,
-   proverState, expectRel
+   proverState
 occurs on PairContents;
 propagate proverState on PairContents;
 
@@ -451,7 +431,7 @@ top::PairContents ::= t::Term rest::PairContents
 
 attribute
    toAbella<TermList>,
-   proverState, expectRel
+   proverState
 occurs on TermList;
 propagate proverState on TermList;
 
@@ -467,7 +447,6 @@ top::TermList ::= t::Term rest::TermList
 {
   top.toAbella = consTermList(t.toAbella, rest.toAbella);
 }
-
 
 
 aspect production emptyTermList

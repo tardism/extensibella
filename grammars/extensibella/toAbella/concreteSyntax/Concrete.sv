@@ -40,117 +40,139 @@ concrete productions top::ListOfCommands_c
 
 
 
-
-closed nonterminal PureCommand_c with ast<ProofCommand>;
+--AnyCommand to handle common parsing errors gracefully
+closed nonterminal PureCommand_c with ast<AnyCommand>;
+closed nonterminal PureTopCommand_c with ast<AnyCommand>;
 closed nonterminal CommonCommand_c with ast<NoOpCommand>;
-closed nonterminal PureTopCommand_c with ast<AnyCommand>; --to handle common parsing errors gracefully
 closed nonterminal AnyCommand_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
    with ast<AnyCommand>;
 closed nonterminal TheoremStmts_c with ast<Either<String ExtThms>>;
-closed nonterminal ExtBody_c with ast<ExtBody>;
+closed nonterminal ExtBody_c with ast<Either<String ExtBody>>;
 closed nonterminal QnameList_c with ast<[String]>;
 
 concrete productions top::AnyCommand_c
 | c::PureTopCommand_c
   { top.ast = c.ast; }
 | c::PureCommand_c
-  { top.ast = anyProofCommand(c.ast); }
+  { top.ast = c.ast; }
 | c::CommonCommand_c
   { top.ast = anyNoOpCommand(c.ast); }
 
 concrete productions top::PureCommand_c
 | h::HHint_c 'induction' 'on' nl::NumList_c '.'
-  { top.ast = inductionTactic(h.ast, nl.ast); }
+  { top.ast = anyProofCommand(inductionTactic(h.ast, nl.ast)); }
 | h::HHint_c 'coinduction' '.'
-  { top.ast = coinductionTactic(h.ast); }
+  { top.ast = anyProofCommand(coinductionTactic(h.ast)); }
 | h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'to'
   a::ApplyArgs_c '.'
-  { top.ast = applyTactic(h.ast, md.ast, c.ast, a.ast, endWiths()); }
+  { top.ast = anyProofCommand(applyTactic(h.ast, md.ast, c.ast,
+                                          a.ast, endWiths())); }
 | h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'to'
   a::ApplyArgs_c 'with' w::Withs_c '.'
-  { top.ast = applyTactic(h.ast, md.ast, c.ast, a.ast, w.ast); }
+  { top.ast = anyProofCommand(applyTactic(h.ast, md.ast, c.ast,
+                                          a.ast, w.ast)); }
 | h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c 'with'
   w::Withs_c '.'
-  { top.ast = applyTactic(h.ast, md.ast, c.ast, endApplyArgs(),
-                          w.ast); }
+  { top.ast = anyProofCommand(applyTactic(h.ast, md.ast, c.ast,
+                                          endApplyArgs(), w.ast)); }
 | h::HHint_c 'apply' md::MaybeDepth_c c::Clearable_c '.'
-  { top.ast = applyTactic(h.ast, md.ast, c.ast, endApplyArgs(),
-                          endWiths()); }
+  { top.ast = anyProofCommand(applyTactic(h.ast, md.ast, c.ast,
+                                 endApplyArgs(), endWiths())); }
 | 'backchain' md::MaybeDepth_c c::Clearable_c '.'
-  { top.ast = backchainTactic(md.ast, c.ast, endWiths()); }
+  { top.ast = anyProofCommand(backchainTactic(md.ast, c.ast,
+                                 endWiths())); }
 | 'backchain' md::MaybeDepth_c c::Clearable_c 'with' w::Withs_c '.'
-  { top.ast = backchainTactic(md.ast, c.ast, w.ast); }
+  { top.ast = anyProofCommand(backchainTactic(md.ast, c.ast, w.ast)); }
 | h::HHint_c 'case' hy::Hyp_c '.'
-  { top.ast = caseTactic(h.ast, hy.ast, false); }
+  { top.ast = anyProofCommand(caseTactic(h.ast, hy.ast, false)); }
 | h::HHint_c 'case' hy::Hyp_c '(' 'keep' ')' '.'
-  { top.ast = caseTactic(h.ast, hy.ast, true); }
---| h::HHint_c 'assert' md::MaybeDepth_c m::Metaterm_c '.'
---  { top.ast = assertTactic(h.ast, md.ast, m.ast); }
-{-The above is the original rule.  Once I added Silver things, this
-  became an ambiguity.  By moving the option here (in the following
-  two rules) rather than the MaybeDepth_c nonterminal, we remove the
-  ambiguity.-}
---| h::HHint_c 'assert' d::Depth_c m::Metaterm_c '.'
---  { top.ast = assertTactic(h.ast, just(d.ast), m.ast); }
+  { top.ast = anyProofCommand(caseTactic(h.ast, hy.ast, true)); }
 | h::HHint_c 'assert' m::Metaterm_c '.'
-  { top.ast = assertTactic(h.ast, nothing(), m.ast); }
+  { top.ast =
+        case m.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(ma) ->
+          anyProofCommand(assertTactic(h.ast, nothing(), ma))
+        end; }
 | 'exists' ew::EWitnesses_c '.'
-  { top.ast = existsTactic(ew.ast); }
+  { top.ast = anyProofCommand(existsTactic(ew.ast)); }
 | 'witness' ew::EWitnesses_c '.'
-  { top.ast = witnessTactic(ew.ast); }
+  { top.ast = anyProofCommand(witnessTactic(ew.ast)); }
 | 'search' '.'
-  { top.ast = searchTactic(); }
+  { top.ast = anyProofCommand(searchTactic()); }
 | 'search' n::Number_t '.'
-  { top.ast = searchDepthTactic(toInteger(n.lexeme)); }
+  { top.ast = anyProofCommand(
+                 searchDepthTactic(toInteger(n.lexeme))); }
 | 'search' 'with' sw::SearchWitness_c '.'
-  { top.ast = searchWitnessTactic(sw.ast); }
+  { top.ast = anyProofCommand(searchWitnessTactic(sw.ast)); }
 | 'async' '.'
-  { top.ast = asyncTactic(); }
+  { top.ast = anyProofCommand(asyncTactic()); }
 | 'split' '.'
-  { top.ast = splitTactic(); }
+  { top.ast = anyProofCommand(splitTactic()); }
 | 'split*' '.'
-  { top.ast = splitStarTactic(); }
+  { top.ast = anyProofCommand(splitStarTactic()); }
 | 'left' '.'
-  { top.ast = leftTactic(); }
+  { top.ast = anyProofCommand(leftTactic()); }
 | 'right' '.'
-  { top.ast = rightTactic(); }
+  { top.ast = anyProofCommand(rightTactic()); }
 | 'intros' '.'
-  { top.ast = introsTactic([]); }
+  { top.ast = anyProofCommand(introsTactic([])); }
 | 'intros' names::HypList_c '.'
-  { top.ast = introsTactic(names.ast); }
+  { top.ast = anyProofCommand(introsTactic(names.ast)); }
 | 'skip' '.'
-  { top.ast = skipTactic(); }
+  { top.ast = anyProofCommand(skipTactic()); }
 | 'abort' '.'
-  { top.ast = abortCommand(); }
+  { top.ast = anyProofCommand(abortCommand()); }
 | 'undo' '.'
-  { top.ast = undoCommand(); }
+  { top.ast = anyProofCommand(undoCommand()); }
 | 'unfold' cs::ClauseSel_c ss::SolSel_c '.'
-  { top.ast = cs.ast(ss.ast); }
+  { top.ast = anyProofCommand(cs.ast(ss.ast)); }
 | 'clear' hl::HypList_c '.'
-  { top.ast = clearCommand(hl.ast, false); }
+  { top.ast = anyProofCommand(clearCommand(hl.ast, false)); }
 | 'clear' '->' hl::HypList_c '.'
-  { top.ast = clearCommand(hl.ast, true); }
+  { top.ast = anyProofCommand(clearCommand(hl.ast, true)); }
 | 'abbrev' hl::HypList_c q::QString_t '.'
-  { top.ast = abbrevCommand(hl.ast, removeQuotes(q.lexeme)); }
+  { top.ast = anyProofCommand(
+                 abbrevCommand(hl.ast, removeQuotes(q.lexeme))); }
 | 'unabbrev' hl::HypList_c '.'
-  { top.ast = unabbrevCommand(hl.ast); }
+  { top.ast = anyProofCommand(unabbrevCommand(hl.ast)); }
 | 'rename' original::Id_t 'to' newname::Id_t '.'
-  { top.ast = renameTactic(original.lexeme, newname.lexeme); }
+  { top.ast = anyProofCommand(renameTactic(original.lexeme,
+                                           newname.lexeme)); }
 | 'permute' p::Perm_c '.'
-  { top.ast = permuteTactic(p.ast, nothing()); }
+  { top.ast = anyProofCommand(permuteTactic(p.ast, nothing())); }
 | 'permute' p::Perm_c h::Hyp_c '.'
-  { top.ast = permuteTactic(p.ast, just(h.ast)); }
+  { top.ast = anyProofCommand(permuteTactic(p.ast, just(h.ast))); }
 
 concrete productions top::PureTopCommand_c
 | 'Theorem' name::Id_t params::TheoremTyparams_c ':' body::Metaterm_c '.'
-  { top.ast = anyTopCommand(theoremDeclaration(name.lexeme, params.ast, body.ast)); }
+  { top.ast =
+        case body.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(ba) ->
+          anyTopCommand(
+             theoremDeclaration(name.lexeme, params.ast, ba))
+        end; }
 | 'Define' x::IdTys_c 'by' o::OptSemi_t d::Defs_c '.'
-  { top.ast = anyTopCommand(definitionDeclaration(x.ast, d.ast)); }
+  { top.ast =
+        case d.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(da) -> anyTopCommand(definitionDeclaration(x.ast, da))
+        end; }
 | 'CoDefine' x::IdTys_c 'by' o::OptSemi_t d::Defs_c '.'
-  { top.ast = anyTopCommand(codefinitionDeclaration(x.ast, d.ast)); }
+  { top.ast =
+        case d.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(da) ->
+          anyTopCommand(codefinitionDeclaration(x.ast, da))
+        end; }
 | 'Query' m::Metaterm_c '.'
-  { top.ast = anyTopCommand(queryCommand(m.ast)); }
+  { top.ast =
+        case m.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(ma) -> anyTopCommand(queryCommand(ma))
+        end; }
 | 'Kind' il::IdList_c k::Knd_c '.'
   { top.ast = anyTopCommand(kindDeclaration(il.ast, k.ast)); }
 | 'Type' il::IdList_c t::Ty_c '.'
@@ -185,14 +207,21 @@ concrete productions top::PureTopCommand_c
 
 concrete productions top::TheoremStmts_c
 | name::Id_t ':' body::ExtBody_c 'on' label::Id_t
-  { top.ast = right(addExtThms(toString(name.lexeme), body.ast,
-                               toString(label.lexeme), endExtThms())); }
+  { top.ast =
+        case body.ast of
+        | left(msg) -> left(msg)
+        | right(b) ->
+          right(addExtThms(toString(name.lexeme), b,
+                           toString(label.lexeme), endExtThms()))
+        end; }
 | name::Id_t ':' body::ExtBody_c 'on' label::Id_t ',' rest::TheoremStmts_c
   { top.ast =
-        case rest.ast of
-        | left(msg) -> left(msg)
-        | right(rst) ->
-          right(addExtThms(toString(name.lexeme), body.ast,
+        case body.ast, rest.ast of
+        | left(msg1), left(msg2) -> left(msg1 ++ "\n" ++ msg2)
+        | left(msg), _ -> left(msg)
+        | _, left(msg) -> left(msg)
+        | right(b), right(rst) ->
+          right(addExtThms(toString(name.lexeme), b,
                            toString(label.lexeme), rst))
         end; }
   --These are to get errors which are more helpful, because I forget
@@ -213,11 +242,22 @@ concrete productions top::TheoremStmts_c
 
 concrete productions top::ExtBody_c
 | conc::Metaterm_c
-  { top.ast = endExtBody(conc.ast); }
+  { top.ast = bind(conc.ast, \ c::Metaterm -> right(endExtBody(c))); }
 | label::Id_t ':' m::Metaterm_c '->' rest::ExtBody_c
-  { top.ast = addLabelExtBody(toString(label.lexeme), m.ast, rest.ast); }
+  { top.ast =
+        bind(m.ast,
+             \ ma::Metaterm ->
+               bind(rest.ast,
+                    \ ra::ExtBody ->
+                      right(addLabelExtBody(toString(label.lexeme),
+                                            ma, ra)))); }
 | m::Metaterm_c '->' rest::ExtBody_c
-  { top.ast = addBasicExtBody(m.ast, rest.ast); }
+  { top.ast =
+        bind(m.ast,
+             \ ma::Metaterm ->
+               bind(rest.ast,
+                    \ ra::ExtBody ->
+                      right(addBasicExtBody(ma, ra)))); }
 
 
 concrete productions top::QnameList_c
@@ -277,11 +317,6 @@ concrete productions top::Exp_c
   { top.ast = intTerm(toInteger(i.lexeme)); }
 
 
-concrete productions top::PAId_c
-| l::Qname_t
-  { top.ast = nameTerm(toQName(l.lexeme), nothingType()); }
-
-
 
 
 
@@ -319,35 +354,33 @@ concrete productions top::ATyList_c
   { top.ast = addTypeList(a.ast, rest.ast); }
 
 
-concrete productions top::PTy_c
-| i::Qname_t
-  { top.ast = nameType(toQName(i.lexeme)); }
-
-
-concrete productions top::ATy_c
-| i::Qname_t
-  { top.ast = nameType(toQName(i.lexeme)); }
 
 
 
-
-
-closed nonterminal Defs_c with ast<Defs>;
-closed nonterminal Def_c with ast<Def>;
+closed nonterminal Defs_c with ast<Either<String Defs>>;
+closed nonterminal Def_c with ast<Either<String Def>>;
 
 
 concrete productions top::Defs_c
 | d::Def_c ';' rest::Defs_c
-  { top.ast = consDefs(d.ast, rest.ast); }
+  { top.ast =
+        bind(d.ast,
+             \ da::Def ->
+               bind(rest.ast,
+                    \ ra::Defs -> right(consDefs(da, ra)))); }
 | d::Def_c
-  { top.ast = singleDefs(d.ast); }
+  { top.ast = bind(d.ast, \ da::Def -> right(singleDefs(da))); }
 
 
 concrete productions top::Def_c
 | m::Metaterm_c
-  { top.ast = factDef(m.ast); }
+  { top.ast = bind(m.ast, \ ma::Metaterm -> right(factDef(ma))); }
 | h::Metaterm_c ':=' b::Metaterm_c
-  { top.ast = ruleDef(h.ast, b.ast); }
+  { top.ast =
+        bind(h.ast,
+             \ ha::Metaterm ->
+               bind(b.ast,
+                    \ ba::Metaterm -> right(ruleDef(ha, ba)))); }
 
 
 

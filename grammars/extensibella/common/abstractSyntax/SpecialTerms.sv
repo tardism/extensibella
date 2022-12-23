@@ -2,13 +2,22 @@ grammar extensibella:common:abstractSyntax;
 
 
 --METATERMS
+abstract production translationMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+{
+  top.pp = (if args.len == 0 then "" else args.pp ++ " ") ++
+           "|{" ++ ty.pp ++ "}- " ++ orig.pp ++ " ~~> " ++ trans.pp;
+  top.isAtomic = true;
+}
+
+
 {-
   Why don't we just put these operations in Term?  Then we could use
   something like `3+4` directly in the next addition.  That sounds
   wonderful, but it doesn't really fit the Abella style, and thus it
-  would be really difficult to work with.  We would not have a good
-  way to use properties of the arithmetic operations, which are
-  theorems which need to be applied.
+  would be really difficult to use.  We would not have a good way to
+  use properties of the arithmetic operations, which are properties
+  that need to be applied.
 
   The translation of the numeric operations will need to be dependent
   on typing once we add floats.

@@ -15,9 +15,9 @@ concrete productions top::FullDisplay_c
 
 concrete productions top::TheoremList_c
 | 'Theorem' name::Id_t ':' body::Metaterm_c '.'
-  { top.ast = theoremListAdd(name.lexeme, body.ast, theoremListEmpty()); }
+  { top.ast = theoremListAdd(name.lexeme, body.ast.fromRight, theoremListEmpty()); }
 | 'Theorem' name::Id_t ':' body::Metaterm_c '.' rest::TheoremList_c
-  { top.ast = theoremListAdd(name.lexeme, body.ast, rest.ast); }
+  { top.ast = theoremListAdd(name.lexeme, body.ast.fromRight, rest.ast); }
 
 
 
@@ -74,9 +74,9 @@ closed nonterminal ExistantVars_c with ast<[String]>;
 
 concrete productions top::CurrentGoal_c
 | hyps::HypothesisList_c gl::GoalLine_t goal::Metaterm_c
-  { top.ast = currentGoal([], hyps.ast, goal.ast); }
+  { top.ast = currentGoal([], hyps.ast, goal.ast.fromRight); }
 | 'Variables' ':' vars::ExistantVars_c hyps::HypothesisList_c gl::GoalLine_t goal::Metaterm_c
-  { top.ast = currentGoal(vars.ast, hyps.ast, goal.ast); }
+  { top.ast = currentGoal(vars.ast, hyps.ast, goal.ast.fromRight); }
 
 
 concrete productions top::ExistantVars_c
@@ -107,9 +107,9 @@ concrete productions top::MoreSubgoals_c
 |
   { top.ast = []; }
 | 'Subgoal' 'is' ':' g::Metaterm_c
-  { top.ast = [subgoal([1], g.ast)]; }
+  { top.ast = [subgoal([1], g.ast.fromRight)]; }
 | 'Subgoal' num::SubgoalNum_c 'is' ':' g::Metaterm_c rest::MoreSubgoals_c
-  { top.ast = [subgoal(num.ast, g.ast)] ++ rest.ast; }
+  { top.ast = [subgoal(num.ast, g.ast.fromRight)] ++ rest.ast; }
 {-| num::Number_t 'other subgoals.'
   { top.ast = [hiddenSubgoals(toInteger(num.lexeme))]; }
 | num::Number_t 'other subgoal.'
@@ -136,7 +136,7 @@ concrete productions top::Hypothesis_c
 | hyps::HypNameList_c body::Metaterm_c
   {
     top.ast = foldr(\ a::String b::Context ->
-                      branchContext(singleContext(metatermHyp(a, body.ast)), b),
+                      branchContext(singleContext(metatermHyp(a, body.ast.fromRight)), b),
                     emptyContext(), hyps.ast);
   }
 --EVERYTHING is turning into abbreviated hypotheses if I include this
@@ -173,12 +173,16 @@ closed nonterminal TypingErrorMessage_c with ast<TypingErrorMessage>;
 closed nonterminal WarningMessage_c with ast<WarningMessage>;
 
 concrete productions top::WarningMessage_c
-| 'Definition might not be stratified' '(' name::QString_t 'occurs to the left of ->)'
-  { top.ast = stratificationWarning(stripQuotes(name.lexeme)); }
-| 'Definition can be used to defeat stratification' '(higher-order argument' name::QString_t 'occurs to the left of ->)'
-  { top.ast = defeatStratification(stripQuotes(name.lexeme)); }
+| 'Definition might not be stratified'
+  '(' name::QString_t 'occurs to the left of ->)'
+  { top.ast =
+        stratificationWarning(toQName(stripQuotes(name.lexeme))); }
+| 'Definition can be used to defeat stratification'
+  '(higher-order argument' name::QString_t 'occurs to the left of ->)'
+  { top.ast =
+        defeatStratification(toQName(stripQuotes(name.lexeme))); }
 | 'overriding existing lemma named' name::QString_t
-  { top.ast = overridingLemma(stripQuotes(name.lexeme)); }
+  { top.ast = overridingLemma(toQName(stripQuotes(name.lexeme))); }
 
 
 concrete productions top::ProcessingErrorMessage_c
@@ -192,22 +196,24 @@ concrete productions top::ProcessingErrorMessage_c
   { top.ast = unknownConstant(name.lexeme); }
 | 'Imported file makes reference to unknown types:' names::IdList_c
   { top.ast = importedUnknownTy(names.ast); }
-| 'Invalid formula:' form::Metaterm_c 'Cannot use size restrictions (*, @, #, or +)'
-  { top.ast = invalidFormula(form.ast); }
+| 'Invalid formula:' form::Metaterm_c
+  'Cannot use size restrictions (*, @, #, or +)'
+  { top.ast = invalidFormula(form.ast.fromRight); }
 | 'Some type variables in the theorem is not bounded'
   { top.ast = unboundedTyVars(); }
 | 'Predicate or constant' name::ErrorId_t 'already exists'
-  { top.ast = alreadyDefined(name.lexeme); }
-| 'Invalid defined predicate name' name::QString_t '.' 'Defined predicates may not begin with a capital letter.'
-  { top.ast = invalidCapDefName(stripQuotes(name.lexeme)); }
+  { top.ast = alreadyDefined(toQName(name.lexeme)); }
+| 'Invalid defined predicate name' name::QString_t '.'
+  'Defined predicates may not begin with a capital letter.'
+  { top.ast = invalidCapDefName(toQName(stripQuotes(name.lexeme))); }
 | 'Constants may not begin with a capital letter:' name::ErrorId_t
-  { top.ast = invalidCapConstName(name.lexeme); }
+  { top.ast = invalidCapConstName(toQName(name.lexeme)); }
 | 'Found stray clause for' name::ErrorId_t
   { top.ast = strayClause(name.lexeme); }
 | 'Invalid head in definition:' formula::Metaterm_c
-  { top.ast = invalidHead(formula.ast); }
+  { top.ast = invalidHead(formula.ast.fromRight); }
 | 'Definitional clause head not atomic:' hd::Metaterm_c
-  { top.ast = nonatomicHead(hd.ast); }
+  { top.ast = nonatomicHead(hd.ast.fromRight); }
 | 'Cannot perform case-analysis on undefined atom'
   { top.ast = caseUndefinedAtom(); }
 | 'Unknown hypothesis or variable' hyp::ErrorId_t
@@ -236,34 +242,52 @@ concrete productions top::ProcessingErrorMessage_c
   { top.ast = unknownVarHypLabel(stripQuotes(name.lexeme)); }
 | 'Cannot go that far back!'
   { top.ast = cannotGoBack(); }
-| 'While matching argument #' argnum::Number_t ':' 'Unification failure (constant clash between' name1::ErrorId_t 'and' name2::ErrorId_t ')'
-  { top.ast = matchingUnificationFailureConstants(toInteger(argnum.lexeme), name1.lexeme, name2.lexeme); }
-| 'While matching argument #' argnum::Number_t ':' 'Unification failure'
+| 'While matching argument #' argnum::Number_t ':'
+  'Unification failure (constant clash between' name1::ErrorId_t 'and'
+  name2::ErrorId_t ')'
+  { top.ast =
+        matchingUnificationFailureConstants(toInteger(argnum.lexeme),
+           toQName(name1.lexeme), toQName(name2.lexeme)); }
+| 'While matching argument #' argnum::Number_t ':'
+  'Unification failure'
   { top.ast = matchingUnificationFailure(toInteger(argnum.lexeme)); }
 | 'Unification failure'
   { top.ast = unificationFailure(); }
-| 'Type constructor' name::ErrorId_t 'has inconsistent kind declarations'
-  { top.ast = tyConstrInconsistentKinds(name.lexeme); }
+| 'Type constructor' name::ErrorId_t
+  'has inconsistent kind declarations'
+  { top.ast = tyConstrInconsistentKinds(toQName(name.lexeme)); }
 | 'Types may not begin with a capital letter:' name::ErrorId_t
-  { top.ast = tyNoCaps(name.lexeme); }
+  { top.ast = tyNoCaps(toQName(name.lexeme)); }
 | 'Unknown type constructor:' name::ErrorId_t
   { top.ast = unknownTyConstr(name.lexeme); }
-| name::Id_t 'expects' expected::Number_t 'arguments but has' given::Number_t
-  { top.ast = wrongArgNumber(name.lexeme, toInteger(expected.lexeme), toInteger(given.lexeme)); }
+| name::Id_t 'expects' expected::Number_t 'arguments but has'
+  given::Number_t
+  { top.ast = wrongArgNumber(toQName(name.lexeme),
+               toInteger(expected.lexeme), toInteger(given.lexeme)); }
 | 'Cannot quantify over type prop'
   { top.ast = noQuantifyProp(); }
 | 'Unknown key' name::SingleQString_t
   { top.ast = unknownSettingKey(stripQuotes(name.lexeme)); }
-| 'Unknown value' val::SingleQString_t 'for key' key::QString_t ';' 'expected non-negative integer'
-  { top.ast = unknownSettingsValueExpectInt(stripQuotes(val.lexeme), stripQuotes(key.lexeme)); }
-| 'Unknown value' val::SingleQString_t 'for key' key::QString_t ';' x::ExpectOnOff_t
-  { top.ast = unknownSettingsValueExpectOnOff(stripQuotes(val.lexeme), stripQuotes(key.lexeme)); }
-| 'Unknown value' val::SingleQString_t 'for key' key::QString_t ';' x::ExpectMany_t
-  { top.ast = unknownSettingsValueExpectMany(stripQuotes(val.lexeme), stripQuotes(key.lexeme)); }
-| 'Not enough arguments to apply' '(' 'Expected' exp::Number_t 'but got' got::Number_t ')'
-  { top.ast = applyWrongArgsNumber(toInteger(exp.lexeme), toInteger(got.lexeme)); }
-| 'Too many arguments to apply' '(' 'Expected' exp::Number_t 'but got' got::Number_t ')'
-  { top.ast = applyWrongArgsNumber(toInteger(exp.lexeme), toInteger(got.lexeme)); }
+| 'Unknown value' val::SingleQString_t 'for key' key::QString_t ';'
+  'expected non-negative integer'
+  { top.ast = unknownSettingsValueExpectInt(stripQuotes(val.lexeme),
+                                            stripQuotes(key.lexeme)); }
+| 'Unknown value' val::SingleQString_t 'for key' key::QString_t ';'
+  x::ExpectOnOff_t
+  { top.ast = unknownSettingsValueExpectOnOff(stripQuotes(val.lexeme),
+                                           stripQuotes(key.lexeme)); }
+| 'Unknown value' val::SingleQString_t 'for key' key::QString_t ';'
+  x::ExpectMany_t
+  { top.ast = unknownSettingsValueExpectMany(stripQuotes(val.lexeme),
+                                           stripQuotes(key.lexeme)); }
+| 'Not enough arguments to apply' '(' 'Expected' exp::Number_t
+  'but got' got::Number_t ')'
+  { top.ast = applyWrongArgsNumber(toInteger(exp.lexeme),
+                                   toInteger(got.lexeme)); }
+| 'Too many arguments to apply' '(' 'Expected' exp::Number_t
+  'but got' got::Number_t ')'
+  { top.ast = applyWrongArgsNumber(toInteger(exp.lexeme),
+                                   toInteger(got.lexeme)); }
 | 'Found logic variable at toplevel'
   { top.ast = logicVariableToplevel(); }
 | 'Structure of applied term must be a substructure of the following.'

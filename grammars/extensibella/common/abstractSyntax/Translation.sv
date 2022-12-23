@@ -48,6 +48,19 @@ global falseName::String = "$bfalse";
 
 
 
+function transName
+QName ::= ty::QName
+{
+  --need to add "$trans__" to first module portion
+  return case ty of
+         | addModule(mod, rest) -> addModule("$trans__" ++ mod, rest)
+         | baseName(_) ->
+           error("Translating types must have module names")
+         end;
+}
+
+
+
 
 -- ~99% of the time, this is what we want
 function basicNameTerm

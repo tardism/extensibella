@@ -4,6 +4,7 @@ nonterminal QName with
    pp,
    typeEnv, constructorEnv, relationEnv,
    shortName, moduleName, isQualified,
+   boundNames,
    addBase, baseAdded,
    typeErrors, typeFound, fullType,
    constrErrors, constrFound, fullConstr,
@@ -166,17 +167,50 @@ top::QName ::= name::String rest::QName
 
 
 
-function toQName
-QName ::= name::String
-{
-  return
-     foldrLastElem(addModule(_, _), baseName(_), explode(":", name));
-}
-
-
 function addQNameBase
 QName ::= module::QName name::String
 {
   module.addBase = name;
   return module.baseAdded;
+}
+
+
+function toQName
+QName ::= name::String
+{
+  local cleaned::String = stripName(name);
+  --Check whether we should be splitting on ':' or name_sep
+  local containsColons::Boolean = indexOf(":", cleaned) >= 0;
+  local exploded::[String] =
+        explode(if containsColons then ":" else name_sep, cleaned);
+  return
+     foldrLastElem(addModule(_, _), baseName(_), exploded);
+}
+
+
+--remove special prefixes (other than $trans) from the start
+function stripName
+String ::= name::String
+{
+  --remove $ext__<pc>__ from the beginning
+  local removeExt::String =
+        let x::String = removeDigits(substring(6, length(name), name))
+        in
+          substring(2, length(x), x)
+        end;
+  return if startsWith("$fix__", name)
+         then substring(6, length(name), name)
+         else if startsWith("$ext__", name)
+         then removeExt
+         else name;
+}
+
+
+--take digits off the front of the string
+function removeDigits
+String ::= x::String
+{
+  return if isDigit(substring(0, 1, x))
+         then removeDigits(substring(1, length(x), x))
+         else x;
 }

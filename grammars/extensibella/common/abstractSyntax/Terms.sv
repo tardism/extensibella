@@ -8,10 +8,10 @@ nonterminal Metaterm with
 propagate typeEnv, constructorEnv, relationEnv on Metaterm;
 propagate boundNames on Metaterm excluding bindingMetaterm;
 
-abstract production termMetaterm
-top::Metaterm ::= t::Term r::Restriction
+abstract production relationMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.pp = t.pp ++ r.pp;
+  top.pp = rel.pp ++ " " ++ args.pp ++ r.pp;
   top.isAtomic = true;
 }
 
@@ -252,7 +252,7 @@ top::Term ::= mty::MaybeType
 
 
 nonterminal TermList with
-   pp, toList<Term>,
+   pp, toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    usedNames;
 propagate typeEnv, constructorEnv, relationEnv on TermList;
@@ -263,6 +263,7 @@ top::TermList ::= t::Term
   top.pp = if t.isAtomic then t.pp else "(" ++ t.pp ++ ")";
 
   top.toList = [t];
+  top.len = 1;
 }
 
 abstract production consTermList
@@ -271,6 +272,7 @@ top::TermList ::= t::Term rest::TermList
   top.pp = (if t.isAtomic then t.pp else "(" ++ t.pp ++ ")") ++ " " ++ rest.pp;
 
   top.toList = t::rest.toList;
+  top.len = 1 + rest.len;
 }
 
 abstract production emptyTermList
@@ -279,5 +281,6 @@ top::TermList ::=
   top.pp = "";
 
   top.toList = [];
+  top.len = 0;
 }
 

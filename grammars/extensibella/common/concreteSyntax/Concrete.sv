@@ -11,8 +11,9 @@ synthesized attribute count::Integer;
 
 
 
-closed nonterminal Metaterm_c with ast<Metaterm>;
-closed nonterminal SubMetaterm_c with ast<Metaterm>;
+--Either for a parse error allowed by the grammar but disallowed semantically
+closed nonterminal Metaterm_c with ast<Either<String Metaterm>>;
+closed nonterminal SubMetaterm_c with ast<Either<String Metaterm>>;
 
 
 {-concrete productions top::Metaterm_c
@@ -49,111 +50,141 @@ closed nonterminal SubMetaterm_c with ast<Metaterm>;
   strings.
 -}
 concrete productions top::Metaterm_c
-| t::Term_c
-  {-This lets us overload `true` and `false` for use as metaterms and
-    Silver Booleans.  If it is simply "true" or "false" where a
-    metaterm is needed, that is the Abella metaterm; otherwise, it
-    must be the Silver Boolean.-}
+| tm::Term_c
   { top.ast =
-        if t.ast.pp == "true"
-        then trueMetaterm()
-        else if t.ast.pp == "false"
-        then falseMetaterm()
-        else termMetaterm(t.ast, emptyRestriction());
-    {-Originally, I had this:
-         case t.ast of
-         | trueTerm() -> trueMetaterm()
-         | falseTerm() -> falseMetaterm()
-         | _ -> termMetaterm(t.ast, emptyRestriction())
-         end;
-      However, this breaks MWDA because forwarding relies on the
-      silverContext attribute.  Because only the true and false terms
-      should be printed as "true" and "false", we can rely on this
-      cheap imitation which does not break MWDA.-}
-  }
+        case tm.ast of
+        | trueTerm() -> right(trueMetaterm())
+        | falseTerm() -> right(falseMetaterm())
+        | applicationTerm(nameTerm(q, _), args) ->
+          right(relationMetaterm(q, args, emptyRestriction()))
+        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        end; }
 | s::SubMetaterm_c
   { top.ast = s.ast; }
 
 
 concrete productions top::SubMetaterm_c
---| 'true'
---  { top.ast = trueMetaterm(); }
---| 'false'
---  { top.ast = falseMetaterm(); }
 | t1::Term_c '=' t2::Term_c
-  { top.ast = eqMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(eqMetaterm(t1.ast, t2.ast)); }
 | b::Binder_c bl::BindingList_c ',' m::Metaterm_c
-  { top.ast = bindingMetaterm(b.ast, bl.ast, m.ast); }
+  { top.ast =
+        bind(m.ast,
+             \ ma::Metaterm ->
+               right(bindingMetaterm(b.ast, bl.ast, ma))); }
 | m1::Metaterm_c '->' m2::Metaterm_c
-  { top.ast = impliesMetaterm(m1.ast, m2.ast); }
+  { top.ast =
+        bind(m1.ast,
+             \ m1::Metaterm ->
+               bind(m2.ast,
+                    \ m2::Metaterm ->
+                      right(impliesMetaterm(m1, m2)))); }
 | m1::Metaterm_c '\/' m2::Metaterm_c
-  { top.ast = orMetaterm(m1.ast, m2.ast); }
+  { top.ast =
+        bind(m1.ast,
+             \ m1::Metaterm ->
+               bind(m2.ast,
+                    \ m2::Metaterm ->
+                      right(orMetaterm(m1, m2)))); }
 | m1::Metaterm_c '/\' m2::Metaterm_c
-  { top.ast = andMetaterm(m1.ast, m2.ast); }
+  { top.ast =
+        bind(m1.ast,
+             \ m1::Metaterm ->
+               bind(m2.ast,
+                    \ m2::Metaterm ->
+                      right(andMetaterm(m1, m2)))); }
 | '(' m::SubMetaterm_c ')'
   { top.ast = m.ast; }
-| t::Term_c s::Stars_c
-  { top.ast = termMetaterm(t.ast, s.ast); }
-| t::Term_c p::Pluses_c
-  { top.ast = termMetaterm(t.ast, p.ast); }
-| t::Term_c a::Ats_c
-  { top.ast = termMetaterm(t.ast, a.ast); }
-| t::Term_c h::Hashes_c
-  { top.ast = termMetaterm(t.ast, h.ast); }
---Things for Silver (for special relations)
+--Restrictions
+| tm::Term_c s::Stars_c
+  { top.ast =
+        case tm.ast of
+        | trueTerm() ->
+          left("Cannot have restrictions on true")
+        | falseTerm() ->
+          left("Cannot have restrictions on false")
+        | applicationTerm(nameTerm(q, _), args) ->
+          right(relationMetaterm(q, args, s.ast))
+        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        end; }
+| tm::Term_c p::Pluses_c
+  { top.ast =
+        case tm.ast of
+        | trueTerm() ->
+          left("Cannot have restrictions on true")
+        | falseTerm() ->
+          left("Cannot have restrictions on false")
+        | applicationTerm(nameTerm(q, _), args) ->
+          right(relationMetaterm(q, args, p.ast))
+        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        end; }
+| tm::Term_c a::Ats_c
+  { top.ast =
+        case tm.ast of
+        | trueTerm() ->
+          left("Cannot have restrictions on true")
+        | falseTerm() ->
+          left("Cannot have restrictions on false")
+        | applicationTerm(nameTerm(q, _), args) ->
+          right(relationMetaterm(q, args, a.ast))
+        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        end; }
+| tm::Term_c h::Hashes_c
+  { top.ast =
+        case tm.ast of
+        | trueTerm() ->
+          left("Cannot have restrictions on true")
+        | falseTerm() ->
+          left("Cannot have restrictions on false")
+        | applicationTerm(nameTerm(q, _), args) ->
+          right(relationMetaterm(q, args, h.ast))
+        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        end; }
+--Special relations
 | t1::Term_c '+' t2::Term_c '=' t3::Term_c
-  { top.ast = plusMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(plusMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c '-' t2::Term_c '=' t3::Term_c
-  { top.ast = minusMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(minusMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c '*' t2::Term_c '=' t3::Term_c
-  { top.ast = multiplyMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(multiplyMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c '/' t2::Term_c '=' t3::Term_c
-  { top.ast = divideMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(divideMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c 'mod' t2::Term_c '=' t3::Term_c
-  { top.ast = modulusMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(modulusMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c '<' t2::Term_c
-  { top.ast = lessMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(lessMetaterm(t1.ast, t2.ast)); }
 | t1::Term_c '<=' t2::Term_c
-  { top.ast = lessEqMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(lessEqMetaterm(t1.ast, t2.ast)); }
 | t1::Term_c '>' t2::Term_c
-  { top.ast = greaterMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(greaterMetaterm(t1.ast, t2.ast)); }
 | t1::Term_c '>=' t2::Term_c
-  { top.ast = greaterEqMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(greaterEqMetaterm(t1.ast, t2.ast)); }
 | t1::Term_c '++' t2::Term_c '=' t3::Term_c
-  { top.ast = appendMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(appendMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c '||' t2::Term_c '=' t3::Term_c
-  { top.ast = orBoolMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(orBoolMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c '&&' t2::Term_c '=' t3::Term_c
-  { top.ast = andBoolMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(andBoolMetaterm(t1.ast, t2.ast, t3.ast)); }
 | '!' t1::Term_c '=' t2::Term_c
-  { top.ast = notBoolMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(notBoolMetaterm(t1.ast, t2.ast)); }
 --Symmetry for the same
 | t3::Term_c '=' t1::Term_c '+' t2::Term_c
-  { top.ast = plusMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(plusMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '-' t2::Term_c
-  { top.ast = minusMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(minusMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '*' t2::Term_c
-  { top.ast = multiplyMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(multiplyMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '/' t2::Term_c
-  { top.ast = divideMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(divideMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c 'mod' t2::Term_c
-  { top.ast = modulusMetaterm(t1.ast, t2.ast, t3.ast); }
-| t1::Term_c '<' t2::Term_c
-  { top.ast = lessMetaterm(t1.ast, t2.ast); }
-| t1::Term_c '<=' t2::Term_c
-  { top.ast = lessEqMetaterm(t1.ast, t2.ast); }
-| t1::Term_c '>' t2::Term_c
-  { top.ast = greaterMetaterm(t1.ast, t2.ast); }
-| t1::Term_c '>=' t2::Term_c
-  { top.ast = greaterEqMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(modulusMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '++' t2::Term_c
-  { top.ast = appendMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(appendMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '||' t2::Term_c
-  { top.ast = orBoolMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(orBoolMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '&&' t2::Term_c
-  { top.ast = andBoolMetaterm(t1.ast, t2.ast, t3.ast); }
+  { top.ast = right(andBoolMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t2::Term_c '=' '!' t1::Term_c
-  { top.ast = notBoolMetaterm(t1.ast, t2.ast); }
+  { top.ast = right(notBoolMetaterm(t1.ast, t2.ast)); }
 
 
 
@@ -187,8 +218,8 @@ concrete productions top::Exp_c
   { top.ast = p.ast; }
 | 'nil'
   { top.ast = nilTerm(); }
---New for Silver:
-{- This doesn't work with fromAbella
+--New for encoding:
+{- This doesn't work with fromAbella, so it is in toAbella:
 | i::Number_t
   { top.ast = intTerm(toInteger(i.lexeme)); }-}
 | i::SilverNegativeInteger_t
@@ -229,6 +260,10 @@ concrete productions top::ListBody_c
 
 
 concrete productions top::PAId_c
+| l::Qname_t
+  { top.ast = nameTerm(toQName(l.lexeme), nothingType()); }
+| '(' l::Qname_t ':' t::Ty_c ')'
+  { top.ast = nameTerm(toQName(l.lexeme), justType(t.ast)); }
 | l::Id_t
   { top.ast = nameTerm(baseName(l.lexeme), nothingType()); }
 | '(' l::Id_t ':' t::Ty_c ')'
@@ -250,6 +285,8 @@ closed nonterminal Ty_c with ast<Type>;
 concrete productions top::PTy_c
 | i::Id_t
   { top.ast = nameType(baseName(i.lexeme)); }
+| i::Qname_t
+  { top.ast = nameType(toQName(i.lexeme)); }
 | '(' t::Ty_c ')'
   { top.ast = t.ast; }
 
@@ -257,6 +294,8 @@ concrete productions top::PTy_c
 concrete productions top::ATy_c
 | i::Id_t
   { top.ast = nameType(baseName(i.lexeme)); }
+| i::Qname_t
+  { top.ast = nameType(toQName(i.lexeme)); }
 | a::ATy_c p::PTy_c
   { top.ast = functorType(a.ast, p.ast); }
 
