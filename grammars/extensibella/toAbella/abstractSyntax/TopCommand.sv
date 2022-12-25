@@ -8,6 +8,8 @@ nonterminal TopCommand with
    --pp should always end with a newline
    pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
+   newProofState, builtNewProofState,
+   provingTheorems,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           toAbellaMsgs on TopCommand;
@@ -33,8 +35,14 @@ top::TopCommand ::= name::String params::[String] body::Metaterm
       "Theorem " ++ name ++ " " ++ paramsString ++
       " : " ++ body.pp ++ ".\n";
 
+  production fullName::QName = addBase(top.currentModule, name);
   top.toAbella =
-      [anyTopCommand(theoremDeclaration(name, params, body.toAbella))];
+      [anyTopCommand(
+          theoremDeclaration(fullName, params, body.toAbella))];
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [(fullName, body)];
 }
 
 
@@ -55,6 +63,12 @@ top::TopCommand ::= preds::[(String, Type)] defs::Defs
      then error("Definition should not be empty; definitionDeclaration")
      else buildPreds(preds);
   top.pp = "Define " ++ predsString ++ " by " ++ defs.pp ++ ".";
+
+  top.toAbella = error("definitionDeclaration.toAbella");
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [];
 }
 
 
@@ -77,6 +91,10 @@ top::TopCommand ::= preds::[(String, Type)] defs::Defs
   top.pp = "CoDefine " ++ predsString ++ " by " ++ defs.pp ++ ".";
 
   top.toAbella = error("codefinitionDeclaration.toAbella");
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [];
 }
 
 
@@ -86,6 +104,10 @@ top::TopCommand ::= m::Metaterm
   top.pp = "Query " ++ m.pp ++ ".\n";
 
   top.toAbella = [anyTopCommand(queryCommand(m.toAbella))];
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [];
 }
 
 
@@ -117,6 +139,10 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[String]
   --this isn't quite right because it outputs colons
   production expandedNames::[String] =
      map((.pp), qedNewNames ++ moreNames);
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [];
 }
 
 
@@ -126,6 +152,10 @@ top::TopCommand ::= tys::TypeList
   top.pp = "Close " ++ tys.pp ++ ".\n";
 
   top.toAbella = error("closeCommand.toAbella");
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [];
 }
 
 
@@ -158,6 +188,10 @@ top::TopCommand ::= names::[String] k::Kind
       if length(names) == length(nub(names))
       then [] --no duplicates
       else [errorMsg("Cannot declare same type twice")];
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [];
 }
 
 
@@ -190,5 +224,9 @@ top::TopCommand ::= names::[String] ty::Type
       if length(names) == length(nub(names))
       then [] --no duplicates
       else [errorMsg("Cannot declare same constructor twice")];
+
+  top.builtNewProofState = top.newProofState;
+
+  top.provingTheorems = [];
 }
 

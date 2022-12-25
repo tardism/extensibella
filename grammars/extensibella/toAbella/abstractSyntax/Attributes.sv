@@ -10,5 +10,21 @@ synthesized attribute toAbella<a>::a;
 monoid attribute toAbellaMsgs::[Message] with [], ++;
 
 
+synthesized attribute isUndo::Boolean;
+
+
 --information about the current state of the prover
 inherited attribute proverState::ProverState;
+
+--the number of commands and resulting states in reverse order
+--first element is current state
+inherited attribute stateListIn::[(Integer, ProverState)];
+--modified state list produced by command
+synthesized attribute stateListOut::[(Integer, ProverState)];
+
+--proof state produced after a command
+inherited attribute newProofState::ProofState;
+
+--proof state modified to reflect the particular situtaion for
+--extensible theorems
+synthesized attribute builtNewProofState::ProofState;

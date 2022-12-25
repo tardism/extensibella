@@ -9,7 +9,7 @@ imports extensibella:common:concreteSyntax;
 lexer class COMMAND dominates Id_t;
 
 
-terminal Grammar_t        'Grammar'        lexer classes {COMMAND};
+terminal Module_t         'Module'         lexer classes {COMMAND};
 terminal Close_t          'Close'          lexer classes {COMMAND};
 terminal CoDefine_t       'CoDefine'       lexer classes {COMMAND};
 terminal Define_t         'Define'         lexer classes {COMMAND};

@@ -7,15 +7,24 @@ top::TopCommand ::= depth::Integer thms::ExtThms
   top.pp = "Extensible_Theorem " ++ thms.pp ++ ".\n";
 
   top.toAbella = error("extensibleTheoremDeclaration.toAbella");
+
+  top.builtNewProofState = error("extensibleTheoremDeclaration.builtNewProofState");
+
+  top.provingTheorems = thms.provingTheorems;
 }
 
 
 abstract production proveObligations
-top::TopCommand ::= names::[String]
+top::TopCommand ::= names::[QName]
 {
   top.pp = "Prove " ++ implode(", ", names) ++ ".\n";
 
   top.toAbella = error("proveObligations.toAbella");
+  --Need to check these are the right things to prove
+
+  top.builtNewProofState = error("proveObligations.builtNewProofState");
+
+  top.provingTheorems = error("proveObligations.provingTheorems");
 }
 
 
@@ -25,6 +34,7 @@ top::TopCommand ::= names::[String]
 nonterminal ExtThms with
    pp,
    toAbella<Metaterm>, toAbellaMsgs,
+   provingTheorems,
    typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
           proverState on ExtThms;
@@ -35,6 +45,8 @@ top::ExtThms ::=
   top.pp = "";
 
   top.toAbella = trueMetaterm();
+
+  top.provingTheorems = [];
 }
 
 
@@ -44,6 +56,8 @@ top::ExtThms ::= name::String body::ExtBody onLabel::String
 {
   top.pp = name ++ " : " ++ body.pp ++ " on " ++ onLabel ++
            if rest.pp == "" then "" else " /\\ " ++ rest.pp;
+
+  production fullName::QName = addBase(top.currentModule, name);
 
   top.toAbella =
       case rest of
@@ -70,6 +84,8 @@ top::ExtThms ::= name::String body::ExtBody onLabel::String
       | just(m) ->
         [] --need to check the metaterm is built by an extensible relation
       end;
+
+  top.provingTheorems = (fullName, body)::rest.provingTheorems;
 }
 
 

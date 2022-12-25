@@ -8,6 +8,7 @@ nonterminal NoOpCommand with
    pp,
    toAbella<Maybe<NoOpCommand>>, --maybe because we might send nothing
    toAbellaMsgs,
+   stateListIn, stateListOut,
    proverState;
 propagate proverState, toAbellaMsgs on NoOpCommand;
 
@@ -19,9 +20,18 @@ top::NoOpCommand ::= opt::String val::String
 {
   top.pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
 
+  local abellaSetting::Boolean = opt == "debug";
   top.toAbella =
-      if opt == "debug" then nothing()
-                        else just(setCommand(opt, val));
+      if abellaSetting then nothing()
+                       else just(setCommand(opt, val));
+
+  top.stateListOut =
+      (if abellaSetting then 1 else 0,
+       proverState(top.proverState.state, top.proverState.provingThms,
+                   if opt == "debug" then opt == "on"
+                                     else top.proverState.debug,
+                   top.knownTheorems, top.remainingObligations)
+      )::top.stateListIn;
 
   top.toAbellaMsgs <-
       if opt == "debug"
@@ -68,6 +78,8 @@ top::NoOpCommand ::= theoremName::QName
                   "; possibilities are " ++
                   implode(", ", map((.pp), map(fst, possibleThms))))]
       end;
+
+  top.stateListOut = (1, top.proverState)::top.stateListIn;
 }
 
 
@@ -77,6 +89,9 @@ top::NoOpCommand ::=
   top.pp = "Quit.\n";
 
   top.toAbella = just(top);
+
+  --this probably isn't needed
+  top.stateListOut = top.stateListIn;
 }
 
 
@@ -84,9 +99,19 @@ top::NoOpCommand ::=
 abstract production backCommand
 top::NoOpCommand ::= n::Integer
 {
-  top.pp = replicate(n - 1, "#back. ") ++ "#back.\n";
+  top.pp = implode(" ", replicate(n, "#back.")) ++ "\n";
 
-  top.toAbella = error("backCommand.toAbella");
+  local trans_n::Integer =
+      foldr(\ p::(Integer, ProverState) rest::Integer -> p.1 + rest,
+            0, take(n, top.stateListIn));
+  top.toAbella = backCommand(trans_n);
+
+  top.toAbellaMsgs <-
+      if length(top.stateListIn) < n
+      then [errorMsg("Cannot go back that far")]
+      else [];
+
+  top.stateListOut = drop(n, top.stateListIn);
 }
 
 
@@ -96,6 +121,11 @@ top::NoOpCommand ::=
   top.pp = "#reset.\n";
 
   top.toAbella = just(top);
+
+  top.toAbellaMsgs <- [errorMsg("Cannot #reset")];
+
+  --shouldn't need this since this command isn't allowed
+  top.stateListOut = top.stateListIn;
 }
 
 
@@ -105,4 +135,8 @@ top::NoOpCommand ::=
   top.pp = "Show $$current.\n";
 
   top.toAbella = nothing();
+
+  --this doesn't really count as a command since it shouldn't be used
+  --other than by Proof General
+  top.stateListOut = top.stateListIn;
 }

@@ -1,12 +1,16 @@
 grammar extensibella:common:abstractSyntax;
 
 
-nonterminal Message with pp;
+nonterminal Message with pp, isError;
+
+synthesized attribute isError::Boolean;
 
 abstract production errorMsg
 top::Message ::= msg::String
 {
   top.pp = "Error:  " ++ msg;
+
+  top.isError = true;
 }
 
 
@@ -14,6 +18,8 @@ abstract production warningMsg
 top::Message ::= msg::String
 {
   top.pp = "Warning:  " ++ msg;
+
+  top.isError = false;
 }
 
 

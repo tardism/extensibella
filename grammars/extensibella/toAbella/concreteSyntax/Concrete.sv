@@ -5,15 +5,15 @@ grammar extensibella:toAbella:concreteSyntax;
 
 
 
-closed nonterminal GrammarDecl_c
+closed nonterminal ModuleDecl_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
-   with ast<String>;
+   with ast<QName>;
 
-concrete productions top::GrammarDecl_c
-| 'Grammar' q::Qname_t '.'
-  { top.ast = q.lexeme; }
-| 'Grammar' q::Id_t '.' --Because Qname_t assumes at least one colon
-  { top.ast = q.lexeme; }
+concrete productions top::ModuleDecl_c
+| 'Module' q::Qname_t '.'
+  { top.ast = toQName(q.lexeme); }
+| 'Module' q::Id_t '.' --Because Qname_t assumes at least one colon
+  { top.ast = toQName(q.lexeme); }
 
 
 
@@ -22,14 +22,14 @@ concrete productions top::GrammarDecl_c
 
 closed nonterminal FullFile_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
-   with ast<(String, ListOfCommands)>;
+   with ast<(QName, ListOfCommands)>;
 closed nonterminal ListOfCommands_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
    with ast<ListOfCommands>;
 
 concrete productions top::FullFile_c
-| g::GrammarDecl_c contents::ListOfCommands_c
-  { top.ast = (g.ast, contents.ast); }
+| m::ModuleDecl_c contents::ListOfCommands_c
+  { top.ast = (m.ast, contents.ast); }
 
 concrete productions top::ListOfCommands_c
 |

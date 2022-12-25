@@ -7,9 +7,18 @@ nonterminal ProofCommand with
    --pp should end with two spaces
    pp,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState,
-   toAbella<[ProofCommand]>, toAbellaMsgs;
+   toAbella<[ProofCommand]>, toAbellaMsgs,
+   isUndo,
+   stateListIn, stateListOut;
 propagate typeEnv, constructorEnv, relationEnv,
           currentModule, proverState on ProofCommand;
+
+aspect default production top::ProofCommand
+{
+  top.isUndo = false;
+  top.stateListOut =
+      error("Should only access ProofCommand.stateListOut for undo");
+}
 
 
 abstract production inductionTactic
@@ -245,7 +254,10 @@ top::ProofCommand ::=
 {
   top.pp = "undo.  ";
 
-  top.toAbella = [top];
+  top.toAbella = replicate(undoCommand(), head(top.stateListIn).1);
+
+  top.isUndo = true;
+  top.statelistOut = tail(top.stateListIn);
 }
 
 
