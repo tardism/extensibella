@@ -49,7 +49,7 @@ closed nonterminal AnyCommand_c
    with ast<AnyCommand>;
 closed nonterminal TheoremStmts_c with ast<Either<String ExtThms>>;
 closed nonterminal ExtBody_c with ast<Either<String ExtBody>>;
-closed nonterminal QnameList_c with ast<[String]>;
+closed nonterminal QnameList_c with ast<[QName]>;
 
 concrete productions top::AnyCommand_c
 | c::PureTopCommand_c
@@ -152,7 +152,15 @@ concrete productions top::PureTopCommand_c
         | left(msg) -> anyParseFailure(msg)
         | right(ba) ->
           anyTopCommand(
-             theoremDeclaration(name.lexeme, params.ast, ba))
+             theoremDeclaration(toQName(name.lexeme), params.ast, ba))
+        end; }
+| 'Theorem' name::Qname_t params::TheoremTyparams_c ':' body::Metaterm_c '.'
+  { top.ast =
+        case body.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(ba) ->
+          anyTopCommand(
+             theoremDeclaration(toQName(name.lexeme), params.ast, ba))
         end; }
 | 'Define' x::IdTys_c 'by' o::OptSemi_t d::Defs_c '.'
   { top.ast =
@@ -173,9 +181,9 @@ concrete productions top::PureTopCommand_c
         | left(msg) -> anyParseFailure(msg)
         | right(ma) -> anyTopCommand(queryCommand(ma))
         end; }
-| 'Kind' il::IdList_c k::Knd_c '.'
+| 'Kind' il::QnameList_c k::Knd_c '.'
   { top.ast = anyTopCommand(kindDeclaration(il.ast, k.ast)); }
-| 'Type' il::IdList_c t::Ty_c '.'
+| 'Type' il::QnameList_c t::Ty_c '.'
   { top.ast = anyTopCommand(typeDeclaration(il.ast, t.ast)); }
 | 'Close' al::ATyList_c '.'
   { top.ast = anyTopCommand(closeCommand(al.ast)); }
@@ -211,8 +219,8 @@ concrete productions top::TheoremStmts_c
         case body.ast of
         | left(msg) -> left(msg)
         | right(b) ->
-          right(addExtThms(toString(name.lexeme), b,
-                           toString(label.lexeme), endExtThms()))
+          right(addExtThms(toQName(name.lexeme), b,
+                           label.lexeme, endExtThms()))
         end; }
 | name::Id_t ':' body::ExtBody_c 'on' label::Id_t ',' rest::TheoremStmts_c
   { top.ast =
@@ -221,8 +229,8 @@ concrete productions top::TheoremStmts_c
         | left(msg), _ -> left(msg)
         | _, left(msg) -> left(msg)
         | right(b), right(rst) ->
-          right(addExtThms(toString(name.lexeme), b,
-                           toString(label.lexeme), rst))
+          right(addExtThms(toQName(name.lexeme), b,
+                           label.lexeme, rst))
         end; }
   --These are to get errors which are more helpful, because I forget
   --   the labels a lot and can't figure out why it doesn't work.
@@ -261,10 +269,14 @@ concrete productions top::ExtBody_c
 
 
 concrete productions top::QnameList_c
+| i::Id_t
+  { top.ast = [toQName(i.lexeme)]; }
 | q::Qname_t
-  { top.ast = [q.lexeme]; }
+  { top.ast = [toQName(q.lexeme)]; }
+| i::Id_t ',' rest::QnameList_c
+  { top.ast = toQName(i.lexeme)::rest.ast; }
 | q::Qname_t ',' rest::QnameList_c
-  { top.ast = q.lexeme::rest.ast; }
+  { top.ast = toQName(q.lexeme)::rest.ast; }
 
 
 concrete productions top::CommonCommand_c
@@ -502,8 +514,8 @@ concrete productions top::ExistsBinds_c
 
 
 closed nonterminal IdList_c with ast<[String]>;
-closed nonterminal IdTy_c with ast<Pair<String Type>>;
-closed nonterminal IdTys_c with ast<[Pair<String Type>]>;
+closed nonterminal IdTy_c with ast<(QName, Type)>;
+closed nonterminal IdTys_c with ast<[(QName, Type)]>;
 closed nonterminal HHint_c with ast<HHint>;
 closed nonterminal Clearable_c with ast<Clearable>;
 closed nonterminal Withs_c with ast<Withs>;
@@ -518,7 +530,7 @@ concrete productions top::IdList_c
 
 concrete productions top::IdTy_c
 | i::Id_t ':' t::Ty_c
-  { top.ast = pair(i.lexeme, t.ast); }
+  { top.ast = (toQName(i.lexeme), t.ast); }
 
 
 concrete productions top::IdTys_c

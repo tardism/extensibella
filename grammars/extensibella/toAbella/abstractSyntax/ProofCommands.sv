@@ -13,7 +13,8 @@ nonterminal ProofCommand with
 propagate typeEnv, constructorEnv, relationEnv,
           currentModule, proverState on ProofCommand;
 
-aspect default production top::ProofCommand
+aspect default production
+top::ProofCommand ::=
 {
   top.isUndo = false;
   top.stateListOut =
@@ -254,10 +255,10 @@ top::ProofCommand ::=
 {
   top.pp = "undo.  ";
 
-  top.toAbella = replicate(undoCommand(), head(top.stateListIn).1);
+  top.toAbella = repeat(undoCommand(), head(top.stateListIn).1);
 
   top.isUndo = true;
-  top.statelistOut = tail(top.stateListIn);
+  top.stateListOut = tail(top.stateListIn);
 }
 
 

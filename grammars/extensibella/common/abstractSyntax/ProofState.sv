@@ -1,21 +1,17 @@
 grammar extensibella:common:abstractSyntax;
 
-{-
-  We put these in common rather than fromAbella because we need to
-  have a ProofState in the undolist, which is passed to commands to
-  determine how much should be undone.  We aren't touching the proof
-  state, but we still need the type for typechecking.
--}
-
 synthesized attribute hypList::[(String, Metaterm)];
 synthesized attribute currentSubgoal::[Integer];
 
 nonterminal ProofState with
    pp,
    hypList, currentSubgoal, goal,
+   inProof,
    typeEnv, constructorEnv, relationEnv,
    usedNames;
 propagate typeEnv, constructorEnv, relationEnv on ProofState;
+
+synthesized attribute inProof::Boolean;
 
 abstract production proofInProgress
 top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal futureGoals::[Subgoal]
@@ -33,6 +29,8 @@ top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal futureGoals::[Su
 
   top.currentSubgoal = subgoalNum;
   top.goal = currGoal.goal;
+
+  top.inProof = true;
 }
 
 
@@ -46,6 +44,8 @@ top::ProofState ::=
   top.currentSubgoal = [];
 
   top.goal = nothing();
+
+  top.inProof = false;
 }
 
 
@@ -59,6 +59,8 @@ top::ProofState ::=
   top.currentSubgoal = [];
 
   top.goal = nothing();
+
+  top.inProof = false;
 
   forwards to noProof();
 }
@@ -74,6 +76,8 @@ top::ProofState ::=
   top.currentSubgoal = [];
 
   top.goal = nothing();
+
+  top.inProof = false;
 
   forwards to noProof();
 }
@@ -98,6 +102,8 @@ top::ProofState ::= currentProofState::ProofState
   top.pp = forward.pp;
   --We could use this production to figure out what to label with * in the actual proof state
   --Have a translation attribute to label the things with * as needed
+
+  top.inProof = true;
 
   forwards to currentProofState;
 }

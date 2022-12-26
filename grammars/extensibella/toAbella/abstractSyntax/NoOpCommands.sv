@@ -30,7 +30,8 @@ top::NoOpCommand ::= opt::String val::String
        proverState(top.proverState.state, top.proverState.provingThms,
                    if opt == "debug" then opt == "on"
                                      else top.proverState.debug,
-                   top.knownTheorems, top.remainingObligations)
+                   top.proverState.knownTheorems,
+                   top.proverState.remainingObligations)
       )::top.stateListIn;
 
   top.toAbellaMsgs <-
@@ -99,12 +100,12 @@ top::NoOpCommand ::=
 abstract production backCommand
 top::NoOpCommand ::= n::Integer
 {
-  top.pp = implode(" ", replicate(n, "#back.")) ++ "\n";
+  top.pp = implode(" ", repeat("#back.", n)) ++ "\n";
 
   local trans_n::Integer =
       foldr(\ p::(Integer, ProverState) rest::Integer -> p.1 + rest,
             0, take(n, top.stateListIn));
-  top.toAbella = backCommand(trans_n);
+  top.toAbella = just(backCommand(trans_n));
 
   top.toAbellaMsgs <-
       if length(top.stateListIn) < n

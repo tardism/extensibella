@@ -46,9 +46,7 @@ top::ProverState ::=
   local newObligations::[ThmElement] =
         case obligations of
         | extensibleMutualTheoremGroup(thms)::rest ->
-          if map(\ p::(String, String, Metaterm) -> p.2 ++ ":" ++ p.1,
-                 provingThms) ==
-             map(fst, thms)
+          if map(fst, provingThms) == map(fst, thms)
           then rest
           else obligations
         | _ -> obligations
@@ -71,10 +69,10 @@ top::ProverState ::=
 
 --Build a prover state as you expect in the beginning
 function defaultProverState
-ProverState ::= obligations::[String] --[ThmElement]
+ProverState ::= obligations::[ThmElement]
 {
   --The metaterms won't be needed, so we can just leave them out
-  local knownThms1::[(String, String, Metaterm)] =
+  local knownThms1::[(QName, Metaterm)] =
         [
          --strings.thm
          (toQName("extensibella:stdLib:is_string_append"), trueMetaterm()),
@@ -128,7 +126,7 @@ ProverState ::= obligations::[String] --[ThmElement]
          (toQName("extensibella:stdLib:DeMorgan" ++ name_sep ++
                   "and_bool" ++ name_sep ++ "not_bool"), trueMetaterm())
         ];
-  local knownThms2::[(String, String, Metaterm)] =
+  local knownThms2::[(QName, Metaterm)] =
         [
          --integers.thm
          (toQName("extensibella:stdLib:is_integer_eq_or_not"), trueMetaterm()),
@@ -191,7 +189,7 @@ ProverState ::= obligations::[String] --[ThmElement]
          (toQName("extensibella:stdLib:length_unique"), trueMetaterm()),
          (toQName("extensibella:stdLib:null_unique"), trueMetaterm())
         ];
-  production attribute knownThms::[(String, String, Metaterm)] with ++;
+  production attribute knownThms::[(QName, Metaterm)] with ++;
   knownThms := knownThms1 ++ knownThms2;
   --Prop-quantified theorems handled by asserting for the particular
   --   case, then applying
@@ -201,8 +199,7 @@ ProverState ::= obligations::[String] --[ThmElement]
       (toQName("extensibella:stdLib:is_list_append"), trueMetaterm()),
       (toQName("extensibella:stdLib:symmetry"), trueMetaterm())
      ];
-  return proverState(noProof(), [], false, true, [], --knownThms,
-                     obligations);
+  return proverState(noProof(), [], false, knownThms, obligations);
 }
 
 

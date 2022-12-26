@@ -31,7 +31,7 @@ top::AnyCommand ::= c::TopCommand
           c.provingTheorems,
           top.proverState.debug,
           top.proverState.knownTheorems,
-          top.proverState.remainingObligations);
+          top.proverState.remainingObligations))::top.stateListIn;
 }
 
 
@@ -50,7 +50,7 @@ top::AnyCommand ::= c::ProofCommand
   local currentState::ProverState = head(top.stateListIn).snd;
   currentState.replaceState = newProofState;
   local newProofState::ProofState =
-      case top.currentState.state of
+      case top.proverState.state of
       | extensible_proofInProgress(_, oMt, numProds) ->
         extensible_proofInProgress(top.newProofState, oMt, numProds)
       | _ -> top.newProofState

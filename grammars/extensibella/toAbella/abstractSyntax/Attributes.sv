@@ -13,6 +13,9 @@ monoid attribute toAbellaMsgs::[Message] with [], ++;
 synthesized attribute isUndo::Boolean;
 
 
+synthesized attribute provingTheorems::[(QName, Metaterm)];
+
+
 --information about the current state of the prover
 inherited attribute proverState::ProverState;
 

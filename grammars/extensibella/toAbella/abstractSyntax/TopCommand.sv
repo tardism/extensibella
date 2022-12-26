@@ -16,7 +16,7 @@ propagate typeEnv, constructorEnv, relationEnv, currentModule,
 
 
 abstract production theoremDeclaration
-top::TopCommand ::= name::String params::[String] body::Metaterm
+top::TopCommand ::= name::QName params::[String] body::Metaterm
 {
   local buildParams::(String ::= [String]) =
      \ p::[String] ->
@@ -31,14 +31,26 @@ top::TopCommand ::= name::String params::[String] body::Metaterm
      if null(params)
      then ""
      else " [" ++ buildParams(params) ++ "] ";
-  top.pp =
-      "Theorem " ++ name ++ " " ++ paramsString ++
-      " : " ++ body.pp ++ ".\n";
+  top.pp = "Theorem " ++ name.pp ++ " " ++ paramsString ++
+           " : " ++ body.pp ++ ".\n";
 
-  production fullName::QName = addBase(top.currentModule, name);
+  production fullName::QName =
+      if name.isQualified
+      then name
+      else addQNameBase(top.currentModule, name.shortName);
   top.toAbella =
       [anyTopCommand(
           theoremDeclaration(fullName, params, body.toAbella))];
+
+  --check if name is qualified and has the appropriate module
+  top.toAbellaMsgs <-
+      if name.isQualified
+      then if name.moduleName == top.currentModule
+           then []
+           else [errorMsg("Theorem name " ++ name.pp ++ " does not" ++
+                    " have correct module (expected " ++
+                    top.currentModule.pp)]
+      else [];
 
   top.builtNewProofState = top.newProofState;
 
@@ -47,24 +59,28 @@ top::TopCommand ::= name::String params::[String] body::Metaterm
 
 
 abstract production definitionDeclaration
-top::TopCommand ::= preds::[(String, Type)] defs::Defs
+top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
-  local buildPreds::(String ::= [(String, Type)]) =
-     \ w::[Pair<String Type>] ->
-       case w of
-       | [] ->
-         error("Should not reach here; definitionDeclaration production")
-       | [pair(a, b)] -> a ++ " : " ++ b.pp
-       | pair(a,b)::rest ->
-         a ++ " : " ++ b.pp ++ ", " ++ buildPreds(rest)
-       end;
   local predsString::String =
      if null(preds)
      then error("Definition should not be empty; definitionDeclaration")
-     else buildPreds(preds);
+     else implode(", ", map(\ p::(QName, Type) ->
+                              p.1.pp ++ " : " ++ p.2.pp, preds));
   top.pp = "Define " ++ predsString ++ " by " ++ defs.pp ++ ".";
 
   top.toAbella = error("definitionDeclaration.toAbella");
+
+  --check names are qualified with appropriate module
+  top.toAbellaMsgs <-
+      flatMap(\ p::(QName, Type) ->
+                if p.1.isQualified
+                then if p.1.moduleName == top.currentModule
+                     then []
+                     else [errorMsg("Declared predicate name " ++
+                              p.1.pp ++ " does not have correct " ++
+                              "module (expected " ++
+                              top.currentModule.pp ++ ")")]
+                else [], preds);
 
   top.builtNewProofState = top.newProofState;
 
@@ -73,24 +89,28 @@ top::TopCommand ::= preds::[(String, Type)] defs::Defs
 
 
 abstract production codefinitionDeclaration
-top::TopCommand ::= preds::[(String, Type)] defs::Defs
+top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
-  local buildPreds::(String ::= [(String, Type)]) =
-     \ w::[Pair<String Type>] ->
-       case w of
-       | [] ->
-         error("Should not reach here; codefinitionDeclaration production")
-       | [pair(a, b)] -> a ++ " : " ++ b.pp
-       | pair(a,b)::rest ->
-         a ++ " := " ++ b.pp ++ ", " ++ buildPreds(rest)
-       end;
   local predsString::String =
      if null(preds)
      then error("CoDefinition should not be empty; codefinitionDeclaration")
-     else buildPreds(preds);
+     else implode(", ", map(\ p::(QName, Type) ->
+                              p.1.pp ++ " : " ++ p.2.pp, preds));
   top.pp = "CoDefine " ++ predsString ++ " by " ++ defs.pp ++ ".";
 
   top.toAbella = error("codefinitionDeclaration.toAbella");
+
+  --check names are qualified with appropriate module
+  top.toAbellaMsgs <-
+      flatMap(\ p::(QName, Type) ->
+                if p.1.isQualified
+                then if p.1.moduleName == top.currentModule
+                     then []
+                     else [errorMsg("Declared predicate name " ++
+                              p.1.pp ++ " does not have correct " ++
+                              "module (expected " ++
+                              top.currentModule.pp ++ ")")]
+                else [], preds);
 
   top.builtNewProofState = top.newProofState;
 
@@ -160,18 +180,18 @@ top::TopCommand ::= tys::TypeList
 
 
 abstract production kindDeclaration
-top::TopCommand ::= names::[String] k::Kind
+top::TopCommand ::= names::[QName] k::Kind
 {
   local namesString::String =
      if null(names)
      then ""
-     else " " ++ implode(", ", names);
+     else " " ++ implode(", ", map((.pp), names));
   top.pp = "Kind " ++ namesString ++ "   " ++ k.pp ++ ".\n";
 
-  top.toAbella =
-      [anyTopCommand(kindDeclaration(map((.pp), newNames), k))];
+  top.toAbella = [anyTopCommand(kindDeclaration(newNames, k))];
   local newNames::[QName] =
-        map(addQNameBase(top.currentModule, _), names);
+      map(addQNameBase(top.currentModule, _),
+          map((.shortName), names));
 
   --redifining a previously-defined type from this module
   top.toAbellaMsgs <-
@@ -188,6 +208,17 @@ top::TopCommand ::= names::[String] k::Kind
       if length(names) == length(nub(names))
       then [] --no duplicates
       else [errorMsg("Cannot declare same type twice")];
+  --check names are qualified with appropriate module
+  top.toAbellaMsgs <-
+      flatMap(\ q::QName ->
+                if q.isQualified
+                then if q.moduleName == top.currentModule
+                     then []
+                     else [errorMsg("Declared type name " ++
+                              q.pp ++ " does not have correct " ++
+                              "module (expected " ++
+                              top.currentModule.pp ++ ")")]
+                else [], names);
 
   top.builtNewProofState = top.newProofState;
 
@@ -196,18 +227,22 @@ top::TopCommand ::= names::[String] k::Kind
 
 
 abstract production typeDeclaration
-top::TopCommand ::= names::[String] ty::Type
+top::TopCommand ::= names::[QName] ty::Type
 {
   local namesString::String =
      if null(names)
      then ""
-     else implode(", ", names);
+     else implode(", ", map((.pp), names));
   top.pp = "Type " ++ namesString ++ "   " ++ ty.pp ++ ".\n";
 
   top.toAbella =
-      [anyTopCommand(typeDeclaration(map((.pp), newNames), ty.toAbella))];
+      [anyTopCommand(typeDeclaration(newNames, ty.toAbella))];
   local newNames::[QName] =
-         map(addQNameBase(top.currentModule, _), names);
+      map(\ q::QName ->
+            if q.isQualified
+            then q
+            else addQNameBase(top.currentModule, q.shortName),
+          names);
 
   --redifining a previously-defined type from this module
   top.toAbellaMsgs <-
@@ -224,6 +259,17 @@ top::TopCommand ::= names::[String] ty::Type
       if length(names) == length(nub(names))
       then [] --no duplicates
       else [errorMsg("Cannot declare same constructor twice")];
+  --check names are qualified with appropriate module
+  top.toAbellaMsgs <-
+      flatMap(\ q::QName ->
+                if q.isQualified
+                then if q.moduleName == top.currentModule
+                     then []
+                     else [errorMsg("Declared constructor name " ++
+                              q.pp ++ " does not have correct " ++
+                              "module (expected " ++
+                              top.currentModule.pp ++ ")")]
+                else [], names);
 
   top.builtNewProofState = top.newProofState;
 

@@ -17,7 +17,7 @@ top::TopCommand ::= depth::Integer thms::ExtThms
 abstract production proveObligations
 top::TopCommand ::= names::[QName]
 {
-  top.pp = "Prove " ++ implode(", ", names) ++ ".\n";
+  top.pp = "Prove " ++ implode(", ", map((.pp), names)) ++ ".\n";
 
   top.toAbella = error("proveObligations.toAbella");
   --Need to check these are the right things to prove
@@ -35,9 +35,9 @@ nonterminal ExtThms with
    pp,
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
-   typeEnv, constructorEnv, relationEnv, proverState;
+   typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
-          proverState on ExtThms;
+          currentModule, proverState on ExtThms;
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -51,13 +51,16 @@ top::ExtThms ::=
 
 
 abstract production addExtThms
-top::ExtThms ::= name::String body::ExtBody onLabel::String
+top::ExtThms ::= name::QName body::ExtBody onLabel::String
                  rest::ExtThms
 {
-  top.pp = name ++ " : " ++ body.pp ++ " on " ++ onLabel ++
+  top.pp = name.pp ++ " : " ++ body.pp ++ " on " ++ onLabel ++
            if rest.pp == "" then "" else " /\\ " ++ rest.pp;
 
-  production fullName::QName = addBase(top.currentModule, name);
+  production fullName::QName =
+      if name.isQualified
+      then name
+      else addQNameBase(top.currentModule, name.shortName);
 
   top.toAbella =
       case rest of
@@ -80,12 +83,22 @@ top::ExtThms ::= name::String body::ExtBody onLabel::String
                     just(onLabel), body.premises) of
       | nothing() ->
         [errorMsg("Unknown label " ++ onLabel ++ " in extensible " ++
-                  "theorem " ++ name)]
+                  "theorem " ++ name.pp)]
       | just(m) ->
         [] --need to check the metaterm is built by an extensible relation
       end;
 
-  top.provingTheorems = (fullName, body)::rest.provingTheorems;
+  --check name is qualified with appropriate module
+  top.toAbellaMsgs <-
+      if name.isQualified
+      then if name.moduleName == top.currentModule
+           then []
+           else [errorMsg("Declared predicate name " ++ name.pp ++
+                    " does not have correct module (expected " ++
+                    top.currentModule.pp ++ ")")]
+      else [];
+
+  top.provingTheorems = (fullName, body.thm)::rest.provingTheorems;
 }
 
 
@@ -95,18 +108,22 @@ top::ExtThms ::= name::String body::ExtBody onLabel::String
 nonterminal ExtBody with
    pp,
    toAbella<Metaterm>, toAbellaMsgs,
-   premises,
-   typeEnv, constructorEnv, relationEnv, proverState;
+   premises, thm,
+   typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
-          proverState on ExtBody;
+          currentModule, proverState on ExtBody;
 
 --Decorated metaterm so we have the information from the envs
 synthesized attribute premises::[(Maybe<String>, Decorated Metaterm)];
+--Metaterm underlying the body
+synthesized attribute thm::Metaterm;
 
 abstract production endExtBody
 top::ExtBody ::= conc::Metaterm
 {
   top.pp = conc.pp;
+
+  top.thm = conc;
 
   top.toAbella = conc.toAbella;
 
@@ -119,6 +136,8 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
 {
   top.pp = "(" ++ label ++ " : " ++ m.pp ++ ") -> " ++ rest.pp;
 
+  top.thm = impliesMetaterm(m, rest.thm);
+
   top.toAbella = impliesMetaterm(m.toAbella, rest.toAbella);
 
   top.premises = (just(label), m)::rest.premises;
@@ -130,6 +149,8 @@ top::ExtBody ::= m::Metaterm rest::ExtBody
 {
   top.pp = (if m.isAtomic then m.pp else "(" ++ m.pp ++ ")") ++
            " -> " ++ rest.pp;
+
+  top.thm = impliesMetaterm(m, rest.thm);
 
   top.toAbella = impliesMetaterm(m.toAbella, rest.toAbella);
 
