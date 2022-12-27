@@ -42,9 +42,9 @@ terminal Id_t  /[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
 terminal Number_t  /[0-9]+/;
 
 
---These are the things which we are adding to Abella for Silver
-terminal SilverString_t  /"([^"]|(\\"))*"/;
-terminal SilverNegativeInteger_t  /-[0-9]+/ dominates Id_t;
+--These are the things which we are adding to Abella
+terminal QuotedString_t  /"([^"]|(\\"))*"/;
+terminal NegativeInteger_t  /-[0-9]+/ dominates Id_t;
 
 terminal Minus_t      '-'    lexer classes {TOKEN}, precedence=9, association=left;
 terminal Divide_t     '/'    lexer classes {TOKEN}, precedence=10, association=left;
@@ -61,9 +61,10 @@ terminal SilverOr_t   '||'   lexer classes {TOKEN}, precedence=3, association=le
 terminal SilverAnd_t  '&&'   lexer classes {TOKEN}, precedence=4, association=left;
 terminal SilverNot_t  '!'    lexer classes {TOKEN}, precedence=5;
 terminal Tilde_t      '~'    lexer classes {TOKEN};
---Attributes not having any value
-terminal No_t         'no';
-terminal Value_t      'value';
+
+terminal TransTurnstyleStart_t   '|{'    lexer classes {TOKEN};
+terminal TransTurstyleEnd_t      '}-'    lexer classes {TOKEN};
+terminal TransArrow_t            '~~>'   lexer classes {TOKEN};
 
 
 ignore terminal Whitespace_t /[\ \t\n\r]+/;

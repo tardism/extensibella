@@ -17,12 +17,13 @@ inherited attribute knownThms::[(QName, Metaterm)];
 abstract production extensibleMutualTheoremGroup
 top::ThmElement ::=
    --[(thm name, thm statement, induction measure)]
-   thms::[(QName, Metaterm, String)]
+   thms::[(QName, ExtBody, String)]
 {
   top.encode = error("Not done yet");
   top.is_nonextensible = false;
 
-  top.thms = map(\ p::(QName, Metaterm, String) -> (p.1, p.2), thms);
+  top.thms =
+      map(\ p::(QName, ExtBody, String) -> (p.1, p.2.thm), thms);
 }
 
 
@@ -74,15 +75,33 @@ top::DefElement ::= defines::[(QName, Type)]
 }
 
 
+abstract production codefineElement
+top::DefElement ::= defines::[(QName, Type)]
+                    --Some clauses don't have bodies, so Maybe
+                    clauses::[(Metaterm, Maybe<Metaterm>)]
+{
+  local defs::Defs =
+        foldrLastElem(consDefs, singleDefs,
+           map(\ p::(Metaterm, Maybe<Metaterm>) ->
+                 case p of
+                 | (m, nothing()) -> factDef(m)
+                 | (m, just(b)) -> ruleDef(m, b)
+                 end,
+               clauses));
+  top.encode =
+      [anyTopCommand(codefinitionDeclaration(defines, defs))];
+}
+
+
 abstract production kindElement
 top::DefElement ::= names::[QName] kind::Kind
 {
-  --top.encode = [anyTopCommand(kindDeclaration(
+  top.encode = [anyTopCommand(kindDeclaration(names, kind))];
 }
 
 
 abstract production typeElement
 top::DefElement ::= names::[QName] ty::Type
 {
-
+  top.encode = [anyTopCommand(typeDeclaration(names, ty))];
 }

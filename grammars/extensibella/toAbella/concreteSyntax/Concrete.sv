@@ -195,13 +195,13 @@ concrete productions top::PureTopCommand_c
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), [])); }
 | 'Split' name::Qname_t 'as' il::QnameList_c '.'
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), il.ast)); }
---New for Silver
+--New for extensibility
 | 'Extensible_Theorem' thms::TheoremStmts_c '.'
   { top.ast =
         case thms.ast of
         | left(msg) -> anyParseFailure(msg)
         | right(lst) ->
-          anyTopCommand(extensibleTheoremDeclaration(1, lst))
+          anyTopCommand(extensibleTheoremDeclaration(lst))
         end; }
 | 'Prove' thms::QnameList_c '.'
   { top.ast = anyTopCommand(proveObligations(thms.ast)); }

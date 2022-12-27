@@ -1,0 +1,113 @@
+
+%nonterminals
+Kind example_calc-$-host-$-Expr   type.
+Kind example_calc-$-host-$-Root   type.
+
+
+%productions
+Type example_calc-$-host-$-intConst   integer -> example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-plus   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-minus   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-mult   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-letBind   list $char -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-name   list $char -> example_calc-$-host-$-Expr.
+
+Type example_calc-$-host-$-root   example_calc-$-host-$-Expr -> example_calc-$-host-$-Root.
+
+
+%fixed relation
+Define $fix__example_calc-$-host-$-lookup :
+   list $char -> list (pair (list $char) integer) -> integer -> prop by
+$fix__example_calc-$-host-$-lookup X (($pair_c X V)::Rest) V;
+$fix__example_calc-$-host-$-lookup X (($pair_c Y YV)::Rest) XV :=
+   (X = Y -> false) /\ $fix__example_calc-$-host-$-lookup X Rest XV.
+
+
+%extensible relations
+Define $ext__1__example_calc-$-host-$-valExists : list (list $char) -> example_calc-$-host-$-Expr -> bool -> prop,
+       $ext__0__example_calc-$-host-$-rootValExists : example_calc-$-host-$-Root -> bool -> prop,
+       %
+       $ext__1__example_calc-$-host-$-value : list (pair (list $char) integer) -> example_calc-$-host-$-Expr -> integer -> prop,
+       $ext__0__example_calc-$-host-$-rootValue : example_calc-$-host-$-Root -> integer -> prop,
+       %
+       $ext__0__example_calc-$-host-$-isExpr : example_calc-$-host-$-Expr -> prop,
+       $ext__0__example_calc-$-host-$-isRoot : example_calc-$-host-$-Root -> prop,
+       %
+       $trans__example_calc-$-host-$-Expr : example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> prop,
+       $trans__example_calc-$-host-$-Root : example_calc-$-host-$-Root -> example_calc-$-host-$-Root -> prop by
+%valExists
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-intConst I) $btrue;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-plus E1 E2) $btrue :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E1 $btrue /\
+   $ext__1__example_calc-$-host-$-valExists KnownNames E2 $btrue;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-plus E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E1 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-plus E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E2 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-minus E1 E2) $btrue :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E1 $btrue /\
+   $ext__1__example_calc-$-host-$-valExists KnownNames E2 $btrue;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-minus E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E1 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-minus E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E2 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-mult E1 E2) $btrue :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E1 $btrue /\
+   $ext__1__example_calc-$-host-$-valExists KnownNames E2 $btrue;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-mult E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E1 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-mult E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E2 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-letBind S E1 E2) $btrue :=
+   $ext__1__example_calc-$-host-$-valExists KnownNames E1 $btrue /\
+   $ext__1__example_calc-$-host-$-valExists (S::KnownNames) E2 $btrue;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-letBind S E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists (S::KnownNames) E2 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-letBind S E1 E2) $bfalse :=
+   $ext__1__example_calc-$-host-$-valExists (S::KnownNames) E2 $bfalse;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-name S) $btrue :=
+   member S KnownNames;
+$ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-name S) $bfalse :=
+   member S KnownNames -> false;
+$ext__0__example_calc-$-host-$-rootValExists (example_calc-$-host-$-root E) B :=
+   $ext__1__example_calc-$-host-$-valExists nil E B;
+%value
+$ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-intConst I) I;
+$ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-plus E1 E2) I :=
+   exists I1 I2,
+      $ext__1__example_calc-$-host-$-value Env E1 I1 /\
+      $ext__1__example_calc-$-host-$-value Env E2 I2 /\
+      plus I1 I2 I;
+$ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-minus E1 E2) I :=
+   exists I1 I2,
+      $ext__1__example_calc-$-host-$-value Env E1 I1 /\
+      $ext__1__example_calc-$-host-$-value Env E2 I1 /\
+      minus I1 I2 I;
+$ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-mult E1 E2) I :=
+   exists I1 I2,
+      $ext__1__example_calc-$-host-$-value Env E1 I1 /\
+      $ext__1__example_calc-$-host-$-value Env E2 I1 /\
+      mult I1 I2 I;
+$ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-letBind S E1 E2) I :=
+   exists I1,
+      $ext__1__example_calc-$-host-$-value Env E1 I1 /\
+      $ext__1__example_calc-$-host-$-value (pair S I1::Env) E2 I;
+$ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-name S) I :=
+   $fix__example_calc-$-host-$-lookup S Env I;
+$ext__0__example_calc-$-host-$-rootValue (example_calc-$-host-$-root E) I :=
+   $ext__1__example_calc-$-host-$-value nil E I;
+%is
+$ext__0__example_calc-$-host-$-isExpr (example_calc-$-host-$-intConst I) := is_integer I;
+$ext__0__example_calc-$-host-$-isExpr (example_calc-$-host-$-plus E1 E2) :=
+   $ext__0__example_calc-$-host-$-isExpr E1 /\ $ext__0__example_calc-$-host-$-isExpr E2;
+$ext__0__example_calc-$-host-$-isExpr (example_calc-$-host-$-minus E1 E2) :=
+   $ext__0__example_calc-$-host-$-isExpr E1 /\ $ext__0__example_calc-$-host-$-isExpr E2;
+$ext__0__example_calc-$-host-$-isExpr (example_calc-$-host-$-mult E1 E2) :=
+   $ext__0__example_calc-$-host-$-isExpr E1 /\ $ext__0__example_calc-$-host-$-isExpr E2;
+$ext__0__example_calc-$-host-$-isExpr (example_calc-$-host-$-letBind S E1 E2) :=
+   is_string S /\ $ext__0__example_calc-$-host-$-isExpr E1 /\
+   $ext__0__example_calc-$-host-$-isExpr E2;
+$ext__0__example_calc-$-host-$-isExpr (example_calc-$-host-$-name S) :=
+   is_string S;
+$ext__0__example_calc-$-host-$-isRoot (example_calc-$-host-$-root E) :=
+   $ext__0__example_calc-$-host-$-isExpr E.

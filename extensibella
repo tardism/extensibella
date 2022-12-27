@@ -12,16 +12,26 @@ fi
 #These next lines stolen from the Silver script
 # ~/bin/silver should be a link to somewhere, find out where!
 SILVER_EXECUTABLE=$(readlink -f $SILVER_SCRIPT_LOCATION)
-# Set Silver's home
+#Set Silver's home
 SILVER_HOME=${SILVER_EXECUTABLE/support\/bin\/silver/}
-#Set the generated directory
-export SILVER_GEN=${SILVER_HOME}generated/thm/
+#Set the generated directory where language encodings can be found
+SILVER_GENERATED=${SILVER_HOME}generated/extensibella/
 
 
 
 #Find the Extensibella home
 EXTENSIBELLA_ROOT=$(dirname $(realpath $0))
+EXTENSIBELLA_GENERATED=${EXTENSIBELLA_ROOT}/generated/
+EXTENSIBELLA_EXAMPLES=${EXTENSIBELLA_ROOT}/exampleEncoding/
 export EXTENSIBELLA_LIBRARY=${EXTENSIBELLA_ROOT}/stdLib/
+
+
+
+#Add generated dirs and example dir to the directories to search
+EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$EXTENSIBELLA_GENERATED
+EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$SILVER_GENERATED
+EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$EXTENSIBELLA_EXAMPLES
+export EXTENSIBELLA_ENCODED
 
 
 

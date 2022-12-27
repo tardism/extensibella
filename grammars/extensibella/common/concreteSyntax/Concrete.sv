@@ -139,6 +139,15 @@ concrete productions top::SubMetaterm_c
           right(relationMetaterm(q, args, h.ast))
         | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
         end; }
+--Translation
+| args::ExpList_c '|{' ty::Qname_t '}-' o::Term_c '~~>' t::Term_c
+  { top.ast =
+        right(translationMetaterm(args.ast, toQName(ty.lexeme),
+                                  o.ast, t.ast)); }
+| '|{' ty::Qname_t '}-' o::Term_c '~~>' t::Term_c
+  { top.ast =
+        right(translationMetaterm(emptyTermList(), toQName(ty.lexeme),
+                                  o.ast, t.ast)); }
 --Special relations
 | t1::Term_c '+' t2::Term_c '=' t3::Term_c
   { top.ast = right(plusMetaterm(t1.ast, t2.ast, t3.ast)); }
@@ -207,6 +216,8 @@ concrete productions top::Term_c
 
 
 concrete productions top::MidTerm_c
+| e::Exp_c args::ExpList_c
+  { top.ast = applicationTerm(e.ast, args.ast); }
 | e::Exp_c
   { top.ast = e.ast; }
 
@@ -222,9 +233,9 @@ concrete productions top::Exp_c
 {- This doesn't work with fromAbella, so it is in toAbella:
 | i::Number_t
   { top.ast = intTerm(toInteger(i.lexeme)); }-}
-| i::SilverNegativeInteger_t
+| i::NegativeInteger_t
   { top.ast = intTerm(toInteger(i.lexeme)); }
-| s::SilverString_t
+| s::QuotedString_t
   { top.ast = stringTerm(unescapeString(substring(1, length(s.lexeme)-1, s.lexeme))); }
 | 'true'
   { top.ast = trueTerm(); }

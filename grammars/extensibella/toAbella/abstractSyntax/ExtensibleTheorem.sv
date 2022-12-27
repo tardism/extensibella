@@ -2,7 +2,7 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 abstract production extensibleTheoremDeclaration
-top::TopCommand ::= depth::Integer thms::ExtThms
+top::TopCommand ::= thms::ExtThms
 {
   top.pp = "Extensible_Theorem " ++ thms.pp ++ ".\n";
 

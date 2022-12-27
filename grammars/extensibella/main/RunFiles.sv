@@ -6,11 +6,12 @@ function run_files
 IOVal<Integer> ::=
    file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
    import_parse::Parser<ListOfCommands_c>
-   ioin::IOToken filenames::[String] config::Decorated CmdArgs
+   interface_parse::Parser<Interface_c> ioin::IOToken
+   filenames::[String] config::Decorated CmdArgs
 {
   local ran::IOVal<Integer> =
-      run_file(file_parse, from_parse, import_parse, ioin,
-               head(filenames), config);
+      run_file(file_parse, from_parse, import_parse,
+               interface_parse, ioin, head(filenames), config);
   return
       case filenames of
       | [] -> ioval(ioin, 0)
@@ -18,7 +19,7 @@ IOVal<Integer> ::=
         if ran.iovalue != 0
         then ran --error in that file, so quit
         else run_files(file_parse, from_parse, import_parse,
-                       ran.io, tl, config)
+                       interface_parse, ran.io, tl, config)
       end;
 }
 
@@ -28,6 +29,7 @@ function run_file
 IOVal<Integer> ::=
    file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
    import_parse::Parser<ListOfCommands_c>
+   interface_parse::Parser<Interface_c>
    ioin::IOToken filename::String config::Decorated CmdArgs
 {
   local fileExists::IOVal<Boolean> = isFileT(filename, ioin);
@@ -38,7 +40,8 @@ IOVal<Integer> ::=
   local fileAST::(QName, ListOfCommands) = fileParsed.parseTree.ast;
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
                                         [ThmElement])>> =
-      processModuleDecl(fileAST.1, import_parse, fileContents.io);
+      processModuleDecl(fileAST.1, import_parse, interface_parse,
+                        fileContents.io);
   --
   local started::IOVal<Either<String ProcessHandle>> =
       startAbella(processed.io, config);

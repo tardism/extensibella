@@ -5,12 +5,13 @@ grammar extensibella:main;
 function compile_files
 IOVal<Integer> ::=
    file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
-   import_parse::Parser<ListOfCommands_c> ioin::IOToken
+   import_parse::Parser<ListOfCommands_c>
+   interface_parse::Parser<Interface_c> ioin::IOToken
    filenames::[String] config::Decorated CmdArgs
 {
   local compiled::IOVal<Integer> =
-      compile_file(file_parse, from_parse, import_parse, ioin,
-                   head(filenames));
+      compile_file(file_parse, from_parse, import_parse,
+                   interface_parse, ioin, head(filenames));
   return
      case filenames of
      | [] -> ioval(ioin, 0)
@@ -18,7 +19,7 @@ IOVal<Integer> ::=
        if compiled.iovalue != 0
        then compiled --error in compiling that file, so quit
        else compile_files(file_parse, from_parse, import_parse,
-                          compiled.io, tl, config)
+                          interface_parse, compiled.io, tl, config)
      end;
 }
 
@@ -27,15 +28,16 @@ IOVal<Integer> ::=
 function check_compile_files
 IOVal<Integer> ::=
    file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
-   import_parse::Parser<ListOfCommands_c> ioin::IOToken
+   import_parse::Parser<ListOfCommands_c>
+   interface_parse::Parser<Interface_c> ioin::IOToken
    filenames::[String] config::Decorated CmdArgs
 {
   local ran::IOVal<Integer> =
-      run_file(file_parse, from_parse, import_parse, ioin,
-               head(filenames), config);
+      run_file(file_parse, from_parse, import_parse,
+               interface_parse, ioin, head(filenames), config);
   local compiled::IOVal<Integer> =
-      compile_file(file_parse, from_parse, import_parse, ran.io,
-                   head(filenames));
+      compile_file(file_parse, from_parse, import_parse,
+                   interface_parse, ran.io, head(filenames));
   return
       case filenames of
       | [] -> ioval(ioin, 0)
@@ -45,7 +47,7 @@ IOVal<Integer> ::=
         else if compiled.iovalue != 0
         then compiled --error in compiling that file, so quit
         else check_compile_files(file_parse, from_parse, import_parse,
-                                 compiled.io, tl, config)
+                interface_parse, compiled.io, tl, config)
       end;
 }
 
@@ -55,6 +57,7 @@ function compile_file
 IOVal<Integer> ::=
    file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
    import_parse::Parser<ListOfCommands_c>
+   interface_parse::Parser<Interface_c>
    ioin::IOToken filename::String
 {
   local fileExists::IOVal<Boolean> = isFileT(filename, ioin);
@@ -65,7 +68,8 @@ IOVal<Integer> ::=
   local fileAST::(QName, ListOfCommands) = fileParsed.parseTree.ast;
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
                                         [ThmElement])>> =
-      processModuleDecl(fileAST.1, import_parse, fileContents.io);
+      processModuleDecl(fileAST.1, import_parse, interface_parse,
+                        fileContents.io);
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
   local proverState::ProverState = error("compile_file.proverState");
