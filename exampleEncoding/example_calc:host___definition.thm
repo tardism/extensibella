@@ -17,7 +17,7 @@ Type example_calc-$-host-$-root   example_calc-$-host-$-Expr -> example_calc-$-h
 
 %fixed relation
 Define $fix__example_calc-$-host-$-lookup :
-   list $char -> list (pair (list $char) integer) -> integer -> prop by
+   list $char -> list ($pair (list $char) integer) -> integer -> prop by
 $fix__example_calc-$-host-$-lookup X (($pair_c X V)::Rest) V;
 $fix__example_calc-$-host-$-lookup X (($pair_c Y YV)::Rest) XV :=
    (X = Y -> false) /\ $fix__example_calc-$-host-$-lookup X Rest XV.
@@ -27,7 +27,7 @@ $fix__example_calc-$-host-$-lookup X (($pair_c Y YV)::Rest) XV :=
 Define $ext__1__example_calc-$-host-$-valExists : list (list $char) -> example_calc-$-host-$-Expr -> bool -> prop,
        $ext__0__example_calc-$-host-$-rootValExists : example_calc-$-host-$-Root -> bool -> prop,
        %
-       $ext__1__example_calc-$-host-$-value : list (pair (list $char) integer) -> example_calc-$-host-$-Expr -> integer -> prop,
+       $ext__1__example_calc-$-host-$-value : list ($pair (list $char) integer) -> example_calc-$-host-$-Expr -> integer -> prop,
        $ext__0__example_calc-$-host-$-rootValue : example_calc-$-host-$-Root -> integer -> prop,
        %
        $ext__0__example_calc-$-host-$-isExpr : example_calc-$-host-$-Expr -> prop,
@@ -77,21 +77,21 @@ $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-plus E1 E2) I :=
    exists I1 I2,
       $ext__1__example_calc-$-host-$-value Env E1 I1 /\
       $ext__1__example_calc-$-host-$-value Env E2 I2 /\
-      plus I1 I2 I;
+      $plus_integer I1 I2 I;
 $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-minus E1 E2) I :=
    exists I1 I2,
       $ext__1__example_calc-$-host-$-value Env E1 I1 /\
       $ext__1__example_calc-$-host-$-value Env E2 I1 /\
-      minus I1 I2 I;
+      $minus_integer I1 I2 I;
 $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-mult E1 E2) I :=
    exists I1 I2,
       $ext__1__example_calc-$-host-$-value Env E1 I1 /\
       $ext__1__example_calc-$-host-$-value Env E2 I1 /\
-      mult I1 I2 I;
+      $multiply_integer I1 I2 I;
 $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-letBind S E1 E2) I :=
    exists I1,
       $ext__1__example_calc-$-host-$-value Env E1 I1 /\
-      $ext__1__example_calc-$-host-$-value (pair S I1::Env) E2 I;
+      $ext__1__example_calc-$-host-$-value ($pair_c S I1::Env) E2 I;
 $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-name S) I :=
    $fix__example_calc-$-host-$-lookup S Env I;
 $ext__0__example_calc-$-host-$-rootValue (example_calc-$-host-$-root E) I :=

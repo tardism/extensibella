@@ -97,8 +97,10 @@ IOVal<Integer> ::=
   local cleanCommands::[ProofCommand] =
       head(newProverState.duringCommands).2;
   local cleaned::IOVal<String> =
-      sendCmdsToAbella(map((.pp), cleanCommands), abella,
-                       back_from_abella.io, config);
+      if shouldClean
+      then sendCmdsToAbella(map((.pp), cleanCommands), abella,
+              back_from_abella.io, config)
+      else ioval(back_from_abella.io, "");
   local cleaned_display::FullDisplay =
       let p::ParseResult<FullDisplay_c> =
           from_parse(cleaned.iovalue, "<<output>>")

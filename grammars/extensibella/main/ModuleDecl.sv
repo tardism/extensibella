@@ -89,6 +89,7 @@ IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
      then error("Could not parse Abella output:\n\n" ++
                 back.iovalue ++ "\n\n" ++ parsedOutput.parseErrors)
      else if parsedOutput.parseTree.ast.isError
-     then error("Error passing module specifications to Abella")
+     then error("Error passing module specifications to Abella:\n" ++
+                parsedOutput.parseTree.ast.pp)
      else ioval(back.io, (comms.tys, comms.rels, comms.constrs));
 }
