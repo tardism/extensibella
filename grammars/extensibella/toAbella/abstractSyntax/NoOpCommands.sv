@@ -9,6 +9,7 @@ nonterminal NoOpCommand with
    toAbella<Maybe<NoOpCommand>>, --maybe because we might send nothing
    toAbellaMsgs,
    stateListIn, stateListOut,
+   isQuit,
    proverState;
 propagate proverState, toAbellaMsgs on NoOpCommand;
 
@@ -27,11 +28,14 @@ top::NoOpCommand ::= opt::String val::String
 
   top.stateListOut =
       (if abellaSetting then 1 else 0,
-       proverState(top.proverState.state, top.proverState.provingThms,
+       proverState(top.proverState.state,
                    if opt == "debug" then opt == "on"
                                      else top.proverState.debug,
                    top.proverState.knownTheorems,
-                   top.proverState.remainingObligations)
+                   top.proverState.remainingObligations,
+                   top.proverState.provingThms,
+                   top.proverState.duringCommands,
+                   top.proverState.afterCommands)
       )::top.stateListIn;
 
   top.toAbellaMsgs <-
@@ -57,6 +61,8 @@ top::NoOpCommand ::= opt::String val::String
            else [errorMsg("Argument to option 'search_depth' must " ++
                           "be integer; found '" ++ val ++ "'")]
       else [errorMsg("Unknown option '" ++ opt ++ "'")];
+
+  top.isQuit = false;
 }
 
 
@@ -81,6 +87,8 @@ top::NoOpCommand ::= theoremName::QName
       end;
 
   top.stateListOut = (1, top.proverState)::top.stateListIn;
+
+  top.isQuit = false;
 }
 
 
@@ -93,6 +101,8 @@ top::NoOpCommand ::=
 
   --this probably isn't needed
   top.stateListOut = top.stateListIn;
+
+  top.isQuit = true;
 }
 
 
@@ -113,6 +123,8 @@ top::NoOpCommand ::= n::Integer
       else [];
 
   top.stateListOut = drop(n, top.stateListIn);
+
+  top.isQuit = false;
 }
 
 
@@ -127,6 +139,8 @@ top::NoOpCommand ::=
 
   --shouldn't need this since this command isn't allowed
   top.stateListOut = top.stateListIn;
+
+  top.isQuit = false;
 }
 
 
@@ -140,4 +154,6 @@ top::NoOpCommand ::=
   --this doesn't really count as a command since it shouldn't be used
   --other than by Proof General
   top.stateListOut = top.stateListIn;
+
+  top.isQuit = false;
 }

@@ -4,7 +4,7 @@ grammar extensibella:fromAbella:abstractSyntax;
 
 attribute
    fromAbella<ProofState>,
-   inProof, hypList
+   hypList
 occurs on ProofState;
 
 aspect production proofInProgress
@@ -14,7 +14,6 @@ top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal
   top.fromAbella =
       proofInProgress(subgoalNum, currGoal.fromAbella, futureGoals);
 
-  top.inProof = true;
   top.hypList = currGoal.hypList;
 }
 
@@ -24,7 +23,6 @@ top::ProofState ::=
 {
   top.fromAbella = noProof();
 
-  top.inProof = false;
   top.hypList = [];
 }
 
@@ -34,7 +32,6 @@ top::ProofState ::=
 {
   top.fromAbella = proofCompleted();
 
-  top.inProof = false;
   top.hypList = [];
 }
 
@@ -44,7 +41,6 @@ top::ProofState ::=
 {
   top.fromAbella = proofAborted();
 
-  top.inProof = false;
   top.hypList = [];
 }
 

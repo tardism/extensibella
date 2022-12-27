@@ -189,11 +189,11 @@ concrete productions top::PureTopCommand_c
   { top.ast = anyTopCommand(closeCommand(al.ast)); }
 | 'Split' name::Id_t '.'
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), [])); }
-| 'Split' name::Id_t 'as' il::IdList_c '.'
+| 'Split' name::Id_t 'as' il::QnameList_c '.'
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), il.ast)); }
 | 'Split' name::Qname_t '.'
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), [])); }
-| 'Split' name::Qname_t 'as' il::IdList_c '.'
+| 'Split' name::Qname_t 'as' il::QnameList_c '.'
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), il.ast)); }
 --New for Silver
 | 'Extensible_Theorem' thms::TheoremStmts_c '.'
@@ -259,13 +259,14 @@ concrete productions top::ExtBody_c
                     \ ra::ExtBody ->
                       right(addLabelExtBody(toString(label.lexeme),
                                             ma, ra)))); }
+{-This is causing an ambiguity for parsing with Metaterm_c
 | m::Metaterm_c '->' rest::ExtBody_c
   { top.ast =
         bind(m.ast,
              \ ma::Metaterm ->
                bind(rest.ast,
                     \ ra::ExtBody ->
-                      right(addBasicExtBody(ma, ra)))); }
+                      right(addBasicExtBody(ma, ra)))); }-}
 
 
 concrete productions top::QnameList_c

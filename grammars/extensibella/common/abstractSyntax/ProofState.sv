@@ -1,7 +1,7 @@
 grammar extensibella:common:abstractSyntax;
 
 synthesized attribute hypList::[(String, Metaterm)];
-synthesized attribute currentSubgoal::[Integer];
+synthesized attribute currentSubgoal::SubgoalNum;
 
 nonterminal ProofState with
    pp,
@@ -14,16 +14,17 @@ propagate typeEnv, constructorEnv, relationEnv on ProofState;
 synthesized attribute inProof::Boolean;
 
 abstract production proofInProgress
-top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal futureGoals::[Subgoal]
+top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
+                    futureGoals::[Subgoal]
 {
   local subgoalString::String =
-        if !(length(subgoalNum) == 1 && head(subgoalNum) == 0) --subgoalNum != [0]
-        then "Subgoal " ++ subgoalNumToString(subgoalNum) ++ ":\n"
-        else "";
+      if subgoalNum != initialSubgoalNum
+      then "Subgoal " ++ subgoalNumToString(subgoalNum) ++ ":\n"
+      else "";
   local futureGoalsString::String =
-        foldr(\ a::Subgoal b::String -> a.pp ++ "\n\n" ++ b,
-              "", futureGoals);
-  top.pp = subgoalString ++ "\n" ++ currGoal.pp ++ "\n" ++ futureGoalsString;
+      implode("\n\n", map((.pp), futureGoals));
+  top.pp = subgoalString ++ "\n" ++ currGoal.pp ++ "\n" ++
+           futureGoalsString;
 
   top.hypList = currGoal.hypList;
 
@@ -80,32 +81,6 @@ top::ProofState ::=
   top.inProof = false;
 
   forwards to noProof();
-}
-
-
-{-
-  We handle extensible theorems by proving one theorem which is the
-  conjunction of the separate statements we want for the different
-  productions.
-
-  After that proof is finished, we want to split it into separate
-  theorems with names of the form "$<name>_x" where "x" is a number
-  1..n where n is the associated number for the current theorem in
-  numProds.  We also want to admit the original theorem under the
-  original name so it can be used in further proofs.
--}
-abstract production extensible_proofInProgress
-top::ProofState ::= currentProofState::ProofState
-                    originalTheorems::[(String, Metaterm)]
-                    numProds::[(String, Integer)]
-{
-  top.pp = forward.pp;
-  --We could use this production to figure out what to label with * in the actual proof state
-  --Have a translation attribute to label the things with * as needed
-
-  top.inProof = true;
-
-  forwards to currentProofState;
 }
 
 
@@ -197,8 +172,10 @@ top::Hypothesis ::= name::String body::Metaterm
 --A subgoal is a goal to proven in the future, after the current goal
 nonterminal Subgoal with pp;
 
+type SubgoalNum = [Integer];
+
 abstract production subgoal
-top::Subgoal ::= num::[Integer] goal::Metaterm
+top::Subgoal ::= num::SubgoalNum goal::Metaterm
 {
   top.pp = "Subgoal " ++ subgoalNumToString(num) ++ " is:\n " ++ goal.pp;
 }
@@ -220,8 +197,11 @@ top::Subgoal ::= num::Integer
 
 
 
+global initialSubgoalNum::SubgoalNum = [0];
+
+
 function subgoalNumToString
-String ::= subgoalNum::[Integer]
+String ::= subgoalNum::SubgoalNum
 {
   return case subgoalNum of
          | [] -> error("Subgoal numbers should not be empty")
@@ -235,7 +215,7 @@ String ::= subgoalNum::[Integer]
 --true if some position (from left) in s1 is less than corresponding
 --   in s2 or s1 runs out first
 function subgoalLess
-Boolean ::= s1::[Integer] s2::[Integer]
+Boolean ::= s1::SubgoalNum s2::SubgoalNum
 {
   return
      case s1, s2 of
@@ -254,7 +234,7 @@ Boolean ::= s1::[Integer] s2::[Integer]
 
 --Comparing (possibly empty) subgoals to see if a goal was completed
 function subgoalCompleted
-Boolean ::= oldSubgoal::[Integer] newSubgoal::[Integer]
+Boolean ::= oldSubgoal::SubgoalNum newSubgoal::SubgoalNum
 {
   --Catch a subgoal completing and going forward to another one
   local goalToNewGoal::Boolean =

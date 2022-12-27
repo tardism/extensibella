@@ -6,6 +6,7 @@ nonterminal AnyCommand with
    toAbella<[AnyCommand]>, toAbellaMsgs,
    stateListIn, stateListOut,
    newProofState,
+   isQuit,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           proverState, toAbellaMsgs on AnyCommand;
@@ -28,10 +29,14 @@ top::AnyCommand ::= c::TopCommand
   top.stateListOut =
       (length(c.toAbella),
        proverState(c.builtNewProofState,
-          c.provingTheorems,
           top.proverState.debug,
           top.proverState.knownTheorems,
-          top.proverState.remainingObligations))::top.stateListIn;
+          top.proverState.remainingObligations,
+          c.provingTheorems,
+          c.duringCommands,
+          c.afterCommands))::top.stateListIn;
+
+  top.isQuit = false;
 }
 
 
@@ -47,19 +52,15 @@ top::AnyCommand ::= c::ProofCommand
       then []
       else [errorMsg("Cannot use proof commands when not in proof")];
 
-  local currentState::ProverState = head(top.stateListIn).snd;
-  currentState.replaceState = newProofState;
-  local newProofState::ProofState =
-      case top.proverState.state of
-      | extensible_proofInProgress(_, oMt, numProds) ->
-        extensible_proofInProgress(top.newProofState, oMt, numProds)
-      | _ -> top.newProofState
-      end;
+  local currentState::ProverState = top.proverState;
+  currentState.replaceState = top.newProofState;
   top.stateListOut =
       if c.isUndo
       then c.stateListOut
       else (length(c.toAbella),
             currentState.replacedState)::top.stateListIn;
+
+  top.isQuit = false;
 }
 
 
@@ -76,6 +77,8 @@ top::AnyCommand ::= c::NoOpCommand
 
   c.stateListIn = top.stateListIn;
   top.stateListOut = c.stateListOut;
+
+  top.isQuit = c.isQuit;
 }
 
 
@@ -91,4 +94,6 @@ top::AnyCommand ::= parseErrors::String
 
   --sholudn't be needed since this is an error
   top.stateListOut = top.stateListIn;
+
+  top.isQuit = false;
 }

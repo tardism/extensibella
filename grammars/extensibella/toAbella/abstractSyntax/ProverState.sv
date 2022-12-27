@@ -11,6 +11,7 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal ProverState with
    state, provingThms, debug, knownTheorems, remainingObligations,
+   duringCommands, afterCommands,
    replaceState, replacedState<ProverState>;
 
 
@@ -22,31 +23,56 @@ synthesized attribute debug::Boolean;
 --(qualified name, statement)
 synthesized attribute knownTheorems::[(QName, Metaterm)];
 
---
+--Things we will need to do in the proof based on imports that we
+--haven't done yet
 synthesized attribute remainingObligations::[ThmElement];
 
 
 abstract production proverState
 top::ProverState ::=
-   state::ProofState provingThms::[(QName, Metaterm)]
+   --current state of Abella
+   state::ProofState
+   --whether to print out the Abella commands/returns to the user
    debugMode::Boolean
-   thms::[(QName, Metaterm)]
+   --theorems we have proven or imported and can use
+   --should include the standard library's theorems
+   knownThms::[(QName, Metaterm)]
+   --things we will need to do in the proof based on imports
    obligations::[ThmElement]
+   --theorems we are currently in the process of proving
+   --should be added to knownThms when we finish the proof
+   provingThms::[(QName, Metaterm)]
+   --things to do when the subgoal reaches that number
+   --should clear it once it has been sent to Abella
+   --Note:  If there are commands for e.g. Subgoal 2 that are expected
+   --  to move us to Subgoal 2.1, there should not be a separate entry
+   --  for Subgoal 2.1.  Any sequential commands should be rolled into
+   --  a single entry because we don't want to need to check this
+   --  repeatedly.
+   duringCommands::[(SubgoalNum, [ProofCommand])]
+   --things to do when the proof is done
+   --I think this is only ever one Split, but make it general in case
+   afterCommands::[AnyCommand]
 {
   top.state = state;
   top.provingThms = provingThms;
   top.debug = debugMode;
 
-  top.knownTheorems = thms;
+  top.knownTheorems = knownThms;
 
   top.remainingObligations = obligations;
+
+  top.duringCommands = duringCommands;
+  top.afterCommands = afterCommands;
 
   --Determine whether we need to remove an extensible mutual group
   --   from the beginning because we just proved it
   local newObligations::[ThmElement] =
         case obligations of
         | extensibleMutualTheoremGroup(thms)::rest ->
-          if map(fst, provingThms) == map(fst, thms)
+          --everything imported here is in the things we just proved
+          if all(map(\ t::QName -> contains(t, map(fst, provingThms)),
+                     map(fst, thms)))
           then rest
           else obligations
         | _ -> obligations
@@ -54,14 +80,22 @@ top::ProverState ::=
   top.replacedState =
       case top.replaceState of
       | proofCompleted() ->
-        proverState(top.replaceState, [], debugMode,
-                    provingThms ++ thms, newObligations)
+        proverState(top.replaceState, debugMode,
+                    provingThms ++ knownThms, newObligations,
+                    [], [], afterCommands)
       | proofAborted() ->
-        proverState(top.replaceState, [], debugMode, thms,
-                    obligations)
+        proverState(top.replaceState, debugMode, knownThms,
+                    obligations, [], [], [])
+      | _ when !null(duringCommands) &&
+               subgoalLess(head(duringCommands).1,
+                           top.replaceState.currentSubgoal) ->
+        proverState(top.replaceState, debugMode, knownThms,
+                    obligations, provingThms, tail(duringCommands),
+                    afterCommands)
       | _ ->
-        proverState(top.replaceState, provingThms, debugMode,
-                    thms, obligations)
+        proverState(top.replaceState, debugMode, knownThms,
+                    obligations, provingThms, duringCommands,
+                    afterCommands)
       end;
 }
 
@@ -199,7 +233,7 @@ ProverState ::= obligations::[ThmElement]
       (toQName("extensibella:stdLib:is_list_append"), trueMetaterm()),
       (toQName("extensibella:stdLib:symmetry"), trueMetaterm())
      ];
-  return proverState(noProof(), [], false, knownThms, obligations);
+  return proverState(noProof(), false, knownThms, obligations, [], [], []);
 }
 
 

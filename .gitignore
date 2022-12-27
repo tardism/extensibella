@@ -3,6 +3,7 @@
 *.jar
 build.xml
 *.copperdump.html
+Parser_*_parse.html
 
 # Compiled Abella files
 *.thc

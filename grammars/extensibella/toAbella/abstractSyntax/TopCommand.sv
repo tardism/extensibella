@@ -9,10 +9,17 @@ nonterminal TopCommand with
    pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
    newProofState, builtNewProofState,
-   provingTheorems,
+   provingTheorems, duringCommands, afterCommands,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           toAbellaMsgs on TopCommand;
+
+aspect default production
+top::TopCommand ::=
+{
+  top.duringCommands = [];
+  top.afterCommands = [];
+}
 
 
 abstract production theoremDeclaration
@@ -132,12 +139,12 @@ top::TopCommand ::= m::Metaterm
 
 
 abstract production splitTheorem
-top::TopCommand ::= theoremName::QName newTheoremNames::[String]
+top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
 {
   local namesString::String =
      if null(newTheoremNames)
      then ""
-     else " as " ++ implode(", ", newTheoremNames);
+     else " as " ++ implode(", ", map((.pp), newTheoremNames));
   top.pp = "Split " ++ theoremName.pp ++ namesString ++ ".\n";
 
   top.toAbella =
@@ -148,17 +155,18 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[String]
   production splitThm::[Metaterm] = splitMetaterm(head(thm).2);
   --Need to add module to given names and make up names for rest
   local qedNewNames::[QName] =
-     map(addQNameBase(top.currentModule, _),
+     map(\ q::QName ->
+           if q.isQualified
+           then q
+           else addQNameBase(top.currentModule, q.shortName),
          newTheoremNames);
   local moreNames::[QName] =
-        foldr(\ m::Metaterm rest::[QName] ->
-                addQNameBase(top.currentModule,
-                             theoremName.shortName ++ "_" ++
-                             toString(genInt()))::rest,
-              [], drop(length(newTheoremNames), splitThm));
-  --this isn't quite right because it outputs colons
-  production expandedNames::[String] =
-     map((.pp), qedNewNames ++ moreNames);
+      foldr(\ m::Metaterm rest::[QName] ->
+              addQNameBase(top.currentModule,
+                           theoremName.shortName ++ "_" ++
+                           toString(genInt()))::rest,
+            [], drop(length(newTheoremNames), splitThm));
+  production expandedNames::[QName] = qedNewNames ++ moreNames;
 
   top.builtNewProofState = top.newProofState;
 

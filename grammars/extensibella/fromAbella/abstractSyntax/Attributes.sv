@@ -6,10 +6,6 @@ imports extensibella:common:abstractSyntax;
 synthesized attribute fromAbella<a>::a;
 
 
---Whether a proof state is during a proof or not
-synthesized attribute inProof::Boolean;
-
-
 --The proof state of a full display
 synthesized attribute proof::ProofState;
 

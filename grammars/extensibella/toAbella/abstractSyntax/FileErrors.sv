@@ -7,10 +7,10 @@ grammar extensibella:toAbella:abstractSyntax;
 -}
 monoid attribute fileErrors::[Message] with [], ++;
 propagate fileErrors on
-   {-ListOfCommands,-} AnyCommand, TopCommand, ProofCommand, NoOpCommand;
+   ListOfCommands, AnyCommand, TopCommand, ProofCommand, NoOpCommand;
 
 attribute fileErrors occurs on
-   {-ListOfCommands,-} AnyCommand, TopCommand, ProofCommand, NoOpCommand;
+   ListOfCommands, AnyCommand, TopCommand, ProofCommand, NoOpCommand;
 
 
 aspect production abortCommand

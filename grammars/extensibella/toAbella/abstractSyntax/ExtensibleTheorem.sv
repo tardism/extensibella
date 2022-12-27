@@ -11,6 +11,10 @@ top::TopCommand ::= depth::Integer thms::ExtThms
   top.builtNewProofState = error("extensibleTheoremDeclaration.builtNewProofState");
 
   top.provingTheorems = thms.provingTheorems;
+
+  top.duringCommands = error("extensibleTheoremDeclaration.duringCommands");
+
+  top.afterCommands = error("extensibleTheoremDeclaration.afterCommands");
 }
 
 
@@ -25,6 +29,10 @@ top::TopCommand ::= names::[QName]
   top.builtNewProofState = error("proveObligations.builtNewProofState");
 
   top.provingTheorems = error("proveObligations.provingTheorems");
+
+  top.duringCommands = error("proveObligations.duringCommands");
+
+  top.afterCommands = error("proveObligations.afterCommands");
 }
 
 

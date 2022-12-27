@@ -11,9 +11,15 @@ monoid attribute toAbellaMsgs::[Message] with [], ++;
 
 
 synthesized attribute isUndo::Boolean;
+synthesized attribute isQuit::Boolean;
 
 
+--theorems currently being proven
 synthesized attribute provingTheorems::[(QName, Metaterm)];
+--commands that need to happen at points in the proof of an ext thm
+synthesized attribute duringCommands::[(SubgoalNum, [ProofCommand])];
+--commands that need to happen after a proof completes
+synthesized attribute afterCommands::[AnyCommand];
 
 
 --information about the current state of the prover
@@ -28,6 +34,6 @@ synthesized attribute stateListOut::[(Integer, ProverState)];
 --proof state produced after a command
 inherited attribute newProofState::ProofState;
 
---proof state modified to reflect the particular situtaion for
+--proof state modified to reflect the particular situation for
 --extensible theorems
 synthesized attribute builtNewProofState::ProofState;
