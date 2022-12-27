@@ -2,7 +2,7 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 nonterminal AnyCommand with
-   pp,
+   pp, abella_pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
    stateListIn, stateListOut,
    newProofState,
@@ -16,6 +16,7 @@ abstract production anyTopCommand
 top::AnyCommand ::= c::TopCommand
 {
   top.pp = c.pp;
+  top.abella_pp = c.abella_pp;
 
   top.toAbella = c.toAbella;
 
@@ -44,6 +45,7 @@ abstract production anyProofCommand
 top::AnyCommand ::= c::ProofCommand
 {
   top.pp = c.pp;
+  top.abella_pp = c.abella_pp;
 
   top.toAbella = map(anyProofCommand, c.toAbella);
 
@@ -68,6 +70,7 @@ abstract production anyNoOpCommand
 top::AnyCommand ::= c::NoOpCommand
 {
   top.pp = c.pp;
+  top.abella_pp = c.abella_pp;
 
   top.toAbella =
       case c.toAbella of
@@ -87,6 +90,8 @@ abstract production anyParseFailure
 top::AnyCommand ::= parseErrors::String
 {
   top.pp = parseErrors;
+  top.abella_pp =
+      error("anyParseFailure.abella_pp should not be accessed");
 
   top.toAbella = [];
 

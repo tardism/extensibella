@@ -1,8 +1,13 @@
 grammar extensibella:common:abstractSyntax;
 
 
+--pp using colons for joining
 synthesized attribute pp::String;
-flowtype pp {} on Subgoal,  Hypothesis, Context, CurrentGoal, ProofState, Metaterm, Term, TermList;
+flowtype pp {} on Subgoal,  Hypothesis, Context, CurrentGoal,
+                  ProofState, Metaterm, Term, TermList;
+--pp using name_sep for joining
+synthesized attribute abella_pp::String;
+flowtype abella_pp {} on Metaterm, Term, TermList;
 
 --This tells us whether something is essentially atomic for pretty printing purposes
 synthesized attribute isAtomic::Boolean;

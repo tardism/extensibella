@@ -501,14 +501,14 @@ concrete productions top::ApplyArg_c
 
 
 
-closed nonterminal ExistsBinds_c with ast<[Pair<String Term>]>;
+closed nonterminal ExistsBinds_c with ast<Withs>;
 
 
 concrete productions top::ExistsBinds_c
 |
-  { top.ast = []; }
+  { top.ast = endWiths(); }
 | w::Withs_c
-  { top.ast = w.ast.toList; }
+  { top.ast = w.ast; }
 
 
 

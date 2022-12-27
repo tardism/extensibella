@@ -7,6 +7,7 @@ top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
 {
   top.pp = (if args.len == 0 then "" else args.pp ++ " ") ++
            "|{" ++ ty.pp ++ "}- " ++ orig.pp ++ " ~~> " ++ trans.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -26,6 +27,7 @@ abstract production plusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " + " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -33,6 +35,7 @@ abstract production minusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " - " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -40,6 +43,7 @@ abstract production multiplyMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " * " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -47,6 +51,7 @@ abstract production divideMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " / " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -54,6 +59,7 @@ abstract production modulusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " mod " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -61,6 +67,7 @@ abstract production negateMetaterm
 top::Metaterm ::= t::Term result::Term
 {
   top.pp = "- " ++ t.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -68,6 +75,7 @@ abstract production lessMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = t1.pp ++ " < " ++ t2.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -75,6 +83,7 @@ abstract production lessEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = t1.pp ++ " <= " ++ t2.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -82,6 +91,7 @@ abstract production greaterMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = t1.pp ++ " > " ++ t2.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -89,6 +99,7 @@ abstract production greaterEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = t1.pp ++ " >= " ++ t2.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -96,6 +107,7 @@ abstract production appendMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " ++ " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -103,6 +115,7 @@ abstract production orBoolMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " || " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -110,6 +123,7 @@ abstract production andBoolMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp = t1.pp ++ " && " ++ t2.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -117,6 +131,7 @@ abstract production notBoolMetaterm
 top::Metaterm ::= t::Term result::Term
 {
   top.pp = "! " ++ t.pp ++ " = " ++ result.pp;
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -129,6 +144,7 @@ abstract production intTerm
 top::Term ::= i::Integer
 {
   top.pp = toString(i);
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -136,6 +152,7 @@ abstract production stringTerm
 top::Term ::= contents::String
 {
   top.pp = "\"" ++ contents ++ "\"";
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -143,6 +160,7 @@ abstract production trueTerm
 top::Term ::=
 {
   top.pp = "true";
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -150,6 +168,7 @@ abstract production falseTerm
 top::Term ::=
 {
   top.pp = "false";
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -157,6 +176,7 @@ abstract production listTerm
 top::Term ::= contents::ListContents
 {
   top.pp = "[" ++ contents.pp ++ "]";
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -164,6 +184,7 @@ abstract production pairTerm
 top::Term ::= contents::PairContents
 {
   top.pp = "(" ++ contents.pp ++ ")";
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 
@@ -171,6 +192,7 @@ abstract production charTerm
 top::Term ::= char::String
 {
   top.pp = "\"" ++ char ++ "\"";
+  top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 }
 

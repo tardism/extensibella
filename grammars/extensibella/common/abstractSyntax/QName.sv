@@ -1,7 +1,7 @@
 grammar extensibella:common:abstractSyntax;
 
 nonterminal QName with
-   pp,
+   pp, abella_pp,
    typeEnv, constructorEnv, relationEnv,
    shortName, moduleName, isQualified,
    boundNames,
@@ -40,6 +40,7 @@ abstract production baseName
 top::QName ::= name::String
 {
   top.pp = name;
+  top.abella_pp = name;
 
   top.isQualified = false;
   top.shortName = name;
@@ -102,6 +103,7 @@ abstract production addModule
 top::QName ::= name::String rest::QName
 {
   top.pp = name ++ ":" ++ rest.pp;
+  top.abella_pp = name ++ name_sep ++ rest.abella_pp;
 
   top.isQualified = true;
   top.shortName = rest.shortName;

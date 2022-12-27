@@ -4,8 +4,8 @@ grammar extensibella:toAbella:abstractSyntax;
 --things you can do inside of proofs
 
 nonterminal ProofCommand with
-   --pp should end with two spaces
-   pp,
+   --pp/abella_pp should end with two spaces
+   pp, abella_pp,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<[ProofCommand]>, toAbellaMsgs,
    isUndo,
@@ -27,6 +27,8 @@ top::ProofCommand ::= h::HHint nl::[Integer]
 {
   top.pp = h.pp ++ "induction on " ++
            implode(" ", map(toString, nl)) ++ ".  ";
+  top.abella_pp = h.pp ++ "induction on " ++
+                  implode(" ", map(toString, nl)) ++ ".  ";
 
   top.toAbella = [top];
 
@@ -39,6 +41,7 @@ abstract production coinductionTactic
 top::ProofCommand ::= h::HHint
 {
   top.pp = h.pp ++ "coinduction.  ";
+  top.abella_pp = h.pp ++ "coinduction.  ";
 
   top.toAbella = [top];
 }
@@ -52,6 +55,7 @@ top::ProofCommand ::= names::[String]
      then ""
      else " " ++ implode(" ", names);
   top.pp = "intros" ++ namesString ++ ".  ";
+  top.abella_pp = "intros" ++ namesString ++ ".  ";
 
   top.toAbella = [top];
 }
@@ -72,6 +76,13 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
      else " with " ++ withs.pp;
   top.pp = h.pp ++ "apply " ++ depthString ++ theorem.pp ++
            args.pp ++ withsString ++ ".  ";
+  local withsString_abella::String =
+     if withs.len == 0
+     then ""
+     else " with " ++ withs.abella_pp;
+  top.abella_pp =
+      h.pp ++ "apply " ++ depthString ++ theorem.abella_pp ++
+      args.abella_pp ++ withsString_abella ++ ".  ";
 
   top.toAbella =
       [applyTactic(h, depth, theorem.toAbella,
@@ -94,6 +105,12 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
      else " with " ++ withs.pp;
   top.pp = "backchain " ++ depthString ++ theorem.pp ++
            withsString ++ ".  ";
+  local withsString_abella::String =
+     if withs.len == 0
+     then ""
+     else " with " ++ withs.abella_pp;
+  top.abella_pp = "backchain " ++ depthString ++ theorem.abella_pp ++
+                  withsString_abella ++ ".  ";
 
   top.toAbella =
       [backchainTactic(depth, theorem.toAbella, withs.toAbella)];
@@ -103,7 +120,10 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
 abstract production caseTactic
 top::ProofCommand ::= h::HHint hyp::String keep::Boolean
 {
-  top.pp = h.pp ++ "case " ++ hyp ++ if keep then " (keep).  " else ".  ";
+  top.pp = h.pp ++ "case " ++ hyp ++ if keep then " (keep).  "
+                                             else ".  ";
+  top.abella_pp = h.pp ++ "case " ++ hyp ++ if keep then " (keep).  "
+                                                    else ".  ";
 
   top.toAbella = [top];
 
@@ -121,6 +141,8 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
      | nothing() -> ""
      end;
   top.pp = h.pp ++ "assert " ++ depthString ++ m.pp ++ ".  ";
+  top.abella_pp = h.pp ++ "assert " ++ depthString ++
+                  m.abella_pp ++ ".  ";
 
   top.toAbella = [assertTactic(h, depth, m.toAbella)];
 }
@@ -129,15 +151,9 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
 abstract production existsTactic
 top::ProofCommand ::= ew::[EWitness]
 {
-  local buildWitnesses::(String ::= [EWitness]) =
-   \ ew::[EWitness] ->
-     case ew of
-     | [] ->
-       error("Cannot have an empty list in existsTactic")
-     | [e] -> e.pp
-     | e::rest -> e.pp ++ ", " ++ buildWitnesses(rest)
-     end;
-  top.pp = "exists " ++ buildWitnesses(ew) ++ ".  ";
+  top.pp = "exists " ++ implode(", ", map((.pp), ew)) ++ ".  ";
+  top.abella_pp = "exists " ++
+                  implode(", ", map((.abella_pp), ew)) ++ ".  ";
 
   top.toAbella = [existsTactic(map((.toAbella), ew))];
 }
@@ -146,15 +162,9 @@ top::ProofCommand ::= ew::[EWitness]
 abstract production witnessTactic
 top::ProofCommand ::= ew::[EWitness]
 {
-  local buildWitnesses::(String ::= [EWitness]) =
-   \ ew::[EWitness] ->
-     case ew of
-     | [] ->
-       error("Cannot have an empty list in witnessTactic")
-     | [e] -> e.pp
-     | e::rest -> e.pp ++ ", " ++ buildWitnesses(rest)
-     end;
-  top.pp = "witness " ++ buildWitnesses(ew) ++ ".  ";
+  top.pp = "witness " ++ implode(", ", map((.pp), ew)) ++ ".  ";
+  top.abella_pp = "witness " ++
+                  implode(", ", map((.abella_pp), ew)) ++ ".  ";
 
   top.toAbella = [witnessTactic(map((.toAbella), ew))];
 }
@@ -164,6 +174,7 @@ abstract production searchTactic
 top::ProofCommand ::=
 {
   top.pp = "search.  ";
+  top.abella_pp = "search.  ";
 
   top.toAbella = [top];
 }
@@ -173,6 +184,7 @@ abstract production searchDepthTactic
 top::ProofCommand ::= n::Integer
 {
   top.pp = "search " ++ toString(n) ++ ".  ";
+  top.abella_pp = "search " ++ toString(n) ++ ".  ";
 
   top.toAbella = [top];
 }
@@ -182,6 +194,7 @@ abstract production searchWitnessTactic
 top::ProofCommand ::= sw::SearchWitness
 {
   top.pp = "search with " ++ sw.pp ++ ".  ";
+  top.abella_pp = "search with " ++ sw.abella_pp ++ ".  ";
 
   top.toAbella = [searchWitnessTactic(sw.toAbella)];
 }
@@ -191,6 +204,7 @@ abstract production asyncTactic
 top::ProofCommand ::=
 {
   top.pp = "async.  ";
+  top.abella_pp = "async.  ";
 
   top.toAbella = [top];
 }
@@ -200,6 +214,7 @@ abstract production splitTactic
 top::ProofCommand ::=
 {
   top.pp = "split.  ";
+  top.abella_pp = "split.  ";
 
   top.toAbella = [top];
 }
@@ -209,6 +224,7 @@ abstract production splitStarTactic
 top::ProofCommand ::=
 {
   top.pp = "split*.  ";
+  top.abella_pp = "split*.  ";
 
   top.toAbella = [top];
 }
@@ -218,6 +234,7 @@ abstract production leftTactic
 top::ProofCommand ::=
 {
   top.pp = "left.  ";
+  top.abella_pp = "left.  ";
 
   top.toAbella = [top];
 }
@@ -227,6 +244,7 @@ abstract production rightTactic
 top::ProofCommand ::=
 {
   top.pp = "right.  ";
+  top.abella_pp = "right.  ";
 
   top.toAbella = [top];
 }
@@ -236,6 +254,7 @@ abstract production skipTactic
 top::ProofCommand ::=
 {
   top.pp = "skip.  ";
+  top.abella_pp = "skip.  ";
 
   top.toAbella = [top];
 }
@@ -245,6 +264,7 @@ abstract production abortCommand
 top::ProofCommand ::=
 {
   top.pp = "abort.  ";
+  top.abella_pp = "abort.  ";
 
   top.toAbella = [top];
 }
@@ -254,6 +274,7 @@ abstract production undoCommand
 top::ProofCommand ::=
 {
   top.pp = "undo.  ";
+  top.abella_pp = "undo.  ";
 
   top.toAbella = repeat(undoCommand(), head(top.stateListIn).1);
 
@@ -268,6 +289,7 @@ top::ProofCommand ::= removes::[String] hasArrow::Boolean
 {
   top.pp = "clear " ++ (if hasArrow then "-> " else "") ++
            implode(" ", removes) ++ ".  ";
+  top.abella_pp = top.pp;
 
   top.toAbella = [top];
 }
@@ -277,6 +299,7 @@ abstract production renameTactic
 top::ProofCommand ::= original::String renamed::String
 {
   top.pp = "rename " ++ original ++ " to " ++ renamed ++ ".  ";
+  top.abella_pp = "rename " ++ original ++ " to " ++ renamed ++ ".  ";
 
   top.toAbella = [top];
 }
@@ -286,7 +309,9 @@ top::ProofCommand ::= original::String renamed::String
 abstract production abbrevCommand
 top::ProofCommand ::= hyps::[String] newText::String
 {
-  top.pp = "abbrev " ++ implode(" ", hyps) ++ " \"" ++ newText ++ "\".  ";
+  top.pp = "abbrev " ++ implode(" ", hyps) ++
+           " \"" ++ newText ++ "\".  ";
+  top.abella_pp = top.pp;
 
   top.toAbella = error("Cannot abbreviate");
 }
@@ -296,6 +321,7 @@ abstract production unabbrevCommand
 top::ProofCommand ::= hyps::[String]
 {
   top.pp = "unabbrev " ++ implode(" ", hyps) ++ "\".  ";
+  top.abella_pp = top.pp;
 
   top.toAbella = error("Cannot abbreviate");
 }
@@ -307,6 +333,7 @@ top::ProofCommand ::= names::[String] hyp::Maybe<String>
   local hypString::String = case hyp of | just(h) -> " " ++ h | nothing() -> "" end;
   top.pp = "permute " ++ foldr1(\a::String b::String -> a ++ " " ++ b, names) ++
            hypString ++ ".  ";
+  top.abella_pp = top.pp;
 
   top.toAbella = [top];
 }
@@ -315,7 +342,9 @@ top::ProofCommand ::= names::[String] hyp::Maybe<String>
 abstract production unfoldStepsTactic
 top::ProofCommand ::= steps::Integer all::Boolean
 {
-  top.pp = "unfold " ++ toString(steps) ++ if all then "(all).  " else ".  ";
+  top.pp = "unfold " ++ toString(steps) ++ if all then "(all).  "
+                                                  else ".  ";
+  top.abella_pp = top.pp;
 
   top.toAbella = [top];
 }
@@ -325,6 +354,8 @@ abstract production unfoldIdentifierTactic
 top::ProofCommand ::= id::QName all::Boolean
 {
   top.pp = "unfold " ++ id.pp ++ if all then "(all).  " else ".  ";
+  top.abella_pp = "unfold " ++ id.abella_pp ++ if all then "(all).  "
+                                                      else ".  ";
 
   top.toAbella = [unfoldIdentifierTactic(id.fullRel.name, all)];
 
@@ -336,6 +367,7 @@ abstract production unfoldTactic
 top::ProofCommand ::= all::Boolean
 {
   top.pp = "unfold " ++ if all then "(all).  " else ".  ";
+  top.abella_pp = top.pp;
 
   top.toAbella = [top];
 }
@@ -345,7 +377,7 @@ top::ProofCommand ::= all::Boolean
 
 
 nonterminal Clearable with
-   pp,
+   pp, abella_pp,
    toAbella<Clearable>, toAbellaMsgs,
    typeEnv, constructorEnv, relationEnv, proverState;
 propagate toAbellaMsgs, proverState,
@@ -360,6 +392,12 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
      then ""
      else "[" ++ instantiation.pp ++ "]";
   top.pp = (if star then "*" else "") ++ hyp.pp ++ instString;
+  local instString_abella::String =
+     if instantiation.abella_pp == ""
+     then ""
+     else "[" ++ instantiation.abella_pp ++ "]";
+  top.abella_pp = (if star then "*" else "") ++ hyp.abella_pp ++
+                  instString_abella;
 
   production hypFound::Boolean =
      foldr(\ p::(String, Metaterm) found::Boolean ->
@@ -391,7 +429,7 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 
 
 nonterminal ApplyArgs with
-   pp,
+   pp, abella_pp,
    toList<ApplyArg>, len,
    toAbella<ApplyArgs>, toAbellaMsgs,
    typeEnv, constructorEnv, relationEnv, proverState;
@@ -402,6 +440,7 @@ abstract production endApplyArgs
 top::ApplyArgs ::=
 {
   top.pp = "";
+  top.abella_pp = "";
 
   top.toList = [];
   top.len = 0;
@@ -414,6 +453,8 @@ abstract production addApplyArgs
 top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
 {
   top.pp = a.pp ++ if rest.pp == "" then "" else " " ++ rest.pp;
+  top.abella_pp = a.abella_pp ++
+           if rest.abella_pp == "" then "" else " " ++ rest.abella_pp;
 
   top.toList = a::rest.toList;
   top.len = 1 + rest.len;
@@ -427,7 +468,7 @@ top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
 
 
 nonterminal ApplyArg with
-   pp,
+   pp, abella_pp,
    toAbella<ApplyArg>, toAbellaMsgs,
    typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
@@ -441,6 +482,11 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
      then ""
      else "[" ++ instantiation.pp ++ "]";
   top.pp = hyp ++ instString;
+  local instString_abella::String =
+     if instantiation.abella_pp == ""
+     then ""
+     else "[" ++ instantiation.abella_pp ++ "]";
+  top.abella_pp = hyp ++ instString;
 
   top.toAbella = hypApplyArg(hyp, instantiation.toAbella);
 }
@@ -453,6 +499,11 @@ top::ApplyArg ::= name::String instantiation::TypeList
      then ""
      else "[" ++ instantiation.pp ++ "]";
   top.pp = "*" ++ name ++ instString;
+  local instString_abella::String =
+     if instantiation.abella_pp == ""
+     then ""
+     else "[" ++ instantiation.abella_pp ++ "]";
+  top.abella_pp = "*" ++ name ++ instString_abella;
 
   top.toAbella = starApplyArg(name, instantiation.toAbella);
 }
@@ -462,7 +513,7 @@ top::ApplyArg ::= name::String instantiation::TypeList
 
 
 nonterminal Withs with
-   pp,
+   pp, abella_pp,
    toList<(String, Term)>, len,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState,
    toAbella<Withs>, toAbellaMsgs;
@@ -473,6 +524,7 @@ abstract production endWiths
 top::Withs ::=
 {
   top.pp = "";
+  top.abella_pp = "";
 
   top.toList = [];
   top.len = 0;
@@ -486,6 +538,8 @@ top::Withs ::= name::String term::Term rest::Withs
 {
   top.pp = name ++ " = " ++ term.pp ++
            if rest.len == 0 then "" else ", " ++ rest.pp;
+  top.abella_pp = name ++ " = " ++ term.abella_pp ++
+                 if rest.len == 0 then "" else ", " ++ rest.abella_pp;
 
   top.toList = (name, term)::rest.toList;
   top.len = 1 + rest.len;
@@ -498,7 +552,7 @@ top::Withs ::= name::String term::Term rest::Withs
 
 
 nonterminal EWitness with
-   pp,
+   pp, abella_pp,
    typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<EWitness>, toAbellaMsgs;
 propagate typeEnv, constructorEnv, relationEnv,
@@ -508,6 +562,7 @@ abstract production termEWitness
 top::EWitness ::= t::Term
 {
   top.pp = t.pp;
+  top.abella_pp = t.abella_pp;
 
   top.toAbella = termEWitness(t.toAbella);
 }
@@ -517,6 +572,7 @@ abstract production nameEWitness
 top::EWitness ::= name::String t::Term
 {
   top.pp = name ++ " = " ++ t.pp;
+  top.abella_pp = name ++ " = " ++ t.abella_pp;
 
   top.toAbella = nameEWitness(name, t.toAbella);
 }

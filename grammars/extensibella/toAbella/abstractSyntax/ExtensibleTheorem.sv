@@ -5,6 +5,8 @@ abstract production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms
 {
   top.pp = "Extensible_Theorem " ++ thms.pp ++ ".\n";
+  top.abella_pp =
+      error("extensibleTheoremDeclaration.abella_pp should not be accessed");
 
   top.toAbella = error("extensibleTheoremDeclaration.toAbella");
 
@@ -22,6 +24,8 @@ abstract production proveObligations
 top::TopCommand ::= names::[QName]
 {
   top.pp = "Prove " ++ implode(", ", map((.pp), names)) ++ ".\n";
+  top.abella_pp =
+      error("proveObligations.abella_pp should not be accessed");
 
   top.toAbella = error("proveObligations.toAbella");
   --Need to check these are the right things to prove

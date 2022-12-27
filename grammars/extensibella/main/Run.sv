@@ -56,7 +56,7 @@ IOVal<Integer> ::=
       if debug && config.showUser
       then printT(if speak_to_abella
                   then "Command sent:  " ++
-                       implode("\n", (map((.pp), any_a.toAbella))) ++
+                       implode("\n", (map((.abella_pp), any_a.toAbella))) ++
                           "\n\n~~~~~~~~~~~~~~~~~~~~ End Sent ~~~~~~~~~~~~~~~~~~~~\n\n"
                   else "Nothing to send to Abella",
                   ioin)
@@ -70,7 +70,7 @@ IOVal<Integer> ::=
   ----------------------------
   local back_from_abella::IOVal<String> =
       if speak_to_abella
-      then sendCmdsToAbella(map((.pp), any_a.toAbella), abella,
+      then sendCmdsToAbella(map((.abella_pp), any_a.toAbella), abella,
                             debug_output, config)
       else ioval(debug_output, "");
   --Translate output
@@ -98,7 +98,7 @@ IOVal<Integer> ::=
       head(newProverState.duringCommands).2;
   local cleaned::IOVal<String> =
       if shouldClean
-      then sendCmdsToAbella(map((.pp), cleanCommands), abella,
+      then sendCmdsToAbella(map((.abella_pp), cleanCommands), abella,
               back_from_abella.io, config)
       else ioval(back_from_abella.io, "");
   local cleaned_display::FullDisplay =
@@ -115,7 +115,7 @@ IOVal<Integer> ::=
       end;
   local outputCleanCommands::IOToken =
       if shouldClean && debug && config.showUser
-      then printT(implode("", map((.pp), cleanCommands)) ++
+      then printT(implode("", map((.abella_pp), cleanCommands)) ++
                   "\n\n~~~~~~~~~~~~~~~~~~~~ End Clean ~~~~~~~~~~~~~~~~~~~~\n\n",
                   cleaned.io)
       else cleaned.io;
@@ -136,7 +136,7 @@ IOVal<Integer> ::=
       | _ -> false
       end;
   local aftered::IOVal<String> =
-      sendCmdsToAbella(map((.pp), afterCommands), abella,
+      sendCmdsToAbella(map((.abella_pp), afterCommands), abella,
                        outputCleanCommands, config);
   local aftered_display::FullDisplay =
       let p::ParseResult<FullDisplay_c> =
@@ -152,7 +152,7 @@ IOVal<Integer> ::=
       end;
   local outputAfterCommands::IOToken =
       if runAfterCommands && debug && config.showUser
-      then printT(implode("", map((.pp), afterCommands)) ++
+      then printT(implode("", map((.abella_pp), afterCommands)) ++
                   "\n\n~~~~~~~~~~~~~~~~~~~~ End After ~~~~~~~~~~~~~~~~~~~~\n\n",
                   aftered.io)
       else aftered.io;
@@ -173,11 +173,11 @@ IOVal<Integer> ::=
       else handleIncomingThms(head(newStateList).2);
   local incomingCommands::[AnyCommand] = handleIncoming.1;
   local incominged::IOVal<String> = --assume this worked and don't parse
-      sendCmdsToAbella(map((.pp), incomingCommands), abella,
+      sendCmdsToAbella(map((.abella_pp), incomingCommands), abella,
                        outputAfterCommands, config);
   local outputIncomingThms::IOToken =
       if debug && config.showUser
-      then printT(implode("\n", map((.pp), incomingCommands)) ++
+      then printT(implode("\n", map((.abella_pp), incomingCommands)) ++
                   "\n\n~~~~~~~~~~~~~~~~~~~~ End Incoming ~~~~~~~~~~~~~~~~~~~~\n\n",
                   incominged.io)
       else incominged.io;
@@ -211,7 +211,8 @@ IOVal<Integer> ::=
   --We can't use our normal send/read function because that looks for
   --a new prompt at the end, and we won't have any
   local exit_out_to_abella::IOToken =
-      sendToProcess(abella, implode("\n", map((.pp), any_a.toAbella)),
+      sendToProcess(abella,
+                    implode("\n", map((.abella_pp), any_a.toAbella)),
                     debug_output);
   local wait_on_exit::IOToken =
       waitForProcess(abella, exit_out_to_abella);

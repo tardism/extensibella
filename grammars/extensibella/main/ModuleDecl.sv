@@ -77,12 +77,13 @@ IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
      from_parse::Parser<FullDisplay_c>
      abella::ProcessHandle ioin::IOToken config::Decorated CmdArgs
 {
-  local sendToAbella::[String] = 
-        map((.pp), comms.commandList) ++ map((.pp), defs);
+  local sendToAbella::[String] =
+      map((.abella_pp), comms.commandList) ++
+      map((.abella_pp), flatMap((.encode), defs));
   local back::IOVal<String> =
-        sendCmdsToAbella(sendToAbella, abella, ioin, config);
+      sendCmdsToAbella(sendToAbella, abella, ioin, config);
   local parsedOutput::ParseResult<FullDisplay_c> =
-        from_parse(back.iovalue, "<<output>>");
+      from_parse(back.iovalue, "<<output>>");
 
   return
      if !parsedOutput.parseSuccess

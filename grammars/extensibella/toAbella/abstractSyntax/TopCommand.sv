@@ -6,7 +6,7 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal TopCommand with
    --pp should always end with a newline
-   pp,
+   pp, abella_pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
    newProofState, builtNewProofState,
    provingTheorems, duringCommands, afterCommands,
@@ -40,6 +40,8 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
      else " [" ++ buildParams(params) ++ "] ";
   top.pp = "Theorem " ++ name.pp ++ " " ++ paramsString ++
            " : " ++ body.pp ++ ".\n";
+  top.abella_pp = "Theorem " ++ name.abella_pp ++ " " ++
+                  paramsString ++ " : " ++ body.abella_pp ++ ".\n";
 
   production fullName::QName =
       if name.isQualified
@@ -74,6 +76,14 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
      else implode(", ", map(\ p::(QName, Type) ->
                               p.1.pp ++ " : " ++ p.2.pp, preds));
   top.pp = "Define " ++ predsString ++ " by " ++ defs.pp ++ ".";
+  local predsString_abella::String =
+     if null(preds)
+     then error("Definition should not be empty; definitionDeclaration")
+     else implode(", ",
+             map(\ p::(QName, Type) ->
+                   p.1.abella_pp ++ " : " ++ p.2.abella_pp, preds));
+  top.abella_pp = "Define " ++ predsString_abella ++ " by " ++
+                  defs.abella_pp ++ ".";
 
   top.toAbella = error("definitionDeclaration.toAbella");
 
@@ -104,6 +114,14 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
      else implode(", ", map(\ p::(QName, Type) ->
                               p.1.pp ++ " : " ++ p.2.pp, preds));
   top.pp = "CoDefine " ++ predsString ++ " by " ++ defs.pp ++ ".";
+  local predsString_abella::String =
+     if null(preds)
+     then error("CoDefinition should not be empty; codefinitionDeclaration")
+     else implode(", ",
+             map(\ p::(QName, Type) ->
+                   p.1.abella_pp ++ " : " ++ p.2.abella_pp, preds));
+  top.abella_pp = "CoDefine " ++ predsString_abella ++ " by " ++
+                  defs.abella_pp ++ ".";
 
   top.toAbella = error("codefinitionDeclaration.toAbella");
 
@@ -129,6 +147,7 @@ abstract production queryCommand
 top::TopCommand ::= m::Metaterm
 {
   top.pp = "Query " ++ m.pp ++ ".\n";
+  top.abella_pp = "Query " ++ m.abella_pp ++ ".\n";
 
   top.toAbella = [anyTopCommand(queryCommand(m.toAbella))];
 
@@ -146,6 +165,13 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
      then ""
      else " as " ++ implode(", ", map((.pp), newTheoremNames));
   top.pp = "Split " ++ theoremName.pp ++ namesString ++ ".\n";
+  local namesString_abella::String =
+      if null(newTheoremNames)
+      then ""
+      else " as " ++
+           implode(", ", map((.abella_pp), newTheoremNames));
+  top.abella_pp = "Split " ++ theoremName.abella_pp ++
+                  namesString_abella ++ ".\n";
 
   top.toAbella =
       [anyTopCommand(splitTheorem(head(thm).1, expandedNames))];
@@ -178,6 +204,7 @@ abstract production closeCommand
 top::TopCommand ::= tys::TypeList
 {
   top.pp = "Close " ++ tys.pp ++ ".\n";
+  top.abella_pp = "Close " ++ tys.abella_pp ++ ".\n";
 
   top.toAbella = error("closeCommand.toAbella");
 
@@ -194,7 +221,13 @@ top::TopCommand ::= names::[QName] k::Kind
      if null(names)
      then ""
      else " " ++ implode(", ", map((.pp), names));
-  top.pp = "Kind " ++ namesString ++ "   " ++ k.pp ++ ".\n";
+  top.pp = "Kind" ++ namesString ++ "   " ++ k.pp ++ ".\n";
+  local namesString_abella::String =
+     if null(names)
+     then ""
+     else " " ++ implode(", ", map((.abella_pp), names));
+  top.abella_pp = "Kind" ++ namesString_abella ++ "   " ++
+                  k.pp ++ ".\n";
 
   top.toAbella = [anyTopCommand(kindDeclaration(newNames, k))];
   local newNames::[QName] =
@@ -242,6 +275,12 @@ top::TopCommand ::= names::[QName] ty::Type
      then ""
      else implode(", ", map((.pp), names));
   top.pp = "Type " ++ namesString ++ "   " ++ ty.pp ++ ".\n";
+  local namesString_abella::String =
+     if null(names)
+     then ""
+     else implode(", ", map((.abella_pp), names));
+  top.abella_pp = "Type " ++ namesString_abella ++ "   " ++
+                  ty.abella_pp ++ ".\n";
 
   top.toAbella =
       [anyTopCommand(typeDeclaration(newNames, ty.toAbella))];

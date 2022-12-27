@@ -12,7 +12,7 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 nonterminal ListOfCommands with
-   pp,
+   pp, abella_pp,
    commandList, tys, rels, constrs;
 
 synthesized attribute commandList::[AnyCommand];
@@ -26,6 +26,7 @@ abstract production emptyListOfCommands
 top::ListOfCommands ::=
 {
   top.pp = "";
+  top.abella_pp = "";
 
   top.commandList = [];
 }
@@ -35,6 +36,7 @@ abstract production addListOfCommands
 top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 {
   top.pp = a.pp ++ rest.pp;
+  top.abella_pp = a.abella_pp ++ rest.abella_pp;
 
   top.commandList = a::rest.commandList;
 }
@@ -44,6 +46,7 @@ abstract production joinListOfCommands
 top::ListOfCommands ::= l1::ListOfCommands l2::ListOfCommands
 {
   top.pp = l1.pp ++ l2.pp;
+  top.abella_pp = l1.abella_pp ++ l2.abella_pp;
 
   top.commandList = l1.commandList ++ l2.commandList;
 }

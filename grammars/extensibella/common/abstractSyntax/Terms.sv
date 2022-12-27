@@ -2,7 +2,7 @@ grammar extensibella:common:abstractSyntax;
 
 
 nonterminal Metaterm with
-   pp, isAtomic,
+   pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
 propagate typeEnv, constructorEnv, relationEnv on Metaterm;
@@ -12,6 +12,7 @@ abstract production relationMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
   top.pp = rel.pp ++ " " ++ args.pp ++ r.pp;
+  top.abella_pp = rel.abella_pp ++ " " ++ args.abella_pp ++ r.pp;
   top.isAtomic = true;
 }
 
@@ -19,6 +20,7 @@ abstract production trueMetaterm
 top::Metaterm ::=
 {
   top.pp = "true";
+  top.abella_pp = "true";
   top.isAtomic = true;
 }
 
@@ -26,6 +28,7 @@ abstract production falseMetaterm
 top::Metaterm ::=
 {
   top.pp = "false";
+  top.abella_pp = "false";
   top.isAtomic = true;
 }
 
@@ -33,6 +36,7 @@ abstract production eqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = t1.pp ++ " = " ++ t2.pp;
+  top.abella_pp = t1.abella_pp ++ " = " ++ t2.abella_pp;
   top.isAtomic = true;
 }
 
@@ -42,6 +46,10 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
   top.pp = (if t1.isAtomic
             then t1.pp
             else "(" ++ t1.pp ++ ")") ++ " -> " ++ t2.pp;
+  top.abella_pp =
+      (if t1.isAtomic
+       then t1.abella_pp
+       else "(" ++ t1.abella_pp ++ ")") ++ " -> " ++ t2.abella_pp;
   top.isAtomic = false;
 }
 
@@ -55,6 +63,13 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
     ( if t2.isAtomic
       then t2.pp
       else "(" ++ t2.pp ++ ")" );
+  top.abella_pp =
+    ( if t1.isAtomic
+      then t1.abella_pp
+      else "(" ++ t1.abella_pp ++ ")" ) ++ " \\/ " ++
+    ( if t2.isAtomic
+      then t2.abella_pp
+      else "(" ++ t2.abella_pp ++ ")" );
   top.isAtomic = false;
 }
 
@@ -68,6 +83,13 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
     ( if t2.isAtomic
       then t2.pp
       else "(" ++ t2.pp ++ ")" );
+  top.abella_pp =
+    ( if t1.isAtomic
+      then t1.abella_pp
+      else "(" ++ t1.abella_pp ++ ")" ) ++ " /\\ " ++
+    ( if t2.isAtomic
+      then t2.abella_pp
+      else "(" ++ t2.abella_pp ++ ")" );
   top.isAtomic = false;
 }
 
@@ -75,6 +97,8 @@ abstract production bindingMetaterm
 top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
 {
   top.pp = b.pp ++ " " ++ nameBindings.pp ++ ", " ++ body.pp;
+  top.abella_pp = b.pp ++ " " ++ nameBindings.abella_pp ++ ", " ++
+                  body.abella_pp;
   top.isAtomic = false;
 
   --Want ALL names which occur, even if only in bindings
@@ -88,7 +112,7 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
 
 
 nonterminal Bindings with
-   pp,
+   pp, abella_pp,
    toList<(String, MaybeType)>, len,
    usedNames,
    typeEnv;
@@ -100,6 +124,10 @@ top::Bindings ::= name::String mty::MaybeType
   top.pp =
       if mty.isJust
       then "(" ++ name ++ " : " ++ mty.pp ++ ")"
+      else name;
+  top.abella_pp =
+      if mty.isJust
+      then "(" ++ name ++ " : " ++ mty.abella_pp ++ ")"
       else name;
 
   top.toList = [(name, mty)];
@@ -116,6 +144,10 @@ top::Bindings ::= name::String mty::MaybeType rest::Bindings
       ( if mty.isJust
         then "(" ++ name ++ " : " ++ mty.pp ++ ")"
         else name ) ++ " " ++ rest.pp;
+  top.abella_pp =
+      ( if mty.isJust
+        then "(" ++ name ++ " : " ++ mty.abella_pp ++ ")"
+        else name ) ++ " " ++ rest.abella_pp;
 
   top.toList = (name, mty)::rest.toList;
   top.len = 1 + rest.len;
@@ -185,7 +217,7 @@ top::Binder::=
 
 
 nonterminal Term with
-   pp, isAtomic,
+   pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
 propagate typeEnv, constructorEnv, relationEnv on Term;
@@ -202,6 +234,10 @@ top::Term ::= f::Term args::TermList
     ( if f.isAtomic
       then f.pp
       else "(" ++ f.pp ++ ")" ) ++ " " ++ args.pp;
+  top.abella_pp =
+    ( if f.isAtomic
+      then f.abella_pp
+      else "(" ++ f.abella_pp ++ ")" ) ++ " " ++ args.abella_pp;
   top.isAtomic = false;
 }
 
@@ -212,6 +248,10 @@ top::Term ::= name::QName mty::MaybeType
       if mty.isJust
       then "(" ++ name.pp ++ " : " ++ mty.pp ++ ")"
       else name.pp;
+  top.abella_pp =
+      if mty.isJust
+      then "(" ++ name.abella_pp ++ " : " ++ mty.abella_pp ++ ")"
+      else name.abella_pp;
   top.isAtomic = true;
 
   top.usedNames := if name.isQualified then [] else [name.shortName];
@@ -227,6 +267,13 @@ top::Term ::= t1::Term t2::Term
     ( if t2.isAtomic
       then t2.pp
       else "(" ++ t2.pp ++ ")" );
+  top.abella_pp =
+    ( if t1.isAtomic
+      then t1.abella_pp
+      else "(" ++ t1.abella_pp ++ ")" ) ++ "::" ++
+    ( if t2.isAtomic
+      then t2.abella_pp
+      else "(" ++ t2.abella_pp ++ ")" );
   top.isAtomic = false;
 }
 
@@ -234,6 +281,7 @@ abstract production nilTerm
 top::Term ::=
 {
   top.pp = "nil";
+  top.abella_pp = "nil";
   top.isAtomic = true;
 }
 
@@ -244,6 +292,10 @@ top::Term ::= mty::MaybeType
       if mty.isJust
       then "(_ : " ++ mty.pp ++ ")"
       else "_";
+  top.abella_pp =
+      if mty.isJust
+      then "(_ : " ++ mty.abella_pp ++ ")"
+      else "_";
 
   top.isAtomic = true;
 }
@@ -252,7 +304,7 @@ top::Term ::= mty::MaybeType
 
 
 nonterminal TermList with
-   pp, toList<Term>, len,
+   pp, abella_pp, toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    usedNames;
 propagate typeEnv, constructorEnv, relationEnv on TermList;
@@ -261,6 +313,8 @@ abstract production singleTermList
 top::TermList ::= t::Term
 {
   top.pp = if t.isAtomic then t.pp else "(" ++ t.pp ++ ")";
+  top.abella_pp = if t.isAtomic then t.abella_pp
+                                else "(" ++ t.abella_pp ++ ")";
 
   top.toList = [t];
   top.len = 1;
@@ -270,6 +324,9 @@ abstract production consTermList
 top::TermList ::= t::Term rest::TermList
 {
   top.pp = (if t.isAtomic then t.pp else "(" ++ t.pp ++ ")") ++ " " ++ rest.pp;
+  top.abella_pp = (if t.isAtomic then t.abella_pp
+                                 else "(" ++ t.abella_pp ++ ")") ++
+                  " " ++ rest.abella_pp;
 
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
@@ -279,6 +336,7 @@ abstract production emptyTermList
 top::TermList ::=
 {
   top.pp = "";
+  top.abella_pp = "";
 
   top.toList = [];
   top.len = 0;

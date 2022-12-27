@@ -1,7 +1,5 @@
 grammar extensibella:toAbella:abstractSyntax;
 
---import extensibella:thmInterfaceFile:abstractSyntax;
-
 {-
   We store the pieces of the state of the theorem prover with this
   nonterminal.  It makes it a bit easier to handle changing the form

@@ -5,7 +5,7 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal NoOpCommand with
    --pp should always end with a newline
-   pp,
+   pp, abella_pp,
    toAbella<Maybe<NoOpCommand>>, --maybe because we might send nothing
    toAbellaMsgs,
    stateListIn, stateListOut,
@@ -20,6 +20,7 @@ abstract production setCommand
 top::NoOpCommand ::= opt::String val::String
 {
   top.pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
+  top.abella_pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
 
   local abellaSetting::Boolean = opt == "debug";
   top.toAbella =
@@ -70,6 +71,7 @@ abstract production showCommand
 top::NoOpCommand ::= theoremName::QName
 {
   top.pp = "Show " ++ theoremName.pp ++ ".\n";
+  top.abella_pp = "Show " ++ theoremName.abella_pp ++ ".\n";
 
   local possibleThms::[(QName, Metaterm)] =
      findTheorem(theoremName, top.proverState);
@@ -96,6 +98,7 @@ abstract production quitCommand
 top::NoOpCommand ::=
 {
   top.pp = "Quit.\n";
+  top.abella_pp = "Quit.\n";
 
   top.toAbella = just(top);
 
@@ -111,6 +114,7 @@ abstract production backCommand
 top::NoOpCommand ::= n::Integer
 {
   top.pp = implode(" ", repeat("#back.", n)) ++ "\n";
+  top.abella_pp = top.pp;
 
   local trans_n::Integer =
       foldr(\ p::(Integer, ProverState) rest::Integer -> p.1 + rest,
@@ -132,6 +136,7 @@ abstract production resetCommand
 top::NoOpCommand ::=
 {
   top.pp = "#reset.\n";
+  top.abella_pp = "#reset.\n";
 
   top.toAbella = just(top);
 
@@ -148,6 +153,8 @@ abstract production showCurrentCommand
 top::NoOpCommand ::=
 {
   top.pp = "Show $$current.\n";
+  top.abella_pp =
+      error("showCurrentCommand.abella_pp should not be accessed");
 
   top.toAbella = nothing();
 

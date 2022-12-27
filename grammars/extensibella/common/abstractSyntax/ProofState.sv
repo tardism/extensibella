@@ -21,10 +21,8 @@ top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
       if subgoalNum != initialSubgoalNum
       then "Subgoal " ++ subgoalNumToString(subgoalNum) ++ ":\n"
       else "";
-  local futureGoalsString::String =
-      implode("\n\n", map((.pp), futureGoals));
   top.pp = subgoalString ++ "\n" ++ currGoal.pp ++ "\n" ++
-           futureGoalsString;
+           implode("\n\n", map((.pp), futureGoals));
 
   top.hypList = currGoal.hypList;
 

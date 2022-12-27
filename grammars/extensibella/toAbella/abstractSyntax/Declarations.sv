@@ -96,7 +96,7 @@ top::MaybeType ::= ty::Type
 
 
 nonterminal Defs with
-   pp,
+   pp, abella_pp,
    toAbella<Defs>, toAbellaMsgs,
    typeEnv, constructorEnv, relationEnv;
 
@@ -104,6 +104,7 @@ abstract production singleDefs
 top::Defs ::= d::Def
 {
   top.pp = d.pp;
+  top.abella_pp = d.abella_pp;
 }
 
 
@@ -111,6 +112,7 @@ abstract production consDefs
 top::Defs ::= d::Def rest::Defs
 {
   top.pp = d.pp ++ "; " ++ rest.pp;
+  top.abella_pp = d.abella_pp ++ "; " ++ rest.abella_pp;
 }
 
 
@@ -118,7 +120,7 @@ top::Defs ::= d::Def rest::Defs
 
 
 nonterminal Def with
-   pp,
+   pp, abella_pp,
    toAbella<Def>, toAbellaMsgs,
    typeEnv, constructorEnv, relationEnv;
 
@@ -126,6 +128,7 @@ abstract production factDef
 top::Def ::= clausehead::Metaterm
 {
   top.pp = clausehead.pp;
+  top.abella_pp = clausehead.abella_pp;
 }
 
 
@@ -133,5 +136,6 @@ abstract production ruleDef
 top::Def ::= clausehead::Metaterm body::Metaterm
 {
   top.pp = clausehead.pp ++ " := " ++ body.pp;
+  top.abella_pp = clausehead.abella_pp ++ " := " ++ body.abella_pp;
 }
 
