@@ -18,12 +18,12 @@ IOVal<Maybe<String>> ::= filename::String dirs::[String] ioin::IOToken
 
 
 --Produce file names for interface files, definitions, outerface files
-synthesized attribute interfaceFileName::String occurs on QName;
-synthesized attribute outerfaceFileName::String occurs on QName;
-synthesized attribute definitionFileName::String occurs on QName;
+synthesized attribute interfaceFileName::String occurs on SubQName, QName;
+synthesized attribute outerfaceFileName::String occurs on SubQName, QName;
+synthesized attribute definitionFileName::String occurs on SubQName, QName;
 
 aspect production baseName
-top::QName ::= name::String
+top::SubQName ::= name::String
 {
   top.interfaceFileName = name ++ "___interface.xthmi";
   top.outerfaceFileName = name ++ "___outerface.xthmi";
@@ -32,9 +32,28 @@ top::QName ::= name::String
 
 
 aspect production addModule
-top::QName ::= name::String rest::QName
+top::SubQName ::= name::String rest::SubQName
 {
   top.interfaceFileName = name ++ ":" ++ rest.interfaceFileName;
   top.outerfaceFileName = name ++ ":" ++ rest.outerfaceFileName;
   top.definitionFileName = name ++ ":" ++ rest.definitionFileName;
+}
+
+
+
+aspect production prefixQName
+top::QName ::= prefixName::String rest::SubQName
+{
+  top.interfaceFileName = rest.interfaceFileName;
+  top.outerfaceFileName = rest.outerfaceFileName;
+  top.definitionFileName = rest.definitionFileName;
+}
+
+
+aspect production basicQName
+top::QName ::= rest::SubQName
+{
+  top.interfaceFileName = rest.interfaceFileName;
+  top.outerfaceFileName = rest.outerfaceFileName;
+  top.definitionFileName = rest.definitionFileName;
 }

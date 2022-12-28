@@ -32,8 +32,8 @@ global integerGreaterName::String = "$greater_integer";
 global integerGreaterEqName::String = "$greatereq_integer";
 
 global stringType::Type =
-       functorType(nameType(baseName("list")),
-                   nameType(baseName("$char")));
+       functorType(nameType(toQName("list")),
+                   nameType(toQName("$char")));
 
 global appendName::String = "$append";
 
@@ -53,9 +53,9 @@ QName ::= ty::QName
 {
   --need to add "$trans__" to first module portion
   return case ty of
-         | addModule(mod, rest) -> addModule("$trans__" ++ mod, rest)
-         | baseName(_) ->
-           error("Translating types must have module names")
+         | prefixQName(p, s) ->
+           error("Translating types cannot have prefixes")
+         | basicQName(s) -> prefixQName("trans", s)
          end;
 }
 

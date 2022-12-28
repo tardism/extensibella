@@ -19,7 +19,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
            head(drop(length(transArgs) - 2, transArgs)),
            head(drop(length(transArgs) - 1, transArgs)))
       --special relations with three arguments
-      | baseName(relName), [a, b, c] ->
+      | basicQName(baseName(relName)), [a, b, c] ->
         if relName == integerAdditionName
         then plusMetaterm(a, b, c)
         else if relName == integerSubtractionName
@@ -38,7 +38,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
         then andBoolMetaterm(a, b, c)
         else relationMetaterm(rel.relFromAbella, args.fromAbella, r)
       --special relations/terms with two arguments
-      | baseName(relName), [a, b] ->
+      | basicQName(baseName(relName)), [a, b] ->
         if relName == integerNegateName
         then negateMetaterm(a, b)
         else if relName == integerLessName
@@ -143,15 +143,15 @@ top::Term ::= f::Term args::TermList
   top.fromAbella =
       case f.fromAbella, args.fromAbella.toList of
       --pair
-      | nameTerm(baseName(relName), _), [a, b]
+      | nameTerm(basicQName(baseName(relName)), _), [a, b]
         when relName == pairConstructorName ->
         pairTerm(addPairContents(a, singlePairContents(b)))
       --integer constants
-      | nameTerm(baseName("$posInt"), _), [intTerm(i)] ->
+      | nameTerm(basicQName(baseName("$posInt")), _), [intTerm(i)] ->
         intTerm(i)
-      | nameTerm(baseName("$negSuccInt"), _), [intTerm(i)] ->
+      | nameTerm(basicQName(baseName("$negSuccInt")), _), [intTerm(i)] ->
         intTerm(-i - 1)
-      | nameTerm(baseName("$succ"), _), [intTerm(i)] ->
+      | nameTerm(basicQName(baseName("$succ")), _), [intTerm(i)] ->
         intTerm(i + 1)
       --nothing special
       | _, _ ->
@@ -166,12 +166,12 @@ top::Term ::= name::QName ty::MaybeType
   top.fromAbella =
       case name of
       --Booleans
-      | baseName("$btrue") -> trueTerm()
-      | baseName("$bfalse") -> falseTerm()
+      | basicQName(baseName("$btrue")) -> trueTerm()
+      | basicQName(baseName("$bfalse")) -> falseTerm()
       --Integers
-      | baseName("$zero") -> intTerm(0)
+      | basicQName(baseName("$zero")) -> intTerm(0)
       --Characters
-      | baseName(x) when startsWith("$_", x) ->
+      | basicQName(baseName(x)) when startsWith("$_", x) ->
         charTerm(charsToString(
                  [toInteger(substring(3, length(x), x))]))
       --Other

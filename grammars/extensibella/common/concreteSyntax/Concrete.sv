@@ -276,9 +276,9 @@ concrete productions top::PAId_c
 | '(' l::Qname_t ':' t::Ty_c ')'
   { top.ast = nameTerm(toQName(l.lexeme), justType(t.ast)); }
 | l::Id_t
-  { top.ast = nameTerm(baseName(l.lexeme), nothingType()); }
+  { top.ast = nameTerm(toQName(l.lexeme), nothingType()); }
 | '(' l::Id_t ':' t::Ty_c ')'
-  { top.ast = nameTerm(baseName(l.lexeme), justType(t.ast)); }
+  { top.ast = nameTerm(toQName(l.lexeme), justType(t.ast)); }
 | '_'
   { top.ast = underscoreTerm(nothingType()); }
 | '(' '_' ':' t::Ty_c ')'
@@ -295,7 +295,7 @@ closed nonterminal Ty_c with ast<Type>;
 
 concrete productions top::PTy_c
 | i::Id_t
-  { top.ast = nameType(baseName(i.lexeme)); }
+  { top.ast = nameType(toQName(i.lexeme)); }
 | i::Qname_t
   { top.ast = nameType(toQName(i.lexeme)); }
 | '(' t::Ty_c ')'
@@ -304,7 +304,7 @@ concrete productions top::PTy_c
 
 concrete productions top::ATy_c
 | i::Id_t
-  { top.ast = nameType(baseName(i.lexeme)); }
+  { top.ast = nameType(toQName(i.lexeme)); }
 | i::Qname_t
   { top.ast = nameType(toQName(i.lexeme)); }
 | a::ATy_c p::PTy_c

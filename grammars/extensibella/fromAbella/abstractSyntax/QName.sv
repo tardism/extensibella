@@ -1,70 +1,87 @@
 grammar extensibella:fromAbella:abstractSyntax;
 
 attribute
-   fromAbella<QName>, relFromAbella, tyFromAbella, constrFromAbella,
-   isTranslation, transFromAbella
-occurs on QName;
+   fromAbella<QName>, relFromAbella, tyFromAbella, constrFromAbella
+occurs on SubQName, QName;
 
-synthesized attribute isTranslation::Boolean;
+synthesized attribute isTranslation::Boolean occurs on QName;
 
-synthesized attribute transFromAbella::QName;
+synthesized attribute transFromAbella::QName occurs on QName;
 synthesized attribute relFromAbella::QName;
 synthesized attribute tyFromAbella::QName;
 synthesized attribute constrFromAbella::QName;
 
 aspect production baseName
-top::QName ::= name::String
+top::SubQName ::= name::String
 {
   --if we only have the short name, this is a var
-  top.fromAbella = baseName(name);
+  top.fromAbella = basicQName(baseName(name));
 
-  top.isTranslation = false;
-  top.transFromAbella = error("Not possible");
-
-  top.relFromAbella = top;
-  top.tyFromAbella = top;
-  top.constrFromAbella = top;
+  top.relFromAbella = basicQName(top);
+  top.tyFromAbella = basicQName(top);
+  top.constrFromAbella = basicQName(top);
 }
 
 
 aspect production addModule
-top::QName ::= name::String rest::QName
+top::SubQName ::= name::String rest::SubQName
 {
-  top.isTranslation = startsWith("$trans__", name);
-  top.transFromAbella =
-      case lookupEnv(baseName(rest.shortName), top.typeEnv) of
-      | [] -> error("Not possible")
-      | [_] -> baseName(rest.shortName) --no confusion
-      | l ->  --drop $trans__ from type name
-        addModule(substring(7, length(name), name), rest)
-      end;
-
   --fromAbella should only be for error messages from QName, so use
   --the full name
-  top.fromAbella = top;
+  top.fromAbella = basicQName(top);
 
   --check if there are other relations by the same short name
   --only translates 
   top.relFromAbella =
-      case lookupEnv(baseName(rest.shortName), top.relationEnv) of
+      case lookupEnv(basicQName(baseName(rest.shortName)), top.relationEnv) of
       | [] -> error("Not possible")
-      | [_] -> baseName(rest.shortName) --no confusion
-      | l -> top
+      | [_] -> basicQName(baseName(rest.shortName)) --no confusion
+      | l -> basicQName(top)
       end;
 
   --check if there are other types by the same short name
   top.tyFromAbella =
-      case lookupEnv(baseName(rest.shortName), top.typeEnv) of
+      case lookupEnv(basicQName(baseName(rest.shortName)), top.typeEnv) of
       | [] -> error("Not possible")
-      | [_] -> baseName(rest.shortName) --no confusion
-      | l -> top
+      | [_] -> basicQName(baseName(rest.shortName)) --no confusion
+      | l -> basicQName(top)
       end;
 
   --check if there are other constructors by the same short name
   top.constrFromAbella =
-      case lookupEnv(baseName(rest.shortName), top.constructorEnv) of
+      case lookupEnv(basicQName(baseName(rest.shortName)), top.constructorEnv) of
       | [] -> error("Not possible")
-      | [_] -> baseName(rest.shortName) --no confusion
-      | l -> top
+      | [_] -> basicQName(baseName(rest.shortName)) --no confusion
+      | l -> basicQName(top)
       end;
+}
+
+
+
+
+aspect production prefixQName
+top::QName ::= prefixName::String rest::SubQName
+{
+  top.isTranslation = prefixName == "trans";
+  top.transFromAbella = rest.tyFromAbella;
+
+  top.fromAbella = rest.fromAbella;
+
+  top.relFromAbella = rest.relFromAbella;
+  top.tyFromAbella = rest.tyFromAbella;
+  top.constrFromAbella = rest.constrFromAbella;
+}
+
+
+aspect production basicQName
+top::QName ::= rest::SubQName
+{
+  top.isTranslation = false;
+  top.transFromAbella = error("Not a translation");
+
+  top.fromAbella = rest.fromAbella;
+
+  top.relFromAbella = rest.relFromAbella;
+  top.tyFromAbella = rest.tyFromAbella;
+  top.constrFromAbella = rest.constrFromAbella;
 }

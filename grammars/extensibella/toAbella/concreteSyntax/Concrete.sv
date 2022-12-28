@@ -290,7 +290,7 @@ concrete productions top::CommonCommand_c
 | 'Set' opt::Id_t 'on' '.'
   { top.ast = setCommand(opt.lexeme, "on"); }
 | 'Show' name::Id_t '.'
-  { top.ast = showCommand(baseName(name.lexeme)); }
+  { top.ast = showCommand(toQName(name.lexeme)); }
 | 'Show' name::Qname_t '.'
   { top.ast = showCommand(toQName(name.lexeme)); }
 | 'Quit' '.'
@@ -550,9 +550,9 @@ concrete productions top::HHint_c
 
 concrete productions top::Clearable_c
 | h::Hyp_c m::MaybeInst_c
-  { top.ast = clearable(false, baseName(h.ast), m.ast); }
+  { top.ast = clearable(false, toQName(h.ast), m.ast); }
 | '*' h::Hyp_c m::MaybeInst_c
-  { top.ast = clearable(true, baseName(h.ast), m.ast); }
+  { top.ast = clearable(true, toQName(h.ast), m.ast); }
 | name::Qname_t m::MaybeInst_c
   { top.ast = clearable(false, toQName(name.lexeme), m.ast); }
 | '*' name::Qname_t m::MaybeInst_c
@@ -640,7 +640,7 @@ concrete productions top::ClauseSel_c
 | n::Number_t
   { top.ast = unfoldStepsTactic(toInteger(n.lexeme), _); }
 | si::Id_t
-  { top.ast = unfoldIdentifierTactic(baseName(si.lexeme), _); }
+  { top.ast = unfoldIdentifierTactic(toQName(si.lexeme), _); }
 
 
 concrete productions top::SolSel_c

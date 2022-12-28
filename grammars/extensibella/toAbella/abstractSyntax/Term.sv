@@ -91,7 +91,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerAdditionName),
+         toQName(integerAdditionName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -103,7 +103,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerSubtractionName),
+         toQName(integerSubtractionName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -115,7 +115,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerMultiplicationName),
+         toQName(integerMultiplicationName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -127,7 +127,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerDivisionName),
+         toQName(integerDivisionName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -139,7 +139,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerModulusName),
+         toQName(integerModulusName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -151,7 +151,7 @@ top::Metaterm ::= t::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerNegateName),
+         toQName(integerNegateName),
          buildApplicationArgs([t.toAbella, result.toAbella]),
          emptyRestriction());
 }
@@ -162,7 +162,7 @@ top::Metaterm ::= t1::Term t2::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerLessName),
+         toQName(integerLessName),
          buildApplicationArgs([t1.toAbella, t2.toAbella]),
          emptyRestriction());
 }
@@ -173,7 +173,7 @@ top::Metaterm ::= t1::Term t2::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerLessEqName),
+         toQName(integerLessEqName),
          buildApplicationArgs([t1.toAbella, t2.toAbella]),
          emptyRestriction());
 }
@@ -184,7 +184,7 @@ top::Metaterm ::= t1::Term t2::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerGreaterName),
+         toQName(integerGreaterName),
          buildApplicationArgs([t1.toAbella, t2.toAbella]),
          emptyRestriction());
 }
@@ -195,7 +195,7 @@ top::Metaterm ::= t1::Term t2::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(integerGreaterEqName),
+         toQName(integerGreaterEqName),
          buildApplicationArgs([t1.toAbella, t2.toAbella]),
          emptyRestriction());
 }
@@ -206,7 +206,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(appendName),
+         toQName(appendName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -218,7 +218,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(orName),
+         toQName(orName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -230,7 +230,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(andName),
+         toQName(andName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
          emptyRestriction());
@@ -242,7 +242,7 @@ top::Metaterm ::= t::Term result::Term
 {
   top.toAbella =
       relationMetaterm(
-         baseName(notName),
+         toQName(notName),
          buildApplicationArgs([t.toAbella, result.toAbella]),
          emptyRestriction());
 }
