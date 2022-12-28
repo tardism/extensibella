@@ -13,3 +13,6 @@ Parser_*_parse.html
 
 # Emacs autosave
 *~
+
+# Debugging output
+abella_dump.thm
