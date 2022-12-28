@@ -98,13 +98,17 @@ top::MaybeType ::= ty::Type
 nonterminal Defs with
    pp, abella_pp,
    toAbella<Defs>, toAbellaMsgs,
-   typeEnv, constructorEnv, relationEnv;
+   typeEnv, constructorEnv, relationEnv, currentModule, proverState;
+propagate typeEnv, constructorEnv, relationEnv, currentModule,
+          proverState, toAbellaMsgs on Defs;
 
 abstract production singleDefs
 top::Defs ::= d::Def
 {
   top.pp = d.pp;
   top.abella_pp = d.abella_pp;
+
+  top.toAbella = singleDefs(d.toAbella);
 }
 
 
@@ -113,6 +117,8 @@ top::Defs ::= d::Def rest::Defs
 {
   top.pp = d.pp ++ "; " ++ rest.pp;
   top.abella_pp = d.abella_pp ++ "; " ++ rest.abella_pp;
+
+  top.toAbella = consDefs(d.toAbella, rest.toAbella);
 }
 
 
@@ -122,13 +128,20 @@ top::Defs ::= d::Def rest::Defs
 nonterminal Def with
    pp, abella_pp,
    toAbella<Def>, toAbellaMsgs,
-   typeEnv, constructorEnv, relationEnv;
+   typeEnv, constructorEnv, relationEnv, proverState, currentModule;
+propagate typeEnv, constructorEnv, relationEnv, proverState,
+          currentModule, toAbellaMsgs on Def;
 
 abstract production factDef
 top::Def ::= clausehead::Metaterm
 {
   top.pp = clausehead.pp;
   top.abella_pp = clausehead.abella_pp;
+
+  clausehead.boundNames =
+      filter(\ s::String -> !isCapitalized(s), clausehead.usedNames);
+
+  top.toAbella = factDef(clausehead.toAbella);
 }
 
 
@@ -137,5 +150,12 @@ top::Def ::= clausehead::Metaterm body::Metaterm
 {
   top.pp = clausehead.pp ++ " := " ++ body.pp;
   top.abella_pp = clausehead.abella_pp ++ " := " ++ body.abella_pp;
+
+  local boundNames::[String] =
+      filter(\ s::String -> !isCapitalized(s), clausehead.usedNames);
+  clausehead.boundNames = boundNames;
+  body.boundNames = boundNames;
+
+  top.toAbella = ruleDef(clausehead.toAbella, body.toAbella);
 }
 

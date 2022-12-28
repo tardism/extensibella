@@ -7,9 +7,10 @@ nonterminal AnyCommand with
    stateListIn, stateListOut,
    newProofState,
    isQuit,
+   boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          proverState, toAbellaMsgs on AnyCommand;
+          proverState, boundNames, toAbellaMsgs on AnyCommand;
 
 
 abstract production anyTopCommand
@@ -54,6 +55,7 @@ top::AnyCommand ::= c::ProofCommand
       then []
       else [errorMsg("Cannot use proof commands when not in proof")];
 
+  c.stateListIn = top.stateListIn;
   local currentState::ProverState = top.proverState;
   currentState.replaceState = top.newProofState;
   top.stateListOut =

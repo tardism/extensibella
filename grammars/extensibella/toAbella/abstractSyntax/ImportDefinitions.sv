@@ -29,6 +29,10 @@ top::ListOfCommands ::=
   top.abella_pp = "";
 
   top.commandList = [];
+
+  top.tys = error("emptyListOfCommands.tys");
+  top.rels = error("emptyListOfCommands.rels");
+  top.constrs = error("emptyListOfCommands.constrs");
 }
 
 
@@ -39,6 +43,10 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   top.abella_pp = a.abella_pp ++ rest.abella_pp;
 
   top.commandList = a::rest.commandList;
+
+  top.tys = error("addListOfCommands.tys");
+  top.rels = error("addListOfCommands.rels");
+  top.constrs = error("addListOfCommands.constrs");
 }
 
 
@@ -49,4 +57,8 @@ top::ListOfCommands ::= l1::ListOfCommands l2::ListOfCommands
   top.abella_pp = l1.abella_pp ++ l2.abella_pp;
 
   top.commandList = l1.commandList ++ l2.commandList;
+
+  top.tys = error("joinListOfCommands.tys");
+  top.rels = error("joinListOfCommands.rels");
+  top.constrs = error("joinListOfCommands.constrs");
 }

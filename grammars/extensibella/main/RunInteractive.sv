@@ -46,6 +46,7 @@ IOVal<Integer> ::=
      else run_step(
              build_interactive_commands(cmd_parse),
              "<<user input>>", from_parse,
+             moduleName.iovalue,
              build_context.iovalue.1, build_context.iovalue.2,
              build_context.iovalue.3,
              [(-1, handleIncoming.2)],

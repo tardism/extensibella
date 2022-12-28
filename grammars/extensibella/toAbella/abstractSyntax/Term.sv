@@ -430,10 +430,10 @@ top::PairContents ::= t::Term rest::PairContents
 
 
 attribute
-   toAbella<TermList>,
+   toAbella<TermList>, toAbellaMsgs,
    proverState
 occurs on TermList;
-propagate proverState on TermList;
+propagate proverState, toAbellaMsgs on TermList;
 
 aspect production singleTermList
 top::TermList ::= t::Term

@@ -49,7 +49,7 @@ nonterminal ExtThms with
    provingTheorems,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
-          currentModule, proverState on ExtThms;
+          currentModule, proverState, toAbellaMsgs on ExtThms;
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -79,6 +79,8 @@ top::ExtThms ::= name::QName body::ExtBody onLabel::String
       | endExtThms() -> body.toAbella
       | _ -> andMetaterm(body.toAbella, rest.toAbella)
       end;
+
+  body.boundNames = [];
 
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem
@@ -121,9 +123,10 @@ nonterminal ExtBody with
    pp,
    toAbella<Metaterm>, toAbellaMsgs,
    premises, thm,
+   boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
-          currentModule, proverState on ExtBody;
+          currentModule, proverState, toAbellaMsgs on ExtBody;
 
 --Decorated metaterm so we have the information from the envs
 synthesized attribute premises::[(Maybe<String>, Decorated Metaterm)];
@@ -139,6 +142,8 @@ top::ExtBody ::= conc::Metaterm
 
   top.toAbella = conc.toAbella;
 
+  conc.boundNames = top.boundNames;
+
   top.premises = [];
 }
 
@@ -151,6 +156,9 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
   top.thm = impliesMetaterm(m, rest.thm);
 
   top.toAbella = impliesMetaterm(m.toAbella, rest.toAbella);
+
+  m.boundNames = top.boundNames;
+  rest.boundNames = top.boundNames;
 
   top.premises = (just(label), m)::rest.premises;
 }
@@ -165,6 +173,9 @@ top::ExtBody ::= m::Metaterm rest::ExtBody
   top.thm = impliesMetaterm(m, rest.thm);
 
   top.toAbella = impliesMetaterm(m.toAbella, rest.toAbella);
+
+  m.boundNames = top.boundNames;
+  rest.boundNames = top.boundNames;
 
   top.premises = (nothing(), m)::rest.premises;
 }

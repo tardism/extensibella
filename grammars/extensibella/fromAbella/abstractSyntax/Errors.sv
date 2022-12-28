@@ -13,6 +13,8 @@ top::WarningMessage ::= name::QName
 {
   top.pp = "Definition might not be stratified\n (\"" ++ name.pp ++
            "\" occurs to the left of ->)";
+
+  top.fromAbella = stratificationWarning(name);
 }
 
 
@@ -22,6 +24,8 @@ top::WarningMessage ::= name::QName
   top.pp = "Definition can be used to defeat stratification\n" ++
            " (higher-order argument \"" ++ name.pp ++
            "\" occurs to the left of ->)";
+
+  top.fromAbella = defeatStratification(name);
 }
 
 
@@ -29,6 +33,8 @@ abstract production overridingLemma
 top::WarningMessage ::= name::QName
 {
   top.pp = "overriding existing lemma named \"" ++ name.pp ++ "\"";
+
+  top.fromAbella = overridingLemma(name);
 }
 
 
@@ -37,7 +43,10 @@ top::WarningMessage ::= name::QName
 
 nonterminal ProcessingErrorMessage with
    pp,
-   fromAbella<ProcessingErrorMessage>;
+   fromAbella<ProcessingErrorMessage>,
+   typeEnv, relationEnv, constructorEnv;
+propagate typeEnv, relationEnv, constructorEnv
+   on ProcessingErrorMessage;
 
 abstract production undeterminedVarType
 top::ProcessingErrorMessage ::=
@@ -448,7 +457,9 @@ top::ProcessingErrorMessage ::=
 
 nonterminal TypingErrorMessage with
    pp,
-   fromAbella<TypingErrorMessage>;
+   fromAbella<TypingErrorMessage>,
+   typeEnv;
+propagate typeEnv on TypingErrorMessage;
 
 abstract production badTypeUsage
 top::TypingErrorMessage ::= hasType::Type usedType::Type

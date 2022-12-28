@@ -203,8 +203,9 @@ nonterminal ListContents with
    pp,
    toList<Term>,
    typeEnv, constructorEnv, relationEnv,
-   usedNames;
-propagate typeEnv, constructorEnv, relationEnv on ListContents;
+   boundNames, usedNames;
+propagate typeEnv, constructorEnv, relationEnv, boundNames
+   on ListContents;
 
 abstract production emptyListContents
 top::ListContents ::=
@@ -227,8 +228,9 @@ nonterminal PairContents with
    pp,
    toList<Term>,
    typeEnv, constructorEnv, relationEnv,
-   usedNames;
-propagate typeEnv, constructorEnv, relationEnv on PairContents;
+   boundNames, usedNames;
+propagate typeEnv, constructorEnv, relationEnv, boundNames
+   on PairContents;
 
 abstract production singlePairContents
 top::PairContents ::= t::Term

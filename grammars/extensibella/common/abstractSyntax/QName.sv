@@ -94,6 +94,7 @@ top::QName ::= name::String
                                 map((.name), possibleRels))))]
       end;
   top.relFound = length(possibleRels) == 1;
+  top.fullRel = head(possibleRels);
 
   propagate compareTo, isEqual;
 }
@@ -161,6 +162,7 @@ top::QName ::= name::String rest::QName
                                 map((.name), possibleRels))))]
       end;
   top.relFound = length(possibleRels) == 1;
+  top.fullRel = head(possibleRels);
 
   propagate compareTo, isEqual;
 }

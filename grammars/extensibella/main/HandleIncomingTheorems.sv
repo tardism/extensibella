@@ -10,10 +10,9 @@ function handleIncomingThms
   --
   local doThms::[ThmElement] =
         takeWhile((.is_nonextensible), obligations);
-  local translated::[AnyCommand] =
-        flatMap(\ t::ThmElement ->
-                  flatMap(\ a::AnyCommand -> a.toAbella, t.encode),
-                doThms);
+  --don't need toAbella here because it should already be valid
+  local commands::[AnyCommand] =
+        flatMap(\ t::ThmElement -> t.encode, doThms);
   --
   local outObligations::[ThmElement] =
         dropWhile((.is_nonextensible), obligations);
@@ -22,7 +21,7 @@ function handleIncomingThms
                 rest ++ decorate t with {knownThms = rest;}.thms,
               initialState.knownTheorems, doThms);
   --
-  return (translated,
+  return (commands,
           proverState(initialState.state, initialState.debug, outThms,
                       outObligations, [], [], []));
 }

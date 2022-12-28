@@ -1,13 +1,21 @@
 grammar extensibella:toAbella:abstractSyntax;
 
 
-nonterminal SearchWitness with pp, abella_pp, toAbella<SearchWitness>;
+nonterminal SearchWitness with
+   pp, abella_pp,
+   boundNames,
+   toAbella<SearchWitness>, toAbellaMsgs,
+   typeEnv, relationEnv, constructorEnv, currentModule, proverState;
+propagate typeEnv, relationEnv, constructorEnv, proverState,
+          currentModule, boundNames, toAbellaMsgs on SearchWitness;
 
 abstract production trueSearchWitness
 top::SearchWitness ::=
 {
   top.pp = "true";
   top.abella_pp = "true";
+
+  top.toAbella = top;
 }
 
 
@@ -16,6 +24,8 @@ top::SearchWitness ::= name::String
 {
   top.pp = "apply " ++ name;
   top.abella_pp = "apply " ++ name;
+
+  top.toAbella = top;
 }
 
 
@@ -24,6 +34,8 @@ top::SearchWitness ::= sub::SearchWitness
 {
   top.pp = "left (" ++ sub.pp ++ ")";
   top.abella_pp = "left (" ++ sub.abella_pp ++ ")";
+
+  top.toAbella = leftSearchWitness(sub.toAbella);
 }
 
 
@@ -32,6 +44,8 @@ top::SearchWitness ::= sub::SearchWitness
 {
   top.pp = "right (" ++ sub.pp ++ ")";
   top.abella_pp = "right (" ++ sub.abella_pp ++ ")";
+
+  top.toAbella = rightSearchWitness(sub.toAbella);
 }
 
 
@@ -41,6 +55,8 @@ top::SearchWitness ::= l::SearchWitness r::SearchWitness
   top.pp = "split(" ++l.pp ++ ", " ++ r.pp ++ ")";
   top.abella_pp =
       "split(" ++l.abella_pp ++ ", " ++ r.abella_pp ++ ")";
+
+  top.toAbella = splitSearchWitness(l.toAbella, r.toAbella);
 }
 
 
@@ -53,6 +69,8 @@ top::SearchWitness ::= names::[String] sub::SearchWitness
   top.abella_pp =
      "intros [" ++ foldr1(\a::String b::String -> a ++ ", " ++ b, names) ++
      "] (" ++ sub.abella_pp ++ ")";
+
+  top.toAbella = introsSearchWitness(names, sub.toAbella);
 }
 
 
@@ -65,6 +83,8 @@ top::SearchWitness ::= names::[String] sub::SearchWitness
   top.abella_pp =
      "forall [" ++ foldr1(\a::String b::String -> a ++ ", " ++ b, names) ++
      "] (" ++ sub.abella_pp ++ ")";
+
+  top.toAbella = forallSearchWitness(names, sub.toAbella);
 }
 
 
@@ -82,6 +102,8 @@ top::SearchWitness ::= withs::Withs sub::SearchWitness
      else " with " ++ withs.abella_pp;
   top.abella_pp = "exists [" ++ withsString_abella ++ "] (" ++
                   sub.abella_pp ++ ")";
+
+  top.toAbella = existsSearchWitness(withs.toAbella, sub.toAbella);
 }
 
 
@@ -101,6 +123,8 @@ top::SearchWitness ::= name::String n::Integer swl::[SearchWitness]
                  map(\x::SearchWitness -> x.abella_pp, swl));
   top.abella_pp = "unfold(" ++ name ++ ", " ++ toString(n) ++
                   swlString_abella ++ ")";
+
+  top.toAbella = error("unfoldSearchWitness.toAbella");
 }
 
 
@@ -109,6 +133,8 @@ top::SearchWitness ::=
 {
   top.pp = "*";
   top.abella_pp = "*";
+
+  top.toAbella = top;
 }
 
 
@@ -117,5 +143,7 @@ top::SearchWitness ::=
 {
   top.pp = "=";
   top.abella_pp = "=";
+
+  top.toAbella = top;
 }
 

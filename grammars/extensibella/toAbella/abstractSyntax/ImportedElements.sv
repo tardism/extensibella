@@ -19,7 +19,9 @@ top::ThmElement ::=
    --[(thm name, thm statement, induction measure)]
    thms::[(QName, ExtBody, String)]
 {
-  top.encode = error("Not done yet");
+  top.pp = error("extensibleMutualTheoremGroup.pp");
+
+  top.encode = error("extensibleMutualTheoremGroup.encode");
   top.is_nonextensible = false;
 
   top.thms =
@@ -31,6 +33,8 @@ top::ThmElement ::=
 abstract production nonextensibleTheorem
 top::ThmElement ::= name::QName stmt::Metaterm
 {
+  top.pp = theoremDeclaration(name, [], stmt).pp;
+
   top.encode =
       [anyTopCommand(theoremDeclaration(name, [], stmt)),
        anyProofCommand(skipTactic())];
@@ -43,6 +47,8 @@ top::ThmElement ::= name::QName stmt::Metaterm
 abstract production splitElement
 top::ThmElement ::= toSplit::QName newNames::[QName]
 {
+  top.pp = splitTheorem(toSplit, newNames).pp;
+
   top.encode = [anyTopCommand(splitTheorem(toSplit, newNames))];
   top.is_nonextensible = true;
 
@@ -63,6 +69,8 @@ top::DefElement ::= defines::[(QName, Type)]
                     --Some clauses don't have bodies, so Maybe
                     clauses::[(Metaterm, Maybe<Metaterm>)]
 {
+  top.pp = definitionDeclaration(defines, defs).pp;
+
   local defs::Defs =
         foldrLastElem(consDefs, singleDefs,
            map(\ p::(Metaterm, Maybe<Metaterm>) ->
@@ -80,6 +88,8 @@ top::DefElement ::= defines::[(QName, Type)]
                     --Some clauses don't have bodies, so Maybe
                     clauses::[(Metaterm, Maybe<Metaterm>)]
 {
+  top.pp = codefinitionDeclaration(defines, defs).pp;
+
   local defs::Defs =
         foldrLastElem(consDefs, singleDefs,
            map(\ p::(Metaterm, Maybe<Metaterm>) ->
@@ -96,6 +106,7 @@ top::DefElement ::= defines::[(QName, Type)]
 abstract production kindElement
 top::DefElement ::= names::[QName] kind::Kind
 {
+  top.pp = kindDeclaration(names, kind).pp;
   top.encode = [anyTopCommand(kindDeclaration(names, kind))];
 }
 
@@ -103,5 +114,6 @@ top::DefElement ::= names::[QName] kind::Kind
 abstract production typeElement
 top::DefElement ::= names::[QName] ty::Type
 {
+  top.pp = typeDeclaration(names, ty).pp;
   top.encode = [anyTopCommand(typeDeclaration(names, ty))];
 }

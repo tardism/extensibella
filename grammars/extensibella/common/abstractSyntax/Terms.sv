@@ -306,8 +306,9 @@ top::Term ::= mty::MaybeType
 nonterminal TermList with
    pp, abella_pp, toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
-   usedNames;
-propagate typeEnv, constructorEnv, relationEnv on TermList;
+   boundNames, usedNames;
+propagate typeEnv, constructorEnv, relationEnv, boundNames
+   on TermList;
 
 abstract production singleTermList
 top::TermList ::= t::Term

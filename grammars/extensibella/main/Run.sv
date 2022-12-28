@@ -21,6 +21,7 @@ IOVal<Integer> ::=
    inputCommands::[AnyCommand]
    filename::String
    from_parse::Parser<FullDisplay_c>
+   currentModule::QName
    tyEnv::Env<TypeEnvItem>
    relationEnv::Env<RelationEnvItem>
    constructorEnv::Env<ConstructorEnvItem>
@@ -32,16 +33,22 @@ IOVal<Integer> ::=
   local state::ProofState = currentProverState.state;
   local debug::Boolean = currentProverState.debug;
 
+  state.typeEnv = tyEnv;
+  state.relationEnv = relationEnv;
+  state.constructorEnv = constructorEnv;
+
   {-
     PROCESS COMMAND
   -}
   --Translate command
   ----------------------------
   local any_a::AnyCommand = head(inputCommands);
+  any_a.currentModule = currentModule;
   any_a.typeEnv = tyEnv;
   any_a.relationEnv = relationEnv;
   any_a.constructorEnv = constructorEnv;
   any_a.proverState = currentProverState;
+  any_a.boundNames = currentProverState.state.usedNames;
   any_a.stateListIn = stateList;
   --whether we have something to send to Abella
   local speak_to_abella::Boolean =
@@ -83,6 +90,9 @@ IOVal<Integer> ::=
                  back_from_abella.iovalue ++ "\n\n" ++
                  full_result.parseErrors)
       else full_result.parseTree.ast;
+  full_a.typeEnv = tyEnv;
+  full_a.relationEnv = relationEnv;
+  full_a.constructorEnv = constructorEnv;
   any_a.newProofState = full_a.proof;
   --Clean up state
   ----------------------------
@@ -113,6 +123,9 @@ IOVal<Integer> ::=
              else p.parseTree.ast
         else full_a
       end;
+  cleaned_display.typeEnv = tyEnv;
+  cleaned_display.relationEnv = relationEnv;
+  cleaned_display.constructorEnv = constructorEnv;
   local outputCleanCommands::IOToken =
       if shouldClean && debug && config.showUser
       then printT(implode("", map((.abella_pp), cleanCommands)) ++
@@ -236,7 +249,7 @@ IOVal<Integer> ::=
   local again::IOVal<Integer> =
                --use unsafeTrace to force it to print output
       run_step(tail(unsafeTrace(inputCommands, printed_output)),
-               filename, from_parse,
+               filename, from_parse, currentModule,
                tyEnv, relationEnv, constructorEnv, --need to be updated
                completeStateList, config,
                abella, printed_output);
@@ -259,7 +272,7 @@ IOVal<Integer> ::=
      | _::tl ->
        if any_a.isQuit
        then ioval(exit_message, 0)
-       else if config.runningFile --running file should end on error
+       else if config.runningFile --running file should not error
             then if any(map((.isError), any_a.toAbellaMsgs))
                  then ioval(printT("Could not process full file " ++
                                    filename ++ ":\n" ++

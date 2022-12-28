@@ -168,7 +168,8 @@ top::Hypothesis ::= name::String body::Metaterm
 
 
 --A subgoal is a goal to proven in the future, after the current goal
-nonterminal Subgoal with pp;
+nonterminal Subgoal with pp, typeEnv, relationEnv, constructorEnv;
+propagate typeEnv, relationEnv, constructorEnv on Subgoal;
 
 type SubgoalNum = [Integer];
 

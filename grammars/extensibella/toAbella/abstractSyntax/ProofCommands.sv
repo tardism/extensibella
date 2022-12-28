@@ -6,12 +6,13 @@ grammar extensibella:toAbella:abstractSyntax;
 nonterminal ProofCommand with
    --pp/abella_pp should end with two spaces
    pp, abella_pp,
+   boundNames,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<[ProofCommand]>, toAbellaMsgs,
    isUndo,
    stateListIn, stateListOut;
-propagate typeEnv, constructorEnv, relationEnv,
-          currentModule, proverState on ProofCommand;
+propagate typeEnv, constructorEnv, relationEnv, currentModule,
+          proverState, boundNames, toAbellaMsgs on ProofCommand;
 
 aspect default production
 top::ProofCommand ::=
@@ -155,7 +156,8 @@ top::ProofCommand ::= ew::[EWitness]
   top.abella_pp = "exists " ++
                   implode(", ", map((.abella_pp), ew)) ++ ".  ";
 
-  top.toAbella = [existsTactic(map((.toAbella), ew))];
+  top.toAbella = error("existsTactic.toAbella");
+               --[existsTactic(map((.toAbella), ew))];
 }
 
 
@@ -166,7 +168,8 @@ top::ProofCommand ::= ew::[EWitness]
   top.abella_pp = "witness " ++
                   implode(", ", map((.abella_pp), ew)) ++ ".  ";
 
-  top.toAbella = [witnessTactic(map((.toAbella), ew))];
+  top.toAbella = error("witnessTactic.toAbella");
+               --[witnessTactic(map((.toAbella), ew))];
 }
 
 
@@ -431,10 +434,11 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 nonterminal ApplyArgs with
    pp, abella_pp,
    toList<ApplyArg>, len,
+   boundNames,
    toAbella<ApplyArgs>, toAbellaMsgs,
    typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
-          proverState, toAbellaMsgs on ApplyArgs;
+          proverState, boundNames, toAbellaMsgs on ApplyArgs;
 
 abstract production endApplyArgs
 top::ApplyArgs ::=
@@ -469,10 +473,11 @@ top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
 
 nonterminal ApplyArg with
    pp, abella_pp,
+   boundNames,
    toAbella<ApplyArg>, toAbellaMsgs,
    typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
-          proverState, toAbellaMsgs on ApplyArg;
+          proverState, boundNames, toAbellaMsgs on ApplyArg;
 
 abstract production hypApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
@@ -515,10 +520,11 @@ top::ApplyArg ::= name::String instantiation::TypeList
 nonterminal Withs with
    pp, abella_pp,
    toList<(String, Term)>, len,
+   boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState,
    toAbella<Withs>, toAbellaMsgs;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          proverState, toAbellaMsgs on Withs;
+          proverState, toAbellaMsgs, boundNames on Withs;
 
 abstract production endWiths
 top::Withs ::=
@@ -553,10 +559,11 @@ top::Withs ::= name::String term::Term rest::Withs
 
 nonterminal EWitness with
    pp, abella_pp,
+   boundNames,
    typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<EWitness>, toAbellaMsgs;
 propagate typeEnv, constructorEnv, relationEnv,
-          proverState, toAbellaMsgs on EWitness;
+          proverState, boundNames, toAbellaMsgs on EWitness;
 
 abstract production termEWitness
 top::EWitness ::= t::Term

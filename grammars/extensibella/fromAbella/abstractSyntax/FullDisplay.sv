@@ -4,7 +4,9 @@ grammar extensibella:fromAbella:abstractSyntax;
 nonterminal FullDisplay with
    pp,
    fromAbella<FullDisplay>,
+   typeEnv, relationEnv, constructorEnv,
    proof, isError, isWarning, proofEnded;
+propagate typeEnv, relationEnv, constructorEnv on FullDisplay;
 
 abstract production fullDisplay
 top::FullDisplay ::= msg::ExtraInformation state::ProofState
@@ -46,7 +48,9 @@ top::FullDisplay ::= tl::TheoremList
 
 nonterminal TheoremList with
    pp,
-   fromAbella<TheoremList>;
+   fromAbella<TheoremList>,
+   typeEnv, relationEnv, constructorEnv;
+propagate typeEnv, relationEnv, constructorEnv on TheoremList;
 
 abstract production theoremListEmpty
 top::TheoremList ::=
@@ -72,7 +76,9 @@ top::TheoremList ::= name::String body::Metaterm rest::TheoremList
 nonterminal ExtraInformation with
    pp,
    fromAbella<ExtraInformation>,
+   typeEnv, relationEnv, constructorEnv,
    isError, isWarning;
+propagate typeEnv, relationEnv, constructorEnv on ExtraInformation;
 
 
 abstract production emptyInformation

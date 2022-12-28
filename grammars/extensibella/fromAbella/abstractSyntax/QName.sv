@@ -19,6 +19,7 @@ top::QName ::= name::String
   top.fromAbella = baseName(name);
 
   top.isTranslation = false;
+  top.transFromAbella = error("Not possible");
 
   top.relFromAbella = top;
   top.tyFromAbella = top;

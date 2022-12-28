@@ -51,6 +51,8 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
       [anyTopCommand(
           theoremDeclaration(fullName, params, body.toAbella))];
 
+  body.boundNames = [];
+
   --check if name is qualified and has the appropriate module
   top.toAbellaMsgs <-
       if name.isQualified
@@ -148,6 +150,8 @@ top::TopCommand ::= m::Metaterm
 {
   top.pp = "Query " ++ m.pp ++ ".\n";
   top.abella_pp = "Query " ++ m.abella_pp ++ ".\n";
+
+  m.boundNames = [];
 
   top.toAbella = [anyTopCommand(queryCommand(m.toAbella))];
 
