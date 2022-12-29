@@ -33,8 +33,41 @@ top::ProofCommand ::= h::HHint nl::[Integer]
 
   top.toAbella = [top];
 
-  --Need to check none of the numbers correspond to extensible relations
-  --Only way for induction on those should be extensible theorems, I think
+  --Check none of the numbers correspond to extensible relations
+  --Only way for induction on those should be extensible theorems
+  --If that is not the case, I can change this
+  local goal::Metaterm = top.proverState.state.goal.fromJust;
+  local splits::[[Metaterm]] =
+      map((.splitImplies), goal.splitConjunctions);
+  top.toAbellaMsgs <-
+      if !top.proverState.state.inProof
+      then [] --not a proof
+      else if length(nl) != length(splits)
+      then [errorMsg("Expected " ++ toString(length(splits)) ++
+               " induction arguments but was given " ++
+               toString(length(nl)))]
+      else
+        flatMap( --(induction integer, premises and goal)
+           \ p::(Integer, [Metaterm]) ->
+             if p.1 >= length(p.2)
+             then [errorMsg("Premise " ++ toString(p.1) ++ " does " ++
+                            "not exist")]
+             else 
+               case elemAtIndex(p.2, p.1 - 1) of
+               | relationMetaterm(rel, args, r) ->
+                 let decRel::Decorated QName with {relationEnv} =
+                     decorate rel with {
+                       relationEnv = top.relationEnv;}
+                 in
+                   if !decRel.fullRel.isExtensible
+                   then []
+                   else [errorMsg("Cannot induct on extensible " ++
+                            "judgment " ++ elemAtIndex(p.2, p.1 - 1).pp ++
+                            " outside of extensible theorems")]
+                 end
+               | _ -> [errorMsg("Cannot induct on non-relation")]
+               end,
+           zipWith(pair, nl, splits));
 }
 
 
@@ -141,8 +174,7 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
   local hypBody::Metaterm = maybeHypBody.fromJust;
   hypBody.relationEnv = top.relationEnv;
   hypBody.constructorEnv = top.constructorEnv;
-  --need to check hyp isn't an extensible relation or
-  --it has its PC filled in
+  --check hyp isn't an extensible relation or has PC filled in
   top.toAbellaMsgs <-
       if !maybeHypBody.isJust
       then [errorMsg("Unknown hypothesis " ++ hyp)]
@@ -350,6 +382,8 @@ top::ProofCommand ::= hyps::[String] newText::String
   top.abella_pp = top.pp;
 
   top.toAbella = error("Cannot abbreviate");
+  top.toAbellaMsgs <-
+     [errorMsg("Abbreviation of hypotheses not currently supported")];
 }
 
 
@@ -360,6 +394,8 @@ top::ProofCommand ::= hyps::[String]
   top.abella_pp = top.pp;
 
   top.toAbella = error("Cannot abbreviate");
+  top.toAbellaMsgs <-
+     [errorMsg("Abbreviation of hypotheses not currently supported")];
 }
 
 

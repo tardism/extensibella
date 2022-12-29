@@ -18,7 +18,6 @@ induction on 1. intros. case H1.
      %Subgoal 2.2:  X is later
       apply IH to H4 H6. search.
 
-
 %Extensible_Theorem val_exists__value : forall T KnownNames EvalEnv V,
 %  valExists KnownNames T true ->
 %  (forall X, member X KnownNames -> exists VX, member (X, VX) EvalEnv) ->

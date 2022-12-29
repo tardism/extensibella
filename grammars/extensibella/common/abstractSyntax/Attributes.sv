@@ -45,6 +45,11 @@ synthesized attribute isStructured::Boolean;
 synthesized attribute isStructuredList::[Boolean];
 
 
+--Split into a list along the given production
+synthesized attribute splitConjunctions::[Metaterm];
+synthesized attribute splitImplies::[Metaterm];
+
+
 
 --We often only want to replace the state and leave everything else
 inherited attribute replaceState::ProofState;

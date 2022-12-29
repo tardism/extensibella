@@ -44,16 +44,10 @@ TermList ::= args::[Term]
 
 
 --Split based on actual conjunctions
---Different than attribute
 function splitMetaterm
 [Metaterm] ::= mt::Metaterm
 {
-  return
-     case mt of
-     | andMetaterm(mt1, mt2) ->
-       splitMetaterm(mt1) ++ splitMetaterm(mt2)
-     | _ -> [mt]
-     end;
+  return mt.splitConjunctions;
 }
 
 

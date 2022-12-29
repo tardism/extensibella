@@ -9,6 +9,9 @@ top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
            "|{" ++ ty.pp ++ "}- " ++ orig.pp ++ " ~~> " ++ trans.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 
@@ -29,6 +32,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " + " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production minusMetaterm
@@ -37,6 +43,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " - " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production multiplyMetaterm
@@ -45,6 +54,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " * " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production divideMetaterm
@@ -53,6 +65,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " / " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production modulusMetaterm
@@ -61,6 +76,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " mod " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production negateMetaterm
@@ -69,6 +87,9 @@ top::Metaterm ::= t::Term result::Term
   top.pp = "- " ++ t.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production lessMetaterm
@@ -77,6 +98,9 @@ top::Metaterm ::= t1::Term t2::Term
   top.pp = t1.pp ++ " < " ++ t2.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production lessEqMetaterm
@@ -85,6 +109,9 @@ top::Metaterm ::= t1::Term t2::Term
   top.pp = t1.pp ++ " <= " ++ t2.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production greaterMetaterm
@@ -93,6 +120,9 @@ top::Metaterm ::= t1::Term t2::Term
   top.pp = t1.pp ++ " > " ++ t2.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production greaterEqMetaterm
@@ -101,6 +131,9 @@ top::Metaterm ::= t1::Term t2::Term
   top.pp = t1.pp ++ " >= " ++ t2.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production appendMetaterm
@@ -109,6 +142,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " ++ " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production orBoolMetaterm
@@ -117,6 +153,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " || " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production andBoolMetaterm
@@ -125,6 +164,9 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   top.pp = t1.pp ++ " && " ++ t2.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production notBoolMetaterm
@@ -133,6 +175,9 @@ top::Metaterm ::= t::Term result::Term
   top.pp = "! " ++ t.pp ++ " = " ++ result.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 

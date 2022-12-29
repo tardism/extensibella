@@ -3,6 +3,7 @@ grammar extensibella:common:abstractSyntax;
 
 nonterminal Metaterm with
    pp, abella_pp, isAtomic,
+   splitImplies, splitConjunctions,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
 propagate typeEnv, constructorEnv, relationEnv on Metaterm;
@@ -14,6 +15,9 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   top.pp = rel.pp ++ " " ++ args.pp ++ r.pp;
   top.abella_pp = rel.abella_pp ++ " " ++ args.abella_pp ++ r.pp;
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production trueMetaterm
@@ -22,6 +26,9 @@ top::Metaterm ::=
   top.pp = "true";
   top.abella_pp = "true";
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production falseMetaterm
@@ -30,6 +37,9 @@ top::Metaterm ::=
   top.pp = "false";
   top.abella_pp = "false";
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production eqMetaterm
@@ -38,6 +48,9 @@ top::Metaterm ::= t1::Term t2::Term
   top.pp = t1.pp ++ " = " ++ t2.pp;
   top.abella_pp = t1.abella_pp ++ " = " ++ t2.abella_pp;
   top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production impliesMetaterm
@@ -51,6 +64,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
        then t1.abella_pp
        else "(" ++ t1.abella_pp ++ ")") ++ " -> " ++ t2.abella_pp;
   top.isAtomic = false;
+
+  top.splitImplies = t1::t2.splitImplies;
+  top.splitConjunctions = [top];
 }
 
 abstract production orMetaterm
@@ -71,6 +87,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
       then t2.abella_pp
       else "(" ++ t2.abella_pp ++ ")" );
   top.isAtomic = false;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
 }
 
 abstract production andMetaterm
@@ -91,6 +110,10 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
       then t2.abella_pp
       else "(" ++ t2.abella_pp ++ ")" );
   top.isAtomic = false;
+
+  top.splitImplies = [top];
+  --split both because associative
+  top.splitConjunctions = t1.splitConjunctions ++ t2.splitConjunctions;
 }
 
 abstract production bindingMetaterm
@@ -100,6 +123,9 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
   top.abella_pp = b.pp ++ " " ++ nameBindings.abella_pp ++ ", " ++
                   body.abella_pp;
   top.isAtomic = false;
+
+  top.splitImplies = body.splitImplies;
+  top.splitConjunctions = [top];
 
   --Want ALL names which occur, even if only in bindings
   top.usedNames := nameBindings.usedNames ++ body.usedNames;
