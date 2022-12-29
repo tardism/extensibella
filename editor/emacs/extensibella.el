@@ -37,14 +37,14 @@
  proof-save-command-regexp            proof-no-regexp
 
  ;;Commands end with (period-space) or (period-EOF) or (period-close paren)
- proof-script-command-end-regexp    "\\.\\([ \n\t\r)]\\|$\\)"
+ proof-script-command-end-regexp    "\\."
  proof-script-comment-start-regexp  "%"
  proof-script-fly-past-comments     t
  proof-script-comment-end           "\n"
  proof-shell-strip-crs-from-input   nil
 
  proof-undo-n-times-cmd           'extensibella-undo-n
- proof-non-undoables-regexp       "\\(#back\\)\\|\\(#reset\\)\\|\\(undo\\)"
+ proof-non-undoables-regexp       "\\(#back\\)\\|\\(undo\\)"
  proof-ignore-for-undo-count      ""
  proof-no-fully-processed-buffer  t
  proof-find-and-forget-fn         'extensibella-find-and-forget-fn
