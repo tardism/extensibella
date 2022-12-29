@@ -23,5 +23,7 @@ function handleIncomingThms
   --
   return (commands,
           proverState(initialState.state, initialState.debug, outThms,
-                      outObligations, [], [], []));
+             outObligations, initialState.knownTypes,
+             initialState.knownRels, initialState.knownConstrs,
+             [], [], []));
 }

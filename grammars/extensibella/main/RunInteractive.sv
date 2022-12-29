@@ -31,7 +31,9 @@ IOVal<Integer> ::=
   --
   local handleIncoming::([AnyCommand], ProverState) =
       handleIncomingThms(
-         defaultProverState(processed.iovalue.fromRight.3));
+         defaultProverState(processed.iovalue.fromRight.3,
+            build_context.iovalue.1, build_context.iovalue.2,
+            build_context.iovalue.3));
   local sendIncoming::IOVal<String> =
       sendCmdsToAbella(map((.pp), handleIncoming.1),
          started.iovalue.fromRight, build_context.io, config);
@@ -47,8 +49,6 @@ IOVal<Integer> ::=
              build_interactive_commands(cmd_parse),
              "<<user input>>", from_parse,
              moduleName.iovalue,
-             build_context.iovalue.1, build_context.iovalue.2,
-             build_context.iovalue.3,
              [(-1, handleIncoming.2)],
              config,
              started.iovalue.fromRight,

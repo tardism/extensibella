@@ -7,30 +7,30 @@ IOVal<Either<String ProcessHandle>> ::= ioin::IOToken config::Decorated CmdArgs
 {
   --Find the library location (env variable set by startup script)
   local library_loc::IOVal<String> =
-        envVarT("EXTENSIBELLA_LIBRARY", ioin);
+      envVarT("EXTENSIBELLA_LIBRARY", ioin);
   local library_cmds::[String] =
-       ["Kind bool   type.",
-        "Import \"" ++ library_loc.iovalue ++ "bools\".",
-        "Kind nat   type.",
-        "Import \"" ++ library_loc.iovalue ++ "integer_addition\".",
-        "Import \"" ++ library_loc.iovalue ++ "integer_multiplication\".",
-        "Import \"" ++ library_loc.iovalue ++ "integer_division\".",
-        "Import \"" ++ library_loc.iovalue ++ "integer_comparison\".",
-        "Import \"" ++ library_loc.iovalue ++ "lists\".",
-        "Import \"" ++ library_loc.iovalue ++ "strings\".",
-        "Kind $pair   type -> type -> type.",
-        "Import \"" ++ library_loc.iovalue ++ "pairs\"."];
+      ["Kind $lib__bool   type.",
+       "Import \"" ++ library_loc.iovalue ++ "bools\".",
+       "Kind $lib__nat   type.",
+       "Import \"" ++ library_loc.iovalue ++ "integer_addition\".",
+       "Import \"" ++ library_loc.iovalue ++ "integer_multiplication\".",
+       "Import \"" ++ library_loc.iovalue ++ "integer_division\".",
+       "Import \"" ++ library_loc.iovalue ++ "integer_comparison\".",
+       "Import \"" ++ library_loc.iovalue ++ "lists\".",
+       "Import \"" ++ library_loc.iovalue ++ "strings\".",
+       "Kind $lib__pair   type -> type -> type.",
+       "Import \"" ++ library_loc.iovalue ++ "pairs\"."];
 
   local abella::IOVal<ProcessHandle> =
-        spawnProcess("abella", [], library_loc.io);
+      spawnProcess("abella", [], library_loc.io);
   --Read Abella's outputs from the library imports, in addition to the
   --   welcome message
   local abella_initial_string::IOVal<String> =
-        read_abella_output(abella.iovalue, abella.io);
+      read_abella_output(abella.iovalue, abella.io);
   --Send the library imports to Abella
   local send_imports::IOVal<String> =
-        sendCmdsToAbella(library_cmds, abella.iovalue,
-                         abella_initial_string.io, config);
+      sendCmdsToAbella(library_cmds, abella.iovalue,
+                       abella_initial_string.io, config);
 
   return
      if library_loc.iovalue == ""
@@ -66,9 +66,9 @@ IOVal<String> ::= cmd::String abella::ProcessHandle ioin::IOToken
 {
   local sent::IOToken = sendToProcess(abella, cmd, ioin);
   local dumped::IOToken =
-        if config.dumpAbella
-        then appendFileT(config.dumpAbellaFile, cmd ++ "\n", sent)
-        else sent;
+      if config.dumpAbella
+      then appendFileT(config.dumpAbellaFile, cmd ++ "\n", sent)
+      else sent;
   return read_abella_output(abella, dumped);
 }
 
@@ -78,7 +78,8 @@ IOVal<String> ::= cmd::String abella::ProcessHandle ioin::IOToken
 function read_abella_output
 IOVal<String> ::= abella::ProcessHandle ioin::IOToken
 {
-  local read::IOVal<String> = readUntilFromProcess(abella, "< ", ioin);
+  local read::IOVal<String> =
+      readUntilFromProcess(abella, "< ", ioin);
   return ioval(read.io, removeLastWord(read.iovalue));
 }
 

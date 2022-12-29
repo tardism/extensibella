@@ -5,7 +5,7 @@ Kind example_calc-$-host-$-Root   type.
 
 
 %productions
-Type example_calc-$-host-$-intConst   integer -> example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-intConst   $lib__integer -> example_calc-$-host-$-Expr.
 Type example_calc-$-host-$-plus   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
 Type example_calc-$-host-$-minus   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
 Type example_calc-$-host-$-mult   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
@@ -17,18 +17,18 @@ Type example_calc-$-host-$-root   example_calc-$-host-$-Expr -> example_calc-$-h
 
 %fixed relation
 Define $fix__example_calc-$-host-$-lookup :
-   list $char -> list ($pair (list $char) integer) -> integer -> prop by
+   list $char -> list ($lib__pair (list $char) $lib__integer) -> $lib__integer -> prop by
 $fix__example_calc-$-host-$-lookup X (($pair_c X V)::Rest) V;
 $fix__example_calc-$-host-$-lookup X (($pair_c Y YV)::Rest) XV :=
    (X = Y -> false) /\ $fix__example_calc-$-host-$-lookup X Rest XV.
 
 
 %extensible relations
-Define $ext__1__example_calc-$-host-$-valExists : list (list $char) -> example_calc-$-host-$-Expr -> bool -> prop,
-       $ext__0__example_calc-$-host-$-rootValExists : example_calc-$-host-$-Root -> bool -> prop,
+Define $ext__1__example_calc-$-host-$-valExists : list (list $char) -> example_calc-$-host-$-Expr -> $lib__bool -> prop,
+       $ext__0__example_calc-$-host-$-rootValExists : example_calc-$-host-$-Root -> $lib__bool -> prop,
        %
-       $ext__1__example_calc-$-host-$-value : list ($pair (list $char) integer) -> example_calc-$-host-$-Expr -> integer -> prop,
-       $ext__0__example_calc-$-host-$-rootValue : example_calc-$-host-$-Root -> integer -> prop,
+       $ext__1__example_calc-$-host-$-value : list ($lib__pair (list $char) $lib__integer) -> example_calc-$-host-$-Expr -> $lib__integer -> prop,
+       $ext__0__example_calc-$-host-$-rootValue : example_calc-$-host-$-Root -> $lib__integer -> prop,
        %
        $ext__0__example_calc-$-host-$-isExpr : example_calc-$-host-$-Expr -> prop,
        $ext__0__example_calc-$-host-$-isRoot : example_calc-$-host-$-Root -> prop,

@@ -77,6 +77,15 @@ top::QName ::= rest::SubQName
 }
 
 
+aspect production libQName
+top::QName ::= rest::SubQName
+{
+  top.interfaceFileName = rest.interfaceFileName;
+  top.outerfaceFileName = rest.outerfaceFileName;
+  top.definitionFileName = rest.definitionFileName;
+}
+
+
 aspect production basicQName
 top::QName ::= rest::SubQName
 {

@@ -1,4 +1,4 @@
-Kind nat   type.
+Kind $lib__nat   type.
 Import "lists".
 
 

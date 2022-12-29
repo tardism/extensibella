@@ -3,10 +3,10 @@
   Abella requires declaring the imported kinds.  I'm not sure why.
 */
 
-Kind nat   type.
+Kind $lib__nat   type.
 Import "nats".
 
-Kind bool   type.
+Kind $lib__bool   type.
 Import "bools".
 
 
@@ -23,12 +23,12 @@ Import "bools".
   negative one, would not have unique encodings for any number.
 */
 
-Kind integer   type.
-Type $posInt   nat -> integer.
-Type $negSuccInt   nat -> integer.
+Kind $lib__integer   type.
+Type $posInt   $lib__nat -> $lib__integer.
+Type $negSuccInt   $lib__nat -> $lib__integer.
 
 %The definition using $is_nat is NOT helpful
-Define is_integer : integer -> prop by
+Define is_integer : $lib__integer -> prop by
   is_integer ($posInt $zero);
   is_integer ($posInt ($succ N)) := is_integer ($posInt N);
   is_integer ($negSuccInt $zero);

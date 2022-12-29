@@ -1,9 +1,9 @@
 
-Kind bool   type.
-Type $btrue   bool.
-Type $bfalse   bool.
+Kind $lib__bool   type.
+Type $btrue   $lib__bool.
+Type $bfalse   $lib__bool.
 
-Define is_bool : bool -> prop by
+Define is_bool : $lib__bool -> prop by
   is_bool $btrue;
   is_bool $bfalse.
 
@@ -30,7 +30,7 @@ intros. case H1.
 %                                AND                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $and_bool : bool -> bool -> bool -> prop by
+Define $and_bool : $lib__bool -> $lib__bool -> $lib__bool -> prop by
   $and_bool $btrue $btrue $btrue;
   $and_bool $bfalse B $bfalse;
   $and_bool B $bfalse $bfalse.
@@ -168,7 +168,7 @@ intros. case H1.
 %                                OR                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $or_bool : bool -> bool -> bool -> prop by
+Define $or_bool : $lib__bool -> $lib__bool -> $lib__bool -> prop by
   $or_bool $btrue B $btrue;
   $or_bool B $btrue $btrue;
   $or_bool $bfalse $bfalse $bfalse.
@@ -308,7 +308,7 @@ intros. case H1.
 %                                NOT                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $not_bool : bool -> bool -> prop by
+Define $not_bool : $lib__bool -> $lib__bool -> prop by
   $not_bool $btrue $bfalse;
   $not_bool $bfalse $btrue.
 

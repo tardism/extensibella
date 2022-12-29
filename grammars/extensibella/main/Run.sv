@@ -26,9 +26,6 @@ IOVal<Integer> ::=
    filename::String
    from_parse::Parser<FullDisplay_c>
    currentModule::QName
-   tyEnv::Env<TypeEnvItem>
-   relationEnv::Env<RelationEnvItem>
-   constructorEnv::Env<ConstructorEnvItem>
    stateList::StateList
    config::Configuration
    abella::ProcessHandle ioin::IOToken
@@ -37,9 +34,9 @@ IOVal<Integer> ::=
   local state::ProofState = currentProverState.state;
   local debug::Boolean = currentProverState.debug;
 
-  state.typeEnv = tyEnv;
-  state.relationEnv = relationEnv;
-  state.constructorEnv = constructorEnv;
+  state.typeEnv = currentProverState.knownTypes;
+  state.relationEnv = currentProverState.knownRels;
+  state.constructorEnv = currentProverState.knownConstrs;
 
   {-
     PROCESS COMMAND
@@ -48,9 +45,9 @@ IOVal<Integer> ::=
   ----------------------------
   local any_a::AnyCommand = head(inputCommands);
   any_a.currentModule = currentModule;
-  any_a.typeEnv = tyEnv;
-  any_a.relationEnv = relationEnv;
-  any_a.constructorEnv = constructorEnv;
+  any_a.typeEnv = currentProverState.knownTypes;
+  any_a.relationEnv = currentProverState.knownRels;
+  any_a.constructorEnv = currentProverState.knownConstrs;
   any_a.proverState = currentProverState;
   any_a.boundNames = state.usedNames;
   any_a.stateListIn = stateList;
@@ -78,6 +75,7 @@ IOVal<Integer> ::=
       then debugOutput(debug, config, any_a.toAbella,
               "Entered Command", back_from_abella.iovalue,
               back_from_abella.io)
+                                    --Why?  Solving type constraints
       else debugOutput(debug, config, tail([anyParseFailure("")]),
               "Entered Command", "", ioin);
 
@@ -99,12 +97,13 @@ IOVal<Integer> ::=
   ----------------------------
   local incominged::IOVal<StateList> =
       runIncoming(aftered.iovalue, aftered.io, abella, debug, config);
+  local finalStateList::StateList = incominged.iovalue;
   --Show to user
   ----------------------------
   local finalDisplay::FullDisplay = cleared.iovalue.2;
-  finalDisplay.typeEnv = tyEnv;
-  finalDisplay.relationEnv = relationEnv;
-  finalDisplay.constructorEnv = constructorEnv;
+  finalDisplay.typeEnv = head(finalStateList).2.knownTypes;
+  finalDisplay.relationEnv = head(finalStateList).2.knownRels;
+  finalDisplay.constructorEnv = head(finalStateList).2.knownConstrs;
   local output_output::String =
       if speak_to_abella
       then finalDisplay.fromAbella.pp ++ "\n"
@@ -125,24 +124,11 @@ IOVal<Integer> ::=
   {-
     RUN REPL AGAIN
   -}
-  local newTys::Env<TypeEnvItem> =
-      if full_a.isError
-      then tyEnv
-      else addEnv(tyEnv, any_a.tys);
-  local newRels::Env<RelationEnvItem> =
-      if full_a.isError
-      then relationEnv
-      else addEnv(relationEnv, any_a.rels);
-  local newConstrs::Env<ConstructorEnvItem> =
-      if full_a.isError
-      then constructorEnv
-      else addEnv(constructorEnv, any_a.constrs);
   local again::IOVal<Integer> =
                --use unsafeTrace to force it to print output
       run_step(tail(unsafeTrace(inputCommands, printed_output)),
                filename, from_parse, currentModule,
-               newTys, newRels, newConstrs,
-               incominged.iovalue, config,
+               finalStateList, config,
                abella, printed_output);
 
 
@@ -218,6 +204,9 @@ IOVal<(StateList, FullDisplay)> ::=
           initProverState.debug,
           initProverState.knownTheorems,
           initProverState.remainingObligations,
+          initProverState.knownTypes,
+          initProverState.knownRels,
+          initProverState.knownConstrs,
           initProverState.provingThms,
           tail(initProverState.duringCommands), --drop used first set
           initProverState.afterCommands))::tail(stateListIn);
@@ -259,6 +248,9 @@ IOVal<StateList> ::=
                    initProverState.debug,
                    initProverState.knownTheorems,
                    initProverState.remainingObligations,
+                   initProverState.knownTypes,
+                   initProverState.knownRels,
+                   initProverState.knownConstrs,
                    [], [], []))::tail(stateListIn);
   return ioval(outputAfterCommands,
                if runAfterCommands

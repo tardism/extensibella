@@ -1,6 +1,6 @@
 
-Kind bool   type.
-Kind nat   type.
+Kind $lib__bool   type.
+Kind $lib__nat   type.
 Import "integer_multiplication".
 
 
@@ -10,26 +10,26 @@ Import "integer_multiplication".
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %used for $less_abs_integer
-Define $abs_integer : integer -> integer -> prop by
+Define $abs_integer : $lib__integer -> $lib__integer -> prop by
   $abs_integer ($posInt N) ($posInt N);
   $abs_integer ($negSuccInt N) ($posInt ($succ N)).
 
 %used for divR_integer
-Define $less_abs_integer : integer -> integer -> prop by
+Define $less_abs_integer : $lib__integer -> $lib__integer -> prop by
   $less_abs_integer N1 N2 :=
      exists N1' N2',
         $abs_integer N1 ($posInt N1') /\ $abs_integer N2 ($posInt N2') /\
         $less_nat N1' N2'.
 
-Define $lesseq_abs_integer : integer -> integer -> prop by
+Define $lesseq_abs_integer : $lib__integer -> $lib__integer -> prop by
   $lesseq_abs_integer N1 N2 :=
      exists N1' N2',
         $abs_integer N1 ($posInt N1') /\ $abs_integer N2 ($posInt N2') /\
         $lesseq_nat N1' N2'.
 
 %Multiplication-related definition
-Define $divR_integer' : integer -> integer ->
-                        integer -> integer -> prop by
+Define $divR_integer' : $lib__integer -> $lib__integer ->
+                        $lib__integer -> $lib__integer -> prop by
   $divR_integer' A B ($posInt $zero) A :=
     $less_abs_integer A B /\ (B = $posInt $zero -> false);
   $divR_integer' ($posInt A) ($posInt B) Q R :=
@@ -59,8 +59,8 @@ Define $divR_integer' : integer -> integer ->
 
 %Definition useful for induction
 Define
-  $divR_help : integer -> integer -> integer -> integer -> prop,
-  $divR_help_minus : integer -> nat -> integer -> integer -> integer -> prop by
+  $divR_help : $lib__integer -> $lib__integer -> $lib__integer -> $lib__integer -> prop,
+  $divR_help_minus : $lib__integer -> $lib__nat -> $lib__integer -> $lib__integer -> $lib__integer -> prop by
   % $divR_help Dividend Divisor Quotient Remainder
   $divR_help A B ($posInt $zero) A :=
     $less_abs_integer A B /\ (B = $posInt $zero -> false);
@@ -912,7 +912,7 @@ apply $divR_integer'_divisor_not_0 to H1.
 %                               DIVIDE                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $divide_integer : integer -> integer -> integer -> prop by
+Define $divide_integer : $lib__integer -> $lib__integer -> $lib__integer -> prop by
   $divide_integer N1 N2 Q :=
      exists R, $divR_help N1 N2 Q R.
 
@@ -951,7 +951,7 @@ intros. apply $divR_help_multiply to _ _ _ H4. search.
 %                              MODULUS                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%.
 
-Define $modulus_integer : integer -> integer -> integer -> prop by
+Define $modulus_integer : $lib__integer -> $lib__integer -> $lib__integer -> prop by
   $modulus_integer N1 N2 R :=
     exists Q, $divR_help N1 N2 Q R.
 

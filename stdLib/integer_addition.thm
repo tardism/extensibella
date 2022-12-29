@@ -1,5 +1,5 @@
 
-Kind nat   type.
+Kind $lib__nat   type.
 Import "integers".
 
 
@@ -8,7 +8,7 @@ Import "integers".
 %                                PLUS                                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $plus_integer : integer -> integer -> integer -> prop by
+Define $plus_integer : $lib__integer -> $lib__integer -> $lib__integer -> prop by
   $plus_integer ($posInt $zero) N N;
   $plus_integer ($posInt ($succ N1)) ($posInt N2) ($posInt ($succ N3)) :=
      $plus_integer ($posInt N1) ($posInt N2) ($posInt N3);
@@ -701,7 +701,7 @@ induction on 1. intros. case H1.
 %                               MINUS                                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $minus_integer : integer -> integer -> integer -> prop by
+Define $minus_integer : $lib__integer -> $lib__integer -> $lib__integer -> prop by
   $minus_integer N ($posInt $zero) N;
   $minus_integer N1 ($posInt ($succ N2)) N3 :=
      $plus_integer N1 ($negSuccInt N2) N3;
@@ -945,7 +945,7 @@ intros. case H3.
 %                               NEGATE                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $negate_integer : integer -> integer -> prop by
+Define $negate_integer : $lib__integer -> $lib__integer -> prop by
   $negate_integer ($posInt $zero) ($posInt $zero);
   $negate_integer ($posInt ($succ N)) ($negSuccInt N);
   $negate_integer ($negSuccInt N) ($posInt ($succ N)).

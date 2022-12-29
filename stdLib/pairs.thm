@@ -1,10 +1,10 @@
 
 
-Kind $pair   type -> type -> type.
-Type $pair_c   A -> B -> $pair A B.
+Kind $lib__pair   type -> type -> type.
+Type $pair_c   A -> B -> $lib__pair A B.
 
 
-Define is_pair : (A -> prop) -> (B -> prop) -> ($pair A B) -> prop by
+Define is_pair : (A -> prop) -> (B -> prop) -> ($lib__pair A B) -> prop by
   is_pair SubRelA SubRelB ($pair_c A B) :=
      SubRelA A /\ SubRelB B.
 

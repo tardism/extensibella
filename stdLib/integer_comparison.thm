@@ -1,5 +1,5 @@
 
-Kind nat   type.
+Kind $lib__nat   type.
 Import "integer_multiplication".
 
 
@@ -8,7 +8,7 @@ Import "integer_multiplication".
 %                                LESS                                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $less_integer : integer -> integer -> prop by
+Define $less_integer : $lib__integer -> $lib__integer -> prop by
   $less_integer ($posInt $zero) ($posInt ($succ N2));
   $less_integer ($posInt ($succ N1)) ($posInt ($succ N2)) :=
      $less_integer ($posInt N1) ($posInt N2);
@@ -91,7 +91,7 @@ induction on 2. intros LAB LBC. LBC: case LBC.
 %                               LESSEQ                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $lesseq_integer : integer -> integer -> prop by
+Define $lesseq_integer : $lib__integer -> $lib__integer -> prop by
   $lesseq_integer ($posInt $zero) ($posInt $zero);
   $lesseq_integer ($posInt $zero) ($posInt ($succ N2));
   $lesseq_integer ($posInt ($succ N1)) ($posInt ($succ N2)) :=
@@ -256,7 +256,7 @@ apply $lesseq_integer_posInt to L2. case L1 (keep).
 %                              GREATER                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $greater_integer : integer -> integer -> prop by
+Define $greater_integer : $lib__integer -> $lib__integer -> prop by
   $greater_integer N1 N2 := $less_integer N2 N1.
 
 Theorem $greater_true_flip_less_integer : forall N1 N2,
@@ -296,7 +296,7 @@ search.
 %                             GREATEREQ                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $greatereq_integer : integer -> integer -> prop by
+Define $greatereq_integer : $lib__integer -> $lib__integer -> prop by
   $greatereq_integer N1 N2 := $lesseq_integer N2 N1.
 
 Theorem extensibella-$-stdLib-$-greatereq_integer__add_positive :

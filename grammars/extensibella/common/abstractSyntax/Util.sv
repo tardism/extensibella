@@ -145,3 +145,12 @@ Boolean ::= str::String
   return str != "" && isUpper(substring(0, 1, str));
 }
 
+
+
+
+function toTypeList
+TypeList ::= tys::[Type]
+{
+  return foldr(addTypeList, emptyTypeList(), tys);
+}
+

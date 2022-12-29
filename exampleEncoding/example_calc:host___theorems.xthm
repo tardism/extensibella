@@ -4,3 +4,16 @@ Set debug on.
 
 Theorem lookup__unique : forall X L V1 V2,
   lookup X L V1 -> lookup X L V2 -> V1 = V2.
+induction on 1. intros. case H1.
+  %Subgoal 1:  X is first
+   case H2.
+     %Subgoal 1.1:  X is first
+      search.
+     %Subgoal 1.2:  X is later
+      skip.
+  %Subgoal 2:  X is later
+   case H2.
+     %Subgoal 2.1:  X is here
+      skip.
+     %Subgoal 2.2:  X is later
+      apply IH to H4 H6.

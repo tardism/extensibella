@@ -34,6 +34,9 @@ top::NoOpCommand ::= opt::String val::String
                                      else top.proverState.debug,
                    top.proverState.knownTheorems,
                    top.proverState.remainingObligations,
+                   top.proverState.knownTypes,
+                   top.proverState.knownRels,
+                   top.proverState.knownConstrs,
                    top.proverState.provingThms,
                    top.proverState.duringCommands,
                    top.proverState.afterCommands)

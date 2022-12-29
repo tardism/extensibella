@@ -1,5 +1,5 @@
 
-Kind nat   type.
+Kind $lib__nat   type.
 Import "integer_addition".
 
 
@@ -8,7 +8,7 @@ Import "integer_addition".
 %                              MULTIPLY                              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Define $multiply_integer : integer -> integer -> integer -> prop by
+Define $multiply_integer : $lib__integer -> $lib__integer -> $lib__integer -> prop by
   $multiply_integer ($posInt $zero) N ($posInt $zero);
   $multiply_integer ($posInt ($succ N1)) N2 N3 :=
      exists N',

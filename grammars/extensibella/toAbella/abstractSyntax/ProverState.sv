@@ -8,8 +8,9 @@ grammar extensibella:toAbella:abstractSyntax;
 -}
 
 nonterminal ProverState with
-   state, provingThms, debug, knownTheorems, remainingObligations,
-   duringCommands, afterCommands,
+   state, debug, knownTheorems, remainingObligations,
+   knownTypes, knownRels, knownConstrs,
+   provingThms, duringCommands, afterCommands,
    replaceState, replacedState<ProverState>;
 
 
@@ -25,6 +26,11 @@ synthesized attribute knownTheorems::[(QName, Metaterm)];
 --haven't done yet
 synthesized attribute remainingObligations::[ThmElement];
 
+--Environments of various entities we know
+synthesized attribute knownTypes::Env<TypeEnvItem>;
+synthesized attribute knownRels::Env<RelationEnvItem>;
+synthesized attribute knownConstrs::Env<ConstructorEnvItem>;
+
 
 abstract production proverState
 top::ProverState ::=
@@ -37,6 +43,10 @@ top::ProverState ::=
    knownThms::[(QName, Metaterm)]
    --things we will need to do in the proof based on imports
    obligations::[ThmElement]
+   --current environments
+   tyEnv::Env<TypeEnvItem>
+   relEnv::Env<RelationEnvItem>
+   constrEnv::Env<ConstructorEnvItem>
    --theorems we are currently in the process of proving
    --should be added to knownThms when we finish the proof
    provingThms::[(QName, Metaterm)]
@@ -53,13 +63,17 @@ top::ProverState ::=
    afterCommands::[AnyCommand]
 {
   top.state = state;
-  top.provingThms = provingThms;
   top.debug = debugMode;
 
   top.knownTheorems = knownThms;
 
   top.remainingObligations = obligations;
 
+  top.knownTypes = tyEnv;
+  top.knownRels = relEnv;
+  top.knownConstrs = constrEnv;
+
+  top.provingThms = provingThms;
   top.duringCommands = duringCommands;
   top.afterCommands = afterCommands;
 
@@ -80,20 +94,20 @@ top::ProverState ::=
       | proofCompleted() ->
         proverState(top.replaceState, debugMode,
                     provingThms ++ knownThms, newObligations,
-                    [], [], afterCommands)
+                    tyEnv, relEnv, constrEnv, [], [], afterCommands)
       | proofAborted() ->
         proverState(top.replaceState, debugMode, knownThms,
-                    obligations, [], [], [])
+                    obligations, tyEnv, relEnv, constrEnv, [], [], [])
       | _ when !null(duringCommands) &&
                subgoalLess(head(duringCommands).1,
                            top.replaceState.currentSubgoal) ->
         proverState(top.replaceState, debugMode, knownThms,
-                    obligations, provingThms, tail(duringCommands),
-                    afterCommands)
+                    obligations, tyEnv, relEnv, constrEnv,
+                    provingThms, tail(duringCommands), afterCommands)
       | _ ->
         proverState(top.replaceState, debugMode, knownThms,
-                    obligations, provingThms, duringCommands,
-                    afterCommands)
+                    obligations, tyEnv, relEnv, constrEnv,
+                    provingThms, duringCommands, afterCommands)
       end;
 }
 
@@ -101,7 +115,8 @@ top::ProverState ::=
 
 --Build a prover state as you expect in the beginning
 function defaultProverState
-ProverState ::= obligations::[ThmElement]
+ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
+   relEnv::Env<RelationEnvItem> constrEnv::Env<ConstructorEnvItem>
 {
   --The metaterms won't be needed, so we can just leave them out
   local knownThms1::[(QName, Metaterm)] =
@@ -231,7 +246,47 @@ ProverState ::= obligations::[ThmElement]
       (toQName("extensibella:stdLib:is_list_append"), trueMetaterm()),
       (toQName("extensibella:stdLib:symmetry"), trueMetaterm())
      ];
-  return proverState(noProof(), false, knownThms, obligations, [], [], []);
+
+  {-Starting environments with the things from the environment not
+    having special syntax to hide them-}
+  --types with special constructors can still be seen, so we add them
+  local knownTys::[TypeEnvItem] =
+      buildEnv(
+         [libTypeEnvItem(toQName(pairTypeName), 2),
+          libTypeEnvItem(toQName("$lib__nat"), 0),
+          libTypeEnvItem(toQName("$lib__bool"), 0),
+          libTypeEnvItem(toQName("$lib__integer"), 0),
+          --not our library, but still *a* library
+          libTypeEnvItem(toQName("list"), 1)]);
+  --a couple of these have type variables in them
+  local knownRels::[RelationEnvItem] =
+      buildEnv(
+         [fixedRelationEnvItem(toQName("is_pair"),
+             toTypeList([arrowType(nameType(toQName("A")),
+                                   nameType(toQName("prop"))),
+                         arrowType(nameType(toQName("B")),
+                                   nameType(toQName("prop"))),
+                         functorType(
+                         functorType(nameType(toQName(pairTypeName)),
+                                     nameType(toQName("A"))),
+                                     nameType(toQName("B")))])),
+          fixedRelationEnvItem(toQName("is_string"),
+             toTypeList([stringType])),
+          fixedRelationEnvItem(toQName("is_bool"),
+             toTypeList([nameType(toQName("$lib__bool"))])),
+          fixedRelationEnvItem(toQName("is_integer"),
+             toTypeList([nameType(toQName("$lib__integer"))])),
+          fixedRelationEnvItem(toQName("is_list"),
+             toTypeList([arrowType(nameType(toQName("A")),
+                                   nameType(toQName("prop"))),
+                         functorType(nameType(toQName("list")),
+                                     nameType(toQName("A")))]))]);
+  --currently no visible constructors from the standard library
+  local knownConstrs::[ConstructorEnvItem] = buildEnv([]);
+
+  return proverState(noProof(), false, knownThms, obligations,
+            addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),
+            addEnv(knownConstrs, knownConstrs), [], [], []);
 }
 
 

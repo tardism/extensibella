@@ -37,7 +37,7 @@ global stringType::Type =
 
 global appendName::String = "$append";
 
-global pairTypeName::String = "$pair";
+global pairTypeName::String = "$lib__pair";
 global pairConstructorName::String = "$pair_c";
 
 global orName::String = "$or_bool";

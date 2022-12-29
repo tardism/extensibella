@@ -62,6 +62,21 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
 }
 
 
+--types defined in the standard library
+abstract production libTypeEnvItem
+top::TypeEnvItem ::= name::QName kind::Integer
+{
+  top.name = name;
+
+  top.isLangType = false;
+
+  top.kind = kind;
+
+  top.transTypes =
+      error("Should not access transTypes on libTypeEnvItem");
+}
+
+
 --types defined in the proof files somewhere (current or imported)
 abstract production proofTypeEnvItem
 top::TypeEnvItem ::= name::QName kind::Integer

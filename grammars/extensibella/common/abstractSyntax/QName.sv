@@ -185,6 +185,7 @@ top::SubQName ::= name::String rest::SubQName
   We only check the SubQName for equality because the user never
   enters the prefix, and indeed cannot enter it.
 -}
+--fixed relations from a language
 abstract production fixQName
 top::QName ::= rest::SubQName
 {
@@ -217,6 +218,7 @@ top::QName ::= rest::SubQName
 }
 
 
+--extensible relations from a language
 abstract production extQName
 top::QName ::= pc::Integer rest::SubQName
 {
@@ -249,6 +251,7 @@ top::QName ::= pc::Integer rest::SubQName
 }
 
 
+--translation relations
 abstract production transQName
 top::QName ::= rest::SubQName
 {
@@ -281,6 +284,7 @@ top::QName ::= rest::SubQName
 }
 
 
+--types defined in a language
 abstract production tyQName
 top::QName ::= rest::SubQName
 {
@@ -292,7 +296,7 @@ top::QName ::= rest::SubQName
   top.moduleName = basicQName(rest.moduleName);
 
   rest.addBase = top.addBase;
-  top.baseAdded = transQName(rest.baseAdded);
+  top.baseAdded = tyQName(rest.baseAdded);
 
   top.typeErrors = rest.typeErrors;
   top.typeFound = rest.typeFound;
@@ -313,6 +317,40 @@ top::QName ::= rest::SubQName
 }
 
 
+--anything from the standard library
+abstract production libQName
+top::QName ::= rest::SubQName
+{
+  top.pp = rest.pp;
+  top.abella_pp = "$lib__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = libQName(rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+
+
+--anything without a prefix
 abstract production basicQName
 top::QName ::= rest::SubQName
 {
@@ -362,11 +400,13 @@ QName ::= name::String
   --choose splitter based on whether it uses colons
   local splitter::String =
       if indexOf(":", name) >= 0 then ":" else name_sep;
+  local buildSub::(SubQName ::= Integer String) =
+      \ i::Integer name::String ->
+        foldrLastElem(addModule, baseName,
+           explode(splitter, substring(i, length(name), name)));
   return
       if startsWith("$fix__", name)
-      then fixQName(foldrLastElem(addModule, baseName,
-                      explode(splitter,
-                              substring(6, length(name), name))))
+      then fixQName(buildSub(6, name))
       else if startsWith("$ext__", name)
       then let shortened::String = substring(6, length(name), name)
            in
@@ -374,16 +414,13 @@ QName ::= name::String
            in
            let pc::Integer = toInteger(substring(0, stop, shortened))
            in
-             extQName(pc,
-                foldrLastElem(addModule, baseName,
-                   explode(splitter,
-                      substring(stop + 2, length(shortened),
-                                shortened))))
+             extQName(pc, buildSub(stop + 2, shortened))
            end end end
       else if startsWith("$trans__", name)
-      then fixQName(foldrLastElem(addModule, baseName,
-                       explode(splitter,
-                               substring(7, length(name), name))))
-      else basicQName(foldrLastElem(addModule, baseName,
-                                    explode(splitter, name)));
+      then fixQName(buildSub(7, name))
+      else if startsWith("$ty__", name)
+      then tyQName(buildSub(5, name))
+      else if startsWith("$lib__", name)
+      then libQName(buildSub(6, name))
+      else basicQName(buildSub(0, name));
 }
