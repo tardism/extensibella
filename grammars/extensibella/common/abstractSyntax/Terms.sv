@@ -219,9 +219,9 @@ top::Binder::=
 nonterminal Term with
    pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
+   isStructured,
    boundNames, usedNames;
-propagate typeEnv, constructorEnv, relationEnv on Term;
-propagate boundNames on Term;
+propagate typeEnv, constructorEnv, relationEnv, boundNames on Term;
 
 --Easy equality check
 attribute compareTo, isEqual occurs on Type;
@@ -239,6 +239,8 @@ top::Term ::= f::Term args::TermList
       then f.abella_pp
       else "(" ++ f.abella_pp ++ ")" ) ++ " " ++ args.abella_pp;
   top.isAtomic = false;
+
+  top.isStructured = true;
 }
 
 abstract production nameTerm
@@ -255,6 +257,8 @@ top::Term ::= name::QName mty::MaybeType
   top.isAtomic = true;
 
   top.usedNames := if name.isQualified then [] else [name.shortName];
+
+  top.isStructured = name.constrFound;
 }
 
 abstract production consTerm
@@ -275,6 +279,8 @@ top::Term ::= t1::Term t2::Term
       then t2.abella_pp
       else "(" ++ t2.abella_pp ++ ")" );
   top.isAtomic = false;
+
+  top.isStructured = true;
 }
 
 abstract production nilTerm
@@ -283,6 +289,8 @@ top::Term ::=
   top.pp = "nil";
   top.abella_pp = "nil";
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 abstract production underscoreTerm
@@ -298,6 +306,8 @@ top::Term ::= mty::MaybeType
       else "_";
 
   top.isAtomic = true;
+
+  top.isStructured = false;
 }
 
 
@@ -306,7 +316,8 @@ top::Term ::= mty::MaybeType
 nonterminal TermList with
    pp, abella_pp, toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
-   boundNames, usedNames;
+   boundNames, usedNames,
+   isStructuredList;
 propagate typeEnv, constructorEnv, relationEnv, boundNames
    on TermList;
 
@@ -319,6 +330,8 @@ top::TermList ::= t::Term
 
   top.toList = [t];
   top.len = 1;
+
+  top.isStructuredList = [t.isStructured];
 }
 
 abstract production consTermList
@@ -331,6 +344,8 @@ top::TermList ::= t::Term rest::TermList
 
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
+
+  top.isStructuredList = t.isStructured::rest.isStructuredList;
 }
 
 abstract production emptyTermList
@@ -341,5 +356,7 @@ top::TermList ::=
 
   top.toList = [];
   top.len = 0;
+
+  top.isStructuredList = [];
 }
 

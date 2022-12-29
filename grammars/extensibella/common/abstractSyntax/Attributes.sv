@@ -39,6 +39,12 @@ propagate usedNames on
 inherited attribute boundNames::[String];
 
 
+--Whether a term is built by some constructor rather than being a var
+synthesized attribute isStructured::Boolean;
+--Combination of isStructured for term lists
+synthesized attribute isStructuredList::[Boolean];
+
+
 
 --We often only want to replace the state and leave everything else
 inherited attribute replaceState::ProofState;

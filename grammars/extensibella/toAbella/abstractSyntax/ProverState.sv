@@ -280,6 +280,11 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
              toTypeList([arrowType(nameType(toQName("A")),
                                    nameType(toQName("prop"))),
                          functorType(nameType(toQName("list")),
+                                     nameType(toQName("A")))])),
+          --once again, not our library, but *a* library
+          fixedRelationEnvItem(toQName("member"),
+             toTypeList([nameType(toQName("A")),
+                         functorType(nameType(toQName("list")),
                                      nameType(toQName("A")))]))]);
   --currently no visible constructors from the standard library
   local knownConstrs::[ConstructorEnvItem] = buildEnv([]);

@@ -10,8 +10,6 @@ top::TopCommand ::= thms::ExtThms
 
   top.toAbella = error("extensibleTheoremDeclaration.toAbella");
 
-  top.builtNewProofState = error("extensibleTheoremDeclaration.builtNewProofState");
-
   top.provingTheorems = thms.provingTheorems;
 
   top.duringCommands = error("extensibleTheoremDeclaration.duringCommands");
@@ -29,8 +27,6 @@ top::TopCommand ::= names::[QName]
 
   top.toAbella = error("proveObligations.toAbella");
   --Need to check these are the right things to prove
-
-  top.builtNewProofState = error("proveObligations.builtNewProofState");
 
   top.provingTheorems = error("proveObligations.provingTheorems");
 

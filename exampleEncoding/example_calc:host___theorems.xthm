@@ -1,6 +1,6 @@
 Module example_calc:host.
 
-Set debug on.
+%Set debug on.
 
 Theorem lookup__unique : forall X L V1 V2,
   lookup X L V1 -> lookup X L V2 -> V1 = V2.
@@ -17,3 +17,9 @@ induction on 1. intros. case H1.
       apply H3 to _.
      %Subgoal 2.2:  X is later
       apply IH to H4 H6. search.
+
+
+%Extensible_Theorem val_exists__value : forall T KnownNames EvalEnv V,
+%  valExists KnownNames T true ->
+%  (forall X, member X KnownNames -> exists VX, member (X, VX) EvalEnv) ->
+%  value EvalEnv T V.

@@ -146,6 +146,8 @@ top::Term ::= i::Integer
   top.pp = toString(i);
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 abstract production stringTerm
@@ -154,6 +156,8 @@ top::Term ::= contents::String
   top.pp = "\"" ++ contents ++ "\"";
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 abstract production trueTerm
@@ -162,6 +166,8 @@ top::Term ::=
   top.pp = "true";
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 abstract production falseTerm
@@ -170,6 +176,8 @@ top::Term ::=
   top.pp = "false";
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 abstract production listTerm
@@ -178,6 +186,8 @@ top::Term ::= contents::ListContents
   top.pp = "[" ++ contents.pp ++ "]";
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 abstract production pairTerm
@@ -186,6 +196,8 @@ top::Term ::= contents::PairContents
   top.pp = "(" ++ contents.pp ++ ")";
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 abstract production charTerm
@@ -194,6 +206,8 @@ top::Term ::= char::String
   top.pp = "\"" ++ char ++ "\"";
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
+
+  top.isStructured = true;
 }
 
 

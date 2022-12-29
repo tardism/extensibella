@@ -33,7 +33,3 @@ synthesized attribute stateListOut::[(Integer, ProverState)];
 
 --proof state produced after a command
 inherited attribute newProofState::ProofState;
-
---proof state modified to reflect the particular situation for
---extensible theorems
-synthesized attribute builtNewProofState::ProofState;

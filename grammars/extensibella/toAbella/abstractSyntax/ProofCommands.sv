@@ -136,8 +136,33 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
 
   top.toAbella = [top];
 
+  local maybeHypBody::Maybe<Metaterm> =
+      lookup(hyp, top.proverState.state.hypList);
+  local hypBody::Metaterm = maybeHypBody.fromJust;
+  hypBody.relationEnv = top.relationEnv;
+  hypBody.constructorEnv = top.constructorEnv;
   --need to check hyp isn't an extensible relation or
   --it has its PC filled in
+  top.toAbellaMsgs <-
+      if !maybeHypBody.isJust
+      then [errorMsg("Unknown hypothesis " ++ hyp)]
+      else
+         case hypBody of
+         | relationMetaterm(rel, args, r) ->
+           if !rel.relFound
+           then [] --already covered
+           else if !rel.fullRel.isExtensible
+           then [] --can do case analysis on non-extensible whenever
+           else if length(args.isStructuredList) <= rel.fullRel.pcIndex
+           then [] --too few args
+           else if elemAtIndex(args.isStructuredList,
+                               rel.fullRel.pcIndex)
+           then [] --pc is structured
+           else [errorMsg("Cannot do case analysis on extensible " ++
+                    "relation " ++ rel.pp ++ " with unstructured " ++
+                    "primary component")]
+         | _ -> []
+         end;
 }
 
 

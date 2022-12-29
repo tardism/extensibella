@@ -30,7 +30,7 @@ top::AnyCommand ::= c::TopCommand
 
   top.stateListOut =
       (length(c.toAbella),
-       proverState(c.builtNewProofState,
+       proverState(top.newProofState,
           top.proverState.debug,
           top.proverState.knownTheorems,
           top.proverState.remainingObligations,

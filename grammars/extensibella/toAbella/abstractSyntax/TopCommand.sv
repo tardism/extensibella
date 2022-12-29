@@ -8,7 +8,7 @@ nonterminal TopCommand with
    --pp should always end with a newline
    pp, abella_pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
-   newProofState, builtNewProofState,
+   newProofState,
    provingTheorems, duringCommands, afterCommands,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
@@ -63,8 +63,6 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
                     top.currentModule.pp)]
       else [];
 
-  top.builtNewProofState = top.newProofState;
-
   top.provingTheorems = [(fullName, body)];
 }
 
@@ -100,8 +98,6 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                               "module (expected " ++
                               top.currentModule.pp ++ ")")]
                 else [], preds);
-
-  top.builtNewProofState = top.newProofState;
 
   top.provingTheorems = [];
 }
@@ -139,8 +135,6 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                               top.currentModule.pp ++ ")")]
                 else [], preds);
 
-  top.builtNewProofState = top.newProofState;
-
   top.provingTheorems = [];
 }
 
@@ -154,8 +148,6 @@ top::TopCommand ::= m::Metaterm
   m.boundNames = [];
 
   top.toAbella = [anyTopCommand(queryCommand(m.toAbella))];
-
-  top.builtNewProofState = top.newProofState;
 
   top.provingTheorems = [];
 }
@@ -198,8 +190,6 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
             [], drop(length(newTheoremNames), splitThm));
   production expandedNames::[QName] = qedNewNames ++ moreNames;
 
-  top.builtNewProofState = top.newProofState;
-
   top.provingTheorems = [];
 }
 
@@ -211,8 +201,6 @@ top::TopCommand ::= tys::TypeList
   top.abella_pp = "Close " ++ tys.abella_pp ++ ".\n";
 
   top.toAbella = error("closeCommand.toAbella");
-
-  top.builtNewProofState = top.newProofState;
 
   top.provingTheorems = [];
 }
@@ -264,8 +252,6 @@ top::TopCommand ::= names::[QName] k::Kind
                               "module (expected " ++
                               top.currentModule.pp ++ ")")]
                 else [], names);
-
-  top.builtNewProofState = top.newProofState;
 
   top.provingTheorems = [];
 }
@@ -321,8 +307,6 @@ top::TopCommand ::= names::[QName] ty::Type
                               "module (expected " ++
                               top.currentModule.pp ++ ")")]
                 else [], names);
-
-  top.builtNewProofState = top.newProofState;
 
   top.provingTheorems = [];
 }
