@@ -35,13 +35,13 @@ named nonterminals and named productions.
 
 Nonterminals
 ----------------------------------------------------------------------
-We name nonterminals using their qualified names, so `mo:du:le:Nt` is
-named as `mo-$-du-$-le-$-Nt`.
+We name nonterminals of the language using their qualified names with
+a prefix, so `mo:du:le:Nt` is named as `$ty__mo-$-du-$-le-$-Nt`.
 
 Nonterminals are defined as Abella types of kind `type`, so we define
 nonterminals as
 ```
-Kind mo-$-du-$-le-$-Nt   type.
+Kind $ty__mo-$-du-$-le-$-Nt   type.
 ```
 We might add the ability to have functor nonterminals (e.g. have kind
 `type -> type`), but this is not currently present.
@@ -56,14 +56,14 @@ Productions are defined in Abella as constructors.  If a production
 `mod:prod` takes arguments of nonterminal types `mod1:A` and `mod2:B`
 and builds a `mod:C`, we encode it as
 ```
-Type mod-$-prod   mod1-$-A -> mod2-$-B -> mod-$-C.
+Type mod-$-prod   $ty__mod1-$-A -> $ty__mod2-$-B -> $ty__mod-$-C.
 ```
 
 Suppose we are defining a module `mod` that imports a module `imp`.
 Further suppose `imp` introduces a nonterminal `imp:Nt`.  Then the
 definition must include a new production as
 ```
-Type $unknown_imp-$-Nt   imp-$-Nt.
+Type $unknown_imp-$-Nt   $ty__imp-$-Nt.
 ```
 This is a placeholder for productions of the `imp:Nt` nonterminal
 introduced by other modules not known to the current module and will
@@ -136,7 +136,7 @@ If the translation relation for `mod:Nt` takes one argument, of type
 `a`, to define the translation, its translation relation must be
 defined as
 ```
-Define $trans__mod-$-Nt : a -> mod-$-Nt -> mod-$-Nt -> prop by
+Define $trans__mod-$-Nt : a -> $ty__mod-$-Nt -> $ty__mod-$-Nt -> prop by
 ...
 ```
 The first `mod:Nt` argument is the translating syntax and the second

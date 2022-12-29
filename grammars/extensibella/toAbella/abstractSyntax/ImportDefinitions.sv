@@ -17,9 +17,9 @@ nonterminal ListOfCommands with
 
 synthesized attribute commandList::[AnyCommand];
 
-synthesized attribute tys::Env<TypeEnvItem>;
-synthesized attribute rels::Env<RelationEnvItem>;
-synthesized attribute constrs::Env<ConstructorEnvItem>;
+synthesized attribute tys::[TypeEnvItem];
+synthesized attribute rels::[RelationEnvItem];
+synthesized attribute constrs::[ConstructorEnvItem];
 
 
 abstract production emptyListOfCommands
@@ -30,9 +30,9 @@ top::ListOfCommands ::=
 
   top.commandList = [];
 
-  top.tys = error("emptyListOfCommands.tys");
-  top.rels = error("emptyListOfCommands.rels");
-  top.constrs = error("emptyListOfCommands.constrs");
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
 }
 
 
@@ -44,9 +44,9 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 
   top.commandList = a::rest.commandList;
 
-  top.tys = error("addListOfCommands.tys");
-  top.rels = error("addListOfCommands.rels");
-  top.constrs = error("addListOfCommands.constrs");
+  top.tys = a.tys ++ rest.tys;
+  top.rels = a.rels ++ rest.rels;
+  top.constrs = a.constrs ++ rest.constrs;
 }
 
 
@@ -58,7 +58,203 @@ top::ListOfCommands ::= l1::ListOfCommands l2::ListOfCommands
 
   top.commandList = l1.commandList ++ l2.commandList;
 
-  top.tys = error("joinListOfCommands.tys");
-  top.rels = error("joinListOfCommands.rels");
-  top.constrs = error("joinListOfCommands.constrs");
+  top.tys = l1.tys ++ l2.tys;
+  top.rels = l1.rels ++ l2.rels;
+  top.constrs = l1.constrs ++ l2.constrs;
+}
+
+
+
+
+
+attribute
+   tys, rels, constrs
+occurs on AnyCommand;
+
+aspect production anyTopCommand
+top::AnyCommand ::= c::TopCommand
+{
+  top.tys = c.tys;
+  top.rels = c.rels;
+  top.constrs = c.constrs;
+}
+
+
+aspect production anyProofCommand
+top::AnyCommand ::= c::ProofCommand
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production anyNoOpCommand
+top::AnyCommand ::= c::NoOpCommand
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production anyParseFailure
+top::AnyCommand ::= parseErrors::String
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+
+
+
+attribute
+   tys, rels, constrs
+occurs on TopCommand;
+
+aspect production theoremDeclaration
+top::TopCommand ::= name::QName params::[String] body::Metaterm
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production definitionDeclaration
+top::TopCommand ::= preds::[(QName, Type)] defs::Defs
+{
+  top.tys =
+      flatMap(\ p::(QName, Type) ->
+                case p.1 of
+                | transQName(s) ->
+                  [langTypeEnvItem(tyQName(s), 0,
+                      foldr(addTypeList, emptyTypeList(),
+                        --drop `ty -> ty -> prop` from end to get args
+                         take(length(p.2.toList) - 3, p.2.toList)))]
+                | _ -> []
+                end,
+              preds);
+  top.rels =
+      flatMap(\ p::(QName, Type) ->
+                case p.1 of
+                | extQName(pc, s) ->
+                  [extRelationEnvItem(p.1,
+                      foldr(addTypeList, emptyTypeList(), p.2.toList),
+                      pc)]
+                | transQName(_) -> []
+                | _ ->
+                  [fixedRelationEnvItem(p.1,
+                      foldr(addTypeList, emptyTypeList(), p.2.toList))]
+                end,
+              preds);
+  top.constrs = [];
+}
+
+
+aspect production codefinitionDeclaration
+top::TopCommand ::= preds::[(QName, Type)] defs::Defs
+{
+  top.tys =
+      flatMap(\ p::(QName, Type) ->
+                case p.1 of
+                | transQName(s) ->
+                  [langTypeEnvItem(tyQName(s), 0,
+                      foldr(addTypeList, emptyTypeList(),
+                        --drop `ty -> ty -> prop` from end to get args
+                         take(length(p.2.toList) - 3, p.2.toList)))]
+                | _ -> []
+                end,
+              preds);
+  top.rels =
+      flatMap(\ p::(QName, Type) ->
+                case p.1 of
+                | extQName(pc, s) ->
+                  [extRelationEnvItem(p.1,
+                      foldr(addTypeList, emptyTypeList(), p.2.toList),
+                      pc)]
+                | transQName(_) -> []
+                | _ ->
+                  [fixedRelationEnvItem(p.1,
+                      foldr(addTypeList, emptyTypeList(), p.2.toList))]
+                end,
+              preds);
+  top.constrs = [];
+}
+
+
+aspect production queryCommand
+top::TopCommand ::= m::Metaterm
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production splitTheorem
+top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production closeCommand
+top::TopCommand ::= tys::TypeList
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production kindDeclaration
+top::TopCommand ::= names::[QName] k::Kind
+{
+  top.tys =
+      flatMap(\ q::QName ->
+                case q of
+                --get these from translation definitions
+                | tyQName(s) -> []
+                | _ -> [proofTypeEnvItem(q, k.len)]
+                end,
+              names);
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production typeDeclaration
+top::TopCommand ::= names::[QName] ty::Type
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs =
+      map(constructorEnvItem(_,
+             last(ty.toList),
+             foldr(addTypeList, emptyTypeList(),
+                   take(length(ty.toList) - 1, ty.toList))),
+          names);
+}
+
+
+aspect production extensibleTheoremDeclaration
+top::TopCommand ::= thms::ExtThms
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production proveObligations
+top::TopCommand ::= names::[QName]
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
 }

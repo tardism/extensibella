@@ -53,9 +53,8 @@ QName ::= ty::QName
 {
   --need to add "$trans__" to first module portion
   return case ty of
-         | prefixQName(p, s) ->
-           error("Translating types cannot have prefixes")
-         | basicQName(s) -> prefixQName("trans", s)
+         | basicQName(s) -> transQName(s)
+         | _ -> error("Translating types cannot have prefixes")
          end;
 }
 

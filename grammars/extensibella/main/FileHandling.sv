@@ -41,8 +41,35 @@ top::SubQName ::= name::String rest::SubQName
 
 
 
-aspect production prefixQName
-top::QName ::= prefixName::String rest::SubQName
+aspect production fixQName
+top::QName ::= rest::SubQName
+{
+  top.interfaceFileName = rest.interfaceFileName;
+  top.outerfaceFileName = rest.outerfaceFileName;
+  top.definitionFileName = rest.definitionFileName;
+}
+
+
+aspect production extQName
+top::QName ::= pc::Integer rest::SubQName
+{
+  top.interfaceFileName = rest.interfaceFileName;
+  top.outerfaceFileName = rest.outerfaceFileName;
+  top.definitionFileName = rest.definitionFileName;
+}
+
+
+aspect production transQName
+top::QName ::= rest::SubQName
+{
+  top.interfaceFileName = rest.interfaceFileName;
+  top.outerfaceFileName = rest.outerfaceFileName;
+  top.definitionFileName = rest.definitionFileName;
+}
+
+
+aspect production tyQName
+top::QName ::= rest::SubQName
 {
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;

@@ -1,12 +1,14 @@
 grammar extensibella:toAbella:abstractSyntax;
 
 
-nonterminal Kind with pp;
+nonterminal Kind with pp, len;
 
 abstract production typeKind
 top::Kind ::=
 {
   top.pp = "type";
+
+  top.len = 0;
 }
 
 
@@ -14,6 +16,8 @@ abstract production arrowKind
 top::Kind ::= k::Kind
 {
   top.pp = "type -> " ++ k.pp;
+
+  top.len = 1 + k.len;
 }
 
 

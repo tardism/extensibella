@@ -30,7 +30,7 @@ top::NoOpCommand ::= opt::String val::String
   top.stateListOut =
       (if abellaSetting then 1 else 0,
        proverState(top.proverState.state,
-                   if opt == "debug" then opt == "on"
+                   if opt == "debug" then val == "on"
                                      else top.proverState.debug,
                    top.proverState.knownTheorems,
                    top.proverState.remainingObligations,

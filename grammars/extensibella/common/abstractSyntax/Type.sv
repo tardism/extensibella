@@ -3,6 +3,7 @@ grammar extensibella:common:abstractSyntax;
 
 nonterminal Type with
    pp, abella_pp, isAtomic,
+   toList<Type>, --type broken into a list across arrows
    typeEnv;
 propagate typeEnv on Type;
 
@@ -17,6 +18,8 @@ top::Type ::= ty1::Type ty2::Type
                    else "(" ++ ty1.abella_pp ++ ")") ++
                   " -> " ++ ty2.abella_pp;
   top.isAtomic = false;
+
+  top.toList = ty1.toList ++ ty2.toList;
 }
 
 abstract production nameType
@@ -25,6 +28,8 @@ top::Type ::= name::QName
   top.pp = name.pp;
   top.abella_pp = name.abella_pp;
   top.isAtomic = true;
+
+  top.toList = [top];
 }
 
 abstract production functorType
@@ -38,6 +43,8 @@ top::Type ::= functorTy::Type argTy::Type
                   then argTy.abella_pp
                   else "(" ++ argTy.abella_pp ++ ")";
   top.isAtomic = false;
+
+  top.toList = [top];
 }
 
 abstract production underscoreType
@@ -46,6 +53,8 @@ top::Type ::=
   top.pp = "_";
   top.abella_pp = "_";
   top.isAtomic = true;
+
+  top.toList = [top];
 }
 
 

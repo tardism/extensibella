@@ -59,11 +59,57 @@ top::SubQName ::= name::String rest::SubQName
 
 
 
-aspect production prefixQName
-top::QName ::= prefixName::String rest::SubQName
+aspect production fixQName
+top::QName ::= rest::SubQName
 {
-  top.isTranslation = prefixName == "trans";
-  top.transFromAbella = rest.tyFromAbella;
+  top.isTranslation = false;
+  top.transFromAbella = error("Not a translation");
+
+  top.fromAbella = rest.fromAbella;
+
+  top.relFromAbella = rest.relFromAbella;
+  top.tyFromAbella = rest.tyFromAbella;
+  top.constrFromAbella = rest.constrFromAbella;
+}
+
+
+aspect production extQName
+top::QName ::= pc::Integer rest::SubQName
+{
+  top.isTranslation = false;
+  top.transFromAbella = error("Not a translation");
+
+  top.fromAbella = rest.fromAbella;
+
+  top.relFromAbella = rest.relFromAbella;
+  top.tyFromAbella = rest.tyFromAbella;
+  top.constrFromAbella = rest.constrFromAbella;
+}
+
+
+aspect production transQName
+top::QName ::= rest::SubQName
+{
+  top.isTranslation = true;
+  top.transFromAbella =
+      case rest.tyFromAbella of
+      | tyQName(s) -> transQName(s)
+      | _ -> error("Cannot have translation for anything but tyQName")
+      end;
+
+  top.fromAbella = rest.fromAbella;
+
+  top.relFromAbella = rest.relFromAbella;
+  top.tyFromAbella = rest.tyFromAbella;
+  top.constrFromAbella = rest.constrFromAbella;
+}
+
+
+aspect production tyQName
+top::QName ::= rest::SubQName
+{
+  top.isTranslation = false;
+  top.transFromAbella = error("Not a translation");
 
   top.fromAbella = rest.fromAbella;
 

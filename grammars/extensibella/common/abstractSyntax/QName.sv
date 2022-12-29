@@ -43,6 +43,9 @@ synthesized attribute relErrors::[Message];
 synthesized attribute relFound::Boolean;
 synthesized attribute fullRel::RelationEnvItem;
 
+--for internal use
+synthesized attribute sub::SubQName occurs on QName;
+
 
 abstract production baseName
 top::SubQName ::= name::String
@@ -178,18 +181,22 @@ top::SubQName ::= name::String rest::SubQName
 
 
 
-abstract production prefixQName
-top::QName ::= prefixName::String rest::SubQName
+{-
+  We only check the SubQName for equality because the user never
+  enters the prefix, and indeed cannot enter it.
+-}
+abstract production fixQName
+top::QName ::= rest::SubQName
 {
   top.pp = rest.pp;
-  top.abella_pp = "$" ++ prefixName ++ "__" ++ rest.abella_pp;
+  top.abella_pp = "$fix__" ++ rest.abella_pp;
 
   top.isQualified = rest.isQualified;
   top.shortName = rest.shortName;
   top.moduleName = basicQName(rest.moduleName);
 
   rest.addBase = top.addBase;
-  top.baseAdded = prefixQName(prefixName, rest.baseAdded);
+  top.baseAdded = fixQName(rest.baseAdded);
 
   top.typeErrors = rest.typeErrors;
   top.typeFound = rest.typeFound;
@@ -203,10 +210,105 @@ top::QName ::= prefixName::String rest::SubQName
   top.relFound = rest.relFound;
   top.fullRel = rest.fullRel;
 
-  rest.compareTo = case top.compareTo of
-                   | prefixQName(_, r) -> r
-                   | basicQName(r) -> r
-                   end;
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+
+
+abstract production extQName
+top::QName ::= pc::Integer rest::SubQName
+{
+  top.pp = rest.pp;
+  top.abella_pp = "$ext__" ++ toString(pc) ++ "__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = extQName(pc, rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+
+
+abstract production transQName
+top::QName ::= rest::SubQName
+{
+  top.pp = rest.pp;
+  top.abella_pp = "$trans__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = transQName(rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+
+
+abstract production tyQName
+top::QName ::= rest::SubQName
+{
+  top.pp = rest.pp;
+  top.abella_pp = "$ty__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = transQName(rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
   top.isEqual = rest.isEqual;
 }
 
@@ -236,10 +338,9 @@ top::QName ::= rest::SubQName
   top.relFound = rest.relFound;
   top.fullRel = rest.fullRel;
 
-  rest.compareTo = case top.compareTo of
-                   | prefixQName(_, r) -> r
-                   | basicQName(r) -> r
-                   end;
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
   top.isEqual = rest.isEqual;
 }
 
@@ -258,46 +359,31 @@ QName ::= module::QName name::String
 function toQName
 QName ::= name::String
 {
-  local cleaned::String = stripName(name);
-  --Check whether we should be splitting on ':' or name_sep
-  local containsColons::Boolean = indexOf(":", cleaned) >= 0;
-  local exploded::[String] =
-        explode(if containsColons then ":" else name_sep, cleaned);
-  local sub::SubQName = foldrLastElem(addModule, baseName, exploded);
+  --choose splitter based on whether it uses colons
+  local splitter::String =
+      if indexOf(":", name) >= 0 then ":" else name_sep;
   return
-     if startsWith("$fix__", name)
-     then prefixQName("fix", sub)
-     else if startsWith("$ext__", name)
-     then prefixQName("ext", sub)
-     else if startsWith("$trans__", name)
-     then prefixQName("trans", sub)
-     else basicQName(sub);
-}
-
-
---remove special prefixes (other than $trans) from the start
-function stripName
-String ::= name::String
-{
-  --remove $ext__<pc>__ from the beginning
-  local removeExt::String =
-        let x::String = removeDigits(substring(6, length(name), name))
-        in
-          substring(2, length(x), x)
-        end;
-  return if startsWith("$fix__", name)
-         then substring(6, length(name), name)
-         else if startsWith("$ext__", name)
-         then removeExt
-         else name;
-}
-
-
---take digits off the front of the string
-function removeDigits
-String ::= x::String
-{
-  return if isDigit(substring(0, 1, x))
-         then removeDigits(substring(1, length(x), x))
-         else x;
+      if startsWith("$fix__", name)
+      then fixQName(foldrLastElem(addModule, baseName,
+                      explode(splitter,
+                              substring(6, length(name), name))))
+      else if startsWith("$ext__", name)
+      then let shortened::String = substring(6, length(name), name)
+           in
+           let stop::Integer = indexOf("__", shortened)
+           in
+           let pc::Integer = toInteger(substring(0, stop, shortened))
+           in
+             extQName(pc,
+                foldrLastElem(addModule, baseName,
+                   explode(splitter,
+                      substring(stop + 2, length(shortened),
+                                shortened))))
+           end end end
+      else if startsWith("$trans__", name)
+      then fixQName(foldrLastElem(addModule, baseName,
+                       explode(splitter,
+                               substring(7, length(name), name))))
+      else basicQName(foldrLastElem(addModule, baseName,
+                                    explode(splitter, name)));
 }

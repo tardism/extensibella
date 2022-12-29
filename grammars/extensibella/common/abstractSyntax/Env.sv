@@ -17,11 +17,17 @@ attribute name {} occurs on a => [a] ::= name::QName env::Env<a>
 }
 
 
---Why have this?  In case we change the definition of Env
+--Why have these?  In case we change the definition of Env
 function buildEnv
 attribute name {} occurs on a => Env<a> ::= l::[a]
 {
   return l;
+}
+
+function addEnv
+Env<a> ::= base::Env<a> add::[a]
+{
+  return base ++ add;
 }
 
 
@@ -36,18 +42,21 @@ function findAllEnv
 
 
 
-nonterminal TypeEnvItem with name, transTypes, isLangType;
+nonterminal TypeEnvItem with name, transTypes, isLangType, kind;
 
 synthesized attribute isLangType::Boolean;
 synthesized attribute transTypes::TypeList;
+synthesized attribute kind::Integer; --number of args to type
 
 --types defined in the language encoding
 abstract production langTypeEnvItem
-top::TypeEnvItem ::= name::QName args::TypeList
+top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
 {
   top.name = name;
 
   top.isLangType = true;
+
+  top.kind = kind;
 
   top.transTypes = args;
 }
@@ -55,11 +64,13 @@ top::TypeEnvItem ::= name::QName args::TypeList
 
 --types defined in the proof files somewhere (current or imported)
 abstract production proofTypeEnvItem
-top::TypeEnvItem ::= name::QName
+top::TypeEnvItem ::= name::QName kind::Integer
 {
   top.name = name;
 
   top.isLangType = false;
+
+  top.kind = kind;
 
   top.transTypes =
       error("Should not access transTypes on proofTypeEnvItem");

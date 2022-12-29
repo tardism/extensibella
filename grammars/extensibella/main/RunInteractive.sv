@@ -130,7 +130,9 @@ IOVal<String> ::= ioin::IOToken openComments::Integer
         stripExternalWhiteSpace(read.iovalue.fromJust);
   local shouldEnd::Boolean = endsWith(".", noWhiteSpace);
   return
-     if openComments < 0
+     if !read.iovalue.isJust
+     then ioval(read.io, "Quit.") --^D entered, I think
+     else if openComments < 0
      then ioval(read.io, read.iovalue.fromJust) --syntax error
      else if openComments > 0
      then ioval(readRest.io,
