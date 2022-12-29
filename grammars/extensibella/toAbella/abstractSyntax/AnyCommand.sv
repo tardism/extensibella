@@ -77,11 +77,7 @@ top::AnyCommand ::= c::NoOpCommand
   top.pp = c.pp;
   top.abella_pp = c.abella_pp;
 
-  top.toAbella =
-      case c.toAbella of
-      | nothing() -> []
-      | just(n) -> [anyNoOpCommand(n)]
-      end;
+  top.toAbella = map(anyNoOpCommand, c.toAbella);
 
   c.stateListIn = top.stateListIn;
   top.stateListOut = c.stateListOut;

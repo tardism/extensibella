@@ -97,13 +97,14 @@ IOVal<Integer> ::=
   ----------------------------
   local incominged::IOVal<StateList> =
       runIncoming(aftered.iovalue, aftered.io, abella, debug, config);
-  local finalStateList::StateList = incominged.iovalue;
+  local nonErrorStateList::StateList = incominged.iovalue;
   --Show to user
   ----------------------------
   local finalDisplay::FullDisplay = cleared.iovalue.2;
-  finalDisplay.typeEnv = head(finalStateList).2.knownTypes;
-  finalDisplay.relationEnv = head(finalStateList).2.knownRels;
-  finalDisplay.constructorEnv = head(finalStateList).2.knownConstrs;
+  finalDisplay.typeEnv = head(nonErrorStateList).2.knownTypes;
+  finalDisplay.relationEnv = head(nonErrorStateList).2.knownRels;
+  finalDisplay.constructorEnv =
+      head(nonErrorStateList).2.knownConstrs;
   local output_output::String =
       if speak_to_abella
       then finalDisplay.fromAbella.pp ++ "\n"
@@ -124,6 +125,10 @@ IOVal<Integer> ::=
   {-
     RUN REPL AGAIN
   -}
+  local finalStateList::StateList =
+      if speak_to_abella
+      then nonErrorStateList
+      else stateList;
   local again::IOVal<Integer> =
                --use unsafeTrace to force it to print output
       run_step(tail(unsafeTrace(inputCommands, printed_output)),

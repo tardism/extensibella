@@ -6,8 +6,7 @@ grammar extensibella:toAbella:abstractSyntax;
 nonterminal NoOpCommand with
    --pp should always end with a newline
    pp, abella_pp,
-   toAbella<Maybe<NoOpCommand>>, --maybe because we might send nothing
-   toAbellaMsgs,
+   toAbella<[NoOpCommand]>, toAbellaMsgs,
    stateListIn, stateListOut,
    isQuit,
    proverState;
@@ -22,10 +21,9 @@ top::NoOpCommand ::= opt::String val::String
   top.pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
   top.abella_pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
 
-  local abellaSetting::Boolean = opt == "debug";
+  local abellaSetting::Boolean = opt != "debug";
   top.toAbella =
-      if abellaSetting then nothing()
-                       else just(setCommand(opt, val));
+      if abellaSetting then [setCommand(opt, val)] else [];
 
   top.stateListOut =
       (if abellaSetting then 1 else 0,
@@ -78,7 +76,7 @@ top::NoOpCommand ::= theoremName::QName
 
   local possibleThms::[(QName, Metaterm)] =
      findTheorem(theoremName, top.proverState);
-  top.toAbella = just(top);
+  top.toAbella = [showCommand(head(possibleThms).1)];
 
   top.toAbellaMsgs <-
       case possibleThms of
@@ -103,7 +101,7 @@ top::NoOpCommand ::=
   top.pp = "Quit.\n";
   top.abella_pp = "Quit.\n";
 
-  top.toAbella = just(top);
+  top.toAbella = [top];
 
   --this probably isn't needed
   top.stateListOut = top.stateListIn;
@@ -122,10 +120,12 @@ top::NoOpCommand ::= n::Integer
   local trans_n::Integer =
       foldr(\ p::(Integer, ProverState) rest::Integer -> p.1 + rest,
             0, take(n, top.stateListIn));
-  top.toAbella = just(backCommand(trans_n));
+  --send a set of "back one"s so sending them to Abella and reading
+  --them back works correctly
+  top.toAbella = repeat(backCommand(1), trans_n);
 
   top.toAbellaMsgs <-
-      if length(top.stateListIn) < n
+      if length(top.stateListIn) <= n
       then [errorMsg("Cannot go back that far")]
       else [];
 
@@ -141,7 +141,7 @@ top::NoOpCommand ::=
   top.pp = "#reset.\n";
   top.abella_pp = "#reset.\n";
 
-  top.toAbella = just(top);
+  top.toAbella = [top];
 
   top.toAbellaMsgs <- [errorMsg("Cannot #reset")];
 
@@ -159,7 +159,7 @@ top::NoOpCommand ::=
   top.abella_pp =
       error("showCurrentCommand.abella_pp should not be accessed");
 
-  top.toAbella = nothing();
+  top.toAbella = [];
 
   --this doesn't really count as a command since it shouldn't be used
   --other than by Proof General
