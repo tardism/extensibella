@@ -71,19 +71,27 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
+  local argsString::String =
+     if args.len == 0
+     then ""
+     else " to " ++ args.pp;
   local withsString::String =
      if withs.len == 0
      then ""
      else " with " ++ withs.pp;
   top.pp = h.pp ++ "apply " ++ depthString ++ theorem.pp ++
-           args.pp ++ withsString ++ ".  ";
+           argsString ++ withsString ++ ".  ";
+  local argsString_abella::String =
+     if args.len == 0
+     then ""
+     else " to " ++ args.abella_pp;
   local withsString_abella::String =
      if withs.len == 0
      then ""
      else " with " ++ withs.abella_pp;
   top.abella_pp =
       h.pp ++ "apply " ++ depthString ++ theorem.abella_pp ++
-      args.abella_pp ++ withsString_abella ++ ".  ";
+      argsString_abella ++ withsString_abella ++ ".  ";
 
   top.toAbella =
       [applyTactic(h, depth, theorem.toAbella,

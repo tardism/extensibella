@@ -10,10 +10,10 @@ induction on 1. intros. case H1.
      %Subgoal 1.1:  X is first
       search.
      %Subgoal 1.2:  X is later
-      skip.
+      apply H3 to _.
   %Subgoal 2:  X is later
    case H2.
      %Subgoal 2.1:  X is here
-      skip.
+      apply H3 to _.
      %Subgoal 2.2:  X is later
-      apply IH to H4 H6.
+      apply IH to H4 H6. search.
