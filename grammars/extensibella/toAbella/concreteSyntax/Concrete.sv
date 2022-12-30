@@ -462,15 +462,15 @@ concrete productions top::SearchWitnessList_c
 
 
 
-closed nonterminal EWitnesses_c with ast<[EWitness]>;
+closed nonterminal EWitnesses_c with ast<EWitnesses>;
 closed nonterminal EWitness_c with ast<EWitness>;
 
 
 concrete productions top::EWitnesses_c
 | ew::EWitness_c ',' rest::EWitnesses_c
-  { top.ast = ew.ast::rest.ast; }
+  { top.ast = addEWitnesses(ew.ast, rest.ast); }
 | ew::EWitness_c
-  { top.ast = [ew.ast]; }
+  { top.ast = oneEWitnesses(ew.ast); }
 
 
 concrete productions top::EWitness_c

@@ -183,6 +183,9 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
          | relationMetaterm(rel, args, r) ->
            if !rel.relFound
            then [] --already covered
+           else if rel.fullRel.name == is_string
+           then [errorMsg("Cannot do case analysis on " ++
+                    is_string.pp ++ " relation")] --because $is_char
            else if !rel.fullRel.isExtensible
            then [] --can do case analysis on non-extensible whenever
            else if length(args.isStructuredList) <= rel.fullRel.pcIndex
@@ -215,26 +218,22 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
 
 
 abstract production existsTactic
-top::ProofCommand ::= ew::[EWitness]
+top::ProofCommand ::= ew::EWitnesses
 {
-  top.pp = "exists " ++ implode(", ", map((.pp), ew)) ++ ".  ";
-  top.abella_pp = "exists " ++
-                  implode(", ", map((.abella_pp), ew)) ++ ".  ";
+  top.pp = "exists " ++ ew.pp ++ ".  ";
+  top.abella_pp = "exists " ++ ew.abella_pp ++ ".  ";
 
-  top.toAbella = error("existsTactic.toAbella");
-               --[existsTactic(map((.toAbella), ew))];
+  top.toAbella = [existsTactic(ew.toAbella)];
 }
 
 
 abstract production witnessTactic
-top::ProofCommand ::= ew::[EWitness]
+top::ProofCommand ::= ew::EWitnesses
 {
-  top.pp = "witness " ++ implode(", ", map((.pp), ew)) ++ ".  ";
-  top.abella_pp = "witness " ++
-                  implode(", ", map((.abella_pp), ew)) ++ ".  ";
+  top.pp = "witness " ++ ew.pp ++ ".  ";
+  top.abella_pp = "witness " ++ ew.abella_pp ++ ".  ";
 
-  top.toAbella = error("witnessTactic.toAbella");
-               --[witnessTactic(map((.toAbella), ew))];
+  top.toAbella = [witnessTactic(ew.toAbella)];
 }
 
 
@@ -620,6 +619,37 @@ top::Withs ::= name::String term::Term rest::Withs
   top.len = 1 + rest.len;
 
   top.toAbella = addWiths(name, term.toAbella, rest.toAbella);
+}
+
+
+
+
+
+nonterminal EWitnesses with
+   pp, abella_pp,
+   boundNames,
+   typeEnv, constructorEnv, relationEnv, proverState,
+   toAbella<EWitnesses>, toAbellaMsgs;
+propagate typeEnv, constructorEnv, relationEnv,
+          proverState, boundNames, toAbellaMsgs on EWitnesses;
+
+abstract production oneEWitnesses
+top::EWitnesses ::= e::EWitness
+{
+  top.pp = e.pp;
+  top.abella_pp = e.abella_pp;
+
+  top.toAbella = oneEWitnesses(e.toAbella);
+}
+
+
+abstract production addEWitnesses
+top::EWitnesses ::= e::EWitness rest::EWitnesses
+{
+  top.pp = e.pp ++ ", " ++ rest.pp;
+  top.abella_pp = e.abella_pp ++ ", " ++ rest.abella_pp;
+
+  top.toAbella = addEWitnesses(e.toAbella, rest.toAbella);
 }
 
 

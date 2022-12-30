@@ -138,7 +138,7 @@ Extensible_Theorem
  Ev2: apply IH to Is1 VE2 Rel IsEnv.
  IsV: apply value_is to Is IsEnv Ev1.
  IsV1: apply value_is to Is1 IsEnv Ev2.
- apply plus_integer_total to IsV IsV1. search.
+ apply plus_integer_total to IsV IsV1. exists N3. search.
 %Subgoal 3
  Is: case IsE. Ev1: apply IH to Is VE1 Rel IsEnv.
  Ev2: apply IH to Is1 VE2 Rel IsEnv.
