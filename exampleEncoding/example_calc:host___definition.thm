@@ -81,12 +81,12 @@ $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-plus E1 E2) I :=
 $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-minus E1 E2) I :=
    exists I1 I2,
       $ext__1__example_calc-$-host-$-value Env E1 I1 /\
-      $ext__1__example_calc-$-host-$-value Env E2 I1 /\
+      $ext__1__example_calc-$-host-$-value Env E2 I2 /\
       $minus_integer I1 I2 I;
 $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-mult E1 E2) I :=
    exists I1 I2,
       $ext__1__example_calc-$-host-$-value Env E1 I1 /\
-      $ext__1__example_calc-$-host-$-value Env E2 I1 /\
+      $ext__1__example_calc-$-host-$-value Env E2 I2 /\
       $multiply_integer I1 I2 I;
 $ext__1__example_calc-$-host-$-value Env (example_calc-$-host-$-letBind S E1 E2) I :=
    exists I1,

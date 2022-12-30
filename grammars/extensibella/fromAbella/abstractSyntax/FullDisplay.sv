@@ -61,12 +61,12 @@ top::TheoremList ::=
 }
 
 abstract production theoremListAdd
-top::TheoremList ::= name::String body::Metaterm rest::TheoremList
+top::TheoremList ::= name::QName body::Metaterm rest::TheoremList
 {
-  top.pp = "Theorem " ++ name ++ " : " ++ body.pp ++ ".\n\n" ++ rest.pp;
+  top.pp = "Theorem " ++ name.pp ++ " : " ++ body.pp ++ ".\n\n" ++ rest.pp;
 
   top.fromAbella =
-      theoremListAdd(name, body.fromAbella, rest.fromAbella);
+      theoremListAdd(name.fromAbella, body.fromAbella, rest.fromAbella);
 }
 
 

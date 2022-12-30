@@ -214,31 +214,34 @@ concrete productions top::PureTopCommand_c
 
 
 concrete productions top::TheoremStmts_c
-| name::Id_t ':' body::ExtBody_c 'on' label::Id_t
+| name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
+  'on' label::Id_t
   { top.ast =
         case body.ast of
         | left(msg) -> left(msg)
         | right(b) ->
-          right(addExtThms(toQName(name.lexeme), b,
+          right(addExtThms(toQName(name.lexeme), binds.ast, b,
                            label.lexeme, endExtThms()))
         end; }
-| name::Id_t ':' body::ExtBody_c 'on' label::Id_t ',' rest::TheoremStmts_c
+| name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
+  'on' label::Id_t ',' rest::TheoremStmts_c
   { top.ast =
         case body.ast, rest.ast of
         | left(msg1), left(msg2) -> left(msg1 ++ "\n" ++ msg2)
         | left(msg), _ -> left(msg)
         | _, left(msg) -> left(msg)
         | right(b), right(rst) ->
-          right(addExtThms(toQName(name.lexeme), b,
+          right(addExtThms(toQName(name.lexeme), binds.ast, b,
                            label.lexeme, rst))
         end; }
   --These are to get errors which are more helpful, because I forget
   --   the labels a lot and can't figure out why it doesn't work.
-| name::Id_t ':' body::ExtBody_c
+| name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
   { top.ast =
         left("Must include relation on which to do induction for theorem " ++
              toString(name.lexeme)); }
-| name::Id_t ':' body::ExtBody_c ',' rest::TheoremStmts_c
+| name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c ','
+  rest::TheoremStmts_c
   { top.ast =
         left("Must include relation on which to do induction for theorem " ++
               toString(name.lexeme) ++ "\n" ++

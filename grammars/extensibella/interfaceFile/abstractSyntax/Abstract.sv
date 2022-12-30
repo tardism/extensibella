@@ -145,8 +145,8 @@ top::ExtThms ::=
 
 
 aspect production addExtThms
-top::ExtThms ::= name::QName body::ExtBody onLabel::String
-                 rest::ExtThms
+top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
+                 onLabel::String rest::ExtThms
 {
   top.thmInfo = (name, body, onLabel)::rest.thmInfo;
 }

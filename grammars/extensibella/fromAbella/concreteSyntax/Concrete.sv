@@ -15,9 +15,11 @@ concrete productions top::FullDisplay_c
 
 concrete productions top::TheoremList_c
 | 'Theorem' name::Id_t ':' body::Metaterm_c '.'
-  { top.ast = theoremListAdd(name.lexeme, body.ast.fromRight, theoremListEmpty()); }
+  { top.ast = theoremListAdd(toQName(name.lexeme), body.ast.fromRight,
+                             theoremListEmpty()); }
 | 'Theorem' name::Id_t ':' body::Metaterm_c '.' rest::TheoremList_c
-  { top.ast = theoremListAdd(name.lexeme, body.ast.fromRight, rest.ast); }
+  { top.ast = theoremListAdd(toQName(name.lexeme), body.ast.fromRight,
+                             rest.ast); }
 
 
 

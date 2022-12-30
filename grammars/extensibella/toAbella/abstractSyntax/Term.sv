@@ -294,8 +294,12 @@ top::Term ::= name::QName mty::MaybeType
       then nameTerm(name, mty.toAbella)
       else if contains(name.shortName, top.boundNames)
       then nameTerm(name, mty.toAbella) --assume it refers to binding
-      else --if not bound, assume constructor
-           nameTerm(name.fullConstr.name, mty.toAbella);
+      else --if not bound, assume defined name to look up
+           nameTerm(
+              case name.fullConstr of
+              | left(x) -> x.name
+              | right(x) -> x.name
+              end, mty.toAbella);
 
   top.toAbellaMsgs <-
       if contains(name.shortName, top.boundNames)

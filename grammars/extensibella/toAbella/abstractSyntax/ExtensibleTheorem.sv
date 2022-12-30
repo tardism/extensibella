@@ -8,13 +8,35 @@ top::TopCommand ::= thms::ExtThms
   top.abella_pp =
       error("extensibleTheoremDeclaration.abella_pp should not be accessed");
 
-  top.toAbella = error("extensibleTheoremDeclaration.toAbella");
+  production extName::QName =
+      if thms.len > 1
+      then toQName("$extThm_" ++ toString(genInt()))
+      else head(thms.provingTheorems).1;
+
+  top.toAbella =
+      [anyTopCommand(theoremDeclaration(extName, [],
+                                        thms.toAbella)),
+       anyProofCommand(inductionTactic(noHint(),
+                                       thms.inductionNums))] ++
+      (if thms.len > 1 then [anyProofCommand(splitTactic())]
+                       else []) ++
+      map(anyProofCommand,
+          head(thms.duringCommands).2); --intros for first thm
 
   top.provingTheorems = thms.provingTheorems;
 
-  top.duringCommands = error("extensibleTheoremDeclaration.duringCommands");
+  top.duringCommands = tail(thms.duringCommands);
 
-  top.afterCommands = error("extensibleTheoremDeclaration.afterCommands");
+  top.afterCommands =
+      if thms.len > 1
+      then [anyTopCommand(splitTheorem(extName,
+                             map(fst, thms.provingTheorems)))]
+      else []; --nothing to do after if there is only one being proven
+
+  thms.startingGoalNum =
+       if thms.len > 1
+       then [1]
+       else []; --only one thm, so subgoals for it are 1, 2, ...
 }
 
 
@@ -40,30 +62,45 @@ top::TopCommand ::= names::[QName]
 
 
 nonterminal ExtThms with
-   pp,
+   pp, len,
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
+   inductionNums,
+   startingGoalNum, duringCommands,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
           currentModule, proverState, toAbellaMsgs on ExtThms;
+
+--prefix for the subgoals arising from a theorem
+inherited attribute startingGoalNum::SubgoalNum;
+--gather indices for induction
+synthesized attribute inductionNums::[Integer];
 
 abstract production endExtThms
 top::ExtThms ::=
 {
   top.pp = "";
 
+  top.len = 0;
+
   top.toAbella = trueMetaterm();
 
   top.provingTheorems = [];
+
+  top.inductionNums = [];
+
+  top.duringCommands = [];
 }
 
 
 abstract production addExtThms
-top::ExtThms ::= name::QName body::ExtBody onLabel::String
-                 rest::ExtThms
+top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
+                 onLabel::String rest::ExtThms
 {
   top.pp = name.pp ++ " : " ++ body.pp ++ " on " ++ onLabel ++
            if rest.pp == "" then "" else " /\\ " ++ rest.pp;
+
+  top.len = 1 + rest.len;
 
   production fullName::QName =
       if name.isQualified
@@ -72,20 +109,35 @@ top::ExtThms ::= name::QName body::ExtBody onLabel::String
 
   top.toAbella =
       case rest of
-      | endExtThms() -> body.toAbella
-      | _ -> andMetaterm(body.toAbella, rest.toAbella)
+      | endExtThms() ->
+        bindingMetaterm(forallBinder(), bindings, body.toAbella)
+      | _ ->
+        andMetaterm(
+           bindingMetaterm(forallBinder(), bindings, body.toAbella),
+           rest.toAbella)
       end;
 
-  body.boundNames = [];
+  body.boundNames = bindings.usedNames;
 
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem
   local introsNames::[String] =
         foldr(\ p::(Maybe<String>, Decorated Metaterm) rest::[String] ->
-                if p.1.isJust
-                then p.1.fromJust::rest
-                else makeUniqueNameFromBase("H", rest ++ labels)::rest,
+                case p.1 of
+                | just(x) -> x::rest
+                | nothing() ->
+                  makeUniqueNameFromBase("H", rest ++ labels)::rest
+                end,
               [], body.premises);
+
+  top.inductionNums =
+      case lookup(onLabel, zipWith(pair, introsNames,
+                              range(1, length(introsNames) + 1))) of
+      | just(x) -> x::rest.inductionNums
+      | nothing() ->
+        error("Induction nums:  Did not find " ++ onLabel ++ " in " ++
+           "intros names [" ++ implode(", ", introsNames) ++ "]")
+      end;
 
   top.toAbellaMsgs <-
       case lookupBy(\ a::Maybe<String> b::Maybe<String> ->
@@ -94,8 +146,22 @@ top::ExtThms ::= name::QName body::ExtBody onLabel::String
       | nothing() ->
         [errorMsg("Unknown label " ++ onLabel ++ " in extensible " ++
                   "theorem " ++ name.pp)]
+      | just(relationMetaterm(rel, args, r)) ->
+        --need to check the metaterm is built by an extensible relation
+        let decRel::Decorated QName with {relationEnv} =
+            decorate rel with {relationEnv = top.relationEnv;}
+        in
+          if !decRel.relFound
+          then [] --covered by other errors
+          else if decRel.fullRel.isExtensible
+          then []
+          else [errorMsg("Can only induct on extensible relations " ++
+                   "for extensible theorems; " ++
+                   decRel.fullRel.name.pp ++ " is not extensible")]
+        end
       | just(m) ->
-        [] --need to check the metaterm is built by an extensible relation
+        [errorMsg("Can only induct on extensible relations for " ++
+            "extensible theorems, not " ++ m.pp)]
       end;
 
   --check name is qualified with appropriate module
@@ -109,6 +175,14 @@ top::ExtThms ::= name::QName body::ExtBody onLabel::String
       else [];
 
   top.provingTheorems = (fullName, body.thm)::rest.provingTheorems;
+
+  rest.startingGoalNum = [head(top.startingGoalNum) + 1];
+
+  top.duringCommands =
+      --intros and case immediately
+      [(top.startingGoalNum,
+        [introsTactic(introsNames),
+         caseTactic(nameHint(onLabel), onLabel, true)])];
 }
 
 

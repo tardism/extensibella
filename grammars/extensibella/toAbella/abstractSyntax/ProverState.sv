@@ -8,6 +8,7 @@ grammar extensibella:toAbella:abstractSyntax;
 -}
 
 nonterminal ProverState with
+   pp, --solely for debugging purposes
    state, debug, knownTheorems, remainingObligations,
    knownTypes, knownRels, knownConstrs,
    provingThms, duringCommands, afterCommands,
@@ -62,6 +63,16 @@ top::ProverState ::=
    --I think this is only ever one Split, but make it general in case
    afterCommands::[AnyCommand]
 {
+  top.pp = "Prover State{\n" ++
+      "  Debug Mode:  " ++ toString(debugMode) ++ "\n" ++
+      "  Type Env:  [" ++ implode(", ", map((.pp),
+                             map((.name), tyEnv))) ++ "]\n" ++
+      "  Rel Env:  [" ++ implode(", ", map((.pp),
+                            map((.name), relEnv))) ++ "]\n" ++
+      "  Con Env:  [" ++ implode(", ", map((.pp),
+                            map((.name), constrEnv))) ++ "]\n" ++
+      "}\n";
+
   top.state = state;
   top.debug = debugMode;
 
@@ -291,7 +302,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
 
   return proverState(noProof(), false, knownThms, obligations,
             addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),
-            addEnv(knownConstrs, knownConstrs), [], [], []);
+            addEnv(constrEnv, knownConstrs), [], [], []);
 }
 
 

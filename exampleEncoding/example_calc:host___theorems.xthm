@@ -2,7 +2,7 @@ Module example_calc:host.
 
 %Set debug on.
 
-Theorem lookup__unique : forall X L V1 V2,
+Theorem lookup_unique : forall X L V1 V2,
   lookup X L V1 -> lookup X L V2 -> V1 = V2.
 induction on 1. intros. case H1.
   %Subgoal 1:  X is first
@@ -18,7 +18,161 @@ induction on 1. intros. case H1.
      %Subgoal 2.2:  X is later
       apply IH to H4 H6. search.
 
-%Extensible_Theorem val_exists__value : forall T KnownNames EvalEnv V,
-%  valExists KnownNames T true ->
-%  (forall X, member X KnownNames -> exists VX, member (X, VX) EvalEnv) ->
-%  value EvalEnv T V.
+
+Theorem lookup_mem : forall X L V,
+  lookup X L V -> member (X, V) L.
+induction on 1. intros Lkp. Lkp: case Lkp.
+  %Subgoal 1:  first
+   search.
+  %Subgoal 2:  later
+   apply IH to Lkp1. search.
+
+
+Theorem mem_lookup : forall X V L,
+  is_string X -> is_list (is_pair is_string is_integer) L ->
+  member (X, V) L -> exists V', lookup X L V'.
+induction on 3. intros IsX IsL Mem. Mem: case Mem.
+ %Subgoal 1:  first
+  search.
+ %Subgoal 2:  later
+  SubIsL: case IsL. apply IH to IsX SubIsL1 Mem. Is: case SubIsL.
+  Or: apply is_string_eq_or_not to IsX Is. case Or. search. search.
+
+
+Theorem is_mem : forall X V L,
+  is_list (is_pair is_string is_integer) L -> member (X, V) L ->
+  is_integer V.
+induction on 2. intros IsL Mem. Mem: case Mem.
+  %Subgoal 1:  first
+   SubIs: case IsL. case SubIs. search.
+  %Subgoal 2:  later
+   SubIs: case IsL. apply IH to SubIs1 Mem. search.
+
+
+Extensible_Theorem
+  value_is : forall E EvalEnv V,
+    IsE : isExpr E ->
+    IsEvalEnv : is_list (is_pair is_string is_integer) EvalEnv ->
+    Eval : value EvalEnv E V ->
+    is_integer V
+  on Eval.
+%Subgoal 1:  intConst
+ case IsE. search.
+%Subgoal 2:  plus
+ IsE1: case IsE. apply IH to IsE1 IsEvalEnv Eval1.
+ apply IH to IsE2 IsEvalEnv Eval2.
+ apply plus_integer_is_integer to H1 H2 Eval3. search.
+%Subgoal 3:  minus
+ IsE1: case IsE. apply IH to IsE1 IsEvalEnv Eval1.
+ apply IH to IsE2 IsEvalEnv Eval2.
+ apply minus_integer_is_integer to H1 H2 Eval3. search.
+%Subgoal 4:  multiply
+ IsE1: case IsE. apply IH to IsE1 IsEvalEnv Eval1.
+ apply IH to IsE2 IsEvalEnv Eval2.
+ apply multiply_integer_is_integer to H1 H2 Eval3. search.
+%Subgoal 5:  let bind
+ IsE: case IsE. apply IH to IsE1 IsEvalEnv Eval1.
+ backchain IH with E = E2, EvalEnv = (S, I1)::EvalEnv.
+%Subgoal 6:  name
+ Mem: apply lookup_mem to Eval1. apply is_mem to IsEvalEnv Mem.
+ search.
+
+
+Extensible_Theorem
+  root_value_is : forall R V,
+    IsR : isRoot R ->
+    Eval : rootValue R V ->
+    is_integer V
+  on Eval.
+%root
+ IsE: case IsR. backchain value_is.
+
+
+Extensible_Theorem
+  value_unique : forall E EvalEnv V1 V2,
+    Eval1 : value EvalEnv E V1 ->
+    Eval2 : value EvalEnv E V2 ->
+    V1 = V2
+  on Eval1.
+%Subgoal 1:  intConst
+ case Eval2. search.
+%Subgoal 2:  plus
+ Ev2: case Eval2. apply IH to Eval3 Ev2. apply IH to Eval4 Ev1.
+ apply plus_integer_unique to Eval5 Ev3. search.
+%Subgoal 3:  minus
+ Ev2: case Eval2. apply IH to Eval3 Ev2. apply IH to Eval4 Ev1.
+ apply minus_integer_unique to Eval5 Ev3. search.
+%Subgoal 4:  multiply
+ Ev2: case Eval2. apply IH to Eval3 Ev2. apply IH to Eval4 Ev1.
+ apply multiply_integer_unique to Eval5 Ev3. search.
+%Subgoal 5:  let bind
+ Ev2: case Eval2. apply IH to Eval3 Ev2. apply IH to Eval4 Ev1.
+ search.
+%Subgoal 6:  name
+ Lkp: case Eval2. apply lookup_unique to Eval3 Lkp. search.
+
+
+Extensible_Theorem
+  root_value_unique : forall R V1 V2,
+    Eval1 : rootValue R V1 ->
+    Eval2 : rootValue R V2 ->
+    V1 = V2
+  on Eval1.
+%root
+ Ev2: case Eval2. apply value_unique to Eval3 Ev2. search.
+
+
+Extensible_Theorem
+  val_exists__value : forall E KnownNames EvalEnv,
+    IsE : isExpr E ->
+    VE : valExists KnownNames E true ->
+    Rel : (forall X, member X KnownNames ->
+              exists VX, member (X, VX) EvalEnv) ->
+    IsEnv : is_list (is_pair is_string is_integer) EvalEnv ->
+    exists V, value EvalEnv E V
+  on VE.
+%Subgoal 1:  intConst
+ search.
+%Subgoal 2:  plus
+ Is: case IsE. Ev1: apply IH to Is VE1 Rel IsEnv.
+ Ev2: apply IH to Is1 VE2 Rel IsEnv.
+ IsV: apply value_is to Is IsEnv Ev1.
+ IsV1: apply value_is to Is1 IsEnv Ev2.
+ apply plus_integer_total to IsV IsV1. search.
+%Subgoal 3
+ Is: case IsE. Ev1: apply IH to Is VE1 Rel IsEnv.
+ Ev2: apply IH to Is1 VE2 Rel IsEnv.
+ IsV: apply value_is to Is IsEnv Ev1.
+ IsV1: apply value_is to Is1 IsEnv Ev2.
+ apply minus_integer_total to IsV IsV1. search.
+%Subgoal 4
+ Is: case IsE. Ev1: apply IH to Is VE1 Rel IsEnv.
+ Ev2: apply IH to Is1 VE2 Rel IsEnv.
+ IsV: apply value_is to Is IsEnv Ev1.
+ IsV1: apply value_is to Is1 IsEnv Ev2.
+ apply multiply_integer_total to IsV IsV1. search.
+%Subgoal 5
+ Is: case IsE. Ev1: apply IH to Is1 VE1 Rel IsEnv. 
+ Rel': assert forall X, member X (S::KnownNames) ->
+                 exists VX, member (X, VX) ((S, V)::EvalEnv).
+     intros Mem. Mem': case Mem. search. apply Rel to Mem'. search.
+ IsEnv': assert is_list (is_pair is_string is_integer)
+                   ((S, V)::EvalEnv).
+     apply value_is to Is1 IsEnv Ev1. search.
+ apply IH to Is2 VE2 Rel' IsEnv'. search.
+%Subgoal 6
+ MemEnv: apply Rel to VE1. IsS: case IsE.
+ apply mem_lookup to IsS IsEnv MemEnv. search.
+
+
+Extensible_Theorem
+  root__val_exists__value : forall R,
+    IsR : isRoot R ->
+    VE: rootValExists R true ->
+    exists V, rootValue R V
+  on VE.
+%root
+ IsE: case IsR.
+ apply val_exists__value to IsE VE1 _ _ with EvalEnv = [].
+    intros Mem. case Mem.
+ search.

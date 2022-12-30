@@ -34,9 +34,11 @@ synthesized attribute typeFound::Boolean;
 synthesized attribute fullType::TypeEnvItem;
 
 --lookup as a constructor
+--can yield either a strict constructor or a relation, since those can
+--   be used as arguments to relations (thus in Term) as well
 synthesized attribute constrErrors::[Message];
 synthesized attribute constrFound::Boolean;
-synthesized attribute fullConstr::ConstructorEnvItem;
+synthesized attribute fullConstr::Either<RelationEnvItem ConstructorEnvItem>;
 
 --lookup as a relation
 synthesized attribute relErrors::[Message];
@@ -75,22 +77,6 @@ top::SubQName ::= name::String
   top.typeFound = length(possibleTys) == 1;
   top.fullType = head(possibleTys);
 
-  --lookup name as a constructor
-  production attribute possibleConstrs::[ConstructorEnvItem] =
-     lookupEnv(basicQName(top), top.constructorEnv);
-  top.constrErrors =
-      case possibleConstrs of
-      | [] -> [errorMsg("Unknown constructor " ++ top.pp)]
-      | [_] -> []
-      | l ->
-        [errorMsg("Indeterminate constructor " ++ top.pp ++ "; " ++
-                  "possibilities are " ++
-                  implode(", ", map((.pp),
-                                map((.name), possibleConstrs))))]
-      end;
-  top.constrFound = length(possibleConstrs) == 1;
-  top.fullConstr = head(possibleConstrs).1;
-
   --lookup name as a relation
   production attribute possibleRels::[RelationEnvItem] =
      lookupEnv(basicQName(top), top.relationEnv);
@@ -106,6 +92,29 @@ top::SubQName ::= name::String
       end;
   top.relFound = length(possibleRels) == 1;
   top.fullRel = head(possibleRels);
+
+  --lookup name as a constructor
+  --any time we can use a constructor, we can also use a relation,
+  --   so include them
+  production attribute possibleConstrs::[ConstructorEnvItem] =
+     lookupEnv(basicQName(top), top.constructorEnv);
+  top.constrErrors =
+      case possibleConstrs, possibleRels of
+      | [], [] -> [errorMsg("Unknown constant " ++ top.pp)]
+      | [_], [] -> []
+      | [], [_] -> []
+      | l1, l2 ->
+        [errorMsg("Indeterminate constant " ++ top.pp ++ "; " ++
+            "possibilities are " ++
+            implode(", ",
+                map((.pp), map((.name), l1) ++ map((.name), l2))))]
+      end;
+  top.constrFound =
+      length(possibleConstrs) + length(possibleRels) == 1;
+  top.fullConstr =
+      if !null(possibleConstrs)
+      then right(head(possibleConstrs))
+      else left(head(possibleRels));
 
   propagate compareTo, isEqual;
 }
@@ -143,22 +152,6 @@ top::SubQName ::= name::String rest::SubQName
   top.typeFound = length(possibleTys) == 1;
   top.fullType = head(possibleTys);
 
-  --lookup name as a constructor
-  production attribute possibleConstrs::[ConstructorEnvItem] =
-     lookupEnv(basicQName(top), top.constructorEnv);
-  top.constrErrors =
-      case possibleConstrs of
-      | [] -> [errorMsg("Unknown constructor " ++ top.pp)]
-      | [_] -> []
-      | l ->
-        [errorMsg("Indeterminate constructor " ++ top.pp ++ "; " ++
-                  "possibilities are " ++
-                  implode(", ", map((.pp),
-                                map((.name), possibleConstrs))))]
-      end;
-  top.constrFound = length(possibleConstrs) == 1;
-  top.fullConstr = head(possibleConstrs).1;
-
   --lookup name as a relation
   production attribute possibleRels::[RelationEnvItem] =
      lookupEnv(basicQName(top), top.relationEnv);
@@ -174,6 +167,29 @@ top::SubQName ::= name::String rest::SubQName
       end;
   top.relFound = length(possibleRels) == 1;
   top.fullRel = head(possibleRels);
+
+  --lookup name as a constructor
+  --any time we can use a constructor, we can also use a relation,
+  --   so include them
+  production attribute possibleConstrs::[ConstructorEnvItem] =
+     lookupEnv(basicQName(top), top.constructorEnv);
+  top.constrErrors =
+      case possibleConstrs, possibleRels of
+      | [], [] -> [errorMsg("Unknown constant " ++ top.pp)]
+      | [_], [] -> []
+      | [], [_] -> []
+      | l1, l2 ->
+        [errorMsg("Indeterminate constant " ++ top.pp ++ "; " ++
+            "possibilities are " ++
+            implode(", ",
+                map((.pp), map((.name), l1) ++ map((.name), l2))))]
+      end;
+  top.constrFound =
+      length(possibleConstrs) + length(possibleRels) == 1;
+  top.fullConstr =
+      if !null(possibleConstrs)
+      then right(head(possibleConstrs))
+      else left(head(possibleRels));
 
   propagate compareTo, isEqual;
 }
@@ -417,7 +433,7 @@ QName ::= name::String
              extQName(pc, buildSub(stop + 2, shortened))
            end end end
       else if startsWith("$trans__", name)
-      then fixQName(buildSub(7, name))
+      then fixQName(buildSub(8, name))
       else if startsWith("$ty__", name)
       then tyQName(buildSub(5, name))
       else if startsWith("$lib__", name)
