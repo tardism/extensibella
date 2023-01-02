@@ -75,7 +75,11 @@ top::SubQName ::= name::String
                                 map((.name), possibleTys))))]
       end;
   top.typeFound = length(possibleTys) == 1;
-  top.fullType = head(possibleTys);
+  top.fullType =
+      case possibleTys of
+      | x::_ -> x
+      | [] -> error("Could not find full type for " ++ top.pp)
+      end;
 
   --lookup name as a relation
   production attribute possibleRels::[RelationEnvItem] =
@@ -91,7 +95,11 @@ top::SubQName ::= name::String
                                 map((.name), possibleRels))))]
       end;
   top.relFound = length(possibleRels) == 1;
-  top.fullRel = head(possibleRels);
+  top.fullRel =
+      case possibleRels of
+      | x::_ -> x
+      | [] -> error("Could not find full relation for " ++ top.pp)
+      end;
 
   --lookup name as a constructor
   --any time we can use a constructor, we can also use a relation,
@@ -112,9 +120,12 @@ top::SubQName ::= name::String
   top.constrFound =
       length(possibleConstrs) + length(possibleRels) == 1;
   top.fullConstr =
-      if !null(possibleConstrs)
-      then right(head(possibleConstrs))
-      else left(head(possibleRels));
+      case possibleConstrs, possibleRels of
+      | x::_, _ -> right(x)
+      | _, x::_ -> left(x)
+      | [], [] ->
+        error("Could not find full constructor for " ++ top.pp)
+      end;
 
   propagate compareTo, isEqual;
 }
@@ -150,7 +161,11 @@ top::SubQName ::= name::String rest::SubQName
                                 map((.name), possibleTys))))]
       end;
   top.typeFound = length(possibleTys) == 1;
-  top.fullType = head(possibleTys);
+  top.fullType =
+      case possibleTys of
+      | x::_ -> x
+      | [] -> error("Could not find full type for " ++ top.pp)
+      end;
 
   --lookup name as a relation
   production attribute possibleRels::[RelationEnvItem] =
@@ -166,7 +181,11 @@ top::SubQName ::= name::String rest::SubQName
                                 map((.name), possibleRels))))]
       end;
   top.relFound = length(possibleRels) == 1;
-  top.fullRel = head(possibleRels);
+  top.fullRel =
+      case possibleRels of
+      | x::_ -> x
+      | [] -> error("Could not find full relation for " ++ top.pp)
+      end;
 
   --lookup name as a constructor
   --any time we can use a constructor, we can also use a relation,
@@ -187,9 +206,12 @@ top::SubQName ::= name::String rest::SubQName
   top.constrFound =
       length(possibleConstrs) + length(possibleRels) == 1;
   top.fullConstr =
-      if !null(possibleConstrs)
-      then right(head(possibleConstrs))
-      else left(head(possibleRels));
+      case possibleConstrs, possibleRels of
+      | x::_, _ -> right(x)
+      | _, x::_ -> left(x)
+      | [], [] ->
+        error("Could not find full constructor for " ++ top.pp)
+      end;
 
   propagate compareTo, isEqual;
 }

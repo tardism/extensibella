@@ -39,7 +39,6 @@ top::Type ::= ty1::Type ty2::Type
 aspect production nameType
 top::Type ::= name::QName
 {
-  --need to account for built-in types
   top.toAbella = nameType(name.fullType.name);
 }
 

@@ -16,3 +16,6 @@ Parser_*_parse.html
 
 # Debugging output
 abella_dump.thm
+
+# Generated directory
+generated/

@@ -76,19 +76,22 @@ IOVal<Integer> ::=
                                         [ThmElement])>> =
       processModuleDecl(fileAST.1, import_parse, interface_parse,
                         outerface_parse, fileContents.io);
+  local modComms::ListOfCommands = processed.iovalue.fromRight.1;
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
-  local proverState::ProverState = error("compile_file.proverState");
+  local proverState::ProverState =
+      defaultProverState(processed.iovalue.fromRight.3,
+         buildEnv(modComms.tys), buildEnv(modComms.rels),
+         buildEnv(modComms.constrs));
   --
   local compiledContents::String =
-        buildCompiledOutput(fileAST.1, fileAST.2, proverState);
-  local silverGen::IOVal<String> =
-        envVarT("SILVER_GEN", processed.io);
+      buildCompiledOutput(fileAST.1, fileAST.2, proverState);
+  local extensibellaGen::IOVal<String> =
+      envVarT("EXTENSIBELLA_GENERATED", processed.io);
   local outputFile::String =
-        silverGen.iovalue ++ substitute(":", "/", fileAST.1.pp) ++
-        "/thm_outerface.svthmi";
+      extensibellaGen.iovalue ++ fileAST.1.outerfaceFileName;
   local written::IOToken =
-        writeFileT(outputFile, compiledContents, silverGen.io);
+      writeFileT(outputFile, compiledContents, extensibellaGen.io);
 
   return
      if !fileExists.iovalue
@@ -104,9 +107,9 @@ IOVal<Integer> ::=
      then ioval(printT("Processing errors:\n" ++
                        implode("\n", map((.pp), fileErrors)) ++ "\n",
                        processed.io), 1)
-     else if silverGen.iovalue == ""
-     then ioval(printT("Silver generated location not set\n",
-                       silverGen.io), 1)
+     else if extensibellaGen.iovalue == ""
+     then ioval(printT("Extensibella generated location not set\n",
+                       extensibellaGen.io), 1)
      else ioval(printT("Successfully compiled file " ++ filename ++ "\n",
                        written), 0);
 }
@@ -115,9 +118,163 @@ IOVal<Integer> ::=
 
 
 function buildCompiledOutput
-String ::= currentGrammar::QName comms::ListOfCommands
+String ::= currentModule::QName comms::ListOfCommands
            proverState::ProverState
 {
-  return error("buildCompiledOutput");
+  comms.typeEnv = proverState.knownTypes;
+  comms.relationEnv = proverState.knownRels;
+  comms.constructorEnv = proverState.knownConstrs;
+  comms.proverState = proverState;
+  comms.currentModule = currentModule;
+  return comms.compiled.pp;
 }
 
+
+
+
+
+synthesized attribute compiled<a>::a;
+
+attribute
+   compiled<ListOfCommands>
+occurs on ListOfCommands;
+
+aspect production emptyListOfCommands
+top::ListOfCommands ::=
+{
+  top.compiled = emptyListOfCommands();
+}
+
+
+aspect production addListOfCommands
+top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
+{
+  top.compiled =
+      case a.compiled of
+      | just(ac) -> addListOfCommands(ac, rest.compiled)
+      | nothing() -> rest.compiled
+      end;
+}
+
+
+
+attribute compiled<Maybe<AnyCommand>> occurs on AnyCommand;
+
+aspect production anyTopCommand
+top::AnyCommand ::= c::TopCommand
+{
+  top.compiled =
+      case c.compiled of
+      | just(x) -> just(anyTopCommand(x))
+      | nothing() -> nothing()
+      end;
+}
+
+
+aspect production anyProofCommand
+top::AnyCommand ::= c::ProofCommand
+{
+  top.compiled = nothing();
+}
+
+
+aspect production anyNoOpCommand
+top::AnyCommand ::= c::NoOpCommand
+{
+  top.compiled = nothing();
+}
+
+
+aspect production anyParseFailure
+top::AnyCommand ::= parseErrors::String
+{
+  top.compiled = nothing();
+}
+
+
+
+attribute compiled<Maybe<TopCommand>> occurs on TopCommand;
+
+aspect production theoremDeclaration
+top::TopCommand ::= name::QName params::[String] body::Metaterm
+{
+  top.compiled = just(theoremDeclaration(fullName, params, body.full));
+}
+
+
+aspect production definitionDeclaration
+top::TopCommand ::= preds::[(QName, Type)] defs::Defs
+{
+  local fullPreds::[(QName, Type)] =
+      map(\ p::(QName, Type) ->
+            ( if p.1.isQualified
+              then p.1
+              else addQNameBase(top.currentModule, p.1.shortName),
+             decorate p.2 with {typeEnv = top.typeEnv;}.full ),
+          preds);
+  top.compiled = just(definitionDeclaration(fullPreds, defs.full));
+}
+
+
+aspect production codefinitionDeclaration
+top::TopCommand ::= preds::[(QName, Type)] defs::Defs
+{
+  local fullPreds::[(QName, Type)] =
+      map(\ p::(QName, Type) ->
+            ( if p.1.isQualified
+              then p.1
+              else addQNameBase(top.currentModule, p.1.shortName),
+             decorate p.2 with {typeEnv = top.typeEnv;}.full ),
+          preds);
+  top.compiled = just(codefinitionDeclaration(fullPreds, defs.full));
+}
+
+
+aspect production queryCommand
+top::TopCommand ::= m::Metaterm
+{
+  top.compiled = nothing();
+}
+
+
+aspect production splitTheorem
+top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
+{
+  top.compiled =
+      just(splitTheorem(theoremName.fullRel.name, expandedNames));
+}
+
+
+aspect production closeCommand
+top::TopCommand ::= tys::TypeList
+{
+  top.compiled = nothing();
+}
+
+
+aspect production kindDeclaration
+top::TopCommand ::= names::[QName] k::Kind
+{
+  top.compiled = just(kindDeclaration(newNames, k));
+}
+
+
+aspect production typeDeclaration
+top::TopCommand ::= names::[QName] ty::Type
+{
+  top.compiled = just(typeDeclaration(newNames, ty.full));
+}
+
+
+aspect production extensibleTheoremDeclaration
+top::TopCommand ::= thms::ExtThms
+{
+  top.compiled = just(extensibleTheoremDeclaration(thms.full));
+}
+
+
+aspect production proveObligations
+top::TopCommand ::= names::[QName]
+{
+  top.compiled = error("proveObligations.compiled   TODO");
+}

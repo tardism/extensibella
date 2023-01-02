@@ -13,7 +13,9 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal ListOfCommands with
    pp, abella_pp,
+   typeEnv, relationEnv, constructorEnv, proverState, currentModule,
    commandList, tys, rels, constrs;
+propagate proverState, currentModule on ListOfCommands;
 
 synthesized attribute commandList::[AnyCommand];
 
@@ -47,20 +49,14 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   top.tys = a.tys ++ rest.tys;
   top.rels = a.rels ++ rest.rels;
   top.constrs = a.constrs ++ rest.constrs;
-}
 
+  a.typeEnv = top.typeEnv;
+  a.relationEnv = top.relationEnv;
+  a.constructorEnv = top.constructorEnv;
 
-abstract production joinListOfCommands
-top::ListOfCommands ::= l1::ListOfCommands l2::ListOfCommands
-{
-  top.pp = l1.pp ++ l2.pp;
-  top.abella_pp = l1.abella_pp ++ l2.abella_pp;
-
-  top.commandList = l1.commandList ++ l2.commandList;
-
-  top.tys = l1.tys ++ l2.tys;
-  top.rels = l1.rels ++ l2.rels;
-  top.constrs = l1.constrs ++ l2.constrs;
+  rest.typeEnv = addEnv(top.typeEnv, a.tys);
+  rest.relationEnv = addEnv(top.relationEnv, a.rels);
+  rest.constructorEnv = addEnv(top.constructorEnv, a.constrs);
 }
 
 

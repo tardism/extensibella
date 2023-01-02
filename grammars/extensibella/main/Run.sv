@@ -186,9 +186,10 @@ IOVal<(StateList, FullDisplay)> ::=
       --check for errors from given commands
       !displayIn.isError &&
       --and if we have any cleaning things to do right now
-      !null(initProverState.duringCommands) &&
-      head(initProverState.duringCommands).1 ==
-         displayIn.proof.currentSubgoal;
+      case initProverState.duringCommands of
+      | [] -> false
+      | (sg, _)::_ -> sg == displayIn.proof.currentSubgoal
+      end;
   local cleanCommands::[ProofCommand] =
       if shouldClean then head(initProverState.duringCommands).2
                      else [];

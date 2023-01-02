@@ -1,7 +1,5 @@
 grammar extensibella:toAbella:abstractSyntax;
 
---import extensibella:thmInterfaceFile:abstractSyntax;
-
 --things you can do outside of proofs
 
 nonterminal TopCommand with
@@ -222,9 +220,12 @@ top::TopCommand ::= names::[QName] k::Kind
                   k.pp ++ ".\n";
 
   top.toAbella = [anyTopCommand(kindDeclaration(newNames, k))];
-  local newNames::[QName] =
-      map(addQNameBase(top.currentModule, _),
-          map((.shortName), names));
+  production newNames::[QName] =
+      map(\ q::QName ->
+            if q.isQualified
+            then q
+            else addQNameBase(top.currentModule, q.shortName),
+          names);
 
   --redifining a previously-defined type from this module
   top.toAbellaMsgs <-
@@ -274,7 +275,7 @@ top::TopCommand ::= names::[QName] ty::Type
 
   top.toAbella =
       [anyTopCommand(typeDeclaration(newNames, ty.toAbella))];
-  local newNames::[QName] =
+  production newNames::[QName] =
       map(\ q::QName ->
             if q.isQualified
             then q
