@@ -26,7 +26,7 @@ aspect production baseName
 top::SubQName ::= name::String
 {
   top.interfaceFileName = name ++ "___interface.xthmi";
-  top.outerfaceFileName = name ++ "___outerface.xthmi";
+  top.outerfaceFileName = name ++ "___outerface.xthmo";
   top.definitionFileName = name ++ "___definition.thm";
 }
 

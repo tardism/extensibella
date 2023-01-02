@@ -4,6 +4,7 @@ imports extensibella:fromAbella;
 imports extensibella:toAbella;
 imports extensibella:common;
 imports extensibella:interfaceFile;
+imports extensibella:outerfaceFile;
 
 imports silver:util:subprocess;
 imports silver:util:cmdargs;
@@ -16,14 +17,15 @@ IOVal<Integer> ::=
    from_parse::Parser<FullDisplay_c>
    file_parse::Parser<FullFile_c>
    import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<Interface_c>
+   interface_parse::Parser<ModuleList_c>
+   outerface_parse::Parser<Outerface_c>
    largs::[String] ioin::IOToken
 {
   local parsedArgs::Either<String Decorated CmdArgs> =
         parseArgs(largs);
   local generate::IOVal<Boolean> =
         generateSkeletonFiles(parsedArgs.fromRight.generateFiles,
-                              import_parse, interface_parse, ioin);
+           import_parse, interface_parse, outerface_parse, ioin);
   return
      case parsedArgs of
      | left(errs) -> ioval(printT(errs, ioin), 1)
@@ -32,16 +34,20 @@ IOVal<Integer> ::=
        then ioval(generate.io, 1)
        else if (args.compileFile && args.checkFile)
        then check_compile_files(file_parse, from_parse, import_parse,
-               interface_parse, generate.io, args.filenames, args)
+               interface_parse, outerface_parse, generate.io,
+               args.filenames, args)
        else if args.compileFile
        then compile_files(file_parse, from_parse, import_parse,
-               interface_parse, generate.io, args.filenames, args)
+               interface_parse, outerface_parse, generate.io,
+               args.filenames, args)
        else if args.checkFile
        then run_files(file_parse, from_parse, import_parse,
-               interface_parse, generate.io, args.filenames, args)
+               interface_parse, outerface_parse, generate.io,
+               args.filenames, args)
        else if null(args.generateFiles)
        then run_interactive(module_decl_parse, import_parse,
-               cmd_parse, from_parse, interface_parse, ioin, args)
+               cmd_parse, from_parse, interface_parse,
+               outerface_parse, ioin, args)
        else --don't run interactive if generating for some module(s)
             ioval(generate.io, 0)
      end;

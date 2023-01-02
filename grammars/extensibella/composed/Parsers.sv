@@ -3,6 +3,7 @@ grammar extensibella:composed;
 import extensibella:fromAbella:concreteSyntax;
 import extensibella:toAbella:concreteSyntax;
 import extensibella:interfaceFile:concreteSyntax;
+import extensibella:outerfaceFile:concreteSyntax;
 
 {-
   All the parsers we will need
@@ -39,11 +40,18 @@ parser import_parse::ListOfCommands_c
   extensibella:common:concreteSyntax;
 }
 
---Read an interface file
-parser interface_parse::Interface_c
+--Read an outerface file
+parser outerface_parse::Outerface_c
 {
   extensibella:common:concreteSyntax;
   extensibella:toAbella:concreteSyntax;
+  extensibella:outerfaceFile:concreteSyntax;
+}
+
+--Read an interface file
+parser interface_parse::ModuleList_c
+{
+  extensibella:common:concreteSyntax;
   extensibella:interfaceFile:concreteSyntax;
 }
 

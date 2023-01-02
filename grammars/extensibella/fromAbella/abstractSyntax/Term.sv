@@ -207,7 +207,7 @@ top::Term ::=
 aspect production underscoreTerm
 top::Term ::= ty::MaybeType
 {
-  top.fromAbella = error("Sholud not translate underscoreTerm");
+  top.fromAbella = error("Should not translate underscoreTerm");
 }
 
 

@@ -4,7 +4,8 @@ grammar extensibella:main;
 function generateSkeletonFiles
 IOVal<Boolean> ::= gen::[(QName, String)]
    import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<Interface_c> ioin::IOToken
+   interface_parse::Parser<ModuleList_c>
+   outerface_parse::Parser<Outerface_c> ioin::IOToken
 {
   local module::QName = head(gen).1;
   local filename::String = head(gen).2;
@@ -12,7 +13,8 @@ IOVal<Boolean> ::= gen::[(QName, String)]
   local processModule::IOVal<Either<String
                              (ListOfCommands, [DefElement],
                               [ThmElement])>> =
-      processModuleDecl(module, import_parse, interface_parse, ioin);
+      processModuleDecl(module, import_parse, interface_parse,
+         outerface_parse, ioin);
   local outputThms::[ThmElement] =
       filter(\ p::ThmElement ->
                case p of
@@ -62,7 +64,7 @@ IOVal<Boolean> ::= gen::[(QName, String)]
   --
   local rest::IOVal<Boolean> =
       generateSkeletonFiles(tail(gen), import_parse, interface_parse,
-                            output);
+                            outerface_parse, output);
 
   return
       case gen of

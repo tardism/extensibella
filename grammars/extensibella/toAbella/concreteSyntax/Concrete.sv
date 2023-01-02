@@ -209,7 +209,7 @@ concrete productions top::PureTopCommand_c
   { top.ast =
         case newthms.ast of
         | left(msg) -> anyParseFailure(msg)
-        | right(lst) -> error("Adding extensible theorems to groups not done yet")
+        | right(lst) -> error("Adding extensible theorems to groups not done yet   TODO")
         end; }
 
 

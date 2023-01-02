@@ -9,7 +9,8 @@ IOVal<Integer> ::=
    import_parse::Parser<ListOfCommands_c>
    cmd_parse::Parser<AnyCommand_c>
    from_parse::Parser<FullDisplay_c>
-   interface_parse::Parser<Interface_c>
+   interface_parse::Parser<ModuleList_c>
+   outerface_parse::Parser<Outerface_c>
    ioin::IOToken config::Decorated CmdArgs
 {
   local moduleName::IOVal<QName> =
@@ -17,7 +18,7 @@ IOVal<Integer> ::=
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
                                         [ThmElement])>> =
         processModuleDecl(moduleName.iovalue, import_parse,
-                          interface_parse, moduleName.io);
+           interface_parse, outerface_parse, moduleName.io);
   --
   local started::IOVal<Either<String ProcessHandle>> =
         startAbella(moduleName.io, config);
