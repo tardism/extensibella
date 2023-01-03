@@ -27,35 +27,51 @@ IOVal<Either<String
       parsed_interface.parseTree.ast;
 
   --Read imported outerface files
-  local outerfaceFiles::IOVal<[Either<QName String>]> =
-      foldr(\ q::QName rest::IOVal<[Either<QName String>]> ->
+  local outerfaceFiles::IOVal<[Either<QName (QName, String)>]> =
+      foldr(\ q::QName rest::IOVal<[Either<QName (QName, String)>]> ->
               let mf::IOVal<Maybe<String>> =
                   findFile(q.outerfaceFileName, gen_dirs, rest.io)
               in
                 ioval(mf.io, case mf.iovalue of
-                             | just(f) -> right(f)::rest.iovalue
+                             | just(f) -> right((q, f))::rest.iovalue
                              | nothing() -> left(q)::rest.iovalue
                              end)
               end,
             ioval(interface_file_contents.io, []), interface.mods);
   local findOuterfaceFileErrors::[QName] =
-      flatMap(\ e::Either<QName String> ->
+      flatMap(\ e::Either<QName (QName, String)> ->
                 case e of
                 | right(_) -> []
                 | left(q) -> [q]
                 end, outerfaceFiles.iovalue);
-  local outerface::IOVal<Either<String ([DefElement], [ThmElement])>> =
-      processModules(
-         flatMap(\ e::Either<QName String> ->
-                   case e of
-                   | right(x) -> [x]
-                   | left(_) -> []
-                   end, outerfaceFiles.iovalue), outerfaceFiles.io);
+  local outerfaceFilenames::[(QName, String)] =
+      flatMap(\ e::Either<QName (QName, String)> ->
+                case e of
+                | right(p) -> [p]
+                | left(_) -> []
+                end, outerfaceFiles.iovalue);
+  local outerfaces::IOVal<[(QName, Outerface)]> =
+      foldr(\ p::(QName, String) rest::IOVal<[(QName, Outerface)]> ->
+              let contents::IOVal<String> =
+                  readFileT(p.2, rest.io)
+              in
+              let parsed::ParseResult<Outerface_c> =
+                  outerface_parse(contents.iovalue, p.2)
+              in
+                if !parsed.parseSuccess
+                then error("Could not parse outerface file " ++
+                        p.2 ++ ":\n" ++ parsed.parseErrors)
+                else ioval(contents.io,
+                           (p.1, parsed.parseTree.ast)::rest.iovalue)
+              end end,
+            ioval(outerfaceFiles.io, []), outerfaceFilenames);
+  local outerface::([DefElement], [ThmElement]) =
+      processModuleOuterfaces(outerfaces.iovalue);
 
   --Read definition file
   local definition_file::IOVal<Maybe<String>> =
       findFile(moduleName.definitionFileName, gen_dirs,
-               interface_file_contents.io);
+               outerfaces.io);
   local definition_file_contents::IOVal<String> =
       readFileT(definition_file.iovalue.fromJust,
                 definition_file.io);
@@ -90,8 +106,6 @@ IOVal<Either<String
                       implode(", ",
                          map((.pp), findOuterfaceFileErrors))) ++
                 "; must compile first"))
-     else if outerface.iovalue.isLeft
-     then ioval(outerface.io, left(outerface.iovalue.fromLeft))
      --definition errors
      else if !definition_file.iovalue.isJust
      then ioval(definition_file.io,
@@ -104,8 +118,7 @@ IOVal<Either<String
                      parsed_definition.parseErrors ++ "\n"))
      --success
      else ioval(definition_file_contents.io,
-                right((definition, outerface.iovalue.fromRight.1,
-                       outerface.iovalue.fromRight.2)));
+                right((definition, outerface.1, outerface.2)));
 }
 
 

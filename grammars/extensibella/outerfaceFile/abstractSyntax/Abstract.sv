@@ -5,15 +5,91 @@ imports extensibella:toAbella:abstractSyntax;
 
 
 
-function processModules
-IOVal<Either<String ([DefElement], [ThmElement])>> ::=
-   modFiles::[String] ioin::IOToken
+function processModuleOuterfaces
+([DefElement], [ThmElement]) ::= mods::[(QName, Outerface)]
+{
+  local allDefs::[DefElement] =
+      flatMap((.defElements), map(snd, mods));
+  local allThms::[(QName, [ThmElement])] =
+      map(\ p::(QName, Outerface) -> (p.1, p.2.thmElements),
+          mods);
+  local sortedThms::[(QName, [ThmElement])] =
+      sortBy(\ p1::(QName, [ThmElement]) p2::(QName, [ThmElement]) ->
+               p1.1.pp < p2.1.pp, allThms);
+  local justThms::[[ThmElement]] = map(snd, sortedThms);
+  local finalThms::[ThmElement] = combineAllThms(justThms);
+  return (allDefs, finalThms);
+}
+
+
+
+function combineAllThms
+[ThmElement] ::= modThms::[[ThmElement]]
+{
+  local firsts::[ThmElement] = map(head, modThms);
+  local first::ThmElement = getFirst(tail(firsts), head(firsts));
+  local cleaned::[[ThmElement]] = cleanModThms(first, modThms);
+  return
+     case modThms of
+     | [] -> []
+     | [l] -> l
+     | _ -> first::combineAllThms(cleaned)
+     end;
+}
+
+
+function getFirst
+ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
 {
   return
-      case modFiles of
-      | [] -> ioval(ioin, right(([], [])))
-      | hd::tl -> error("processModules   TODO")
-      end;
+     case modThms, thusFar of
+     | [], x -> x
+     --if both extensible, combine them if they contain shared
+     --theorems, otherwise take the earlier one
+     | extensibleMutualTheoremGroup(thms1)::rest,
+       extensibleMutualTheoremGroup(thms2) ->
+       if null(intersect(map(fst, thms1), map(fst, thms2)))
+       then getFirst(rest, thusFar)
+       else getFirst(rest,
+               extensibleMutualTheoremGroup(
+                  unionBy(\ p1::(QName, ExtBody, String)
+                            p2::(QName, ExtBody, String) ->
+                            p1.1 == p2.1,
+                          thms1, thms2)))
+     --if one is not extensible, just take it
+     | x::rest, extensibleMutualTheoremGroup(_) -> x
+     | _::rest, x -> x
+     end;
+}
+
+
+function cleanModThms
+[[ThmElement]] ::= remove::ThmElement modThms::[[ThmElement]]
+{
+  return
+     case modThms of
+     | [] -> []
+     | hd::tl ->
+       case hd, remove of
+       | splitElement(aname, alst)::rest, splitElement(bname, blst)
+         when aname == bname && alst == blst ->
+         if null(rest)
+         then cleanModThms(remove, tl)
+         else rest::cleanModThms(remove, tl)
+       | nonextensibleTheorem(aname, astmt)::rest,
+         nonextensibleTheorem(bname, bstmt) when aname == bname ->
+         if null(rest)
+         then cleanModThms(remove, tl)
+         else rest::cleanModThms(remove, tl)
+       | extensibleMutualTheoremGroup(athms)::rest,
+         extensibleMutualTheoremGroup(bthms)
+         when !null(intersect(map(fst, athms), map(fst, bthms))) ->
+         if null(rest)
+         then cleanModThms(remove, tl)
+         else rest::cleanModThms(remove, tl)
+       | _, _ -> hd::cleanModThms(remove, tl)
+       end
+     end;
 }
 
 

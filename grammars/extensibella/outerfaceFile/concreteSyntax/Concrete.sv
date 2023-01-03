@@ -6,14 +6,18 @@ imports extensibella:outerfaceFile:abstractSyntax;
 
 
 --have this for future proofing against changes adding extra elements
-closed nonterminal Outerface_c with ast<Outerface>;
+closed nonterminal Outerface_c
+   layout {Whitespace_t, BlockComment_t, OneLineComment_t}
+   with ast<Outerface>;
 
 concrete productions top::Outerface_c
 | t::TopCommands_c
   { top.ast = outerface(t.ast); }
 
 
-closed nonterminal TopCommands_c with ast<TopCommands>;
+closed nonterminal TopCommands_c
+   layout {Whitespace_t, BlockComment_t, OneLineComment_t}
+   with ast<TopCommands>;
 
 concrete productions top::TopCommands_c
 |

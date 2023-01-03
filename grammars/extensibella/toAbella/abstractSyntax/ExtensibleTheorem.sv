@@ -97,7 +97,8 @@ abstract production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                  onLabel::String rest::ExtThms
 {
-  top.pp = name.pp ++ " : " ++ body.pp ++ " on " ++ onLabel ++
+  top.pp = name.pp ++ " : forall " ++ bindings.pp ++ ", " ++
+           body.pp ++ " on " ++ onLabel ++
            if rest.pp == "" then "" else " /\\ " ++ rest.pp;
 
   top.len = 1 + rest.len;
@@ -221,7 +222,7 @@ top::ExtBody ::= conc::Metaterm
 abstract production addLabelExtBody
 top::ExtBody ::= label::String m::Metaterm rest::ExtBody
 {
-  top.pp = "(" ++ label ++ " : " ++ m.pp ++ ") -> " ++ rest.pp;
+  top.pp = label ++ " : (" ++ m.pp ++ ") -> " ++ rest.pp;
 
   top.thm = impliesMetaterm(m, rest.thm);
 
