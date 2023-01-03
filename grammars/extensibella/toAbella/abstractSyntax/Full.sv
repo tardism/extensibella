@@ -28,16 +28,16 @@ attribute
 occurs on Def;
 
 aspect production factDef
-top::Def ::= clausehead::Metaterm
+top::Def ::= defRel::QName args::TermList
 {
-  top.full = factDef(clausehead.full);
+  top.full = factDef(defRel.fullRel.name, args.full);
 }
 
 
 aspect production ruleDef
-top::Def ::= clausehead::Metaterm body::Metaterm
+top::Def ::= defRel::QName args::TermList body::Metaterm
 {
-  top.full = ruleDef(clausehead.full, body.full);
+  top.full = ruleDef(defRel.fullRel.name, args.full, body.full);
 }
 
 

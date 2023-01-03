@@ -422,14 +422,20 @@ concrete productions top::Defs_c
 
 
 concrete productions top::Def_c
-| m::Metaterm_c
-  { top.ast = bind(m.ast, \ ma::Metaterm -> right(factDef(ma))); }
-| h::Metaterm_c ':=' b::Metaterm_c
+| rel::Id_t args::ExpList_c
+  { top.ast = right(factDef(toQName(rel.lexeme), args.ast)); }
+| rel::Qname_t args::ExpList_c
+  { top.ast = right(factDef(toQName(rel.lexeme), args.ast)); }
+| rel::Id_t args::ExpList_c ':=' b::Metaterm_c
   { top.ast =
-        bind(h.ast,
-             \ ha::Metaterm ->
-               bind(b.ast,
-                    \ ba::Metaterm -> right(ruleDef(ha, ba)))); }
+        bind(b.ast,
+           \ ba::Metaterm ->
+             right(ruleDef(toQName(rel.lexeme), args.ast, ba))); }
+| rel::Qname_t args::ExpList_c ':=' b::Metaterm_c
+  { top.ast =
+        bind(b.ast,
+           \ ba::Metaterm ->
+             right(ruleDef(toQName(rel.lexeme), args.ast, ba))); }
 
 
 

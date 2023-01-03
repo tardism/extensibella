@@ -16,8 +16,8 @@ inherited attribute knownThms::[(QName, Metaterm)];
 
 abstract production extensibleMutualTheoremGroup
 top::ThmElement ::=
-   --[(thm name, thm statement, induction measure)]
-   thms::[(QName, ExtBody, String)]
+   --[(thm name, var bindings, thm statement, induction measure)]
+   thms::[(QName, Bindings, ExtBody, String)]
 {
   top.pp = error("extensibleMutualTheoremGroup.pp");
 
@@ -25,7 +25,8 @@ top::ThmElement ::=
   top.is_nonextensible = false;
 
   top.thms =
-      map(\ p::(QName, ExtBody, String) -> (p.1, p.2.thm), thms);
+      map(\ p::(QName, Bindings, ExtBody, String) ->
+            (p.1, p.3.thm), thms);
 }
 
 
@@ -67,16 +68,16 @@ nonterminal DefElement with pp, encode;
 abstract production defineElement
 top::DefElement ::= defines::[(QName, Type)]
                     --Some clauses don't have bodies, so Maybe
-                    clauses::[(Metaterm, Maybe<Metaterm>)]
+                    clauses::[(QName, TermList, Maybe<Metaterm>)]
 {
   top.pp = definitionDeclaration(defines, defs).pp;
 
   local defs::Defs =
         foldrLastElem(consDefs, singleDefs,
-           map(\ p::(Metaterm, Maybe<Metaterm>) ->
+           map(\ p::(QName, TermList, Maybe<Metaterm>) ->
                  case p of
-                 | (m, nothing()) -> factDef(m)
-                 | (m, just(b)) -> ruleDef(m, b)
+                 | (q, a, nothing()) -> factDef(q, a)
+                 | (q, a, just(b)) -> ruleDef(q, a, b)
                  end,
                clauses));
   top.encode = [anyTopCommand(definitionDeclaration(defines, defs))];
@@ -86,16 +87,16 @@ top::DefElement ::= defines::[(QName, Type)]
 abstract production codefineElement
 top::DefElement ::= defines::[(QName, Type)]
                     --Some clauses don't have bodies, so Maybe
-                    clauses::[(Metaterm, Maybe<Metaterm>)]
+                    clauses::[(QName, TermList, Maybe<Metaterm>)]
 {
   top.pp = codefinitionDeclaration(defines, defs).pp;
 
   local defs::Defs =
         foldrLastElem(consDefs, singleDefs,
-           map(\ p::(Metaterm, Maybe<Metaterm>) ->
+           map(\ p::(QName, TermList, Maybe<Metaterm>) ->
                  case p of
-                 | (m, nothing()) -> factDef(m)
-                 | (m, just(b)) -> ruleDef(m, b)
+                 | (q, a, nothing()) -> factDef(q, a)
+                 | (q, a, just(b)) -> ruleDef(q, a, b)
                  end,
                clauses));
   top.encode =

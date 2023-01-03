@@ -139,6 +139,12 @@ IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
   local parsedOutput::ParseResult<FullDisplay_c> =
       from_parse(back.iovalue, "<<output>>");
 
+  --nothing is known going into this
+  comms.typeEnv = [];
+  comms.relationEnv = [];
+  comms.constructorEnv = [];
+  comms.currentModule = error("currentModule not needed?");
+
   return
      if !parsedOutput.parseSuccess
      then error("Could not parse Abella output:\n\n" ++

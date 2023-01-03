@@ -275,14 +275,26 @@ top::Bindings ::= name::String mty::MaybeType rest::Bindings
 
 attribute
    toAbella<Term>, toAbellaMsgs,
+   headRel,
    proverState
 occurs on Term;
 propagate proverState, toAbellaMsgs on Term;
+
+synthesized attribute headRel::Maybe<QName>;
+
+aspect default production
+top::Term ::=
+{
+  top.headRel = nothing();
+}
+
 
 aspect production applicationTerm
 top::Term ::= f::Term args::TermList
 {
   top.toAbella = applicationTerm(f.toAbella, args.toAbella);
+
+  top.headRel = f.headRel;
 }
 
 
@@ -305,6 +317,8 @@ top::Term ::= name::QName mty::MaybeType
       if contains(name.shortName, top.boundNames)
       then []
       else name.constrErrors;
+
+  top.headRel = just(name);
 }
 
 

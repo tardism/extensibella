@@ -66,3 +66,23 @@ Maybe<Metaterm> ::= arg::ApplyArg hyps::[(String, Metaterm)]
      end;
 }
 
+
+
+
+
+function subset
+Eq a => Boolean ::= sub::[a] super::[a]
+{
+  return
+     case sub of
+     | [] -> true
+     | h::t -> contains(h, super) && subset(t, super)
+     end;
+}
+
+
+function setEq
+Eq a => Boolean ::= l1::[a] l2::[a]
+{
+  return subset(l1, l2) && subset(l2, l1);
+}

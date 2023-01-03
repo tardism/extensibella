@@ -22,6 +22,10 @@ synthesized attribute duringCommands::[(SubgoalNum, [ProofCommand])];
 synthesized attribute afterCommands::[AnyCommand];
 
 
+--[(relation, module defining primary component constructor)]
+synthesized attribute relationClauseModules::[(QName, QName)];
+
+
 --information about the current state of the prover
 inherited attribute proverState::ProverState;
 

@@ -83,6 +83,16 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
   top.abella_pp = "Define " ++ predsString_abella ++ " by " ++
                   defs.abella_pp ++ ".";
 
+  production fullNames::[(QName, Type)] =
+      map(\ p::(QName, Type) ->
+            if p.1.isQualified
+            then p
+            else (addQNameBase(top.currentModule, p.1.shortName),
+                  p.2),
+          preds);
+
+  defs.beingDefined = fullNames;
+
   top.toAbella = error("definitionDeclaration.toAbella");
 
   --check names are qualified with appropriate module
@@ -118,6 +128,16 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                    p.1.abella_pp ++ " : " ++ p.2.abella_pp, preds));
   top.abella_pp = "CoDefine " ++ predsString_abella ++ " by " ++
                   defs.abella_pp ++ ".";
+
+  production fullNames::[(QName, Type)] =
+      map(\ p::(QName, Type) ->
+            if p.1.isQualified
+            then p
+            else (addQNameBase(top.currentModule, p.1.shortName),
+                  p.2),
+          preds);
+
+  defs.beingDefined = fullNames;
 
   top.toAbella = error("codefinitionDeclaration.toAbella");
 

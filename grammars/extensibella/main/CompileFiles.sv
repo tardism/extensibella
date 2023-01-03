@@ -77,6 +77,10 @@ IOVal<Integer> ::=
       processModuleDecl(fileAST.1, import_parse, interface_parse,
                         outerface_parse, fileContents.io);
   local modComms::ListOfCommands = processed.iovalue.fromRight.1;
+  modComms.typeEnv = [];
+  modComms.relationEnv = [];
+  modComms.constructorEnv = [];
+  modComms.currentModule = fileAST.1;
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
   local proverState::ProverState =

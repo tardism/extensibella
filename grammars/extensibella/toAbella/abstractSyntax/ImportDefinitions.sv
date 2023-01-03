@@ -139,7 +139,10 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                 | extQName(pc, s) ->
                   [extRelationEnvItem(p.1,
                       foldr(addTypeList, emptyTypeList(), p.2.toList),
-                      pc)]
+                      pc, map(snd,
+                              filter(\ inner::(QName, QName) ->
+                                       p.1 == inner.1,
+                                     defs.relationClauseModules)))]
                 | transQName(_) -> []
                 | _ ->
                   [fixedRelationEnvItem(p.1,
@@ -170,7 +173,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                 | extQName(pc, s) ->
                   [extRelationEnvItem(p.1,
                       foldr(addTypeList, emptyTypeList(), p.2.toList),
-                      pc)]
+                      pc, error("codefinitionDeclarationClauseModules"))]
                 | transQName(_) -> []
                 | _ ->
                   [fixedRelationEnvItem(p.1,

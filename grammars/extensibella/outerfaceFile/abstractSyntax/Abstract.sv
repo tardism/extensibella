@@ -52,8 +52,8 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
        then getFirst(rest, thusFar)
        else getFirst(rest,
                extensibleMutualTheoremGroup(
-                  unionBy(\ p1::(QName, ExtBody, String)
-                            p2::(QName, ExtBody, String) ->
+                  unionBy(\ p1::(QName, Bindings, ExtBody, String)
+                            p2::(QName, Bindings, ExtBody, String) ->
                             p1.1 == p2.1,
                           thms1, thms2)))
      --if one is not extensible, just take it
@@ -226,7 +226,7 @@ attribute
    thmInfo
 occurs on ExtThms;
 
-synthesized attribute thmInfo::[(QName, ExtBody, String)];
+synthesized attribute thmInfo::[(QName, Bindings, ExtBody, String)];
 
 aspect production endExtThms
 top::ExtThms ::=
@@ -239,7 +239,7 @@ aspect production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                  onLabel::String rest::ExtThms
 {
-  top.thmInfo = (name, body, onLabel)::rest.thmInfo;
+  top.thmInfo = (name, bindings, body, onLabel)::rest.thmInfo;
 }
 
 
@@ -250,7 +250,7 @@ attribute
    defClauses
 occurs on Defs, Def;
 
-synthesized attribute defClauses::[(Metaterm, Maybe<Metaterm>)];
+synthesized attribute defClauses::[(QName, TermList, Maybe<Metaterm>)];
 
 aspect production singleDefs
 top::Defs ::= d::Def
@@ -268,14 +268,14 @@ top::Defs ::= d::Def rest::Defs
 
 
 aspect production factDef
-top::Def ::= clausehead::Metaterm
+top::Def ::= q::QName args::TermList
 {
-  top.defClauses = [(clausehead, nothing())];
+  top.defClauses = [(q, args, nothing())];
 }
 
 
 aspect production ruleDef
-top::Def ::= clausehead::Metaterm body::Metaterm
+top::Def ::= q::QName args::TermList body::Metaterm
 {
-  top.defClauses = [(clausehead, just(body))];
+  top.defClauses = [(q, args, just(body))];
 }

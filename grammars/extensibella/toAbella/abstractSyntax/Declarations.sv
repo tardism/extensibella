@@ -101,9 +101,13 @@ top::MaybeType ::= ty::Type
 nonterminal Defs with
    pp, abella_pp,
    toAbella<Defs>, toAbellaMsgs,
+   relationClauseModules,
+   beingDefined,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          proverState, toAbellaMsgs on Defs;
+          proverState, toAbellaMsgs, beingDefined on Defs;
+
+inherited attribute beingDefined::[(QName, Type)];
 
 abstract production singleDefs
 top::Defs ::= d::Def
@@ -112,6 +116,8 @@ top::Defs ::= d::Def
   top.abella_pp = d.abella_pp;
 
   top.toAbella = singleDefs(d.toAbella);
+
+  top.relationClauseModules = d.relationClauseModules;
 }
 
 
@@ -122,6 +128,9 @@ top::Defs ::= d::Def rest::Defs
   top.abella_pp = d.abella_pp ++ "; " ++ rest.abella_pp;
 
   top.toAbella = consDefs(d.toAbella, rest.toAbella);
+
+  top.relationClauseModules =
+      d.relationClauseModules ++ rest.relationClauseModules;
 }
 
 
@@ -131,34 +140,105 @@ top::Defs ::= d::Def rest::Defs
 nonterminal Def with
    pp, abella_pp,
    toAbella<Def>, toAbellaMsgs,
+   relationClauseModules,
+   beingDefined,
    typeEnv, constructorEnv, relationEnv, proverState, currentModule;
 propagate typeEnv, constructorEnv, relationEnv, proverState,
-          currentModule, toAbellaMsgs on Def;
+          currentModule, toAbellaMsgs, beingDefined on Def;
 
 abstract production factDef
-top::Def ::= clausehead::Metaterm
+top::Def ::= defRel::QName args::TermList
 {
-  top.pp = clausehead.pp;
-  top.abella_pp = clausehead.abella_pp;
+  top.pp = defRel.pp ++ " " ++ args.pp;
+  top.abella_pp = defRel.abella_pp ++ " " ++ args.abella_pp;
 
-  clausehead.boundNames =
-      filter(\ s::String -> !isCapitalized(s), clausehead.usedNames);
+  args.boundNames =
+      filter(\ s::String -> !isCapitalized(s), args.usedNames);
 
-  top.toAbella = factDef(clausehead.toAbella);
+  top.toAbella = factDef(head(foundDef).1, args.toAbella);
+
+  top.toAbellaMsgs <-
+      case foundDef of
+      | [] -> [errorMsg("Relation " ++ defRel.pp ++ " is not being" ++
+                  " defined")]
+      | [_] -> []
+      | l ->
+        [errorMsg("Cannot determine which relation " ++ defRel.pp ++
+            " is being defined; possibilities are: " ++
+            implode(", ", map((.pp), map(fst, l))))]
+      end;
+
+  production foundDef::[(QName, Type)] =
+      flatMap(\ p::(QName, Type) ->
+                if defRel.isQualified
+                then if p.1 == defRel then [p] else []
+                else if p.1.shortName == defRel.shortName
+                     then [p] else [],
+              top.beingDefined);
+
+  top.relationClauseModules =
+      case foundDef of
+      | [(extQName(pc, sub), ty)] ->
+        let fullList::[Term] = args.full.toList
+        in
+          if length(fullList) < pc
+          then []
+          else case elemAtIndex(fullList, pc).headRel of
+               | just(x) -> [(extQName(pc, sub), x.moduleName)]
+               | nothing() -> []
+               end
+        end
+      | _ -> []
+      end;
 }
 
 
 abstract production ruleDef
-top::Def ::= clausehead::Metaterm body::Metaterm
+top::Def ::= defRel::QName args::TermList body::Metaterm
 {
-  top.pp = clausehead.pp ++ " := " ++ body.pp;
-  top.abella_pp = clausehead.abella_pp ++ " := " ++ body.abella_pp;
+  top.pp = defRel.pp ++ " " ++ args.pp ++ " := " ++ body.pp;
+  top.abella_pp = defRel.abella_pp ++ " " ++ args.abella_pp ++
+                  " := " ++ body.abella_pp;
 
   local boundNames::[String] =
-      filter(\ s::String -> !isCapitalized(s), clausehead.usedNames);
-  clausehead.boundNames = boundNames;
+      filter(\ s::String -> !isCapitalized(s), args.usedNames);
+  args.boundNames = boundNames;
   body.boundNames = boundNames;
 
-  top.toAbella = ruleDef(clausehead.toAbella, body.toAbella);
-}
+  top.toAbella =
+      ruleDef(head(foundDef).1, args.toAbella, body.toAbella);
 
+  top.toAbellaMsgs <-
+      case foundDef of
+      | [] -> [errorMsg("Relation " ++ defRel.pp ++ " is not being" ++
+                  " defined")]
+      | [_] -> []
+      | l ->
+        [errorMsg("Cannot determine which relation " ++ defRel.pp ++
+            " is being defined; possibilities are: " ++
+            implode(", ", map((.pp), map(fst, l))))]
+      end;
+
+  production foundDef::[(QName, Type)] =
+      flatMap(\ p::(QName, Type) ->
+                if defRel.isQualified
+                then if p.1 == defRel then [p] else []
+                else if p.1.shortName == defRel.shortName
+                     then [p] else [],
+              top.beingDefined);
+
+  top.relationClauseModules =
+      case foundDef of
+      | [(extQName(pc, sub), ty)] ->
+        let fullList::[Term] = args.full.toList
+        in
+          if length(fullList) < pc
+          then []
+          else case elemAtIndex(fullList, pc).headRel of
+               | just(x) -> [(extQName(pc, sub), x.moduleName)]
+               | nothing() -> []
+               end
+        end
+      | _ -> []
+      end;
+}

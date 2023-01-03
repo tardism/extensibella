@@ -51,10 +51,11 @@ IOVal<Integer> ::=
   any_a.proverState = currentProverState;
   any_a.boundNames = state.usedNames;
   any_a.stateListIn = stateList;
+  --whether we have an error
+  local is_error::Boolean = any(map((.isError), any_a.toAbellaMsgs));
   --whether we have something to send to Abella
   local speak_to_abella::Boolean =
-      !any(map((.isError), any_a.toAbellaMsgs)) &&
-      !null(any_a.toAbella);
+      !is_error && !null(any_a.toAbella);
   --an error or message based on our own checking
   local our_own_output::String =
       errors_to_string(any_a.toAbellaMsgs);
@@ -128,7 +129,9 @@ IOVal<Integer> ::=
   local finalStateList::StateList =
       if speak_to_abella
       then nonErrorStateList
-      else stateList;
+      else if is_error
+      then stateList
+      else any_a.stateListOut;
   local again::IOVal<Integer> =
                --use unsafeTrace to force it to print output
       run_step(tail(unsafeTrace(inputCommands, printed_output)),
@@ -155,7 +158,7 @@ IOVal<Integer> ::=
        if any_a.isQuit
        then ioval(exited, 0)
        else if config.runningFile --running file should not error
-            then if any(map((.isError), any_a.toAbellaMsgs))
+            then if is_error
                  then ioval(printT("Could not process full file " ++
                                    filename ++ ":\n" ++
                                    our_own_output ++ "\n",
