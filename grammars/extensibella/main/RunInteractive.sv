@@ -35,9 +35,9 @@ IOVal<Integer> ::=
          defaultProverState(processed.iovalue.fromRight.3,
             build_context.iovalue.1, build_context.iovalue.2,
             build_context.iovalue.3));
-  local sendIncoming::IOVal<String> =
-      sendCmdsToAbella(map((.pp), handleIncoming.1),
-         started.iovalue.fromRight, build_context.io, config);
+  local sendIncoming::IOVal<String> = unsafeTracePrint(
+      sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
+         started.iovalue.fromRight, build_context.io, config), "\nStarting theorem commands:  [" ++ implode("", map((.abella_pp), handleIncoming.1)) ++ "]\n");
 
   return
      if !processed.iovalue.isRight

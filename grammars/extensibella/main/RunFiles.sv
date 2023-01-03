@@ -62,7 +62,7 @@ IOVal<Integer> ::=
             build_context.iovalue.1, build_context.iovalue.2,
             build_context.iovalue.3));
   local sendIncoming::IOVal<String> =
-      sendCmdsToAbella(map((.pp), handleIncoming.1),
+      sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
          started.iovalue.fromRight, build_context.io, config);
 
   return

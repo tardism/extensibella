@@ -10,9 +10,19 @@ function handleIncomingThms
   --
   local doThms::[ThmElement] =
         takeWhile((.is_nonextensible), obligations);
-  --don't need toAbella here because it should already be valid
-  local commands::[AnyCommand] =
+  local initialCommands::[AnyCommand] =
         flatMap(\ t::ThmElement -> t.encode, doThms);
+  local commands::[AnyCommand] =
+      flatMap(\ c::AnyCommand ->
+                decorate c with {
+                   currentModule = error("currentModule not needed");
+                   stateListIn = error("stateListIn not needed");
+                   proverState = initialState;
+                   typeEnv = initialState.knownTypes;
+                   relationEnv = initialState.knownRels;
+                   constructorEnv = initialState.knownConstrs;
+                   boundNames = [];
+                }.toAbella, initialCommands);
   --
   local outObligations::[ThmElement] =
         dropWhile((.is_nonextensible), obligations);
