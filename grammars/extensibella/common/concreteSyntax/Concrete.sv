@@ -144,6 +144,10 @@ concrete productions top::SubMetaterm_c
   { top.ast =
         right(translationMetaterm(args.ast, toQName(ty.lexeme),
                                   o.ast, t.ast)); }
+| '|{' ty::Id_t '}-' o::Term_c '~~>' t::Term_c
+  { top.ast =
+        right(translationMetaterm(emptyTermList(), toQName(ty.lexeme),
+                                  o.ast, t.ast)); }
 | '|{' ty::Qname_t '}-' o::Term_c '~~>' t::Term_c
   { top.ast =
         right(translationMetaterm(emptyTermList(), toQName(ty.lexeme),

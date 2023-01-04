@@ -42,11 +42,13 @@ function findAllEnv
 
 
 
-nonterminal TypeEnvItem with name, transTypes, isLangType, kind;
+nonterminal TypeEnvItem with
+   name, transTypes, isLangType, kind, unknownConstr;
 
 synthesized attribute isLangType::Boolean;
 synthesized attribute transTypes::TypeList;
 synthesized attribute kind::Integer; --number of args to type
+synthesized attribute unknownConstr::QName;
 
 --types defined in the language encoding
 abstract production langTypeEnvItem
@@ -59,6 +61,8 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
   top.kind = kind;
 
   top.transTypes = args;
+
+  top.unknownConstr = unknownQName(name.sub);
 }
 
 
@@ -74,6 +78,9 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.transTypes =
       error("Should not access transTypes on libTypeEnvItem");
+
+  top.unknownConstr =
+      error("Should not access unknownConstr on libTypeEnvItem");
 }
 
 
@@ -89,6 +96,9 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.transTypes =
       error("Should not access transTypes on proofTypeEnvItem");
+
+  top.unknownConstr =
+      error("Should not access unknownConstr on proofTypeEnvItem");
 }
 
 

@@ -91,6 +91,7 @@ terminal ButGot_t            'but got'                                          
 terminal LogicVarTopLev_t    'Found logic variable at toplevel'                                     lexer classes {ERROR};
 terminal StructureApp_t      'Structure of applied term must be a substructure of the following.'   lexer classes {ERROR};
 terminal ApplyType_t         'forall A1 ... Ai, nabla z1 ... zj, H1 -> ... -> Hk -> C'              lexer classes {ERROR};
+terminal IndRViolated_t      'Inductive restriction violated'                                       lexer classes {ERROR};
 
 
 terminal Type_t         'type'         lexer classes {LOGIC};

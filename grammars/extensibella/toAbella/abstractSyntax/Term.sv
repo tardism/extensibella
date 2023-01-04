@@ -343,6 +343,22 @@ top::Term ::= mty::MaybeType
 }
 
 
+aspect production unknownTerm
+top::Term ::= ty::QName
+{
+  top.toAbella = nameTerm(ty.fullType.unknownConstr, nothingType());
+  top.toAbellaMsgs <- ty.typeErrors;
+  top.toAbellaMsgs <-
+      if !ty.typeFound
+      then [] --ty.typeErrors gives this
+      else if ty.fullType.isLangType
+      then []
+      else [errorMsg("Cannot have an unknown term for type " ++
+               ty.fullType.name.pp ++ " that is not defined as " ++
+               "part of the language")];
+}
+
+
 aspect production intTerm
 top::Term ::= i::Integer
 {

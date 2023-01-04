@@ -327,6 +327,13 @@ top::Term ::= mty::MaybeType
 }
 
 
+aspect production unknownTerm
+top::Term ::= ty::QName
+{
+  top.full = unknownTerm(ty.fullType.name);
+}
+
+
 aspect production intTerm
 top::Term ::= i::Integer
 {

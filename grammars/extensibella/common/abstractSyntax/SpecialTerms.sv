@@ -185,6 +185,16 @@ top::Metaterm ::= t::Term result::Term
 
 
 --TERMS
+abstract production unknownTerm
+top::Term ::= ty::QName
+{
+  top.pp = "<unknown " ++ ty.pp ++ ">";
+  top.abella_pp = error("Sholud not access abella_pp");
+  top.isAtomic = true;
+
+  top.isStructured = true;
+}
+
 abstract production intTerm
 top::Term ::= i::Integer
 {

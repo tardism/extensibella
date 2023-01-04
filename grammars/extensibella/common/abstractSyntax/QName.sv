@@ -355,6 +355,39 @@ top::QName ::= rest::SubQName
 }
 
 
+--constructor standing in for those from unknown modules
+abstract production unknownQName
+top::QName ::= rest::SubQName
+{
+  top.pp = rest.pp;
+  top.abella_pp = "$unknown__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = unknownQName(rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+
+
 --anything from the standard library
 abstract production libQName
 top::QName ::= rest::SubQName
@@ -455,10 +488,12 @@ QName ::= name::String
              extQName(pc, buildSub(stop + 2, shortened))
            end end end
       else if startsWith("$trans__", name)
-      then fixQName(buildSub(8, name))
+      then transQName(buildSub(8, name))
       else if startsWith("$ty__", name)
       then tyQName(buildSub(5, name))
       else if startsWith("$lib__", name)
       then libQName(buildSub(6, name))
+      else if startsWith("$unknown__", name)
+      then unknownQName(buildSub(10, name))
       else basicQName(buildSub(0, name));
 }

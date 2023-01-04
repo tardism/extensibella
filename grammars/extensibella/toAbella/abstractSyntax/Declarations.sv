@@ -124,8 +124,8 @@ top::Defs ::= d::Def
 abstract production consDefs
 top::Defs ::= d::Def rest::Defs
 {
-  top.pp = d.pp ++ "; " ++ rest.pp;
-  top.abella_pp = d.abella_pp ++ "; " ++ rest.abella_pp;
+  top.pp = d.pp ++ ";\n" ++ rest.pp;
+  top.abella_pp = d.abella_pp ++ ";\n" ++ rest.abella_pp;
 
   top.toAbella = consDefs(d.toAbella, rest.toAbella);
 
@@ -153,7 +153,7 @@ top::Def ::= defRel::QName args::TermList
   top.abella_pp = defRel.abella_pp ++ " " ++ args.abella_pp;
 
   args.boundNames =
-      filter(\ s::String -> !isCapitalized(s), args.usedNames);
+      filter(\ s::String -> isCapitalized(s), args.usedNames);
 
   top.toAbella = factDef(head(foundDef).1, args.toAbella);
 
@@ -201,7 +201,7 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
                   " := " ++ body.abella_pp;
 
   local boundNames::[String] =
-      filter(\ s::String -> !isCapitalized(s), args.usedNames);
+      filter(\ s::String -> isCapitalized(s), args.usedNames);
   args.boundNames = boundNames;
   body.boundNames = boundNames;
 

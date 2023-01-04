@@ -71,13 +71,13 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
   local predsString::String =
      if null(preds)
      then error("Definition should not be empty; definitionDeclaration")
-     else implode(", ", map(\ p::(QName, Type) ->
-                              p.1.pp ++ " : " ++ p.2.pp, preds));
+     else implode(",\n       ", map(\ p::(QName, Type) ->
+                                  p.1.pp ++ " : " ++ p.2.pp, preds));
   top.pp = "Define " ++ predsString ++ " by " ++ defs.pp ++ ".";
   local predsString_abella::String =
      if null(preds)
      then error("Definition should not be empty; definitionDeclaration")
-     else implode(", ",
+     else implode(",\n       ",
              map(\ p::(QName, Type) ->
                    p.1.abella_pp ++ " : " ++ p.2.abella_pp, preds));
   top.abella_pp = "Define " ++ predsString_abella ++ " by " ++
@@ -117,13 +117,13 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
   local predsString::String =
      if null(preds)
      then error("CoDefinition should not be empty; codefinitionDeclaration")
-     else implode(", ", map(\ p::(QName, Type) ->
-                              p.1.pp ++ " : " ++ p.2.pp, preds));
+     else implode(",\n       ", map(\ p::(QName, Type) ->
+                                  p.1.pp ++ " : " ++ p.2.pp, preds));
   top.pp = "CoDefine " ++ predsString ++ " by " ++ defs.pp ++ ".";
   local predsString_abella::String =
      if null(preds)
      then error("CoDefinition should not be empty; codefinitionDeclaration")
-     else implode(", ",
+     else implode(",\n       ",
              map(\ p::(QName, Type) ->
                    p.1.abella_pp ++ " : " ++ p.2.abella_pp, preds));
   top.abella_pp = "CoDefine " ++ predsString_abella ++ " by " ++

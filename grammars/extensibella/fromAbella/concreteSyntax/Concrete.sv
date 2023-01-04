@@ -295,6 +295,8 @@ concrete productions top::ProcessingErrorMessage_c
 | 'Structure of applied term must be a substructure of the following.'
   'forall A1 ... Ai, nabla z1 ... zj, H1 -> ... -> Hk -> C'
   { top.ast = appliedStructure(); }
+| 'Inductive restriction violated'
+  { top.ast = inductiveRestrictionViolated(); }
 
 
 concrete productions top::TypingErrorMessage_c

@@ -96,7 +96,10 @@ top::QName ::= rest::SubQName
   top.transFromAbella =
       case rest.tyFromAbella of
       | tyQName(s) -> transQName(s)
-      | _ -> error("Cannot have translation for anything but tyQName")
+      | basicQName(s) -> transQName(s) --shortened name for display
+      | _ ->
+        error("Cannot have translation for this (" ++
+              rest.tyFromAbella.abella_pp ++ ")")
       end;
 
   top.fromAbella = rest.fromAbella;
@@ -108,6 +111,20 @@ top::QName ::= rest::SubQName
 
 
 aspect production tyQName
+top::QName ::= rest::SubQName
+{
+  top.isTranslation = false;
+  top.transFromAbella = error("Not a translation");
+
+  top.fromAbella = rest.fromAbella;
+
+  top.relFromAbella = rest.relFromAbella;
+  top.tyFromAbella = rest.tyFromAbella;
+  top.constrFromAbella = rest.constrFromAbella;
+}
+
+
+aspect production unknownQName
 top::QName ::= rest::SubQName
 {
   top.isTranslation = false;

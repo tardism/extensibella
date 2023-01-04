@@ -57,16 +57,21 @@ top::TopCommand ::= names::[QName]
           if setEq(names, expectedNames)
           then []
           else if subset(names, expectedNames)
-          then [errorMsg("Missing mutually-inductive obligations " ++
-                   implode(", ",
-                      map((.pp), removeAll(names, expectedNames))))]
+          then let missing::[QName] = removeAll(names, expectedNames)
+               in
+                 [errorMsg("Missing mutually-inductive obligation" ++
+                    (if length(missing) == 1 then " " else "s ") ++
+                    implode(", ",
+                       map((.pp), removeAll(names, expectedNames))))]
+               end
           else if subset(expectedNames, names)
           then [errorMsg("Too many mutually-inductive obligations;" ++
                    " should not have " ++
                    implode(", ",
                       map((.pp), removeAll(expectedNames, names))))]
-          else [errorMsg("Expected obligations " ++
-                         implode(", ", map((.pp), expectedNames)))]
+          else [errorMsg("Expected obligation" ++
+                   (if length(expectedNames) == 1 then "" else "s") ++
+                   " " ++ implode(", ", map((.pp), expectedNames)))]
         end
       | _ ->
         error("Should be impossible (proveObligations.toAbellaMsgs)")
@@ -161,7 +166,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 {
   top.pp = name.pp ++ " : forall " ++ bindings.pp ++ ", " ++
            body.pp ++ " on " ++ onLabel ++
-           if rest.pp == "" then "" else " /\\ " ++ rest.pp;
+           if rest.pp == "" then "" else ", " ++ rest.pp;
 
   top.len = 1 + rest.len;
 
@@ -249,7 +254,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       case foundLabeledPremise of
       | just(relationMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
-      | _ -> error("Should not access inductionRel")
+      | _ -> error("Should not access inductionRel" )
       end;
 
   --for the subgoals that should arise, the last digit of the subgoal
@@ -267,14 +272,14 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                 p1.2 == p2.2,
               expectedSubgoals);
   --last digit of subgoal and skips needed
-  local subgoalDurings::[(Integer, [ProofCommand])] = unsafeTracePrint(
+  local subgoalDurings::[(Integer, [ProofCommand])] =
       flatMap(\ l::[(Integer, Boolean)] ->
                 if !null(l) && !head(l).2 --things we don't do we skip
                 then [(head(l).1,
                        map(\ x::(Integer, Boolean) ->
                              skipTactic(), l))]
                 else [], --nothing for things we need to prove
-              groupedExpectedSubgoals), "\nGroups:  [" ++ implode(";   ", map(\ l::[(Integer, Boolean)] -> "[" ++ implode(", ", map(\ p::(Integer, Boolean) -> "(" ++ toString(p.1) ++ ", " ++ toString(p.2) ++ ")", l)) ++ "]", groupedExpectedSubgoals)) ++ "]\n");
+              groupedExpectedSubgoals);
   top.duringCommands =
       --intros and case immediately
       [(top.startingGoalNum,
@@ -288,7 +293,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
             (top.startingGoalNum ++ [p.1], p.2),
           if !null(subgoalDurings) && head(subgoalDurings).1 == 1
           then tail(subgoalDurings)
-          else subgoalDurings);
+          else subgoalDurings) ++
+      rest.duringCommands;
 }
 
 

@@ -452,6 +452,15 @@ top::ProcessingErrorMessage ::=
 }
 
 
+abstract production inductiveRestrictionViolated
+top::ProcessingErrorMessage ::=
+{
+  top.pp = "Inductive restriction violated";
+
+  top.fromAbella = inductiveRestrictionViolated();
+}
+
+
 
 
 

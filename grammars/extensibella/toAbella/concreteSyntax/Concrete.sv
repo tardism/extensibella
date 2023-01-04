@@ -574,6 +574,8 @@ concrete productions top::IdList_c
 concrete productions top::IdTy_c
 | i::Id_t ':' t::Ty_c
   { top.ast = (toQName(i.lexeme), t.ast); }
+| i::Qname_t ':' t::Ty_c
+  { top.ast = (toQName(i.lexeme), t.ast); }
 
 
 concrete productions top::IdTys_c

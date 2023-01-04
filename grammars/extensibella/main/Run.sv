@@ -207,18 +207,10 @@ IOVal<(StateList, FullDisplay)> ::=
               "Clear Extra Subgoals", cleaned.iovalue, cleaned.io)
       else debugOutput(debug, config, cleanCommands,
               "Clear Extra Subgoals", "", ioin);
+  initProverState.replaceState = cleaned_display.proof;
   local cleanedStateList::StateList =
       (head(stateListIn).1 + length(cleanCommands),
-       proverState(cleaned_display.proof,
-          initProverState.debug,
-          initProverState.knownTheorems,
-          initProverState.remainingObligations,
-          initProverState.knownTypes,
-          initProverState.knownRels,
-          initProverState.knownConstrs,
-          initProverState.provingThms,
-          tail(initProverState.duringCommands), --drop used first set
-          initProverState.afterCommands))::tail(stateListIn);
+       initProverState.replacedState)::tail(stateListIn);
   return ioval(outputCleanCommands,
                if shouldClean
                then (cleanedStateList, cleaned_display)
@@ -234,11 +226,13 @@ IOVal<StateList> ::=
    debug::Boolean config::Configuration
 {
   local initProverState::ProverState = head(stateListIn).2;
-  local runAfterCommands::Boolean =
+  local proofDone::Boolean =
       case initProverState.state of
-      | proofCompleted() -> !null(initProverState.afterCommands)
+      | proofCompleted() -> true
       | _ -> false
       end;
+  local runAfterCommands::Boolean =
+      proofDone && !null(initProverState.afterCommands);
   local afterCommands::[AnyCommand] =
       if runAfterCommands then initProverState.afterCommands else [];
   local aftered::IOVal<String> =
@@ -251,20 +245,37 @@ IOVal<StateList> ::=
               "After-Proof Commands", aftered.iovalue, aftered.io)
       else debugOutput(debug, config, afterCommands,
               "After-Proof Commands", "", ioin);
+  --Determine whether we need to remove an extensible mutual group
+  --   from the beginning because we just proved it
+  local newObligations::[ThmElement] =
+        case initProverState.remainingObligations of
+        | extensibleMutualTheoremGroup(thms)::rest ->
+          --everything imported here is in the things we just proved
+          if all(map(\ t::QName ->
+                       contains(t,
+                          map(fst, initProverState.provingThms)),
+                     map(fst, thms)))
+          then rest
+          else initProverState.remainingObligations
+        | _ -> initProverState.remainingObligations
+        end;
+  --Add completed theorems
+  local newKnownThms::[(QName, Metaterm)] =
+      initProverState.knownTheorems ++ initProverState.provingThms;
+  --Put it together
   local newStateList::StateList =
-      (head(stateListIn).1 + length(afterCommands),
+      (head(stateListIn).1 +
+       if runAfterCommands then length(afterCommands) else 0,
        proverState(initProverState.state,
                    initProverState.debug,
                    initProverState.knownTheorems,
-                   initProverState.remainingObligations,
+                   newObligations,
                    initProverState.knownTypes,
                    initProverState.knownRels,
                    initProverState.knownConstrs,
                    [], [], []))::tail(stateListIn);
-  return ioval(outputAfterCommands,
-               if runAfterCommands
-               then newStateList
-               else stateListIn);
+  return ioval(if runAfterCommands then outputAfterCommands else ioin,
+               if proofDone then newStateList else stateListIn);
 }
 
 

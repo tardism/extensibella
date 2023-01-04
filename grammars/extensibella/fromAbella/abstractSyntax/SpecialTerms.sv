@@ -154,6 +154,19 @@ top::Term ::=
 
 
 {-
+  UNKNOWN TERMS
+-}
+
+aspect production unknownTerm
+top::Term ::= ty::QName
+{
+  top.fromAbella = error("Should never be translating unknownTerm");
+}
+
+
+
+
+{-
   INTEGER CONSTANTS
 -}
 

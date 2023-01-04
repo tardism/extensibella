@@ -171,9 +171,11 @@ top::Term ::= name::QName ty::MaybeType
       --Integers
       | basicQName(baseName("$zero")) -> intTerm(0)
       --Characters
-      | basicQName(baseName(x)) when startsWith("$_", x) ->
+      | basicQName(baseName(x)) when startsWith("$c_", x) ->
         charTerm(charsToString(
                  [toInteger(substring(3, length(x), x))]))
+      --Unknown terms
+      | unknownQName(ty) -> unknownTerm(name.tyFromAbella)
       --Other
       | _ -> nameTerm(name.constrFromAbella, ty)
       end;

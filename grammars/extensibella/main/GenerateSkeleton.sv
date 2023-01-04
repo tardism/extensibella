@@ -28,7 +28,7 @@ IOVal<Boolean> ::= gen::[(QName, String)]
          map(\ p::ThmElement ->
                case p of
                | extensibleMutualTheoremGroup(thms) ->
-                 "Prove " ++ implode("\n      ",
+                 "Prove " ++ implode(",\n      ",
                                 map((.pp), map(fst, thms))) ++ "."
                | _ -> error("Impossible after filtration")
                end,
