@@ -515,7 +515,13 @@ aspect production functorType
 top::Type ::= functorTy::Type argTy::Type
 {
   top.fromAbella =
-      functorType(functorTy.fromAbella, argTy.fromAbella);
+      case functorTy, argTy of
+      | nameType(basicQName(baseName("list"))),
+        nameType(basicQName(baseName("$char"))) ->
+        nameType(toQName("string"))
+      | _, _ ->
+        functorType(functorTy.fromAbella, argTy.fromAbella)
+      end;
 }
 
 

@@ -88,12 +88,14 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
             if p.1.isQualified
             then p
             else (addQNameBase(top.currentModule, p.1.shortName),
-                  p.2),
+                  decorate p.2 with {typeEnv = top.typeEnv;}.toAbella),
           preds);
 
   defs.beingDefined = fullNames;
 
-  top.toAbella = error("definitionDeclaration.toAbella");
+  top.toAbella =
+      [anyTopCommand(definitionDeclaration(fullNames,
+                                           defs.toAbella))];
 
   --check names are qualified with appropriate module
   top.toAbellaMsgs <-

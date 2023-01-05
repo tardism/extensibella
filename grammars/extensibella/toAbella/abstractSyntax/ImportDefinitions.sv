@@ -148,7 +148,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                   [fixedRelationEnvItem(p.1,
                       foldr(addTypeList, emptyTypeList(), p.2.toList))]
                 end,
-              preds);
+              fullNames);
   top.constrs = [];
 }
 

@@ -268,7 +268,8 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
           libTypeEnvItem(toQName("$lib__bool"), 0),
           libTypeEnvItem(toQName("$lib__integer"), 0),
           --not our library, but still *a* library
-          libTypeEnvItem(toQName("list"), 1)]);
+          libTypeEnvItem(toQName("list"), 1),
+          libTypeEnvItem(toQName("prop"), 0)]);
   --a couple of these have type variables in them
   local knownRels::[RelationEnvItem] =
       buildEnv(
