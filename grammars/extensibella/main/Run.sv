@@ -268,7 +268,7 @@ IOVal<StateList> ::=
        if runAfterCommands then length(afterCommands) else 0,
        proverState(initProverState.state,
                    initProverState.debug,
-                   initProverState.knownTheorems,
+                   newKnownThms,
                    newObligations,
                    initProverState.knownTypes,
                    initProverState.knownRels,
