@@ -115,7 +115,7 @@ top::TopCommand ::= names::[QName]
       map(\ p::(QName, Bindings, ExtBody, String) -> (p.1, p.3.thm),
           obligations);
 
-  top.duringCommands = tail(thms.duringCommands);
+  top.duringCommands = unsafeTracePrint(tail(thms.duringCommands), "\n\nGenerated during commands:\n" ++ implode("\n", map(\ p::(SubgoalNum, [ProofCommand]) -> implode(".", map(toString, p.1)) ++ " : " ++ implode("", map((.pp), p.2)), thms.duringCommands)) ++ "\n\n");
 
   top.afterCommands =
       if length(names) > 1
@@ -254,7 +254,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       case foundLabeledPremise of
       | just(relationMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
-      | _ -> error("Should not access inductionRel" )
+      | _ -> error("Should not access inductionRel")
       end;
 
   --for the subgoals that should arise, the last digit of the subgoal
@@ -280,21 +280,44 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                              skipTactic(), l))]
                 else [], --nothing for things we need to prove
               groupedExpectedSubgoals);
+  --turned into full subgoals
+  local subgoalDuringCommands::[(SubgoalNum, [ProofCommand])] =
+      map(\ p::(Integer, [ProofCommand]) ->
+            (top.startingGoalNum ++ [p.1], p.2),
+          subgoalDurings);
+  {-
+    The first thing in ExtThm.duringCommands is always for the first
+    subgoal for the goal because we need intros.  If we skip the last
+    subgoal here, we need to add the starting commands from the next
+    to the last group of commands here.
+  -}
+  local combinedCommands::[(SubgoalNum, [ProofCommand])] =
+      if !null(expectedSubgoals) && !last(expectedSubgoals).2 &&
+         !null(rest.duringCommands) && !null(subgoalDuringCommands)
+      then let lastSubgoal::(SubgoalNum, [ProofCommand]) =
+               last(subgoalDuringCommands)
+           in
+             take(length(subgoalDuringCommands) - 1,
+                  subgoalDuringCommands) ++
+             [(lastSubgoal.1,
+               lastSubgoal.2 ++ head(rest.duringCommands).2)] ++
+             tail(rest.duringCommands)
+           end
+      else subgoalDuringCommands ++ rest.duringCommands;
   top.duringCommands =
       --intros and case immediately
       [(top.startingGoalNum,
         [introsTactic(introsNames),
          caseTactic(nameHint(onLabel), onLabel, true)] ++
          --add first group of skips if they happen right away
-         (if !null(subgoalDurings) && head(subgoalDurings).1 == 1
-          then head(subgoalDurings).2
+         (if !null(combinedCommands) && !null(subgoalDurings) &&
+             head(subgoalDurings).1 == 1
+          then head(combinedCommands).2
           else []))] ++
-      map(\ p::(Integer, [ProofCommand]) ->
-            (top.startingGoalNum ++ [p.1], p.2),
-          if !null(subgoalDurings) && head(subgoalDurings).1 == 1
-          then tail(subgoalDurings)
-          else subgoalDurings) ++
-      rest.duringCommands;
+      if !null(combinedCommands) && !null(subgoalDurings) &&
+          head(subgoalDurings).1 == 1
+      then tail(combinedCommands)
+      else combinedCommands;
 }
 
 
