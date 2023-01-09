@@ -1,47 +1,83 @@
 #!/bin/bash
 
-SILVER_SCRIPT_LOCATION="$HOME/bin/silver"
-
-
-#Check if the silver script exists to find the installed location of Silver
-if [ ! -f $SILVER_SCRIPT_LOCATION ]; then
-    echo "Couldn't find Silver file (~/bin/silver) to find Silver's home"
-    exit 1
-fi
-
-#These next lines stolen from the Silver script
-# ~/bin/silver should be a link to somewhere, find out where!
-SILVER_EXECUTABLE=$(readlink -f $SILVER_SCRIPT_LOCATION)
-#Set Silver's home
-SILVER_HOME=${SILVER_EXECUTABLE/support\/bin\/silver/}
-#Set the generated directory where language encodings can be found
-SILVER_GENERATED=${SILVER_HOME}generated/extensibella/
-
-
-
+######################################################################
+#                  Initial Set-Up for Extensibella                   #
+######################################################################
 #Find the Extensibella home
 EXTENSIBELLA_ROOT=$(dirname $(realpath $0))
 EXTENSIBELLA_EXAMPLES=${EXTENSIBELLA_ROOT}/exampleEncoding/
-export EXTENSIBELLA_GENERATED=${EXTENSIBELLA_ROOT}/generated/
-export EXTENSIBELLA_LIBRARY=${EXTENSIBELLA_ROOT}/stdLib/
-
-
+EXTENSIBELLA_GENERATED=${EXTENSIBELLA_ROOT}/generated/
+EXTENSIBELLA_LIBRARY=${EXTENSIBELLA_ROOT}/stdLib/
 
 #Add generated dirs and example dir to the directories to search
-EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$EXTENSIBELLA_GENERATED
-EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$SILVER_GENERATED
+if [ ! -z "${EXTENSIBELLA_ENCODED}" ]; then #non-empty
+    EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$EXTENSIBELLA_GENERATED
+else
+    EXTENSIBELLA_ENCODED=$EXTENSIBELLA_GENERATED
+fi
 EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$EXTENSIBELLA_EXAMPLES
+
+
+
+######################################################################
+#                 Add Silver as a Generated Location                 #
+######################################################################
+SILVER_SCRIPT_LOCATION="$HOME/bin/silver"
+
+#Check if the Silver script exists to find where Silver is installed
+if [ -f $SILVER_SCRIPT_LOCATION ]; then
+    #These next lines stolen from the Silver script
+    # ~/bin/silver should be a link to somewhere, find out where!
+    SILVER_EXECUTABLE=$(readlink -f $SILVER_SCRIPT_LOCATION)
+    #Set Silver's home
+    SILVER_HOME=${SILVER_EXECUTABLE/support\/bin\/silver/}
+    #Set the generated directory where language encodings can be found
+    SILVER_GENERATED=${SILVER_HOME}generated/extensibella/
+    #Add it to set of locations to search
+    EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$SILVER_GENERATED
+fi
+
+
+
+######################################################################
+#                Add SOS-Ext as a Generated Location                 #
+######################################################################
+SOS_SCRIPT_LOCATION="$HOME/bin/sos-ext"
+
+#Check if the SOS-Ext script exists to find where it is installed
+if [ -f $SOS_SCRIPT_LOCATION ]; then
+    #These next lines modified from the Silver script
+    # ~/bin/sos-ext should be a link to somewhere, find out where!
+    SOS_EXECUTABLE=$(readlink -f $SOS_SCRIPT_LOCATION)
+    #Set SOS-Ext's home
+    SOS_HOME=${SOS_EXECUTABLE%"sos-ext"}
+    #Set the generated directory where language encodings can be found
+    SOS_GENERATED=${SOS_HOME}generated/extensibella/
+    #Add it to set of locations to search
+    EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$SOS_GENERATED
+fi
+
+
+
+######################################################################
+#             Export Extensibella Environment Variables              #
+######################################################################
+export EXTENSIBELLA_GENERATED
+export EXTENSIBELLA_LIBRARY
 export EXTENSIBELLA_ENCODED
 
 
 
+######################################################################
+#                               Run It                               #
+######################################################################
 #Location where the jar should be
 EXTENSIBELLA_JAR="$EXTENSIBELLA_ROOT/extensibella.jar"
 #Check if the jar exists to run
 if [ ! -f "$EXTENSIBELLA_JAR" ]; then
-    echo "Couldn't find Extensibella jar to execute, aborting."
-    exit 2
+    echo "Couldn't find Extensibella jar to execute; aborting."
+    echo "Go build it."
+    exit 1
 fi
-#Run the interface
+#Run it
 java -Xmx4G -Xss16M -jar "$EXTENSIBELLA_JAR" $@
-
