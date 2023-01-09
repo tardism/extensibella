@@ -115,7 +115,7 @@ top::TopCommand ::= names::[QName]
       map(\ p::(QName, Bindings, ExtBody, String) -> (p.1, p.3.thm),
           obligations);
 
-  top.duringCommands = unsafeTracePrint(tail(thms.duringCommands), "\n\nGenerated during commands:\n" ++ implode("\n", map(\ p::(SubgoalNum, [ProofCommand]) -> implode(".", map(toString, p.1)) ++ " : " ++ implode("", map((.pp), p.2)), thms.duringCommands)) ++ "\n\n");
+  top.duringCommands = tail(thms.duringCommands);
 
   top.afterCommands =
       if length(names) > 1
