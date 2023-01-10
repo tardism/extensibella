@@ -686,6 +686,38 @@ case H4.
         %Subgoal 11.3.2
          backchain $plus_integer_negSuccInts_succ.
 
+Theorem extensibella-$-stdLib-$-plus_zero_right : forall N Sum,
+  $plus_integer N ($posInt $zero) Sum -> Sum = N.
+induction on 1. intros P. P: case P.
+  %1:  0 + 0
+   search.
+  %2:  ($posInt ($succ N1)) + 0 = ($posInt ($succ N3))
+   apply IH to P. search.
+  %3:  ($negSuccInt N1) + 0 = ($negSuccInt N1)
+   search.
+
+Theorem extensibella-$-stdLib-$-plus_integer_is_integer_result : forall N1 N2 N3,
+  is_integer N3 -> $plus_integer N1 N2 N3 -> is_integer N1 /\ is_integer N2.
+induction on 2. intros IsN3 P. P: case P.
+  %1:  0 + N3 = N3
+   search.
+  %2:  ($posInt ($succ N4)) + ($posInt N5) = $posInt ($succ N6)
+   IsN6: case IsN3. apply IH to _ P. search.
+  %3:  ($posInt ($succ N4)) + -1 = $posInt N4
+   search.
+  %4:  ($posInt ($succ N4)) + ($negSuccInt ($succ N5)) = N3
+   apply IH to _ P. search.
+  %5:  ($negSuccInt N) + 0 = $negSuccInt N
+   search.
+  %6:  -1 + ($posInt ($succ N4)) = $posInt N4
+   search.
+  %7:  ($negSuccInt ($succ N4)) + ($posInt ($succ N5)) = N3
+   apply IH to _ P. search.
+  %8:  -1 + ($negSuccInt N) = $negSuccInt ($succ N)
+   case IsN3. search.
+  %9:  ($negSuccInt ($succ N4)) + ($negSuccInt N5) = $negSuccInt ($succ N6)
+   case IsN3. apply IH to _ P. search.
+
 Theorem $plus_integer_negation : forall N,
   is_integer ($posInt N) ->
   $plus_integer ($posInt ($succ N)) ($negSuccInt N) ($posInt $zero).
@@ -938,6 +970,21 @@ intros. case H3.
            backchain $plus_integer_negSuccInts_succ.
            backchain extensibella-$-stdLib-$-plus_integer_comm.
    backchain H5. backchain $is_integer_negSuccInt_$$$$$_to_$$$$$_posInt.
+
+Theorem extensibella-$-stdLib-$-minus_integer_is_integer_result : forall N1 N2 N3,
+  is_integer N3 -> $minus_integer N1 N2 N3 -> is_integer N1 /\ is_integer N2.
+intros IsN3 M. P: case M.
+  %1:  N3 - 0 = N3
+   search.
+  %2:  N1 - ($posInt ($succ N5)) = N3
+   Is: apply extensibella-$-stdLib-$-plus_integer_is_integer_result to
+         IsN3 P.
+   apply $is_integer_negSuccInt_$$$$$_to_$$$$$_posInt to Is1. search.
+  %3:  N1 - ($negSuccInt N5) = N3
+   Is: apply extensibella-$-stdLib-$-plus_integer_is_integer_result to
+         IsN3 P.
+   IsN5: apply $is_integer_posInt_$$$$$_to_$$$$$_negSuccInt to Is1.
+   case IsN5. search.
 
 
 

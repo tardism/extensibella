@@ -251,6 +251,47 @@ apply $lesseq_integer_posInt to L2. case L1 (keep).
              case L2 (keep). case H2. search. search. search.
       apply IH to H1 L' H2. backchain $lesseq_negSuccInt_left_step.
 
+Theorem extensibella-$-stdLib-$-less_integer__subtract_positive :
+  forall N1 N2 Base Res,
+    is_integer N1 -> is_integer N2 ->
+    $less_integer N1 Base ->
+    $lesseq_integer ($posInt $zero) N2 ->
+    $minus_integer N1 N2 Res -> $less_integer Res Base.
+intros IsN1 IsN2 L1 L2 M. P: case M.
+  %1:  Res - 0 = Res
+   search.
+  %2:  N1 - ($succ N4) = Res
+   Sub: assert forall A B C,
+      $less_integer A Base -> $lesseq_integer B ($posInt $zero) ->
+      $plus_integer B A C -> $less_integer C Base.
+     induction on 3. clear L1 L2 P. intros L1 L2 P. P: case P.
+       %2.1.1
+        search.
+       %2.1.2
+        case L2.
+       %2.1.3
+        case L2.
+       %2.1.4
+        case L2.
+       %2.1.5
+        apply $less_integer_posInt to L1. search.
+       %2.1.6
+        apply $less_integer_drop_succ_pos_left to L1. search.
+       %2.1.7
+        L1': apply $less_integer_drop_succ_pos_left to L1.
+        apply IH to L1' _ P. search.
+       %2.1.8
+        backchain $less_integer_negSuccInt_left_step.
+       %2.1.9
+        apply IH to L1 _ P.
+        backchain $less_integer_negSuccInt_left_step.
+   IsSN4: apply $is_integer_posInt_$$$$$_to_$$$$$_negSuccInt to IsN2.
+   case IsSN4.
+   P': apply extensibella-$-stdLib-$-plus_integer_comm to _ _ P.
+   apply Sub to _ _ P'. search.
+  %3:  N1 - ($negSuccInt N4) = Res
+   case L2.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              GREATER                               %
@@ -315,6 +356,45 @@ Theorem extensibella-$-stdLib-$-greatereq_integer_transitive :
 intros GAB GBC. LBA: case GAB. LCB: case GBC.
 apply extensibella-$-stdLib-$-lesseq_integer_transitive to LCB LBA.
 search.
+
+
+Theorem extensibella-$-stdLib-$-greatereq_less_integer_false :
+  forall N1 N2,
+    $greatereq_integer N1 N2 -> $less_integer N1 N2 -> false.
+induction on 2. intros GEq L. L: case L.
+  %1:  0 < $succ N3
+   GEq: case GEq. case GEq.
+  %2:  $succ N3 < $succ N4
+   GEq: case GEq. case GEq. apply IH to _ L.
+  %3:  $negSuccInt N3 < $posInt N4
+   GEq: case GEq. case GEq.
+  %4:  $negSuccInt ($succ N3) < -1
+   GEq: case GEq. case GEq.
+  %5:  $negSuccInt ($succ N3) < $negSuccInt ($succ N4)
+   GEq: case GEq. case GEq. apply IH to _ L.
+
+
+Theorem extensibella-$-stdLib-$-less_lesseq_flip_false :
+  forall N1 N2,
+    $less_integer N1 N2 -> $lesseq_integer N2 N1 -> false.
+induction on 1. intros L LEq. L: case L.
+  %1:  0 < $succ N3
+   case LEq.
+  %2:  $succ N3 < $succ N4
+   LEq: case LEq. apply IH to L LEq.
+  %3:  $negSuccInt N3 < $posInt N4
+   case LEq.
+  %4:  $negSuccInt ($succ N3) < -1
+   case LEq.
+  %5:  $negSuccint ($succ N3) < $negSuccInt ($succ N4)
+   LEq: case LEq. apply IH to L LEq.
+
+
+Theorem extensibella-$-stdLib-$-greater_lesseq_integer_false :
+  forall N1 N2,
+    $greater_integer N1 N2 -> $lesseq_integer N1 N2 -> false.
+intros G LEq. L: case G.
+apply extensibella-$-stdLib-$-less_lesseq_flip_false to L LEq.
 
 
 %combinations of <, <=, >, >= and addition, subtraction, multiplication, division, whatever
