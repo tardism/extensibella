@@ -201,6 +201,14 @@ top::TopCommand ::= names::[QName] ty::Type
 }
 
 
+aspect production importCommand
+top::TopCommand ::= name::String
+{
+  top.defElements = [];
+  top.thmElements = [];
+}
+
+
 aspect production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms
 {

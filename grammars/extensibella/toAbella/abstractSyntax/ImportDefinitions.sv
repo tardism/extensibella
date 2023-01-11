@@ -14,7 +14,8 @@ grammar extensibella:toAbella:abstractSyntax;
 nonterminal ListOfCommands with
    pp, abella_pp,
    typeEnv, relationEnv, constructorEnv, proverState, currentModule,
-   commandList, tys, rels, constrs;
+   commandList, tys, rels, constrs,
+   declaredThms;
 propagate proverState, currentModule on ListOfCommands;
 
 synthesized attribute commandList::[AnyCommand];
@@ -22,6 +23,8 @@ synthesized attribute commandList::[AnyCommand];
 synthesized attribute tys::[TypeEnvItem];
 synthesized attribute rels::[RelationEnvItem];
 synthesized attribute constrs::[ConstructorEnvItem];
+
+synthesized attribute declaredThms::[(QName, Metaterm)];
 
 
 abstract production emptyListOfCommands
@@ -35,6 +38,8 @@ top::ListOfCommands ::=
   top.tys = [];
   top.rels = [];
   top.constrs = [];
+
+  top.declaredThms = [];
 }
 
 
@@ -57,6 +62,8 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   rest.typeEnv = addEnv(top.typeEnv, a.tys);
   rest.relationEnv = addEnv(top.relationEnv, a.rels);
   rest.constructorEnv = addEnv(top.constructorEnv, a.constrs);
+
+  top.declaredThms = a.declaredThms ++ rest.declaredThms;
 }
 
 
@@ -64,7 +71,8 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 
 
 attribute
-   tys, rels, constrs
+   tys, rels, constrs,
+   declaredThms
 occurs on AnyCommand;
 
 aspect production anyTopCommand
@@ -73,6 +81,12 @@ top::AnyCommand ::= c::TopCommand
   top.tys = c.tys;
   top.rels = c.rels;
   top.constrs = c.constrs;
+
+  --filter out anything containing dollar signs
+  top.declaredThms =
+      filter(\ p::(QName, Metaterm) ->
+               indexOf("$", p.1.shortName) == -1,
+             c.provingTheorems);
 }
 
 
@@ -82,6 +96,8 @@ top::AnyCommand ::= c::ProofCommand
   top.tys = [];
   top.rels = [];
   top.constrs = [];
+
+  top.declaredThms = [];
 }
 
 
@@ -91,6 +107,8 @@ top::AnyCommand ::= c::NoOpCommand
   top.tys = [];
   top.rels = [];
   top.constrs = [];
+
+  top.declaredThms = [];
 }
 
 
@@ -100,6 +118,8 @@ top::AnyCommand ::= parseErrors::String
   top.tys = [];
   top.rels = [];
   top.constrs = [];
+
+  top.declaredThms = [];
 }
 
 
@@ -238,6 +258,15 @@ top::TopCommand ::= names::[QName] ty::Type
              foldr(addTypeList, emptyTypeList(),
                    take(length(ty.toList) - 1, ty.toList))),
           names);
+}
+
+
+aspect production importCommand
+top::TopCommand ::= name::String
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
 }
 
 

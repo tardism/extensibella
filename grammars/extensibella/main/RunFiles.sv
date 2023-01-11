@@ -48,19 +48,21 @@ IOVal<Integer> ::=
   --
   local started::IOVal<Either<String ProcessHandle>> =
       startAbella(processed.io, config);
+  local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
+      importStdLibThms(import_parse, started.io);
   --
   local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
                               Env<ConstructorEnvItem>)> =
       set_up_abella_module(
          fileAST.1, processed.iovalue.fromRight.1,
          processed.iovalue.fromRight.2, from_parse,
-         started.iovalue.fromRight, started.io, config);
+         started.iovalue.fromRight, stdLibThms.io, config);
   --
   local handleIncoming::([AnyCommand], ProverState) =
       handleIncomingThms(
          defaultProverState(processed.iovalue.fromRight.3,
             build_context.iovalue.1, build_context.iovalue.2,
-            build_context.iovalue.3));
+            build_context.iovalue.3, stdLibThms.iovalue.fromRight));
   local sendIncoming::IOVal<String> =
       sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
          started.iovalue.fromRight, build_context.io, config);
@@ -78,6 +80,9 @@ IOVal<Integer> ::=
      else if !started.iovalue.isRight
      then ioval(printT("Error:  " ++ started.iovalue.fromLeft ++
                        "\n", started.io), 1)
+     else if !stdLibThms.iovalue.isRight
+     then ioval(printT("Error:  " ++ stdLibThms.iovalue.fromLeft ++
+                       "\n", stdLibThms.io), 1)
      else run_step(
              fileAST.2.commandList,
              filename,

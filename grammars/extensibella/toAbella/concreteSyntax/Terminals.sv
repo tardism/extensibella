@@ -13,6 +13,7 @@ terminal Module_t         'Module'         lexer classes {COMMAND};
 terminal Close_t          'Close'          lexer classes {COMMAND};
 terminal CoDefine_t       'CoDefine'       lexer classes {COMMAND};
 terminal Define_t         'Define'         lexer classes {COMMAND};
+terminal Import_t         'Import'         lexer classes {COMMAND};
 terminal KKind_t          'Kind'           lexer classes {COMMAND};
 terminal Query_t          'Query'          lexer classes {COMMAND};
 terminal Quit_t           'Quit'           lexer classes {COMMAND};

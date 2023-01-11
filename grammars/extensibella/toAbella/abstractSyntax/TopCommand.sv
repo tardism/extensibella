@@ -334,3 +334,15 @@ top::TopCommand ::= names::[QName] ty::Type
   top.provingTheorems = [];
 }
 
+
+abstract production importCommand
+top::TopCommand ::= name::String
+{
+  top.pp = "Import \"" ++ name ++ "\".\n";
+  top.abella_pp = top.pp;
+
+  top.toAbella = [];
+  top.toAbellaMsgs <- [errorMsg("Cannot import in Extensibella")];
+
+  top.provingTheorems = [];
+}

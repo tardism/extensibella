@@ -195,6 +195,13 @@ concrete productions top::PureTopCommand_c
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), [])); }
 | 'Split' name::Qname_t 'as' il::QnameList_c '.'
   { top.ast = anyTopCommand(splitTheorem(toQName(name.lexeme), il.ast)); }
+--For reading the standard library, written in Abella
+| 'Import' s::QuotedString_t '.'
+  { top.ast =
+        anyTopCommand(
+           importCommand(
+              unescapeString(
+                 substring(1, length(s.lexeme)-1, s.lexeme)))); }
 --New for extensibility
 | 'Extensible_Theorem' thms::TheoremStmts_c '.'
   { top.ast =

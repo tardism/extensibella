@@ -83,15 +83,17 @@ IOVal<Integer> ::=
   modComms.currentModule = fileAST.1;
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
+  local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
+      importStdLibThms(import_parse, processed.io);
   local proverState::ProverState =
       defaultProverState(processed.iovalue.fromRight.3,
          buildEnv(modComms.tys), buildEnv(modComms.rels),
-         buildEnv(modComms.constrs));
+         buildEnv(modComms.constrs), stdLibThms.iovalue.fromRight);
   --
   local compiledContents::String =
       buildCompiledOutput(fileAST.1, fileAST.2, proverState);
   local extensibellaGen::IOVal<String> =
-      envVarT("EXTENSIBELLA_GENERATED", processed.io);
+      envVarT("EXTENSIBELLA_GENERATED", stdLibThms.io);
   local outputFile::String =
       extensibellaGen.iovalue ++ fileAST.1.outerfaceFileName;
   local written::IOToken =
@@ -267,6 +269,13 @@ aspect production typeDeclaration
 top::TopCommand ::= names::[QName] ty::Type
 {
   top.compiled = just(typeDeclaration(newNames, ty.full));
+}
+
+
+aspect production importCommand
+top::TopCommand ::= name::String
+{
+  top.compiled = error("Should not compile importCommand");
 }
 
 
