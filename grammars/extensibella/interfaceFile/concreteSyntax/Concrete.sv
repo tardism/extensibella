@@ -6,7 +6,9 @@ imports extensibella:common:abstractSyntax;
 imports extensibella:interfaceFile:abstractSyntax;
 
 
-nonterminal ModuleList_c with ast<ImportedModuleList>;
+closed nonterminal ModuleList_c
+   layout {Whitespace_t, BlockComment_t, OneLineComment_t}
+   with ast<ImportedModuleList>;
 
 concrete productions top::ModuleList_c
 |

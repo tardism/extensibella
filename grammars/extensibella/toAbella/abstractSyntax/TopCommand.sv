@@ -10,7 +10,7 @@ nonterminal TopCommand with
    provingTheorems, duringCommands, afterCommands,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          toAbellaMsgs on TopCommand;
+          toAbellaMsgs on TopCommand excluding definitionDeclaration;
 
 aspect default production
 top::TopCommand ::=
@@ -92,6 +92,13 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
           preds);
 
   defs.beingDefined = fullNames;
+  defs.relationEnv =
+       map(\ p::(QName, Type) ->
+             fixedRelationEnvItem(p.1,
+                foldrLastElem(addTypeList,
+                   \ x::Type -> emptyTypeList(), p.2.toList)),
+           fullNames) ++ top.relationEnv;
+  propagate typeEnv, constructorEnv, toAbellaMsgs;
 
   top.toAbella =
       [anyTopCommand(definitionDeclaration(fullNames,

@@ -289,5 +289,23 @@ top::TopCommand ::= thms::ExtThms
 aspect production proveObligations
 top::TopCommand ::= names::[QName]
 {
-  top.compiled = error("proveObligations.compiled   TODO");
+  local foundThm::[ThmElement] =
+      filter(\ t::ThmElement ->
+               case t of
+               | extensibleMutualTheoremGroup(thms) ->
+                 map(fst, thms) == names
+               | _ -> false
+               end,
+             top.proverState.remainingObligations);
+  local extThms::ExtThms =
+      case foundThm of
+      | [extensibleMutualTheoremGroup(thms)] ->
+        foldr(\ p::(QName, Bindings, ExtBody, String) rest::ExtThms ->
+                addExtThms(p.1, p.2, p.3, p.4, rest),
+              endExtThms(), thms)
+      | _ ->
+        error("Could not identify theorems when compiling prove; " ++
+              "file must be checkable before compilation")
+      end;
+  top.compiled = just(extensibleTheoremDeclaration(extThms));
 }
