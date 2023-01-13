@@ -19,6 +19,7 @@ IOVal<Boolean> ::= gen::[(QName, String)]
       filter(\ p::ThmElement ->
                case p of
                | extensibleMutualTheoremGroup(_) -> true
+               | translationConstraintTheorem(_, _, _) -> true
                | _ -> false
                end,
              processModule.iovalue.fromRight.3);
@@ -30,6 +31,8 @@ IOVal<Boolean> ::= gen::[(QName, String)]
                | extensibleMutualTheoremGroup(thms) ->
                  "Prove " ++ implode(",\n      ",
                                 map((.pp), map(fst, thms))) ++ "."
+               | translationConstraintTheorem(name, binds, body) ->
+                 "Prove_Constraint " ++ name.pp ++ "."
                | _ -> error("Impossible after filtration")
                end,
              outputThms)) ++ "\n\n";

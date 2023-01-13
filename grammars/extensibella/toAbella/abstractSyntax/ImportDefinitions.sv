@@ -289,3 +289,12 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
   top.rels = [];
   top.constrs = [];
 }
+
+
+aspect production proveConstraint
+top::TopCommand ::= name::QName
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}

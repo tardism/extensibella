@@ -30,6 +30,19 @@ top::ThmElement ::=
 }
 
 
+abstract production translationConstraintTheorem
+top::ThmElement ::= name::QName binds::Bindings body::ExtBody
+{
+  top.pp = error("translationConstraintTheorem.pp");
+
+  top.encode = error("translationConstraintTheorem.encode");
+  top.is_nonextensible = false;
+
+  top.thms =
+      [(name, bindingMetaterm(forallBinder(), binds, body.thm))];
+}
+
+
 --Non-extensible mutuals are written all in one
 abstract production nonextensibleTheorem
 top::ThmElement ::= name::QName stmt::Metaterm

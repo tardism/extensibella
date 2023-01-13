@@ -51,6 +51,9 @@ top::TopCommand ::= names::[QName]
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
+      | translationConstraintTheorem(q, x, b)::_ ->
+        [errorMsg("Expected translation constraint obligation " ++
+            q.pp)]
       | extensibleMutualTheoremGroup(thms)::_ ->
         let expectedNames::[QName] = map(fst, thms)
         in
@@ -69,7 +72,7 @@ top::TopCommand ::= names::[QName]
                    " should not have " ++
                    implode(", ",
                       map((.pp), removeAll(expectedNames, names))))]
-          else [errorMsg("Expected obligation" ++
+          else [errorMsg("Expected inductive obligation" ++
                    (if length(expectedNames) == 1 then "" else "s") ++
                    " " ++ implode(", ", map((.pp), expectedNames)))]
         end

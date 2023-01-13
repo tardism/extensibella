@@ -69,3 +69,46 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 
   top.afterCommands = [];
 }
+
+
+abstract production proveConstraint
+top::TopCommand ::= name::QName
+{
+  top.pp = "Prove_Constraint " ++ name.pp ++ ".\n";
+  top.abella_pp =
+      error("Should not access proveConstraint.abella_pp");
+
+  --check for the expected theorems being proven
+  top.toAbellaMsgs <-
+      case top.proverState.remainingObligations of
+      | [] -> [errorMsg("No obligations left to prove")]
+      | extensibleMutualTheoremGroup(thms)::_ ->
+        [errorMsg("Expected inductive obligation" ++
+            (if length(thms) == 1 then "" else "s") ++
+            " " ++ implode(", ", map((.pp), map(fst, thms))))]
+      | translationConstraintTheorem(q, x, b)::_ ->
+        if name == q
+        then []
+        else [errorMsg("Expected translation constraint obligation" ++
+                 " " ++ q.pp)]
+      | _ ->
+        error("Should be impossible (proveConstraint.toAbellaMsgs)")
+      end;
+
+  local obligation::(QName, Bindings, ExtBody) =
+      case head(top.proverState.remainingObligations) of
+      | translationConstraintTheorem(q, x, b) -> (q, x, b)
+      | _ -> error("Not possible")
+      end;
+
+  top.provingTheorems =
+      [(obligation.1,
+        bindingMetaterm(forallBinder(), obligation.2,
+           obligation.3.thm))];
+
+  top.toAbella = error("proveConstraint.toAbella");
+
+  top.duringCommands = error("proveConstraint.duringCommands");
+
+  top.afterCommands = [];
+}

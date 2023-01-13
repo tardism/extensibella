@@ -297,22 +297,48 @@ top::TopCommand ::= names::[QName]
                | _ -> false
                end,
              top.proverState.remainingObligations);
-  local extThms::ExtThms =
+  top.compiled =
       case foundThm of
       | [extensibleMutualTheoremGroup(thms)] ->
-        foldr(\ p::(QName, Bindings, ExtBody, String) rest::ExtThms ->
-                addExtThms(p.1, p.2, p.3, p.4, rest),
-              endExtThms(), thms)
+        just(
+           extensibleTheoremDeclaration(
+              foldr(\ p::(QName, Bindings, ExtBody, String)
+                      rest::ExtThms ->
+                      addExtThms(p.1, p.2, p.3, p.4, rest),
+                    endExtThms(), thms)))
       | _ ->
         error("Could not identify theorems when compiling prove; " ++
               "file must be checkable before compilation")
       end;
-  top.compiled = just(extensibleTheoremDeclaration(extThms));
 }
 
 
 aspect production translationConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
-  top.compiled = error("translationConstraint.compiled not done");
+  top.compiled =
+      just(translationConstraint(fullName, binds, body.full));
+}
+
+
+aspect production proveConstraint
+top::TopCommand ::= name::QName
+{
+  local foundThm::[ThmElement] =
+      filter(
+         \ t::ThmElement ->
+           case t of
+           | translationConstraintTheorem(transName, binds, body) ->
+             name == transName
+           | _ -> false
+           end,
+         top.proverState.remainingObligations);
+  top.compiled =
+      case foundThm of
+      | [translationConstraintTheorem(name, binds, body)] ->
+        just(translationConstraint(name, binds, body))
+      | _ ->
+        error("Could not identify constraint when compiling prove;" ++
+              " file must be checkable before compilation")
+      end;
 }

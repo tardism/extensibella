@@ -231,8 +231,17 @@ aspect production translationConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.defElements = [];
+  top.thmElements = [translationConstraintTheorem(name, binds, body)];
+}
+
+
+aspect production proveConstraint
+top::TopCommand ::= name::QName
+{
+  top.defElements =
+      error("Should not have proveConstraint in interface file");
   top.thmElements =
-      error("translationConstraint.thmElements not done");
+      error("Should not have proveConstraint in interface file");
 }
 
 
