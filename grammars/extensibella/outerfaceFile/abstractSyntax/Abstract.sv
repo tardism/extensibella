@@ -227,6 +227,15 @@ top::TopCommand ::= names::[QName]
 }
 
 
+aspect production translationConstraint
+top::TopCommand ::= name::QName binds::Bindings body::ExtBody
+{
+  top.defElements = [];
+  top.thmElements =
+      error("translationConstraint.thmElements not done");
+}
+
+
 
 
 

@@ -22,9 +22,10 @@ terminal Show_t           'Show'           lexer classes {COMMAND};
 terminal SSplit_t         'Split'          lexer classes {COMMAND};
 terminal Theorem_t        'Theorem'        lexer classes {COMMAND};
 terminal TType_t          'Type'           lexer classes {COMMAND};
---New for Silver theorems
-terminal ExtTheorem_t   'Extensible_Theorem'   lexer classes {COMMAND};
-terminal Prove_t        'Prove'                lexer classes {COMMAND};
+--New for extensibility
+terminal ExtTheorem_t   'Extensible_Theorem'       lexer classes {COMMAND};
+terminal Prove_t        'Prove'                    lexer classes {COMMAND};
+terminal TC_t           'Translation_Constraint'   lexer classes {COMMAND};
 
 
 terminal Abbrev_t       'abbrev'       lexer classes {COMMAND};

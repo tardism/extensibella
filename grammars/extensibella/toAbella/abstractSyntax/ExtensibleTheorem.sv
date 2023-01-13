@@ -241,7 +241,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       if name.isQualified
       then if name.moduleName == top.currentModule
            then []
-           else [errorMsg("Declared predicate name " ++ name.pp ++
+           else [errorMsg("Declared theorem name " ++ name.pp ++
                     " does not have correct module (expected " ++
                     top.currentModule.pp ++ ")")]
       else [];
@@ -258,7 +258,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       end;
 
   --for the subgoals that should arise, the last digit of the subgoal
-  --number and whether we need to prove them
+  --number and whether we need to prove it
   local expectedSubgoals::[(Integer, Boolean)] =
       foldl(\ thusFar::(Integer, [(Integer, Boolean)]) now::QName ->
               if fullName.moduleName == top.currentModule || --new thm
@@ -349,7 +349,10 @@ top::ExtBody ::= conc::Metaterm
 
   conc.boundNames = top.boundNames;
 
-  top.premises = [];
+  --take everything from before the final implication
+  top.premises =
+      map(pair(nothing(), _),
+         take(length(conc.splitImplies) - 1, conc.splitImplies));
 }
 
 

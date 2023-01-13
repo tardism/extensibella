@@ -309,3 +309,10 @@ top::TopCommand ::= names::[QName]
       end;
   top.compiled = just(extensibleTheoremDeclaration(extThms));
 }
+
+
+aspect production translationConstraint
+top::TopCommand ::= name::QName binds::Bindings body::ExtBody
+{
+  top.compiled = error("translationConstraint.compiled not done");
+}

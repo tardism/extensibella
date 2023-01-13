@@ -149,7 +149,11 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                   [langTypeEnvItem(tyQName(s), 0,
                       foldr(addTypeList, emptyTypeList(),
                         --drop `ty -> ty -> prop` from end to get args
-                         take(length(p.2.toList) - 3, p.2.toList)))]
+                         take(length(p.2.toList) - 3, p.2.toList)),
+                      map(snd,
+                          filter(\ inner::(QName, QName) ->
+                                   p.1 == inner.1,
+                                 defs.relationClauseModules)))]
                 | _ -> []
                 end,
               preds);
@@ -176,17 +180,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 aspect production codefinitionDeclaration
 top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
-  top.tys =
-      flatMap(\ p::(QName, Type) ->
-                case p.1 of
-                | transQName(s) ->
-                  [langTypeEnvItem(tyQName(s), 0,
-                      foldr(addTypeList, emptyTypeList(),
-                        --drop `ty -> ty -> prop` from end to get args
-                         take(length(p.2.toList) - 3, p.2.toList)))]
-                | _ -> []
-                end,
-              preds);
+  top.tys = []; --no tys from codefinitions
   top.rels =
       flatMap(\ p::(QName, Type) ->
                 case p.1 of
@@ -281,6 +275,15 @@ top::TopCommand ::= thms::ExtThms
 
 aspect production proveObligations
 top::TopCommand ::= names::[QName]
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production translationConstraint
+top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.tys = [];
   top.rels = [];

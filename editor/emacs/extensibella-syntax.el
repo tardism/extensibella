@@ -5,8 +5,8 @@
 (defconst extensibella-top-commands
   '(
     ;;The actual top commands
-    ;; Theorem | Define | Import | Kind | Split | Type | Extensible_Theorem | Module | Prove
-    ("\\<\\(Theorem\\)\\|\\(Define\\)\\|\\(Import\\)\\|\\(Kind\\)\\|\\(Split\\)\\|\\(Type\\)\\|\\(Extensible_Theorem\\)\\|\\(Module\\)\\|\\(Prove\\)\\>"
+    ;; Theorem | Define | Import | Kind | Split | Type | Extensible_Theorem | Module | Prove | Translation_Constraint
+    ("\\<\\(Theorem\\)\\|\\(Define\\)\\|\\(Import\\)\\|\\(Kind\\)\\|\\(Split\\)\\|\\(Type\\)\\|\\(Extensible_Theorem\\)\\|\\(Module\\)\\|\\(Prove\\)\\|\\(Translation_Constraint\\)\\>"
      . font-lock-keyword-face)
     ;;Auxiliary words to go with them
     ;; as | by

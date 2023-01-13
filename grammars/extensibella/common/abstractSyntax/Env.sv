@@ -43,16 +43,20 @@ function findAllEnv
 
 
 nonterminal TypeEnvItem with
-   name, transTypes, isLangType, kind, unknownConstr;
+   name, transTypes, isLangType, kind, unknownConstr, clauseModules;
 
 synthesized attribute isLangType::Boolean;
 synthesized attribute transTypes::TypeList;
 synthesized attribute kind::Integer; --number of args to type
 synthesized attribute unknownConstr::QName;
 
+--the modules for the PC of the clauses, in clause order
+synthesized attribute clauseModules::[QName];
+
 --types defined in the language encoding
 abstract production langTypeEnvItem
 top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
+                     clauseModules::[QName]
 {
   top.name = name;
 
@@ -63,6 +67,8 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
   top.transTypes = args;
 
   top.unknownConstr = unknownQName(name.sub);
+
+  top.clauseModules = clauseModules;
 }
 
 
@@ -81,6 +87,9 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.unknownConstr =
       error("Should not access unknownConstr on libTypeEnvItem");
+
+  top.clauseModules =
+      error("Should not access clauseModules on libTypeEnvItem");
 }
 
 
@@ -99,6 +108,9 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.unknownConstr =
       error("Should not access unknownConstr on proofTypeEnvItem");
+
+  top.clauseModules =
+      error("Should not access clauseModules on proofTypeEnvItem");
 }
 
 
@@ -126,9 +138,6 @@ nonterminal RelationEnvItem with
 
 synthesized attribute pcIndex::Integer;
 synthesized attribute pcType::Type;
-
---the modules for the PC of the clauses, in clause order
-synthesized attribute clauseModules::[QName];
 
 abstract production extRelationEnvItem
 top::RelationEnvItem ::= name::QName args::TypeList pcIndex::Integer

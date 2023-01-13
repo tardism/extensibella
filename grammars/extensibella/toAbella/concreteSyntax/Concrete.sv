@@ -218,6 +218,26 @@ concrete productions top::PureTopCommand_c
         | left(msg) -> anyParseFailure(msg)
         | right(lst) -> error("Adding extensible theorems to groups not done yet   TODO")
         end; }
+| 'Translation_Constraint' name::Id_t ':'
+  'forall' binds::BindingList_c ',' body::ExtBody_c '.'
+  { top.ast =
+        case body.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(b) ->
+          anyTopCommand(
+                 translationConstraint(toQName(name.lexeme),
+                                       binds.ast, b))
+        end; }
+| 'Translation_Constraint' name::Qname_t ':'
+  'forall' binds::BindingList_c ',' body::ExtBody_c '.'
+  { top.ast =
+        case body.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(b) ->
+          anyTopCommand(
+                 translationConstraint(toQName(name.lexeme),
+                                       binds.ast, b))
+        end; }
 
 
 concrete productions top::TheoremStmts_c
