@@ -238,6 +238,8 @@ concrete productions top::PureTopCommand_c
                  translationConstraint(toQName(name.lexeme),
                                        binds.ast, b))
         end; }
+| 'Prove_Constraint' tc::Qname_t '.'
+  { top.ast = anyTopCommand(proveConstraint(toQName(tc.lexeme))); }
 
 
 concrete productions top::TheoremStmts_c

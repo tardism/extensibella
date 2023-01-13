@@ -100,15 +100,82 @@ top::TopCommand ::= name::QName
       | translationConstraintTheorem(q, x, b) -> (q, x, b)
       | _ -> error("Not possible")
       end;
+  local binds::Bindings = obligation.2;
+  local body::ExtBody = obligation.3;
+  body.boundNames = binds.usedNames;
+  body.typeEnv = top.typeEnv;
+  body.relationEnv = top.relationEnv;
+  body.constructorEnv = top.constructorEnv;
+
+  production labels::[String] = catMaybes(map(fst, body.premises));
+  --names we're going to use for the intros command for this theorem
+  local introsNames::[String] =
+        foldr(\ p::(Maybe<String>, Metaterm) rest::[String] ->
+                case p.1 of
+                | just(x) -> x::rest
+                | nothing() ->
+                  makeUniqueNameFromBase("H", rest ++ labels)::rest
+                end,
+              [], body.premises);
+
+  local transTy::QName =
+      case body.premises of
+      | (_, translationMetaterm(_, ty, _, _))::_ -> ty
+      | _ -> error("Should not access transTy")
+      end;
+  transTy.typeEnv = top.typeEnv;
+  local fullType::TypeEnvItem = transTy.fullType;
 
   top.provingTheorems =
       [(obligation.1,
         bindingMetaterm(forallBinder(), obligation.2,
            obligation.3.thm))];
 
-  top.toAbella = error("proveConstraint.toAbella");
+  --for the subgoals that should arise, the last digit of the subgoal
+  --number and whether we need to prove it
+  local expectedSubgoals::[(Integer, Boolean)] =
+      foldl(\ thusFar::(Integer, [(Integer, Boolean)]) now::QName ->
+              if now == top.currentModule --new constr
+              then (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, true)])
+              else (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, false)]),
+            (1, []), fullType.clauseModules).2;
+  --group consecutive skips
+  local groupedExpectedSubgoals::[[(Integer, Boolean)]] =
+      groupBy(\ p1::(Integer, Boolean) p2::(Integer, Boolean) ->
+                p1.2 == p2.2,
+              expectedSubgoals);
+  --last digit of subgoal and skips needed
+  local subgoalDurings::[(Integer, [ProofCommand])] =
+      flatMap(\ l::[(Integer, Boolean)] ->
+                if !null(l) && !head(l).2 --things we don't do we skip
+                then [(head(l).1,
+                       map(\ x::(Integer, Boolean) ->
+                             skipTactic(), l))]
+                else [], --nothing for things we need to prove
+              groupedExpectedSubgoals);
+  --turned into full subgoals
+  local subgoalDuringCommands::[(SubgoalNum, [ProofCommand])] =
+      map(\ p::(Integer, [ProofCommand]) -> ([p.1], p.2),
+          subgoalDurings);
 
-  top.duringCommands = error("proveConstraint.duringCommands");
+  local hasInitialSkips::Boolean =
+      !null(subgoalDuringCommands) && head(subgoalDurings).1 == 1;
+
+  top.toAbella =
+      [anyTopCommand(theoremDeclaration(obligation.1, [],
+          bindingMetaterm(forallBinder(), binds, body.toAbella))),
+       anyProofCommand(introsTactic(introsNames)),
+       anyProofCommand(caseTactic(nameHint(head(introsNames)),
+          head(introsNames), true))] ++
+      --add any initial skips
+      if hasInitialSkips
+      then map(anyProofCommand, head(subgoalDuringCommands).2)
+      else [];
+
+  top.duringCommands =
+      if hasInitialSkips
+      then tail(subgoalDuringCommands)
+      else subgoalDuringCommands;
 
   top.afterCommands = [];
 }

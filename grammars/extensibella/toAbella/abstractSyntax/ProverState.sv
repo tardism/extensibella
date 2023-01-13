@@ -98,6 +98,11 @@ top::ProverState ::=
                      map(fst, thms)))
           then rest
           else obligations
+        | translationConstraintTheorem(q, x, b)::rest ->
+          case provingThms of
+          | [(q2, _)] when q == q2 -> rest
+          | _ -> obligations
+          end
         | _ -> obligations
         end;
   top.replacedState =

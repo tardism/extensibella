@@ -245,8 +245,8 @@ IOVal<StateList> ::=
               "After-Proof Commands", aftered.iovalue, aftered.io)
       else debugOutput(debug, config, afterCommands,
               "After-Proof Commands", "", ioin);
-  --Determine whether we need to remove an extensible mutual group
-  --   from the beginning because we just proved it
+  --Determine whether we need to remove an obligation from the
+  --   beginning because we just proved it
   local newObligations::[ThmElement] =
         case initProverState.remainingObligations of
         | extensibleMutualTheoremGroup(thms)::rest ->
@@ -257,6 +257,11 @@ IOVal<StateList> ::=
                      map(fst, thms)))
           then rest
           else initProverState.remainingObligations
+        | translationConstraintTheorem(q, x, b)::rest ->
+          case initProverState.provingThms of
+          | [(q2, _)] when q == q2 -> rest
+          | _ -> initProverState.remainingObligations
+          end
         | _ -> initProverState.remainingObligations
         end;
   --Add completed theorems
