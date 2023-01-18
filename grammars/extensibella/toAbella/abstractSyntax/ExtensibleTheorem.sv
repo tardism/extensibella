@@ -193,11 +193,12 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem
   local introsNames::[String] =
-        foldr(\ p::(Maybe<String>, Metaterm) rest::[String] ->
+        foldl(\ rest::[String] p::(Maybe<String>, Metaterm) ->
                 case p.1 of
-                | just(x) -> x::rest
-                | nothing() ->
-                  makeUniqueNameFromBase("H", rest ++ labels)::rest
+                | just(x) -> rest ++ [x]
+                | nothing() -> rest ++
+                  --using "H" as base triggers an Abella error
+                  [makeUniqueNameFromBase("Hyp", rest ++ labels)]
                 end,
               [], body.premises);
 
@@ -372,6 +373,13 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
   rest.boundNames = top.boundNames;
 
   top.premises = (just(label), m.full)::rest.premises;
+
+  --labels of the form H<num> cause Abella errors
+  top.toAbellaMsgs <-
+      if startsWith("H", label) &&
+         isDigit(substring(1, length(label), label))
+      then [errorMsg("Cannot declare label of form \"H<num>\"")]
+      else [];
 }
 
 
