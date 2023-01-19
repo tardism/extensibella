@@ -46,12 +46,6 @@ top::NoOpCommand ::= opt::String val::String
            then []
            else [errorMsg("Option 'debug' can only be set to " ++
                           "'on' or 'off', not '" ++ val ++ "'")]
-      else if opt == "subgoals"
-      then if val == "on" || val == "off" || toIntSafe(val).isJust
-           then []
-           else [errorMsg("Argument to option 'subgoals' must be " ++
-                          "'on', 'off', or an integer; found '" ++
-                          val ++ "'")]
       else if opt == "witnesses"
       then if val == "on" || val == "off"
            then []

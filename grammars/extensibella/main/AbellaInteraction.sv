@@ -19,8 +19,7 @@ IOVal<Either<String ProcessHandle>> ::=
 
   local abella::IOVal<ProcessHandle> =
       spawnProcess("abella", [], stdLibFiles.io);
-  --Read Abella's outputs from the library imports, in addition to the
-  --   welcome message
+  --Read Abella's welcome message
   local abella_initial_string::IOVal<String> =
       read_abella_output(abella.iovalue, abella.io);
   --Send the library imports to Abella

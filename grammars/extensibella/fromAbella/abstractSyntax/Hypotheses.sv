@@ -12,7 +12,7 @@ top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal
                     futureGoals::[Subgoal]
 {
   top.fromAbella =
-      proofInProgress(subgoalNum, currGoal.fromAbella, futureGoals);
+      proofInProgress(subgoalNum, currGoal.fromAbella, []);
 
   top.hypList = currGoal.hypList;
 }
