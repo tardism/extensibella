@@ -99,7 +99,7 @@ top::TopCommand ::= name::QName
   local obligation::(QName, Bindings, ExtBody) =
       case head(top.proverState.remainingObligations) of
       | translationConstraintTheorem(q, x, b) -> (q, x, b)
-      | _ -> error("Not possible")
+      | _ -> error("Not possible (length top.toAbellaMsgs = " ++ toString(length(top.toAbellaMsgs)) ++ ")")
       end;
   local binds::Bindings = obligation.2;
   local body::ExtBody = obligation.3;
@@ -174,10 +174,14 @@ top::TopCommand ::= name::QName
       then map(anyProofCommand, head(subgoalDuringCommands).2)
       else [];
 
+  --This shouldn't be accessed if we have errors, but it is
+  --I should figure this out at some point
   top.duringCommands =
-      if hasInitialSkips
-      then tail(subgoalDuringCommands)
-      else subgoalDuringCommands;
+      if null(top.toAbellaMsgs)
+      then if hasInitialSkips
+           then tail(subgoalDuringCommands)
+           else subgoalDuringCommands
+      else [];
 
   top.afterCommands = [];
 }
