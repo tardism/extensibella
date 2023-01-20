@@ -18,11 +18,12 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem
   local introsNames::[String] =
-        foldr(\ p::(Maybe<String>, Metaterm) rest::[String] ->
+        foldl(\ rest::[String] p::(Maybe<String>, Metaterm) ->
                 case p.1 of
-                | just(x) -> x::rest
-                | nothing() ->
-                  makeUniqueNameFromBase("H", rest ++ labels)::rest
+                | just(x) -> rest ++ [x]
+                | nothing() -> rest ++
+                  --using "H" as base triggers an Abella error
+                  [makeUniqueNameFromBase("Hyp", rest ++ labels)]
                 end,
               [], body.premises);
 
@@ -110,11 +111,12 @@ top::TopCommand ::= name::QName
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem
   local introsNames::[String] =
-        foldr(\ p::(Maybe<String>, Metaterm) rest::[String] ->
+        foldl(\ rest::[String] p::(Maybe<String>, Metaterm) ->
                 case p.1 of
-                | just(x) -> x::rest
-                | nothing() ->
-                  makeUniqueNameFromBase("H", rest ++ labels)::rest
+                | just(x) -> rest ++ [x]
+                | nothing() -> rest ++
+                  --using "H" as base triggers an Abella error
+                  [makeUniqueNameFromBase("Hyp", rest ++ labels)]
                 end,
               [], body.premises);
 
