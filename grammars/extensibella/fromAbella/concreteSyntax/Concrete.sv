@@ -64,6 +64,10 @@ concrete productions top::ProofState_c
   { top.ast = proofInProgress(cs.ast, cg.ast, [hiddenSubgoals(toInteger(num.lexeme))]); }
 | 'Proof completed.'
   { top.ast = proofCompleted(); }
+| 'Proof completed'
+  { top.ast = proofCompleted(); }
+| 'Proof completed' '*** USING skip ***'
+  { top.ast = proofCompleted(); }
 | 'Proof ABORTED.'
   { top.ast = proofAborted(); }
 
