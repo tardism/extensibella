@@ -114,6 +114,27 @@ top::TypeEnvItem ::= name::QName kind::Integer
 }
 
 
+--variable type in a theorem or definition
+abstract production typeVarEnvItem
+top::TypeEnvItem ::= name::String
+{
+  top.name = basicQName(baseName(name));
+
+  top.isLangType = false;
+
+  top.kind = 0;
+
+  top.transTypes =
+      error("Should not access transTypes on typeVarEnvItem");
+
+  top.unknownConstr =
+      error("Should not access unknownConstr on typeVarEnvItem");
+
+  top.clauseModules =
+      error("Should not access clauseModules on typeVarEnvItem");
+}
+
+
 
 
 -- .type is built type

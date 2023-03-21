@@ -9,8 +9,10 @@ nonterminal TopCommand with
    newProofState,
    provingTheorems, duringCommands, afterCommands,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
-propagate typeEnv, constructorEnv, relationEnv, currentModule,
+propagate constructorEnv, relationEnv, currentModule,
           toAbellaMsgs on TopCommand excluding definitionDeclaration;
+propagate typeEnv on TopCommand excluding definitionDeclaration,
+                                          theoremDeclaration;
 
 aspect default production
 top::TopCommand ::=
@@ -48,6 +50,8 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
   top.toAbella =
       [anyTopCommand(
           theoremDeclaration(fullName, params, body.toAbella))];
+
+  body.typeEnv = addEnv(top.typeEnv, map(typeVarEnvItem, params));
 
   body.boundNames = [];
 
