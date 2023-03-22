@@ -45,12 +45,12 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 
 --Non-extensible mutuals are written all in one
 abstract production nonextensibleTheorem
-top::ThmElement ::= name::QName stmt::Metaterm
+top::ThmElement ::= name::QName params::[String] stmt::Metaterm
 {
-  top.pp = theoremDeclaration(name, [], stmt).pp;
+  top.pp = theoremDeclaration(name, params, stmt).pp;
 
   top.encode =
-      [anyTopCommand(theoremDeclaration(name, [], stmt)),
+      [anyTopCommand(theoremDeclaration(name, params, stmt)),
        anyProofCommand(skipTactic())];
   top.is_nonextensible = true;
 

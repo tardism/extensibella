@@ -76,8 +76,8 @@ function cleanModThms
          if null(rest)
          then cleanModThms(remove, tl)
          else rest::cleanModThms(remove, tl)
-       | nonextensibleTheorem(aname, astmt)::rest,
-         nonextensibleTheorem(bname, bstmt) when aname == bname ->
+       | nonextensibleTheorem(aname, aparams, astmt)::rest,
+         nonextensibleTheorem(bname, bparams, bstmt) when aname == bname ->
          if null(rest)
          then cleanModThms(remove, tl)
          else rest::cleanModThms(remove, tl)
@@ -139,7 +139,7 @@ aspect production theoremDeclaration
 top::TopCommand ::= name::QName params::[String] body::Metaterm
 {
   top.defElements = [];
-  top.thmElements = [nonextensibleTheorem(name, body)];
+  top.thmElements = [nonextensibleTheorem(name, params, body)];
 }
 
 
