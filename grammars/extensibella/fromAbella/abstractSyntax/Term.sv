@@ -31,7 +31,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
         else if relName == integerModulusName
         then modulusMetaterm(a, b, c)
         else if relName == appendName
-        then appendMetaterm(a, b, c)
+        then appendMetaterm(a, b, c, r)
         else if relName == orName
         then orBoolMetaterm(a, b, c)
         else if relName == andName

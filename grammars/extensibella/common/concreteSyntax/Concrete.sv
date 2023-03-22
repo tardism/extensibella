@@ -172,7 +172,8 @@ concrete productions top::SubMetaterm_c
 | t1::Term_c '>=' t2::Term_c
   { top.ast = right(greaterEqMetaterm(t1.ast, t2.ast)); }
 | t1::Term_c '++' t2::Term_c '=' t3::Term_c
-  { top.ast = right(appendMetaterm(t1.ast, t2.ast, t3.ast)); }
+  { top.ast = right(appendMetaterm(t1.ast, t2.ast, t3.ast,
+                                   emptyRestriction())); }
 | t1::Term_c '||' t2::Term_c '=' t3::Term_c
   { top.ast = right(orBoolMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t1::Term_c '&&' t2::Term_c '=' t3::Term_c
@@ -191,7 +192,8 @@ concrete productions top::SubMetaterm_c
 | t3::Term_c '=' t1::Term_c 'mod' t2::Term_c
   { top.ast = right(modulusMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '++' t2::Term_c
-  { top.ast = right(appendMetaterm(t1.ast, t2.ast, t3.ast)); }
+  { top.ast = right(appendMetaterm(t1.ast, t2.ast, t3.ast,
+                                   emptyRestriction())); }
 | t3::Term_c '=' t1::Term_c '||' t2::Term_c
   { top.ast = right(orBoolMetaterm(t1.ast, t2.ast, t3.ast)); }
 | t3::Term_c '=' t1::Term_c '&&' t2::Term_c

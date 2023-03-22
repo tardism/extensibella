@@ -202,14 +202,14 @@ top::Metaterm ::= t1::Term t2::Term
 
 
 aspect production appendMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 {
   top.toAbella =
       relationMetaterm(
          toQName(appendName),
          buildApplicationArgs([t1.toAbella, t2.toAbella,
                               result.toAbella]),
-         emptyRestriction());
+         r);
 }
 
 

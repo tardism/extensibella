@@ -98,7 +98,7 @@ top::Metaterm ::= arg::Term result::Term
 -}
 
 aspect production appendMetaterm
-top::Metaterm ::= arg1::Term arg2::Term result::Term
+top::Metaterm ::= arg1::Term arg2::Term result::Term r::Restriction
 {
   top.fromAbella = error("Should never be translating an appendMetaterm");
 }

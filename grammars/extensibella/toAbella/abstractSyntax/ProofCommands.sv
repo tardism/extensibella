@@ -54,6 +54,8 @@ top::ProofCommand ::= h::HHint nl::[Integer]
                             "not exist")]
              else 
                case elemAtIndex(p.2, p.1 - 1) of
+               | relationMetaterm(rel, args, r) --allow induction on append
+                 when rel.shortName == appendName -> []
                | relationMetaterm(rel, args, r) ->
                  let decRel::Decorated QName with {relationEnv} =
                      decorate rel with {

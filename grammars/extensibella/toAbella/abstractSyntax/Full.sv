@@ -231,9 +231,9 @@ top::Metaterm ::= t1::Term t2::Term
 
 
 aspect production appendMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 {
-  top.full = appendMetaterm(t1.full, t2.full, result.full);
+  top.full = appendMetaterm(t1.full, t2.full, result.full, r);
 }
 
 

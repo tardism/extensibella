@@ -136,10 +136,11 @@ top::Metaterm ::= t1::Term t2::Term
   top.splitConjunctions = [top];
 }
 
+--because we can do induction on append, should have a restriction
 abstract production appendMetaterm
-top::Metaterm ::= t1::Term t2::Term result::Term
+top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 {
-  top.pp = t1.pp ++ " ++ " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp = t1.pp ++ " ++ " ++ t2.pp ++ " = " ++ result.pp ++ r.pp;
   top.abella_pp = error("Should not access abella_pp");
   top.isAtomic = true;
 
