@@ -144,6 +144,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
           libTypeEnvItem(toQName("$lib__nat"), 0),
           libTypeEnvItem(toQName("$lib__bool"), 0),
           libTypeEnvItem(toQName("$lib__integer"), 0),
+          libTypeEnvItem(toQName("$char"), 0), --part of strings
           --not our library, but still *a* library
           libTypeEnvItem(toQName("list"), 1),
           libTypeEnvItem(toQName("prop"), 0)]);

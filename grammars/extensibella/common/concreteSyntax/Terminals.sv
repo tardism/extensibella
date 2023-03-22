@@ -35,6 +35,10 @@ terminal Plus_t        '+'       lexer classes {TOKEN}, precedence=9, associatio
 terminal Star_t        '*'       lexer classes {TOKEN}, precedence=10, association=left;
 
 
+--The string type needs to be treated specially as a built-in type
+terminal StringTy_t   'string'   dominates {Id_t};
+
+
 --Qname_t is a qualified name as in Silver
 --The module part is a Silver name, so it only needs Silver-allowed characters
 terminal Qname_t  /([A-Za-z0-9_]+:)+[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;

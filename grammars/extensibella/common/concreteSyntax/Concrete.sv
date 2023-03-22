@@ -300,6 +300,8 @@ closed nonterminal Ty_c with ast<Type>;
 
 
 concrete productions top::PTy_c
+| 'string'
+  { top.ast = stringType; }
 | i::Id_t
   { top.ast = nameType(toQName(i.lexeme)); }
 | i::Qname_t
@@ -309,6 +311,8 @@ concrete productions top::PTy_c
 
 
 concrete productions top::ATy_c
+| 'string'
+  { top.ast = stringType; }
 | i::Id_t
   { top.ast = nameType(toQName(i.lexeme)); }
 | i::Qname_t
