@@ -15,3 +15,5 @@ concrete productions top::ModuleList_c
   { top.ast = emptyModuleList(); }
 | mod::Qname_t rest::ModuleList_c
   { top.ast = addModuleList(toQName(mod.lexeme), rest.ast); }
+| mod::Id_t rest::ModuleList_c
+  { top.ast = addModuleList(toQName(mod.lexeme), rest.ast); }
