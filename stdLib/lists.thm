@@ -35,3 +35,30 @@ induction on 1. intros. case H1.
    case H2. search.
   %Subgoal 2
    case H2. apply IH to H3 H4. search.
+
+Theorem extensibella-$-stdLib-$-append_anything[A] : forall (L1 L2 L L3 : list A),
+  $append L1 L2 L ->
+  exists L', $append L1 L3 L'.
+induction on 1. intros. case H1.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to H2 with L3 = L3. search.
+
+%Proof and theorem statement taken from
+%   http://abella-prover.org/examples/first-order/lists.html
+% (L1 ++ L2) ++ L3  =>  L1 ++ (L2 ++ L3) is equal
+Theorem extensibella-$-stdLib-$-append_associative[A] : forall (L1 L2 L3 L12 L123 : list A),
+  $append L1 L2 L12 -> $append L12 L3 L123 ->
+  exists L23, $append L2 L3 L23 /\ $append L1 L23 L123.
+induction on 1. intros. case H1.
+  search.
+  case H2. apply IH to H3 H4. search.
+
+% L1 ++ (L2 ++ L3)  =>  (L1 ++ L2) ++ L3 is equal
+Theorem extensibella-$-stdLib-$-append_associative_back[A] : forall (L1 L2 L3 L23 L123 : list A),
+  $append L2 L3 L23 -> $append L1 L23 L123 ->
+  exists L12, $append L1 L2 L12 /\ $append L12 L3 L123.
+induction on 2. intros. case H2.
+  search.
+  apply IH to H1 H3. search.
