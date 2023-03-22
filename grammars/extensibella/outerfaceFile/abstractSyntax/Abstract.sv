@@ -66,30 +66,31 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
 function cleanModThms
 [[ThmElement]] ::= remove::ThmElement modThms::[[ThmElement]]
 {
-  return
-     case modThms of
-     | [] -> []
-     | hd::tl ->
-       case hd, remove of
-       | splitElement(aname, alst)::rest, splitElement(bname, blst)
-         when aname == bname && alst == blst ->
-         if null(rest)
-         then cleanModThms(remove, tl)
-         else rest::cleanModThms(remove, tl)
-       | nonextensibleTheorem(aname, aparams, astmt)::rest,
-         nonextensibleTheorem(bname, bparams, bstmt) when aname == bname ->
-         if null(rest)
-         then cleanModThms(remove, tl)
-         else rest::cleanModThms(remove, tl)
-       | extensibleMutualTheoremGroup(athms)::rest,
-         extensibleMutualTheoremGroup(bthms)
-         when !null(intersect(map(fst, athms), map(fst, bthms))) ->
-         if null(rest)
-         then cleanModThms(remove, tl)
-         else rest::cleanModThms(remove, tl)
-       | _, _ -> hd::cleanModThms(remove, tl)
-       end
-     end;
+  --whether to remove the first thing in the first list
+  local removeFirst::Boolean =
+      case head(head(modThms)), remove of
+      | splitElement(aname, alst), splitElement(bname, blst) ->
+        aname == bname && alst == blst
+      | nonextensibleTheorem(aname, aparams, astmt),
+        nonextensibleTheorem(bname, bparams, bstmt) ->
+        aname == bname
+      | extensibleMutualTheoremGroup(athms),
+        extensibleMutualTheoremGroup(bthms) ->
+        !null(intersect(map(fst, athms), map(fst, bthms)))
+      | translationConstraintTheorem(aname, abinds, abody),
+        translationConstraintTheorem(bname, bbinds, bbody) ->
+        aname == bname
+      | _, _ -> false
+      end;
+  return case modThms of
+         | [] -> []
+         | [_]::tl when removeFirst ->
+           cleanModThms(remove, tl)
+         | (_::rest)::tl when removeFirst ->
+           rest::cleanModThms(remove, tl)
+         | hd::tl -> --!removeFirst
+           hd::cleanModThms(remove, tl)
+         end;
 }
 
 
@@ -97,11 +98,14 @@ function cleanModThms
 synthesized attribute defElements::[DefElement];
 synthesized attribute thmElements::[ThmElement];
 
-nonterminal Outerface with defElements, thmElements;
+nonterminal Outerface with pp, len, defElements, thmElements;
 
 abstract production outerface
 top::Outerface ::= t::TopCommands
 {
+  top.pp = t.pp;
+  top.len = t.len;
+
   top.defElements = t.defElements;
   top.thmElements = t.thmElements;
 }
@@ -110,11 +114,14 @@ top::Outerface ::= t::TopCommands
 
 
 
-nonterminal TopCommands with defElements, thmElements;
+nonterminal TopCommands with pp, len, defElements, thmElements;
 
 abstract production endTopCommands
 top::TopCommands ::=
 {
+  top.pp = "";
+  top.len = 0;
+
   top.defElements = [];
   top.thmElements = [];
 }
@@ -123,6 +130,9 @@ top::TopCommands ::=
 abstract production addTopCommands
 top::TopCommands ::= t::TopCommand rest::TopCommands
 {
+  top.pp = t.pp ++ rest.pp;
+  top.len = 1 + rest.len;
+
   top.defElements = t.defElements ++ rest.defElements;
   top.thmElements = t.thmElements ++ rest.thmElements;
 }

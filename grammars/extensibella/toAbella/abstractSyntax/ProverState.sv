@@ -91,26 +91,15 @@ top::ProverState ::=
   --Determine whether we need to remove an extensible mutual group
   --   from the beginning because we just proved it
   local newObligations::[ThmElement] =
-        case obligations of
-        | extensibleMutualTheoremGroup(thms)::rest ->
-          --everything imported here is in the things we just proved
-          if all(map(\ t::QName -> contains(t, map(fst, provingThms)),
-                     map(fst, thms)))
-          then rest
-          else obligations
-        | translationConstraintTheorem(q, x, b)::rest ->
-          case provingThms of
-          | [(q2, _)] when q == q2 -> rest
-          | _ -> obligations
-          end
-        | _ -> obligations
-        end;
+      removeFinishedObligation(obligations, provingThms);
   top.replacedState =
       case top.replaceState of
       | proofCompleted() ->
+        --leave provingThms because we will need them for the next step
         proverState(top.replaceState, debugMode,
                     provingThms ++ knownThms, newObligations,
-                    tyEnv, relEnv, constrEnv, [], [], afterCommands)
+                    tyEnv, relEnv, constrEnv, provingThms, [],
+                    afterCommands)
       | proofAborted() ->
         proverState(top.replaceState, debugMode, knownThms,
                     obligations, tyEnv, relEnv, constrEnv, [], [], [])
@@ -127,6 +116,30 @@ top::ProverState ::=
       end;
 }
 
+
+--Remove an obligation if we finished one, otherwise return the list
+--of obligations given
+function removeFinishedObligation
+[ThmElement] ::=
+   obligations::[ThmElement] provenThms::[(QName, Metaterm)]
+{
+  local newObligations::[ThmElement] =
+      case obligations of
+      | extensibleMutualTheoremGroup(thms)::rest ->
+        --everything imported here is in the things we just proved
+        if all(map(\ t::QName -> contains(t, map(fst, provenThms)),
+                   map(fst, thms)))
+        then rest
+        else obligations
+      | translationConstraintTheorem(q, x, b)::rest ->
+        case provenThms of
+        | [(q2, _)] when q == q2 -> rest
+        | _ -> obligations
+        end
+      | _ -> obligations
+      end;
+  return newObligations;
+}
 
 
 --Build a prover state as you expect in the beginning

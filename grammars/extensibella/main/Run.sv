@@ -248,22 +248,8 @@ IOVal<StateList> ::=
   --Determine whether we need to remove an obligation from the
   --   beginning because we just proved it
   local newObligations::[ThmElement] =
-        case initProverState.remainingObligations of
-        | extensibleMutualTheoremGroup(thms)::rest ->
-          --everything imported here is in the things we just proved
-          if all(map(\ t::QName ->
-                       contains(t,
-                          map(fst, initProverState.provingThms)),
-                     map(fst, thms)))
-          then rest
-          else initProverState.remainingObligations
-        | translationConstraintTheorem(q, x, b)::rest ->
-          case initProverState.provingThms of
-          | [(q2, _)] when q == q2 -> rest
-          | _ -> initProverState.remainingObligations
-          end
-        | _ -> initProverState.remainingObligations
-        end;
+      removeFinishedObligation(initProverState.remainingObligations,
+                               initProverState.provingThms);
   --Add completed theorems
   local newKnownThms::[(QName, Metaterm)] =
       initProverState.knownTheorems ++ initProverState.provingThms;
