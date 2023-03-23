@@ -98,7 +98,7 @@ top::ProverState ::=
         --leave provingThms because we will need them for the next step
         proverState(top.replaceState, debugMode,
                     provingThms ++ knownThms, newObligations,
-                    tyEnv, relEnv, constrEnv, provingThms, [],
+                    tyEnv, relEnv, constrEnv, [], [],
                     afterCommands)
       | proofAborted() ->
         proverState(top.replaceState, debugMode, knownThms,
