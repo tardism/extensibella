@@ -240,6 +240,70 @@ concrete productions top::PureTopCommand_c
         end; }
 | 'Prove_Constraint' tc::Qname_t '.'
   { top.ast = anyTopCommand(proveConstraint(toQName(tc.lexeme))); }
+-----
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+| 'Prove_Ext_Ind' rel::Qname_t '.'
+  { top.ast = anyTopCommand(proveExtInd(toQName(rel.lexeme))); }
+
+
+nonterminal VarList_c with ast<[String]>;
+
+concrete productions top::VarList_c
+| name::Id_t
+  { top.ast = [name.lexeme]; }
+| name::Id_t rest::VarList_c
+  { top.ast = name.lexeme::rest.ast; }
 
 
 concrete productions top::TheoremStmts_c

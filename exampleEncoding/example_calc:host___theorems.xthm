@@ -1,6 +1,8 @@
 Module example_calc:host.
 
-%Set debug on.
+Set debug on.
+
+Ext_Ind value EvalEnv E V with |{Expr}- E ~~> T.
 
 Theorem lookup_unique : forall X L V1 V2,
   lookup X L V1 -> lookup X L V2 -> V1 = V2.

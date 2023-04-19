@@ -153,4 +153,9 @@ TypeList ::= tys::[Type]
 {
   return foldr(addTypeList, emptyTypeList(), tys);
 }
+function toTermList
+TermList ::= tms::[Term]
+{
+  return foldr(consTermList, emptyTermList(), tms);
+}
 

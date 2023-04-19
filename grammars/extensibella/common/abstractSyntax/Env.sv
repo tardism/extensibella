@@ -39,6 +39,14 @@ function findAllEnv
 }
 
 
+--Print an environment, for debugging purposes
+function printEnv
+attribute name {} occurs on a => String ::= e::Env<a>
+{
+  return "[" ++ implode(", ", map(\ a::a -> a.name.pp, e)) ++ "]";
+}
+
+
 
 
 

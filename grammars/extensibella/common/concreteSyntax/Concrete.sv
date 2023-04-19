@@ -140,6 +140,10 @@ concrete productions top::SubMetaterm_c
         | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
         end; }
 --Translation
+| args::ExpList_c '|{' ty::Id_t '}-' o::Term_c '~~>' t::Term_c
+  { top.ast =
+        right(translationMetaterm(args.ast, toQName(ty.lexeme),
+                                  o.ast, t.ast)); }
 | args::ExpList_c '|{' ty::Qname_t '}-' o::Term_c '~~>' t::Term_c
   { top.ast =
         right(translationMetaterm(args.ast, toQName(ty.lexeme),

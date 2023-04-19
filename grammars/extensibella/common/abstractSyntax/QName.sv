@@ -465,6 +465,18 @@ QName ::= module::QName name::String
 }
 
 
+--identifier must be fully-qualified
+function sameModule
+Boolean ::= moduleName::QName identifier::QName
+{
+  return if !identifier.isQualified
+         then error("Identifier must be qualified (" ++
+                    identifier.pp ++ ")")
+         else addQNameBase(moduleName, identifier.shortName) ==
+              basicQName(identifier.sub); --drop any special qualifiers
+}
+
+
 function toQName
 QName ::= name::String
 {
