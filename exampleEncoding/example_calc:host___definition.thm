@@ -1,18 +1,18 @@
 
 %nonterminals
-Kind example_calc-$-host-$-Expr   type.
-Kind example_calc-$-host-$-Root   type.
+Kind $ty__example_calc-$-host-$-Expr   type.
+Kind $ty__example_calc-$-host-$-Root   type.
 
 
 %productions
-Type example_calc-$-host-$-intConst   $lib__integer -> example_calc-$-host-$-Expr.
-Type example_calc-$-host-$-plus   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
-Type example_calc-$-host-$-minus   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
-Type example_calc-$-host-$-mult   example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
-Type example_calc-$-host-$-letBind   list $char -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr.
-Type example_calc-$-host-$-name   list $char -> example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-intConst   $lib__integer -> $ty__example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-plus   $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-minus   $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-mult   $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-letBind   list $char -> $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr.
+Type example_calc-$-host-$-name   list $char -> $ty__example_calc-$-host-$-Expr.
 
-Type example_calc-$-host-$-root   example_calc-$-host-$-Expr -> example_calc-$-host-$-Root.
+Type example_calc-$-host-$-root   $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Root.
 
 
 %fixed relation
@@ -24,17 +24,17 @@ $fix__example_calc-$-host-$-lookup X (($pair_c Y YV)::Rest) XV :=
 
 
 %extensible relations
-Define $ext__1__example_calc-$-host-$-valExists : list (list $char) -> example_calc-$-host-$-Expr -> $lib__bool -> prop,
-       $ext__0__example_calc-$-host-$-rootValExists : example_calc-$-host-$-Root -> $lib__bool -> prop,
+Define $ext__1__example_calc-$-host-$-valExists : list (list $char) -> $ty__example_calc-$-host-$-Expr -> $lib__bool -> prop,
+       $ext__0__example_calc-$-host-$-rootValExists : $ty__example_calc-$-host-$-Root -> $lib__bool -> prop,
        %
-       $ext__1__example_calc-$-host-$-value : list ($lib__pair (list $char) $lib__integer) -> example_calc-$-host-$-Expr -> $lib__integer -> prop,
-       $ext__0__example_calc-$-host-$-rootValue : example_calc-$-host-$-Root -> $lib__integer -> prop,
+       $ext__1__example_calc-$-host-$-value : list ($lib__pair (list $char) $lib__integer) -> $ty__example_calc-$-host-$-Expr -> $lib__integer -> prop,
+       $ext__0__example_calc-$-host-$-rootValue : $ty__example_calc-$-host-$-Root -> $lib__integer -> prop,
        %
-       $ext__0__example_calc-$-host-$-isExpr : example_calc-$-host-$-Expr -> prop,
-       $ext__0__example_calc-$-host-$-isRoot : example_calc-$-host-$-Root -> prop,
+       $ext__0__example_calc-$-host-$-isExpr : $ty__example_calc-$-host-$-Expr -> prop,
+       $ext__0__example_calc-$-host-$-isRoot : $ty__example_calc-$-host-$-Root -> prop,
        %
-       $trans__example_calc-$-host-$-Expr : example_calc-$-host-$-Expr -> example_calc-$-host-$-Expr -> prop,
-       $trans__example_calc-$-host-$-Root : example_calc-$-host-$-Root -> example_calc-$-host-$-Root -> prop by
+       $trans__example_calc-$-host-$-Expr : $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr -> prop,
+       $trans__example_calc-$-host-$-Root : $ty__example_calc-$-host-$-Root -> $ty__example_calc-$-host-$-Root -> prop by
 %valExists
 $ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-intConst I) $btrue;
 $ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-plus E1 E2) $btrue :=

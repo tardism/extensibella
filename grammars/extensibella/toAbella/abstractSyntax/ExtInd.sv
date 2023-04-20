@@ -57,12 +57,18 @@ top::TopCommand ::= rel::QName relArgs::[String] transArgs::TermList
   top.toAbellaMsgs <-
       if !transTy.typeFound
       then transTy.typeErrors
-      else if rel.relFound && rel.fullRel.pcType != nameType(transTy)
-      then [errorMsg("Translation must be for relation " ++
-               rel.fullRel.name.pp ++ "'s primary component type " ++
-               rel.fullRel.pcType.pp ++ " but found " ++
-               transTy.fullType.name.pp)]
-      else [];
+      else if !rel.relFound 
+      then []
+      else case rel.fullRel.pcType of
+           | nameType(q) ->
+             if q == transTy.fullType.name
+             then []
+             else [errorMsg("Translation must be for relation " ++
+                      rel.fullRel.name.pp ++ "'s primary component" ++
+                      " type " ++ q.pp ++ " but found " ++
+                      transTy.fullType.name.pp)]
+           | _ -> error("PC type must be a name")
+           end;
   --Check the PC is the one being translated
   top.toAbellaMsgs <-
       if !rel.relFound

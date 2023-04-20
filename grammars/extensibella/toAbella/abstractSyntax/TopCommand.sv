@@ -77,7 +77,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
      then error("Definition should not be empty; definitionDeclaration")
      else implode(",\n       ", map(\ p::(QName, Type) ->
                                   p.1.pp ++ " : " ++ p.2.pp, preds));
-  top.pp = "Define " ++ predsString ++ " by " ++ defs.pp ++ ".";
+  top.pp = "Define " ++ predsString ++ " by " ++ defs.pp ++ ".\n";
   local predsString_abella::String =
      if null(preds)
      then error("Definition should not be empty; definitionDeclaration")
