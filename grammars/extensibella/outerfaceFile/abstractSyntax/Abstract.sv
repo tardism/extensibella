@@ -80,6 +80,9 @@ function cleanModThms
       | translationConstraintTheorem(aname, abinds, abody),
         translationConstraintTheorem(bname, bbinds, bbody) ->
         aname == bname
+      | extIndElement(arel, _, _, _, _, _, _),
+        extIndElement(brel, _, _, _, _, _, _) ->
+        arel == brel
       | _, _ -> false
       end;
   return case modThms of
@@ -260,8 +263,9 @@ top::TopCommand ::= rel::QName relArgs::[String]
                     boundVars::MaybeBindings transArgs::TermList
                     transTy::QName original::String translated::String
 {
-  top.defElements = error("extIndDeclaration.defElements not done");
-  top.thmElements = error("extIndDeclaration.thmElements not done");
+  top.defElements = [];
+  top.thmElements = [extIndElement(rel, relArgs, boundVars.usedNames,
+                        transArgs, transTy, original, translated)];
 }
 
 

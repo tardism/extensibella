@@ -163,14 +163,15 @@ top::ConstructorEnvItem ::= name::QName builtType::Type args::TypeList
 
 
 nonterminal RelationEnvItem with
-   name, types, isExtensible, pcIndex, pcType, clauseModules;
+   name, types, isExtensible, pcIndex, pcType, clauseModules, defsList;
 
 synthesized attribute pcIndex::Integer;
 synthesized attribute pcType::Type;
+synthesized attribute defsList::[([Term], Maybe<Metaterm>)];
 
 abstract production extRelationEnvItem
 top::RelationEnvItem ::= name::QName args::TypeList pcIndex::Integer
-                         clauseModules::[QName]
+          clauseModules::[QName] defsList::[([Term], Maybe<Metaterm>)]
 {
   top.name = name;
 
@@ -182,6 +183,8 @@ top::RelationEnvItem ::= name::QName args::TypeList pcIndex::Integer
   top.pcType = head(drop(pcIndex, args.toList));
 
   top.clauseModules = clauseModules;
+
+  top.defsList = defsList;
 }
 
 
@@ -198,4 +201,7 @@ top::RelationEnvItem ::= name::QName args::TypeList
   top.pcType = error("Should not access on non-extensible relation");
   top.clauseModules =
       error("Should not access on non-extensible relation");
+
+  top.defsList =
+      error("Should not access defsList on non-extensible relation");
 }

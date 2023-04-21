@@ -101,6 +101,7 @@ top::MaybeType ::= ty::Type
 nonterminal Defs with
    pp, abella_pp,
    toAbella<Defs>, toAbellaMsgs,
+   toList<Def>, len,
    relationClauseModules,
    beingDefined,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
@@ -118,6 +119,9 @@ top::Defs ::= d::Def
   top.toAbella = singleDefs(d.toAbella);
 
   top.relationClauseModules = d.relationClauseModules;
+
+  top.toList = [d];
+  top.len = 1;
 }
 
 
@@ -131,6 +135,9 @@ top::Defs ::= d::Def rest::Defs
 
   top.relationClauseModules =
       d.relationClauseModules ++ rest.relationClauseModules;
+
+  top.toList = d::rest.toList;
+  top.len = 1 + rest.len;
 }
 
 
@@ -141,10 +148,13 @@ nonterminal Def with
    pp, abella_pp,
    toAbella<Def>, toAbellaMsgs,
    relationClauseModules,
-   beingDefined,
+   beingDefined, defRel, defTuple,
    typeEnv, constructorEnv, relationEnv, proverState, currentModule;
 propagate typeEnv, constructorEnv, relationEnv, proverState,
           currentModule, toAbellaMsgs, beingDefined on Def;
+
+synthesized attribute defRel::QName;
+synthesized attribute defTuple::([Term], Maybe<Metaterm>);
 
 abstract production factDef
 top::Def ::= defRel::QName args::TermList
@@ -190,6 +200,11 @@ top::Def ::= defRel::QName args::TermList
         end
       | _ -> []
       end;
+
+  top.defRel = if defRel.isQualified
+               then defRel
+               else addQNameBase(top.currentModule, defRel.shortName);
+  top.defTuple = (args.toList, nothing());
 }
 
 
@@ -241,4 +256,9 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
         end
       | _ -> []
       end;
+
+  top.defRel = if defRel.isQualified
+               then defRel
+               else addQNameBase(top.currentModule, defRel.shortName);
+  top.defTuple = (args.toList, just(body));
 }
