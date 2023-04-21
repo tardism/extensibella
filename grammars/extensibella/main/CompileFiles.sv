@@ -342,3 +342,19 @@ top::TopCommand ::= name::QName
               " file must be checkable before compilation")
       end;
 }
+
+
+aspect production extIndDeclaration
+top::TopCommand ::= rel::QName relArgs::[String]
+                    boundVars::MaybeBindings transArgs::TermList
+                    transTy::QName original::String translated::String
+{
+  top.compiled = error("extIndDeclaration.compiled not done");
+}
+
+
+aspect production proveExtInd
+top::TopCommand ::= rel::QName
+{
+  top.compiled = error("proveExtInd.compiled not done");
+}

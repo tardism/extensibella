@@ -246,53 +246,122 @@ concrete productions top::PureTopCommand_c
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              emptyTermList(), toQName(ty.lexeme),
+              nothingBindings(), emptyTermList(), toQName(ty.lexeme),
               o.lexeme, t.lexeme)); }
 | 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
   '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              emptyTermList(), toQName(ty.lexeme),
+              nothingBindings(), emptyTermList(), toQName(ty.lexeme),
               o.lexeme, t.lexeme)); }
 | 'Ext_Ind' rel::Id_t args::VarList_c 'with'
   '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              emptyTermList(), toQName(ty.lexeme),
+              nothingBindings(), emptyTermList(), toQName(ty.lexeme),
               o.lexeme, t.lexeme)); }
 | 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
   '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              emptyTermList(), toQName(ty.lexeme),
+              nothingBindings(), emptyTermList(), toQName(ty.lexeme),
               o.lexeme, t.lexeme)); }
 | 'Ext_Ind' rel::Id_t args::VarList_c 'with'
   targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+              nothingBindings(), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
 | 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
   targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+              nothingBindings(), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
 | 'Ext_Ind' rel::Id_t args::VarList_c 'with'
   targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+              nothingBindings(), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
 | 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
   targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
   { top.ast =
         anyTopCommand(
            extIndDeclaration(toQName(rel.lexeme), args.ast,
-              targs.ast, toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+              nothingBindings(), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+--
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  ',' '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme),  args.ast,
+              justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
+              o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              justBindings(b.ast), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              justBindings(b.ast), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Id_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              justBindings(b.ast), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
+| 'Ext_Ind' rel::Qname_t args::VarList_c 'with'
+  'forall' b::BindingList_c ','
+  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t '.'
+  { top.ast =
+        anyTopCommand(
+           extIndDeclaration(toQName(rel.lexeme), args.ast,
+              justBindings(b.ast), targs.ast,
+              toQName(ty.lexeme), o.lexeme, t.lexeme)); }
 | 'Prove_Ext_Ind' rel::Qname_t '.'
   { top.ast = anyTopCommand(proveExtInd(toQName(rel.lexeme))); }
 

@@ -255,6 +255,26 @@ top::TopCommand ::= name::QName
 }
 
 
+aspect production extIndDeclaration
+top::TopCommand ::= rel::QName relArgs::[String]
+                    boundVars::MaybeBindings transArgs::TermList
+                    transTy::QName original::String translated::String
+{
+  top.defElements = error("extIndDeclaration.defElements not done");
+  top.thmElements = error("extIndDeclaration.thmElements not done");
+}
+
+
+aspect production proveExtInd
+top::TopCommand ::= rel::QName
+{
+  top.defElements =
+      error("Should not have proveExtInd in interface file");
+  top.thmElements =
+      error("Should not have proveExtInd in interface file");
+}
+
+
 
 
 

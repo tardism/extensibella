@@ -298,3 +298,23 @@ top::TopCommand ::= name::QName
   top.rels = [];
   top.constrs = [];
 }
+
+
+aspect production extIndDeclaration
+top::TopCommand ::= rel::QName relArgs::[String]
+                    boundVars::MaybeBindings transArgs::TermList
+                    transTy::QName original::String translated::String
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production proveExtInd
+top::TopCommand ::= rel::QName
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}

@@ -2,7 +2,8 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 abstract production extIndDeclaration
-top::TopCommand ::= rel::QName relArgs::[String] transArgs::TermList
+top::TopCommand ::= rel::QName relArgs::[String]
+                    boundVars::MaybeBindings transArgs::TermList
                     transTy::QName original::String translated::String
 {
   top.pp = "Ext_Ind " ++ implode(" ", rel.pp::relArgs) ++ " with " ++
@@ -12,6 +13,8 @@ top::TopCommand ::= rel::QName relArgs::[String] transArgs::TermList
       error("extIndDeclaration.abella_pp should not be accessed");
 
   top.provingTheorems = [];
+
+  transArgs.boundNames = boundVars.usedNames ++ relArgs;
 
   {-
     This "translation" seems a bit strange, and it is unrelated to
@@ -90,6 +93,38 @@ top::TopCommand ::= rel::QName relArgs::[String] transArgs::TermList
       if isCapitalized(translated) then []
       else [errorMsg("Translation " ++ translated ++
                      " must be capitalized")];
+}
+
+
+nonterminal MaybeBindings with
+   pp, abella_pp,
+   toList<(String, MaybeType)>, len,
+   usedNames,
+   typeEnv;
+propagate typeEnv on MaybeBindings;
+
+abstract production justBindings
+top::MaybeBindings ::= b::Bindings
+{
+  top.pp = b.pp;
+  top.abella_pp = b.abella_pp;
+
+  top.toList = b.toList;
+  top.len = b.len;
+
+  top.usedNames := b.usedNames;
+}
+
+abstract production nothingBindings
+top::MaybeBindings ::=
+{
+  top.pp = "";
+  top.abella_pp = "";
+
+  top.toList = [];
+  top.len = 0;
+
+  top.usedNames := [];
 }
 
 
