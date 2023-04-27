@@ -167,8 +167,11 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                               filter(\ inner::(QName, QName) ->
                                        p.1 == inner.1,
                                      defs.relationClauseModules)),
-                      flatMap(\ d::Def -> if d.defRel == p.1
-                                          then [d.defTuple] else [],
+                      flatMap(\ d::Def ->
+                                if decorate d with {
+                                      currentModule=top.currentModule;
+                                   }.defRel == p.1
+                                then [d.defTuple] else [],
                               defs.toList))]
                 | transQName(_) -> []
                 | _ ->

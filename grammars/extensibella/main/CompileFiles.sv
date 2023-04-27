@@ -338,8 +338,9 @@ top::TopCommand ::= name::QName
       | [translationConstraintTheorem(name, binds, body)] ->
         just(translationConstraint(name, binds, body))
       | _ ->
-        error("Could not identify constraint when compiling prove;" ++
-              " file must be checkable before compilation")
+        error("Could not identify constraint when compiling " ++
+              "Prove_Constraint; file must be checkable before " ++
+              "compilation")
       end;
 }
 
@@ -349,12 +350,31 @@ top::TopCommand ::= rel::QName relArgs::[String]
                     boundVars::MaybeBindings transArgs::TermList
                     transTy::QName original::String translated::String
 {
-  top.compiled = error("extIndDeclaration.compiled not done");
+  top.compiled = just(extIndDeclaration(rel.fullRel.name, relArgs,
+                         boundVars.full, transArgs.full,
+                         transTy.fullType.name, original, translated));
 }
 
 
 aspect production proveExtInd
 top::TopCommand ::= rel::QName
 {
-  top.compiled = error("proveExtInd.compiled not done");
+  local foundExtInd::[ThmElement] =
+      filter(\ t::ThmElement ->
+               case t of
+               | extIndElement(r, _, _, _, _, _, _) -> r == rel
+               | _ -> false
+               end,
+             top.proverState.remainingObligations);
+  top.compiled =
+      case foundExtInd of
+      | [extIndElement(r, relArgs, boundVars, transArgs, transTy,
+                       originalPC, translated)] ->
+        just(extIndDeclaration(r, relArgs, boundVars, transArgs,
+                               transTy, originalPC, translated))
+      | _ ->
+        error("Could not identify ExtInd when compiling " ++
+              "Prove_ExtInd; file must be checkable before " ++
+              "compilation")
+      end;
 }

@@ -264,8 +264,8 @@ top::TopCommand ::= rel::QName relArgs::[String]
                     transTy::QName original::String translated::String
 {
   top.defElements = [];
-  top.thmElements = [extIndElement(rel, relArgs, boundVars.usedNames,
-                        transArgs, transTy, original, translated)];
+  top.thmElements = [extIndElement(rel, relArgs, boundVars, transArgs,
+                                   transTy, original, translated)];
 }
 
 

@@ -283,6 +283,27 @@ top::Bindings ::= name::String mty::MaybeType rest::Bindings
 
 
 attribute
+full<MaybeBindings>
+occurs on MaybeBindings;
+
+aspect production justBindings
+top::MaybeBindings ::= b::Bindings
+{
+  top.full = justBindings(b.full);
+}
+
+
+aspect production nothingBindings
+top::MaybeBindings ::=
+{
+  top.full = nothingBindings();
+}
+
+
+
+
+
+attribute
    full<Term>
 occurs on Term;
 

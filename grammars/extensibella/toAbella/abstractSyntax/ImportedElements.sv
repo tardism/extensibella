@@ -75,7 +75,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 abstract production extIndElement
 top::ThmElement ::= rel::QName relArgs::[String]
-     boundVars::[String] transArgs::TermList
+     boundVars::MaybeBindings transArgs::TermList
      transTy::QName originalPC::String translated::String
 {
   top.pp = error("extIndElement.pp");
