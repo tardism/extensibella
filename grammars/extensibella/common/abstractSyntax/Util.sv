@@ -159,3 +159,16 @@ TermList ::= tms::[Term]
   return foldr(consTermList, emptyTermList(), tms);
 }
 
+
+
+
+
+
+{-
+  Error for when something is yet to be completed
+-}
+function todoError
+a ::= s::String
+{
+  return error("TODO:  " ++ s);
+}

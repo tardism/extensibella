@@ -216,7 +216,7 @@ concrete productions top::PureTopCommand_c
   { top.ast =
         case newthms.ast of
         | left(msg) -> anyParseFailure(msg)
-        | right(lst) -> error("Adding extensible theorems to groups not done yet   TODO")
+        | right(lst) -> todoError("Adding extensible theorems to groups not done yet")
         end; }
 | 'Translation_Constraint' name::Id_t ':'
   'forall' binds::BindingList_c ',' body::ExtBody_c '.'

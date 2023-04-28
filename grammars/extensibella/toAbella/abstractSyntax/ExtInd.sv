@@ -135,7 +135,7 @@ top::TopCommand ::= rel::QName
   top.abella_pp =
       error("proveExtInd.abella_pp should not be accessed");
 
-  top.toAbella = error("proveExtInd.toAbella not done");
+  top.toAbella = todoError("proveExtInd.toAbella");
 
-  top.provingTheorems = error("proveExtInd.provingTheorems not done");
+  top.provingTheorems = todoError("proveExtInd.provingTheorems");
 }
