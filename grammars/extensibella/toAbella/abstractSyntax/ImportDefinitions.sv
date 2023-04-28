@@ -308,9 +308,7 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::= rel::QName relArgs::[String]
-                    boundVars::MaybeBindings transArgs::TermList
-                    transTy::QName original::String translated::String
+top::TopCommand ::=  body::ExtIndBody
 {
   top.tys = [];
   top.rels = [];
@@ -319,7 +317,7 @@ top::TopCommand ::= rel::QName relArgs::[String]
 
 
 aspect production proveExtInd
-top::TopCommand ::= rel::QName
+top::TopCommand ::= rels::[QName]
 {
   top.tys = [];
   top.rels = [];

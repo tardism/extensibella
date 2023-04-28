@@ -2,23 +2,75 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 abstract production extIndDeclaration
-top::TopCommand ::= rel::QName relArgs::[String]
-                    boundVars::MaybeBindings transArgs::TermList
-                    transTy::QName original::String translated::String
+top::TopCommand ::= body::ExtIndBody
 {
-  top.pp = "Ext_Ind " ++ implode(" ", rel.pp::relArgs) ++ " with " ++
-           (case boundVars of
-            | justBindings(b) -> "forall " ++ b.pp ++ ", "
-            | nothingBindings() -> ""
-            end) ++
-           transArgs.pp ++ " |{" ++ transTy.pp ++ "}- " ++
-           original ++ " ~~> " ++ translated ++ ".\n";
+  top.pp = "Ext_Ind " ++ body.pp ++ ".\n";
   top.abella_pp =
       error("extIndDeclaration.abella_pp should not be accessed");
 
   top.provingTheorems = [];
 
+  top.toAbella =
+      [anyTopCommand(
+          definitionDeclaration(
+             map(\ p::(QName, Type, Def) -> (p.1, p.2), body.toAbella),
+             foldr(consDefs, singleDefs(head(body.toAbella).3),
+                   map(\ p::(QName, Type, Def) -> p.3,
+                       tail(body.toAbella)))))];
+
+  --Check each relation occurs at most once
+  top.toAbellaMsgs <- --([duplicated], [seen])
+      let split::([QName], [QName]) =
+          foldr(\ q::QName rest::([QName], [QName]) ->
+                  if contains(q, rest.2) && !contains(q, rest.1)
+                  then (q::rest.1, rest.2)
+                  else (rest.1, q::rest.2),
+                ([], []), body.relations)
+      in
+        map(\ q::QName ->
+              errorMsg("Duplicate definitions of extension " ++
+                 "induction for relation " ++ q.pp), split.1)
+      end;
+}
+
+
+nonterminal ExtIndBody with
+   pp,
+   toAbella<[(QName, Type, Def)]>, toAbellaMsgs,
+   relations,
+   currentModule, typeEnv, constructorEnv, relationEnv;
+propagate constructorEnv, relationEnv, typeEnv, currentModule,
+          toAbellaMsgs on ExtIndBody;
+
+synthesized attribute relations::[QName];
+
+abstract production branchExtIndBody
+top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
+{
+  top.pp = e1.pp ++ ",\n        " ++ e2.pp;
+
+  top.toAbella = e1.toAbella ++ e2.toAbella;
+
+  top.relations = e1.relations ++ e2.relations;
+}
+
+
+abstract production oneExtIndBody
+top::ExtIndBody ::= rel::QName relArgs::[String]
+                    boundVars::MaybeBindings transArgs::TermList
+                    transTy::QName original::String translated::String
+{
+  top.pp = implode(" ", rel.pp::relArgs) ++ " with " ++
+           (case boundVars of
+            | justBindings(b) -> "forall " ++ b.pp ++ ", "
+            | nothingBindings() -> ""
+            end) ++
+           transArgs.pp ++ " |{" ++ transTy.pp ++ "}- " ++
+           original ++ " ~~> " ++ translated;
+
   transArgs.boundNames = boundVars.usedNames ++ relArgs;
+
+  top.relations = if rel.relFound then [rel.fullRel.name] else [];
 
   {-
     This "translation" seems a bit strange, and it is unrelated to
@@ -29,11 +81,8 @@ top::TopCommand ::= rel::QName relArgs::[String]
     the types of transArgs make sense.  This random-looking definition
     lets us do that.
   -}
-  top.toAbella =
-      [anyTopCommand(
-          definitionDeclaration([(testRelQName, testRelTy)],
-             singleDefs(ruleDef(testRelQName, testRelArgs,
-                                testRelBody))))];
+  top.toAbella = [(testRelQName, testRelTy,
+                   ruleDef(testRelQName, testRelArgs, testRelBody))];
   local testRelName::String = "$$$ext_ind_test_def_" ++ rel.shortName;
   local testRelQName::QName = toQName(testRelName);
   local testRelTy::Type = --rel tys, transTy
@@ -95,24 +144,27 @@ top::TopCommand ::= rel::QName relArgs::[String]
       else if elemAtIndex(relArgs, rel.fullRel.pcIndex) == original
       then []
       else [errorMsg("Must translate primary component of relation" ++
-               " (name " ++ elemAtIndex(relArgs, rel.fullRel.pcIndex) ++
+               rel.pp ++ " (name " ++
+               elemAtIndex(relArgs, rel.fullRel.pcIndex) ++
                ") but found " ++ original)];
   --Check the arguments to the relation are variables (capitalized)
   top.toAbellaMsgs <-
       flatMap(\ x::String ->
                 if isCapitalized(x) then []
-                else [errorMsg("Arguments to relation must be " ++
-                               "capitalized, but found " ++ x)],
+                else [errorMsg("Arguments to relation " ++ rel.pp ++
+                         " must be capitalized, but found " ++ x)],
               relArgs);
   --Check the translation is a variable (capitalized)
   top.toAbellaMsgs <-
       if isCapitalized(translated) then []
       else [errorMsg("Translation " ++ translated ++
+                     " for relation " ++ rel.pp ++
                      " must be capitalized")];
   --Check the translation is not in the bound variables
   top.toAbellaMsgs <-
       if contains(translated, boundVars.usedNames)
       then [errorMsg("Translation name " ++ translated ++
+               " for relation " ++ rel.pp ++
                " should not be included in bound variables")]
       else [];
 }
@@ -151,9 +203,9 @@ top::MaybeBindings ::=
 
 
 abstract production proveExtInd
-top::TopCommand ::= rel::QName
+top::TopCommand ::= rels::[QName]
 {
-  top.pp = "Prove_Ext_Ind " ++ rel.pp ++ ".\n";
+  top.pp = "Prove_Ext_Ind " ++ implode(", ", map((.pp), rels)) ++ ".\n";
   top.abella_pp =
       error("proveExtInd.abella_pp should not be accessed");
 

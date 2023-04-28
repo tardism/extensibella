@@ -259,18 +259,17 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::= rel::QName relArgs::[String]
-                    boundVars::MaybeBindings transArgs::TermList
-                    transTy::QName original::String translated::String
+top::TopCommand ::= e::ExtIndBody
 {
   top.defElements = [];
-  top.thmElements = [extIndElement(rel, relArgs, boundVars, transArgs,
-                                   transTy, original, translated)];
+  top.thmElements = todoError("extIndDeclaration.thmElements");
+      {-[extIndElement(rel, relArgs, boundVars, transArgs,
+                     transTy, original, translated)];-}
 }
 
 
 aspect production proveExtInd
-top::TopCommand ::= rel::QName
+top::TopCommand ::= rels::[QName]
 {
   top.defElements =
       error("Should not have proveExtInd in interface file");

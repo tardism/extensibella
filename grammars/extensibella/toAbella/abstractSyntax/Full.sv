@@ -304,6 +304,31 @@ top::MaybeBindings ::=
 
 
 attribute
+   full<ExtIndBody>
+occurs on ExtIndBody;
+
+aspect production branchExtIndBody
+top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
+{
+  top.full = branchExtIndBody(e1.full, e2.full);
+}
+
+
+aspect production oneExtIndBody
+top::ExtIndBody ::= rel::QName relArgs::[String]
+                    boundVars::MaybeBindings transArgs::TermList
+                    transTy::QName original::String translated::String
+{
+  top.full = oneExtIndBody(rel.fullRel.name, relArgs, boundVars.full,
+                           transArgs.full, transTy.fullType.name,
+                           original, translated);
+}
+
+
+
+
+
+attribute
    full<Term>
 occurs on Term;
 

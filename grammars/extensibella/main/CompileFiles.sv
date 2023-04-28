@@ -346,28 +346,24 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::= rel::QName relArgs::[String]
-                    boundVars::MaybeBindings transArgs::TermList
-                    transTy::QName original::String translated::String
+top::TopCommand ::= body::ExtIndBody
 {
-  top.compiled = just(extIndDeclaration(rel.fullRel.name, relArgs,
-                         boundVars.full, transArgs.full,
-                         transTy.fullType.name, original, translated));
+  top.compiled = just(extIndDeclaration(body.full));
 }
 
 
 aspect production proveExtInd
-top::TopCommand ::= rel::QName
+top::TopCommand ::= rels::[QName]
 {
-  local foundExtInd::[ThmElement] =
+{-  local foundExtInd::[ThmElement] =
       filter(\ t::ThmElement ->
                case t of
                | extIndElement(r, _, _, _, _, _, _) -> r == rel
                | _ -> false
                end,
-             top.proverState.remainingObligations);
-  top.compiled =
-      case foundExtInd of
+             top.proverState.remainingObligations);-}
+  top.compiled = todoError("proveExtInd.compiled");
+{-      case foundExtInd of
       | [extIndElement(r, relArgs, boundVars, transArgs, transTy,
                        originalPC, translated)] ->
         just(extIndDeclaration(r, relArgs, boundVars, transArgs,
@@ -376,5 +372,5 @@ top::TopCommand ::= rel::QName
         error("Could not identify ExtInd when compiling " ++
               "Prove_ExtInd; file must be checkable before " ++
               "compilation")
-      end;
+      end;-}
 }
