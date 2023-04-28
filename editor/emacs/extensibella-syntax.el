@@ -6,7 +6,7 @@
   '(
     ;;The actual top commands
     ;; Theorem | Define | Import | Kind | Split | Type | Extensible_Theorem | Module | Prove | Translation_Constraint
-    ("\\<\\(Theorem\\)\\|\\(Define\\)\\|\\(Import\\)\\|\\(Kind\\)\\|\\(Split\\)\\|\\(Type\\)\\|\\(Extensible_Theorem\\)\\|\\(Module\\)\\|\\(Prove\\)\\|\\(Translation_Constraint\\)\\|\\(Prove_Constraint\\)\\>"
+    ("\\<\\(Theorem\\)\\|\\(Define\\)\\|\\(Import\\)\\|\\(Kind\\)\\|\\(Split\\)\\|\\(Type\\)\\|\\(Extensible_Theorem\\)\\|\\(Module\\)\\|\\(Prove\\)\\|\\(Translation_Constraint\\)\\|\\(Prove_Constraint\\)\\|\\(Ext_Ind\\)\\|\\(Prove_Ext_Ind\\)\\>"
      . font-lock-keyword-face)
     ;;Auxiliary words to go with them
     ;; as | by

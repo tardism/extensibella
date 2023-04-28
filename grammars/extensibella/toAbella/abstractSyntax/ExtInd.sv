@@ -7,6 +7,10 @@ top::TopCommand ::= rel::QName relArgs::[String]
                     transTy::QName original::String translated::String
 {
   top.pp = "Ext_Ind " ++ implode(" ", rel.pp::relArgs) ++ " with " ++
+           (case boundVars of
+            | justBindings(b) -> "forall " ++ b.pp ++ ", "
+            | nothingBindings() -> ""
+            end) ++
            transArgs.pp ++ " |{" ++ transTy.pp ++ "}- " ++
            original ++ " ~~> " ++ translated ++ ".\n";
   top.abella_pp =
@@ -28,21 +32,33 @@ top::TopCommand ::= rel::QName relArgs::[String]
   top.toAbella =
       [anyTopCommand(
           definitionDeclaration([(testRelQName, testRelTy)],
-             singleDefs(factDef(testRelQName, testRelArgs))))];
+             singleDefs(ruleDef(testRelQName, testRelArgs,
+                                testRelBody))))];
   local testRelName::String = "$$$ext_ind_test_def_" ++ rel.shortName;
   local testRelQName::QName = toQName(testRelName);
-  local testRelTy::Type = --rel tys, trans arg tys, transTy, transTy
+  local testRelTy::Type = --rel tys, transTy
       foldr(arrowType, nameType(toQName("prop")),
-            rel.fullRel.types.toList ++
+            init(rel.fullRel.types.toList) ++ --drop ending prop
             transTy.fullType.transTypes.toList ++
-            [nameType(transTy.fullType.name),
-             nameType(transTy.fullType.name)]);
-  local testRelArgs::TermList = --relArgs, transArgs, orig, trans
+            [nameType(transTy.fullType.name)]);
+  local testRelArgs::TermList = --relArgs, orig, trans
       toTermList(map(\ x::String ->
                        nameTerm(toQName(x), nothingType()), relArgs) ++
-                 transArgs.toList ++
-                 [nameTerm(toQName(original), nothingType()),
-                  nameTerm(toQName(translated), nothingType())]);
+                 [nameTerm(toQName(original), nothingType())]);
+  local testRelBody::Metaterm =
+      bindingMetaterm(existsBinder(),
+         case boundVars of
+         | justBindings(b) ->
+           addBindings(translated, nothingType(), b)
+         | nothingBindings() ->
+           oneBinding(translated, nothingType())
+         end,
+         --transArgs |- original ~~> translated
+         relationMetaterm(transQName(transTy.fullType.name.sub),
+            toTermList(transArgs.toList ++
+                       [nameTerm(toQName(original), nothingType()),
+                        nameTerm(toQName(translated), nothingType())]),
+            emptyRestriction()));
 
   --Check relation is an extensible relation from this module
   top.toAbellaMsgs <-
@@ -93,6 +109,12 @@ top::TopCommand ::= rel::QName relArgs::[String]
       if isCapitalized(translated) then []
       else [errorMsg("Translation " ++ translated ++
                      " must be capitalized")];
+  --Check the translation is not in the bound variables
+  top.toAbellaMsgs <-
+      if contains(translated, boundVars.usedNames)
+      then [errorMsg("Translation name " ++ translated ++
+               " should not be included in bound variables")]
+      else [];
 }
 
 

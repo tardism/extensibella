@@ -1,6 +1,6 @@
 Module example_calc:host.
 
-Set debug on.
+%Set debug on.
 
 Ext_Ind value EvalEnv E V with |{Expr}- E ~~> T.
 
