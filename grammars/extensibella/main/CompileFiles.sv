@@ -355,22 +355,24 @@ top::TopCommand ::= body::ExtIndBody
 aspect production proveExtInd
 top::TopCommand ::= rels::[QName]
 {
-{-  local foundExtInd::[ThmElement] =
+  local foundExtInd::[ThmElement] =
       filter(\ t::ThmElement ->
                case t of
-               | extIndElement(r, _, _, _, _, _, _) -> r == rel
+               | extIndElement(relInfo) ->
+                 let l::[QName] = map(fst, relInfo)
+                 in --equal by mutual subsets
+                   subset(l, rels) && subset(rels, l)
+                 end
                | _ -> false
                end,
-             top.proverState.remainingObligations);-}
-  top.compiled = todoError("proveExtInd.compiled");
-{-      case foundExtInd of
-      | [extIndElement(r, relArgs, boundVars, transArgs, transTy,
-                       originalPC, translated)] ->
-        just(extIndDeclaration(r, relArgs, boundVars, transArgs,
-                               transTy, originalPC, translated))
+             top.proverState.remainingObligations);
+  top.compiled =
+      case foundExtInd of
+      | [extIndElement(relInfo)] ->
+        just(extIndDeclaration(extIndInfo_to_extIndBody(relInfo)))
       | _ ->
-        error("Could not identify ExtInd when compiling " ++
-              "Prove_ExtInd; file must be checkable before " ++
+        error("Could not identify Ext_Ind when compiling " ++
+              "Prove_Ext_Ind; file must be checkable before " ++
               "compilation")
-      end;-}
+      end;
 }

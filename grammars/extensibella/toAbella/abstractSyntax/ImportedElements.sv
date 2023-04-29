@@ -74,16 +74,45 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 
 abstract production extIndElement
-top::ThmElement ::= rel::QName relArgs::[String]
-     boundVars::MaybeBindings transArgs::TermList
-     transTy::QName originalPC::String translated::String
+top::ThmElement ::=
+   --[(rel name, rel arg names, trans args, trans ty,
+   --    original, translated name)]
+   rels::[(QName, [String], [Term], QName, String, String)]
 {
   top.pp = error("extIndElement.pp");
 
   top.encode = error("extIndElement.encode");
   top.is_nonextensible = false;
 
-  top.thms = error("extIndElement.thms");
+  top.thms = todoError("extIndElement.thms");
+}
+
+function extIndInfo_to_extIndBody
+ExtIndBody ::=
+   extIndInfo::[(QName, [String], [Term], QName, String, String)]
+{
+  local p::(QName, [String], [Term], QName, String, String) =
+      head(extIndInfo);
+  local transArgs::TermList = toTermList(p.3);
+  local newNames::[String] =
+      removeAll(p.2, remove(p.5, transArgs.usedNames));
+  local boundVars::MaybeBindings =
+      if null(newNames)
+      then nothingBindings()
+      else justBindings(
+              foldr(\ x::String rest::Bindings ->
+                      addBindings(x, nothingType(), rest),
+                 oneBinding(head(newNames), nothingType()),
+                 tail(newNames)));
+  local one::ExtIndBody =
+      oneExtIndBody(p.1, p.2, boundVars, transArgs, p.4, p.5, p.6);
+  return
+      case extIndInfo of
+      | [] -> error("Should not call extIndInfo_to_extIndBody " ++
+                    "with empty list")
+      | [_] -> one
+      | _::t -> branchExtIndBody(one, extIndInfo_to_extIndBody(t))
+      end;
 }
 
 

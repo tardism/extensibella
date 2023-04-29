@@ -80,9 +80,8 @@ function cleanModThms
       | translationConstraintTheorem(aname, abinds, abody),
         translationConstraintTheorem(bname, bbinds, bbody) ->
         aname == bname
-      | extIndElement(arel, _, _, _, _, _, _),
-        extIndElement(brel, _, _, _, _, _, _) ->
-        arel == brel
+      | extIndElement(arelinfo), extIndElement(brelinfo) ->
+        !null(intersect(map(fst, arelinfo), map(fst, brelinfo)))
       | _, _ -> false
       end;
   return case modThms of
@@ -262,9 +261,7 @@ aspect production extIndDeclaration
 top::TopCommand ::= e::ExtIndBody
 {
   top.defElements = [];
-  top.thmElements = todoError("extIndDeclaration.thmElements");
-      {-[extIndElement(rel, relArgs, boundVars, transArgs,
-                     transTy, original, translated)];-}
+  top.thmElements = [extIndElement(e.extIndInfo)];
 }
 
 
@@ -299,6 +296,33 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                  onLabel::String rest::ExtThms
 {
   top.thmInfo = (name, bindings, body, onLabel)::rest.thmInfo;
+}
+
+
+
+
+
+attribute
+   extIndInfo
+occurs on ExtIndBody;
+
+synthesized attribute extIndInfo::[(QName, [String], [Term],
+                                    QName, String, String)];
+
+aspect production branchExtIndBody
+top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
+{
+  top.extIndInfo = e1.extIndInfo ++ e2.extIndInfo;
+}
+
+
+aspect production oneExtIndBody
+top::ExtIndBody ::= rel::QName relArgs::[String]
+                    boundVars::MaybeBindings transArgs::TermList
+                    transTy::QName original::String translated::String
+{
+  top.extIndInfo = [(rel, relArgs, transArgs.toList,
+                     transTy, original, translated)];
 }
 
 
