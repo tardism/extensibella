@@ -205,11 +205,86 @@ top::MaybeBindings ::=
 abstract production proveExtInd
 top::TopCommand ::= rels::[QName]
 {
-  top.pp = "Prove_Ext_Ind " ++ implode(", ", map((.pp), rels)) ++ ".\n";
+  top.pp =
+      "Prove_Ext_Ind " ++ implode(", ", map((.pp), rels)) ++ ".\n";
   top.abella_pp =
       error("proveExtInd.abella_pp should not be accessed");
 
-  top.toAbella = todoError("proveExtInd.toAbella");
+  --check for the expected obligation
+  top.toAbellaMsgs <-
+      case top.proverState.remainingObligations of
+      | [] -> [errorMsg("No obligations left to prove")]
+      | translationConstraintTheorem(q, x, b)::_ ->
+        [errorMsg("Expected translation constraint obligation " ++
+            q.pp)]
+      | extensibleMutualTheoremGroup(thms)::_ ->
+        [errorMsg("Expected theorem obligations " ++
+            implode(", ", map((.pp), map(fst, thms))))]
+      | extIndElement(relInfo)::_ ->
+        let expectedNames::[QName] = map(fst, relInfo)
+        in
+          if setEq(rels, expectedNames)
+          then []
+          else if subset(rels, expectedNames)
+          then let missing::[QName] = removeAll(rels, expectedNames)
+               in
+                 [errorMsg("Missing relation" ++
+                     (if length(missing) == 1 then " " else "s ") ++
+                     implode(", ",
+                        map((.pp), removeAll(rels, expectedNames))))]
+               end
+          else if subset(expectedNames, rels)
+          then [errorMsg("Too many relations; should not have " ++
+                   implode(", ",
+                      map((.pp), removeAll(expectedNames, rels))))]
+          else [errorMsg("Expected ExtInd obligation" ++
+                   (if length(expectedNames) == 1 then "" else "s") ++
+                   " " ++ implode(", ", map((.pp), expectedNames)))]
+        end
+      | _ ->
+        error("Should be impossible (proveExtInd.toAbellaMsgs)")
+      end;
 
-  top.provingTheorems = todoError("proveExtInd.provingTheorems");
+  local obligations::[(QName, [String], [Term], QName, String, String)] =
+      case head(top.proverState.remainingObligations) of
+      | extIndElement(r) -> r
+      | _ -> error("Not possible")
+      end;
+
+  local tempThmName::QName =
+      toQName("$$$$$ext_ind_" ++ toString(genInt()));
+
+  local extSizeDef::TopCommand = todoError("proveExtInd.extSizeDef");
+  local transRelDef::TopCommand = todoError("proveExtInd.transRelDef");
+  local thmDecl::TopCommand =
+      theoremDeclaration(tempThmName, [],
+         foldr1(andMetaterm, map(snd, top.provingTheorems)));
+
+  top.duringCommands = todoError("proveExtInd.duringCommands");
+  top.afterCommands = todoError("proveExtInd.afterCommands");
+
+  top.toAbella =
+      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef),
+       anyTopCommand(thmDecl)] ++ todoError("proveExtInd.set-up proof");
+
+  top.provingTheorems =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            (addQNameBase(basicQName(p.1.sub.moduleName),
+                          "$extInd_" ++ p.1.shortName),
+             let usedVars::[String] =
+                 nub([p.5, p.6] ++ p.2 ++ flatMap((.usedNames), p.3))
+             in
+             let num::String = freshName("N", usedVars)
+             in
+               bindingMetaterm(forallBinder(),
+                  toBindings(num::usedVars),
+                  impliesMetaterm(
+                     relationMetaterm(extSizeQName(p.1.sub),
+                        toTermList(p.3 ++ [nameTerm(toQName(num),
+                                              nothingType())]),
+                        emptyRestriction()),
+                     relationMetaterm(transRelQName(p.1.sub),
+                        toTermList(p.3), emptyRestriction())))
+             end end),
+          obligations);
 }

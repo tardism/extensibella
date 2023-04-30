@@ -158,8 +158,34 @@ TermList ::= tms::[Term]
 {
   return foldr(consTermList, emptyTermList(), tms);
 }
+function toBindings
+Bindings ::= names::[String]
+{
+  return if null(names) then error("toBindings([])")
+         else foldr(addBindings(_, nothingType(), _),
+                    oneBinding(head(names), nothingType()), names);
+}
 
 
+
+
+function freshName
+String ::= base::String used::[String]
+{
+  local reservedWords::[String] =
+      ["Module", "Close", "CoDefine", "Define", "Kind", "Query",
+       "Quit", "Set", "Show", "Split", "Theorem", "Type", "Prove"];
+  return if contains(base, reservedWords ++ used)
+         then freshName_help(base, 1, reservedWords ++ used)
+         else base;
+}
+function freshName_help
+String ::= base::String index::Integer used::[String]
+{
+  return if contains(base ++ toString(index), used)
+         then freshName_help(base, index + 1, used)
+         else base ++ toString(index);
+}
 
 
 

@@ -54,6 +54,9 @@ top::TopCommand ::= names::[QName]
       | translationConstraintTheorem(q, x, b)::_ ->
         [errorMsg("Expected translation constraint obligation " ++
             q.pp)]
+      | extIndElement(relInfo)::_ ->
+        [errorMsg("Expected Ext_Ind obligation for " ++
+            implode(", ", map((.pp), map(fst, relInfo))))]
       | extensibleMutualTheoremGroup(thms)::_ ->
         let expectedNames::[QName] = map(fst, thms)
         in

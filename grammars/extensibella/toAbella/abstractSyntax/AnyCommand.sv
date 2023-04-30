@@ -98,7 +98,7 @@ top::AnyCommand ::= parseErrors::String
 
   top.toAbellaMsgs <- [errorMsg(parseErrors)];
 
-  --sholudn't be needed since this is an error
+  --shouldn't be needed since this is an error
   top.stateListOut = top.stateListIn;
 
   top.isQuit = false;

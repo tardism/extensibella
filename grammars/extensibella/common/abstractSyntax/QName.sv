@@ -388,6 +388,72 @@ top::QName ::= rest::SubQName
 }
 
 
+--extension size of relation rest
+abstract production extSizeQName
+top::QName ::= rest::SubQName
+{
+  top.pp = "<" ++ rest.pp ++ " {ES}>";
+  top.abella_pp = "$extSize__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = unknownQName(rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+
+
+--translation version of relation rest
+abstract production transRelQName
+top::QName ::= rest::SubQName
+{
+  top.pp = "<" ++ rest.pp ++ " {T}>";
+  top.abella_pp = "$transRel__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = unknownQName(rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+
+
 --anything from the standard library
 abstract production libQName
 top::QName ::= rest::SubQName
@@ -507,5 +573,9 @@ QName ::= name::String
       then libQName(buildSub(6, name))
       else if startsWith("$unknown__", name)
       then unknownQName(buildSub(10, name))
+      else if startsWith("$extSize__", name)
+      then extSizeQName(buildSub(10, name))
+      else if startsWith("$transRel__", name)
+      then transRelQName(buildSub(11, name))
       else basicQName(buildSub(0, name));
 }
