@@ -254,7 +254,30 @@ top::TopCommand ::= rels::[QName]
   local tempThmName::QName =
       toQName("$$$$$ext_ind_" ++ toString(genInt()));
 
-  local extSizeDef::TopCommand = todoError("proveExtInd.extSizeDef");
+  --get the environment entry for the relation as well
+  local fullRelInfo::[(QName, [String], [Term], QName, String, String,
+                       RelationEnvItem)] =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            (p.1, p.2, p.3, p.4, p.5, p.6,
+             decorate p.1 with {relationEnv=top.relationEnv;}.fullRel),
+          obligations);
+
+  local extSizeDef::TopCommand =
+      let preds::[(QName, Type)] =
+          map(\ p::(QName, [String], [Term], QName, String, String,
+                    RelationEnvItem) ->
+                (extSizeQName(p.1.sub),
+                 foldr1(arrowType, p.7.types.toList ++ [integerType])),
+              fullRelInfo)
+      in
+      let defs::[Def] =
+          buildExtSizeDef(
+             map(\ p::(QName, [String], [Term], QName, String, String,
+                       RelationEnvItem) -> (p.1, p.7), fullRelInfo))
+      in
+        definitionDeclaration(preds,
+           foldrLastElem(consDefs, singleDefs, defs))
+      end end;
   local transRelDef::TopCommand = todoError("proveExtInd.transRelDef");
   local thmDecl::TopCommand =
       theoremDeclaration(tempThmName, [],
@@ -287,4 +310,11 @@ top::TopCommand ::= rels::[QName]
                         toTermList(p.3), emptyRestriction())))
              end end),
           obligations);
+}
+
+
+function buildExtSizeDef
+[Def] ::= relInfo::[(QName, RelationEnvItem)]
+{
+  return todoError("buildExtSizeDef");
 }
