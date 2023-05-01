@@ -91,9 +91,8 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
             transTy.fullType.transTypes.toList ++
             [nameType(transTy.fullType.name)]);
   local testRelArgs::TermList = --relArgs, orig, trans
-      toTermList(map(\ x::String ->
-                       nameTerm(toQName(x), nothingType()), relArgs) ++
-                 [nameTerm(toQName(original), nothingType())]);
+      toTermList(map(basicNameTerm, relArgs) ++
+                 [basicNameTerm(original)]);
   local testRelBody::Metaterm =
       bindingMetaterm(existsBinder(),
          case boundVars of
@@ -105,8 +104,8 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
          --transArgs |- original ~~> translated
          relationMetaterm(transQName(transTy.fullType.name.sub),
             toTermList(transArgs.toList ++
-                       [nameTerm(toQName(original), nothingType()),
-                        nameTerm(toQName(translated), nothingType())]),
+                       [basicNameTerm(original),
+                        basicNameTerm(translated)]),
             emptyRestriction()));
 
   --Check relation is an extensible relation from this module
@@ -262,12 +261,15 @@ top::TopCommand ::= rels::[QName]
              decorate p.1 with {relationEnv=top.relationEnv;}.fullRel),
           obligations);
 
+  --definition of R_{ES}
   local extSizeDef::TopCommand =
       let preds::[(QName, Type)] =
           map(\ p::(QName, [String], [Term], QName, String, String,
                     RelationEnvItem) ->
                 (extSizeQName(p.1.sub),
-                 foldr1(arrowType, p.7.types.toList ++ [integerType])),
+                 foldr1(arrowType,
+                        init(p.7.types.toList) ++ --drop prop at end
+                        [integerType, nameType(toQName("prop"))])),
               fullRelInfo)
       in
       let defs::[Def] =
@@ -278,6 +280,8 @@ top::TopCommand ::= rels::[QName]
         definitionDeclaration(preds,
            foldrLastElem(consDefs, singleDefs, defs))
       end end;
+
+  --definition of R_T
   local transRelDef::TopCommand = todoError("proveExtInd.transRelDef");
   local thmDecl::TopCommand =
       theoremDeclaration(tempThmName, [],
@@ -303,8 +307,7 @@ top::TopCommand ::= rels::[QName]
                   toBindings(num::usedVars),
                   impliesMetaterm(
                      relationMetaterm(extSizeQName(p.1.sub),
-                        toTermList(p.3 ++ [nameTerm(toQName(num),
-                                              nothingType())]),
+                        toTermList(p.3 ++ [basicNameTerm(num)]),
                         emptyRestriction()),
                      relationMetaterm(transRelQName(p.1.sub),
                         toTermList(p.3), emptyRestriction())))
@@ -313,8 +316,181 @@ top::TopCommand ::= rels::[QName]
 }
 
 
+{-
+  Build all the definitional clauses for the extSize version of the
+  relations in relInfo
+-}
 function buildExtSizeDef
 [Def] ::= relInfo::[(QName, RelationEnvItem)]
 {
-  return todoError("buildExtSizeDef");
+  local allRels::[QName] = map(fst, relInfo);
+  local pcIndex::Integer = head(relInfo).2.pcIndex;
+  --filter out clauses for unknown
+  local defList::[([Term], Maybe<Metaterm>)] =
+      filter(\ p::([Term], Maybe<Metaterm>) ->
+               case elemAtIndex(p.1, pcIndex) of
+               | nameTerm(unknownQName(_), _) -> false
+               | _ -> true
+               end,
+             head(relInfo).2.defsList);
+  local firstRel::[Def] =
+      buildExtSizeClauses(head(relInfo).1, defList, pcIndex, allRels);
+  return case relInfo of
+         | [] -> []
+         | _::t -> firstRel ++ buildExtSizeDef(t)
+         end;
+}
+{-
+  Build the clauses for the extSize version of a single relation as
+  part of a group of relations (allRels)
+-}
+function buildExtSizeClauses
+[Def] ::= rel::QName defs::[([Term], Maybe<Metaterm>)]
+          pcIndex::Integer allRels::[QName]
+{
+  local extSizeRel::QName = extSizeQName(rel.sub);
+  local usedVars::[String] =
+      case head(defs) of
+      | (tms, just(m)) -> m.usedNames ++ flatMap((.usedNames), tms)
+      | (tms, nothing()) -> flatMap((.usedNames), tms)
+      end;
+  local num::String = freshName("N", usedVars);
+
+  --determine whether this is a rule needing a +1 size
+  local isExtRule::Boolean =
+      let pc::Term = elemAtIndex(head(defs).1, pcIndex)
+      in
+      let constr::QName = pc.headConstructor
+      in
+        !sameModule(rel.moduleName, constr)
+      end end;
+
+  --(has extSize premises added, new body)
+  local modBody::(Boolean, Metaterm) =
+      case head(defs).2 of
+      | just(bindingMetaterm(existsBinder(), binds, body)) ->
+        let x::([String], Metaterm) =
+            buildExtSizeDefBody(body, num, isExtRule,
+               binds.usedNames ++ usedVars, allRels)
+        in
+        let fullBinds::Bindings =
+            foldr(addBindings(_, nothingType(), _), binds, x.1)
+        in
+          (!null(x.1),
+           bindingMetaterm(existsBinder(), fullBinds, x.2))
+        end end
+      | just(m) ->
+        let x::([String], Metaterm) =
+            buildExtSizeDefBody(m, num, isExtRule, usedVars, allRels)
+        in
+          if null(x.1)
+          then (false, x.2) --should hypothetically be equal to m
+          else (true,
+                bindingMetaterm(existsBinder(),
+                   foldrLastElem(addBindings(_, nothingType(), _),
+                      oneBinding(_, nothingType()), x.1),
+                   x.2))
+        end
+      | nothing() -> (false, error("Should not access this half"))
+      end;
+  local newBody::Metaterm = modBody.2;
+
+  --new arguments:  original args + number
+  local finalNumber::Term =
+      if modBody.1 --something within is modified
+      then basicNameTerm(num)
+      else if isExtRule
+      then integerToIntegerTerm(1) --1 for this step
+      else integerToIntegerTerm(0);
+  local newArgs::TermList = toTermList(head(defs).1 ++ [finalNumber]);
+
+  --new def corresponding to first original def
+  local hereDef::Def =
+      case head(defs).2 of
+      | just(_) -> ruleDef(extSizeRel, newArgs, newBody)
+      | nothing() -> factDef(extSizeRel, newArgs)
+      end;
+
+  return case defs of
+         | [] -> []
+         | _::tl ->
+           hereDef::buildExtSizeClauses(rel, tl, pcIndex, allRels)
+         end;
+}
+{-
+  Build the body (not including bindings) of a clause, changing each
+  top-level relation to its extSize version and adding the additions
+  - finalNumName is the name for the size at the root of the clause
+-}
+function buildExtSizeDefBody
+--(new names, full metaterm body defs)
+([String], Metaterm) ::= body::Metaterm finalNumName::String
+    isExtRule::Boolean usedNames::[String] allRels::[QName]
+{
+  local allNames::[String] = finalNumName::usedNames;
+
+  --(names of all size numbers,  modified body)
+  local modBody::([String], [Metaterm]) =
+      foldr(\ m::Metaterm rest::([String], [Metaterm]) ->
+              case m of
+              | relationMetaterm(r, t, _) when contains(r, allRels) ->
+                let name::String = freshName("N", rest.1 ++ allNames)
+                in
+                  (name::rest.1,
+                   relationMetaterm(extSizeQName(r.sub),
+                      toTermList(t.toList ++ [basicNameTerm(name)]),
+                      emptyRestriction())::rest.2)
+                end
+              | _ -> (rest.1, m::rest.2)
+              end,
+            ([], []), splitMetaterm(body));
+
+  --build a term for addition here
+  local addTerm::(Metaterm ::= Term Term Term) =
+      \ t1::Term t2::Term result::Term ->
+        relationMetaterm(toQName(integerAdditionName),
+           toTermList([t1, t2, result]), emptyRestriction());
+  --add up all the names in the list
+  local sumUp::((String, [String], [Metaterm]) ::= [String]) =
+      foldrLastElem(
+         \ here::String rest::(String, [String], [Metaterm]) ->
+           let name::String =
+               freshName("N", rest.2 ++ modBody.1 ++ allNames)
+           in
+             (name, name::rest.2,
+              addTerm(basicNameTerm(here), basicNameTerm(rest.1),
+                      basicNameTerm(name))::rest.3)
+           end,
+         \ here::String -> (here, [], []),
+         _);
+  --(names of addition results, modified body with additions)
+  local allBodyParts::([String], [Metaterm]) =
+      case modBody.1 of
+      | [] -> ([], modBody.2)
+      --more than one
+      | h::t when isExtRule -> --sum + 1
+        let x::(String, [String], [Metaterm]) = sumUp(h::t)
+        in
+          (x.2, addTerm(integerToIntegerTerm(1), basicNameTerm(x.1),
+                        basicNameTerm(finalNumName))::x.3 ++
+                modBody.2)
+        end
+      | h::y::t ->
+        let x::(String, [String], [Metaterm]) = sumUp(y::t)
+        in
+          (x.2, addTerm(basicNameTerm(h), basicNameTerm(x.1),
+                        basicNameTerm(finalNumName))::x.3 ++
+                modBody.2)
+        end
+      | [h] -> --add h = finalNumName to get names right
+        ([], [eqMetaterm(basicNameTerm(h),
+                 basicNameTerm(finalNumName))] ++ modBody.2)
+      end;
+
+  --combine it to get the whole thing as a Metaterm
+  local fullBody::Metaterm = foldr1(andMetaterm, allBodyParts.2);
+  --all the new names
+  local fullNewNameSet::[String] = modBody.1 ++ allBodyParts.1;
+
+  return (fullNewNameSet, fullBody);
 }

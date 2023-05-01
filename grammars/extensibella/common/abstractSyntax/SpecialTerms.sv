@@ -194,6 +194,9 @@ top::Term ::= ty::QName
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor =
+      error("unknownTerm.headConstructor not valid");
 }
 
 abstract production intTerm
@@ -204,6 +207,8 @@ top::Term ::= i::Integer
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("intTerm.headConstructor not valid");
 }
 
 abstract production stringTerm
@@ -214,6 +219,8 @@ top::Term ::= contents::String
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("stringTerm.headConstructor not valid");
 }
 
 abstract production trueTerm
@@ -224,6 +231,8 @@ top::Term ::=
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("trueTerm.headConstructor not valid");
 }
 
 abstract production falseTerm
@@ -234,6 +243,8 @@ top::Term ::=
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("falseTerm.headConstructor not valid");
 }
 
 abstract production listTerm
@@ -244,6 +255,8 @@ top::Term ::= contents::ListContents
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("listTerm.headConstructor not valid");
 }
 
 abstract production pairTerm
@@ -254,6 +267,8 @@ top::Term ::= contents::PairContents
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("pairTerm.headConstructor not valid");
 }
 
 abstract production charTerm
@@ -264,6 +279,8 @@ top::Term ::= char::String
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("charTerm.headConstructor not valid");
 }
 
 

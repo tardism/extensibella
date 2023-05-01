@@ -245,7 +245,7 @@ top::Binder::=
 nonterminal Term with
    pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
-   isStructured,
+   isStructured, headConstructor,
    boundNames, usedNames;
 propagate typeEnv, constructorEnv, relationEnv, boundNames on Term;
 
@@ -267,6 +267,8 @@ top::Term ::= f::Term args::TermList
   top.isAtomic = false;
 
   top.isStructured = true;
+
+  top.headConstructor = f.headConstructor;
 }
 
 abstract production nameTerm
@@ -285,6 +287,8 @@ top::Term ::= name::QName mty::MaybeType
   top.usedNames := if name.isQualified then [] else [name.shortName];
 
   top.isStructured = name.constrFound;
+
+  top.headConstructor = name;
 }
 
 abstract production consTerm
@@ -307,6 +311,8 @@ top::Term ::= t1::Term t2::Term
   top.isAtomic = false;
 
   top.isStructured = true;
+
+  top.headConstructor = error("consTerm.headConstructor not valid");
 }
 
 abstract production nilTerm
@@ -317,6 +323,8 @@ top::Term ::=
   top.isAtomic = true;
 
   top.isStructured = true;
+
+  top.headConstructor = error("nilTerm.headConstructor not valid");
 }
 
 abstract production underscoreTerm
@@ -334,6 +342,9 @@ top::Term ::= mty::MaybeType
   top.isAtomic = true;
 
   top.isStructured = false;
+
+  top.headConstructor =
+      error("underscoreTerm.headConstructor not valid");
 }
 
 

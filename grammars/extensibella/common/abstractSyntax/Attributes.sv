@@ -44,6 +44,9 @@ synthesized attribute isStructured::Boolean;
 --Combination of isStructured for term lists
 synthesized attribute isStructuredList::[Boolean];
 
+--Constructor building a term, if one exists
+synthesized attribute headConstructor::QName;
+
 
 --Split into a list along the given production
 synthesized attribute splitConjunctions::[Metaterm];
