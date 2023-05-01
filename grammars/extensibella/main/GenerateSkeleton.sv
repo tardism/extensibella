@@ -16,26 +16,11 @@ IOVal<Boolean> ::= gen::[(QName, String)]
       processModuleDecl(module, import_parse, interface_parse,
          outerface_parse, ioin);
   local outputThms::[ThmElement] =
-      filter(\ p::ThmElement ->
-               case p of
-               | extensibleMutualTheoremGroup(_) -> true
-               | translationConstraintTheorem(_, _, _) -> true
-               | _ -> false
-               end,
-             processModule.iovalue.fromRight.3);
+      filter((.inSkeleton), processModule.iovalue.fromRight.3);
   local outputString::String =
       "Module " ++ module.pp ++ ".\n\n\n" ++
-      implode("\n\n\n",
-         map(\ p::ThmElement ->
-               case p of
-               | extensibleMutualTheoremGroup(thms) ->
-                 "Prove " ++ implode(",\n      ",
-                                map((.pp), map(fst, thms))) ++ "."
-               | translationConstraintTheorem(name, binds, body) ->
-                 "Prove_Constraint " ++ name.pp ++ "."
-               | _ -> error("Impossible after filtration")
-               end,
-             outputThms)) ++ "\n\n";
+      implode("\n\n\n", map(\ p::ThmElement -> p.skeletonText,
+                            outputThms)) ++ "\n\n";
   --
   local fileExists::IOVal<Boolean> =
       isFileT(filename, processModule.io);
@@ -82,3 +67,56 @@ IOVal<Boolean> ::= gen::[(QName, String)]
       end;
 }
 
+
+
+attribute
+   inSkeleton, skeletonText
+occurs on ThmElement;
+
+--whether it belongs in the generated skeleton
+synthesized attribute inSkeleton::Boolean;
+--the text to go in the skeleton if it belongs
+synthesized attribute skeletonText::String;
+
+aspect production extensibleMutualTheoremGroup
+top::ThmElement ::= thms::[(QName, Bindings, ExtBody, String)]
+{
+  top.inSkeleton = true;
+  top.skeletonText =
+      "Prove " ++ implode(",\n      ",
+                          map((.pp), map(fst, thms))) ++ ".";
+}
+
+
+aspect production translationConstraintTheorem
+top::ThmElement ::= name::QName binds::Bindings body::ExtBody
+{
+  top.inSkeleton = true;
+  top.skeletonText = "Prove_Constraint " ++ name.pp ++ ".";
+}
+
+
+aspect production nonextensibleTheorem
+top::ThmElement ::= name::QName params::[String] stmt::Metaterm
+{
+  top.inSkeleton = false;
+  top.skeletonText = "";
+}
+
+
+aspect production splitElement
+top::ThmElement ::= toSplit::QName newNames::[QName]
+{
+  top.inSkeleton = false;
+  top.skeletonText = "";
+}
+
+
+aspect production extIndElement
+top::ThmElement ::=
+   rels::[(QName, [String], [Term], QName, String, String)]
+{
+  top.inSkeleton = true;
+  top.skeletonText = "Prove_Ext_Ind " ++
+                     implode(", ", map((.pp), map(fst, rels))) ++ ".";
+}
