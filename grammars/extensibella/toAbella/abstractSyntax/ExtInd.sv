@@ -247,7 +247,7 @@ top::TopCommand ::= rels::[QName]
   local obligations::[(QName, [String], [Term], QName, String, String)] =
       case head(top.proverState.remainingObligations) of
       | extIndElement(r) -> r
-      | _ -> error("Not possible")
+      | _ -> error("Not possible (proveExtInd.obligations)")
       end;
 
   local tempThmName::QName =
@@ -275,14 +275,29 @@ top::TopCommand ::= rels::[QName]
       let defs::[Def] =
           buildExtSizeDef(
              map(\ p::(QName, [String], [Term], QName, String, String,
-                       RelationEnvItem) -> (p.1, p.7), fullRelInfo))
+                       RelationEnvItem) -> (p.1, p.7), fullRelInfo),
+             map(fst, obligations))
       in
         definitionDeclaration(preds,
            foldrLastElem(consDefs, singleDefs, defs))
       end end;
 
   --definition of R_T
-  local transRelDef::TopCommand = todoError("proveExtInd.transRelDef");
+  local transRelDef::TopCommand =
+      let preds::[(QName, Type)] =
+          map(\ p::(QName, [String], [Term], QName, String, String,
+                    RelationEnvItem) ->
+                (transRelQName(p.1.sub),
+                 foldr1(arrowType, p.7.types.toList)),
+              fullRelInfo)
+      in
+      let defs::[Def] =
+          buildTransRelDef(fullRelInfo, map(fst, obligations))
+      in
+        definitionDeclaration(preds,
+           foldrLastElem(consDefs, singleDefs, defs))
+      end end;
+
   local thmDecl::TopCommand =
       theoremDeclaration(tempThmName, [],
          foldr1(andMetaterm, map(snd, top.provingTheorems)));
@@ -316,14 +331,19 @@ top::TopCommand ::= rels::[QName]
 }
 
 
+
+
+
+{--------------------------------------------------------------------
+  Extension Size Definition
+ --------------------------------------------------------------------}
 {-
   Build all the definitional clauses for the extSize version of the
   relations in relInfo
 -}
 function buildExtSizeDef
-[Def] ::= relInfo::[(QName, RelationEnvItem)]
+[Def] ::= relInfo::[(QName, RelationEnvItem)] allRels::[QName]
 {
-  local allRels::[QName] = map(fst, relInfo);
   local pcIndex::Integer = head(relInfo).2.pcIndex;
   --filter out clauses for unknown
   local defList::[([Term], Maybe<Metaterm>)] =
@@ -337,9 +357,10 @@ function buildExtSizeDef
       buildExtSizeClauses(head(relInfo).1, defList, pcIndex, allRels);
   return case relInfo of
          | [] -> []
-         | _::t -> firstRel ++ buildExtSizeDef(t)
+         | _::t -> firstRel ++ buildExtSizeDef(t, allRels)
          end;
 }
+
 {-
   Build the clauses for the extSize version of a single relation as
   part of a group of relations (allRels)
@@ -417,6 +438,7 @@ function buildExtSizeClauses
            hereDef::buildExtSizeClauses(rel, tl, pcIndex, allRels)
          end;
 }
+
 {-
   Build the body (not including bindings) of a clause, changing each
   top-level relation to its extSize version and adding the additions
@@ -493,4 +515,166 @@ function buildExtSizeDefBody
   local fullNewNameSet::[String] = modBody.1 ++ allBodyParts.1;
 
   return (fullNewNameSet, fullBody);
+}
+
+
+
+
+
+{--------------------------------------------------------------------
+  Translation Version of a Relation Definition
+ --------------------------------------------------------------------}
+{-
+  Build all the definitional clauses for the translation version of
+  the relations in relInfo
+-}
+function buildTransRelDef
+[Def] ::= relInfo::[(QName, [String], [Term], QName, String, String,
+                     RelationEnvItem)] allRels::[QName]
+{
+  local r::(QName, [String], [Term], QName, String, String,
+            RelationEnvItem) = head(relInfo);
+  local pcIndex::Integer = r.7.pcIndex;
+  --filter out clauses for unknown
+  local defList::[([Term], Maybe<Metaterm>)] =
+      filter(\ p::([Term], Maybe<Metaterm>) ->
+               case elemAtIndex(p.1, pcIndex) of
+               | nameTerm(unknownQName(_), _) -> false
+               | _ -> true
+               end,
+             r.7.defsList);
+  local firstRel::[Def] =
+      buildTransRelClauses(r.1, defList, r.2, r.3, r.4, r.5, r.6,
+                           pcIndex, allRels);
+  return case relInfo of
+         | [] -> []
+         | _::t -> firstRel ++ buildTransRelDef(t, allRels)
+         end;
+}
+
+{-
+  Build the clauses for the translation version of a single relation
+  as part of a group of relations (allRels)
+-}
+function buildTransRelClauses
+[Def] ::= rel::QName defs::[([Term], Maybe<Metaterm>)]
+          relArgs::[String] transArgs::[Term] transTy::QName
+          original::String translated::String
+          pcIndex::Integer allRels::[QName]
+{
+  local transRel::QName = transRelQName(rel.sub);
+  local usedVars::[String] =
+      case head(defs) of
+      | (tms, just(m)) -> m.usedNames ++ flatMap((.usedNames), tms)
+      | (tms, nothing()) -> flatMap((.usedNames), tms)
+      end;
+  --need a fresh version in case translated is already in the rule
+  local freshTransName::String = freshName(translated, usedVars);
+
+  --determine whether this is a rule needing a translation
+  local isExtRule::Boolean =
+      let pc::Term = elemAtIndex(head(defs).1, pcIndex)
+      in
+      let constr::QName = pc.headConstructor
+      in
+        !sameModule(rel.moduleName, constr)
+      end end;
+
+  --(body should be used, new body)
+  local modBody::(Boolean, Metaterm) =
+      case head(defs).2 of
+      | just(bindingMetaterm(existsBinder(), binds, body)) ->
+        let newBody::Metaterm = replaceRelsTransRels(allRels, body)
+        in
+        let transRelStuff::([String], Metaterm, Metaterm) =
+            createTransRelPremises(transRel, head(defs).1, relArgs,
+               transArgs, transTy, original, freshTransName, pcIndex,
+               freshTransName::usedVars ++ binds.usedNames)
+        in
+          (true,
+           bindingMetaterm(existsBinder(),
+              foldr(addBindings(_, nothingType(), _), binds,
+                    transRelStuff.1),
+              andMetaterm(transRelStuff.2,
+              andMetaterm(transRelStuff.3, newBody))))
+        end end
+      | just(m) ->
+        let newBody::Metaterm = replaceRelsTransRels(allRels, m)
+        in
+        let transRelStuff::([String], Metaterm, Metaterm) =
+            createTransRelPremises(transRel, head(defs).1, relArgs,
+               transArgs, transTy, original, freshTransName, pcIndex,
+               freshTransName::usedVars)
+        in
+          (true,
+           if null(transRelStuff.1)
+           then andMetaterm(transRelStuff.2,
+                andMetaterm(transRelStuff.3, newBody))
+           else bindingMetaterm(existsBinder(),
+                   foldrLastElem(addBindings(_, nothingType(), _),
+                      oneBinding(_, nothingType()),
+                      transRelStuff.1),
+                   andMetaterm(transRelStuff.2,
+                   andMetaterm(transRelStuff.3, newBody))))
+        end end
+      | nothing() when isExtRule ->
+        let transRelStuff::([String], Metaterm, Metaterm) =
+            createTransRelPremises(transRel, head(defs).1, relArgs,
+               transArgs, transTy, original, freshTransName, pcIndex,
+               freshTransName::usedVars)
+        in
+          (true,
+           if null(transRelStuff.1)
+           then andMetaterm(transRelStuff.2, transRelStuff.3)
+           else bindingMetaterm(existsBinder(),
+                   foldrLastElem(addBindings(_, nothingType(), _),
+                      oneBinding(_, nothingType()),
+                      transRelStuff.1),
+                   andMetaterm(transRelStuff.2, transRelStuff.3)))
+        end
+      | nothing() -> (false, error("Should not access this half"))
+      end;
+
+  local hereDef::Def =
+      if modBody.1
+      then ruleDef(transRel, toTermList(head(defs).1), modBody.2)
+      else factDef(transRel, toTermList(head(defs).1));
+
+  return case defs of
+         | [] -> []
+         | _::tl -> hereDef::buildTransRelClauses(rel, tl, relArgs,
+                                transArgs, transTy, original,
+                                translated, pcIndex, allRels)
+         end;
+}
+
+{-
+  Replace all occurrences of rules in rels in the given metaterm with
+  their transRel versions
+-}
+function replaceRelsTransRels
+Metaterm ::= allRels::[QName] m::Metaterm
+{
+  local replaced::[Metaterm] =
+      map(\ m::Metaterm ->
+            case m of
+            | relationMetaterm(r, t, s) when contains(r, allRels) ->
+              relationMetaterm(transRelQName(r.sub), t, s)
+            | _ -> m
+            end,
+          splitMetaterm(m));
+  return foldr1(andMetaterm, replaced);
+}
+
+{-
+  Generate the translation and R_T for the translation
+  Returns (new bindings, translation, R_T)
+-}
+function createTransRelPremises
+([String], Metaterm, Metaterm) ::=
+    transRel::QName actualArgs::[Term] varArgs::[String]
+    transArgs::[Term] transTy::QName original::String trans::String
+    pcIndex::Integer usedNames::[String]
+{
+  return todoError("createTransRelPremises");
 }
