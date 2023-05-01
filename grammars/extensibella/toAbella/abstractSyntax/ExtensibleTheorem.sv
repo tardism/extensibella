@@ -86,7 +86,7 @@ top::TopCommand ::= names::[QName]
   local obligations::[(QName, Bindings, ExtBody, String)] =
       case head(top.proverState.remainingObligations) of
       | extensibleMutualTheoremGroup(x) -> x
-      | _ -> error("Not possible")
+      | _ -> error("Not possible (proveObligations.obligations)")
       end;
 
   local thms::ExtThms =
@@ -121,7 +121,11 @@ top::TopCommand ::= names::[QName]
       map(\ p::(QName, Bindings, ExtBody, String) -> (p.1, p.3.thm),
           obligations);
 
-  top.duringCommands = tail(thms.duringCommands);
+  top.duringCommands =
+      case head(top.proverState.remainingObligations) of
+      | extensibleMutualTheoremGroup(_) -> tail(thms.duringCommands)
+      | _ -> [] --shouldn't really be accessed
+      end;
 
   top.afterCommands =
       if length(names) > 1
