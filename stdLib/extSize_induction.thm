@@ -1,0 +1,121 @@
+Kind $lib__nat   type.
+Import "nats".
+
+Kind $lib__integer   type.
+Import "integers".
+Import "integer_addition".
+Import "integer_comparison".
+
+Define pos_int : $lib__integer -> prop by
+pos_int ($posInt $zero);
+pos_int ($posInt ($succ N)) :=
+   pos_int ($posInt N).
+
+
+Define acc : $lib__integer -> prop by
+acc N :=
+  forall M, $lesseq_integer ($posInt $zero) M ->
+            $less_integer M N ->
+            acc M.
+
+
+Theorem $less_integer_drop_succ : forall A B,
+  is_integer ($posInt B) ->
+  $less_integer A ($posInt ($succ B)) ->
+  $less_integer A ($posInt B) \/ A = ($posInt B).
+induction on 2. intros IsB L. L: case L.
+  %1:  A = 0
+   case IsB. search. search.
+  %2:  A = N1 + 1
+   IsB: case IsB.
+     %2.1:  B = 0
+      case L.
+     %2.2:  B = N + 1
+      Or: apply IH to _ L. Or: case Or. search. search.
+  %3:  A = -N1
+   search.
+
+
+%every int > 0 is accessible
+Theorem all_acc : forall N,
+  is_integer N -> $lesseq_integer ($posInt $zero) N -> acc N.
+induction on 1. intros IsN LEq. IsN: case IsN.
+  %1:  N = 0
+   unfold. intros LEqM LM. case LM. case LEqM.
+  %2:  N = N1 + 1
+   LEqN1: assert $lesseq_integer ($posInt $zero) ($posInt N1).
+          case IsN. search. search.
+   AccN1: apply IH to IsN LEqN1. unfold. intros LEqM LM.
+   Or: apply $less_integer_drop_succ to _ LM. RelM: case Or.
+     %2.2:  M < N1
+      AccN1: case AccN1. apply AccN1 to _ RelM. search.
+     %2.3:  M = N1
+      search.
+  %3:  N = -1
+   case LEq.
+  %4:  N = -N1 - 1
+   case LEq.
+
+
+Theorem lt_left : forall A B C,
+  $plus_integer A B C ->
+  $lesseq_integer ($posInt $zero) A ->
+  $lesseq_integer ($posInt $zero) B ->
+  $less_integer A C \/ A = C.
+induction on 1. intros Plus PosA PosB. Plus: case Plus.
+  %1:  0 + C = C
+   case PosB. search. search.
+  %2:  (N1 + 1) + N2 = N3 + 1
+   Plus': case Plus (keep).
+     %2.1:  A = 1
+      case PosB. search. search.
+     %2.2:  A = N4 + 2
+      Or: apply IH to Plus _ _. Rel: case Or. search. search.
+  %3:  (N1 + 1) + -1 = N1
+   case PosB.
+  %4:  (N1 + 1) + (-N2 - 1) = C
+   case PosB.
+  %5:  -N + 0 = -N
+   case PosA.
+  %6:  -1 + (N1 + 1) = N1
+   case PosA.
+  %7:  (-N1 - 1) + (N2 + 1) = C
+   case PosA.
+  %8:  -1 + -N = -N - 1
+   case PosA.
+  %9:  (-N1 - 1) + -N2 = -N3
+   case PosA.
+
+
+Theorem lt_right : forall A B C,
+  $plus_integer A B C -> is_integer B ->
+  $lesseq_integer ($posInt $zero) A ->
+  $lesseq_integer ($posInt $zero) B ->
+  $less_integer B C \/ B = C.
+induction on 1. intros Plus IsB PosA PosB. Plus: case Plus.
+  %1:  0 + C = C
+   search.
+  %2:  (N1 + 1) + N2 = N3 + 1
+   Plus': case Plus (keep).
+     %2.1:  A = 1
+      apply $less_integer_pos_self to IsB. search.
+     %2.2:  A = N4 + 2
+      Or: apply IH to Plus _ _ _. Rel: case Or.
+        %2.2.1:  N2 < N6 + 1
+         left. apply $less_integer_posInt_right_step to Rel. search.
+        %2.2.2:  N2 = N6 + 1
+         apply $less_integer_pos_self to IsB. search.
+  %3:  (N1 + 1) + -1 = N1
+   case PosB.
+  %4:  (N1 + 1) + (-N2 - 1) = C
+   case PosB.
+  %5:  -N + 0 = -N
+   case PosA.
+  %6:  -1 + (N1 + 1) = N1
+   case PosA.
+  %7:  (-N1 - 1) + (N2 + 1) = C
+   case PosA.
+  %8:  -1 + -N = -N - 1
+   case PosA.
+  %9:  (-N1 - 1) + -N2 = -N3
+   case PosA.

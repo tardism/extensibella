@@ -1,6 +1,7 @@
 
 all: bools.thc nats.thc integers.thc integer_addition.thc integer_multiplication.thc \
-     integer_division.thc integer_comparison.thc pairs.thc lists.thc strings.thc
+     integer_division.thc integer_comparison.thc pairs.thc lists.thc strings.thc \
+     extSize_induction.thc
 
 
 # All the *.out files are just the output from Abella as it processes
@@ -37,6 +38,9 @@ lists.thc: lists.thm
 
 strings.thc: strings.thm lists.thc
 	abella strings.thm -c strings.thc -o strings.out
+
+extSize_induction.thc: extSize_induction.thm integers.thc integer_addition.thc integer_comparison.thc
+	abella extSize_induction.thm -c extSize_induction.thc -o extSize_induction.out
 
 
 #remove unnecessary generated files

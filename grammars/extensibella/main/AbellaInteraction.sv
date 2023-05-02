@@ -93,7 +93,7 @@ IOVal<Either<String [String]>> ::= ioin::IOToken
   local baseFiles::[String] =
       ["bools", "integer_addition", "integer_multiplication",
        "integer_division", "integer_comparison", "lists", "strings",
-       "pairs"];
+       "pairs", "extSize_induction"];
   local fullFilenames::[String] =
       map(\ filename::String -> library_loc.iovalue ++ filename,
           baseFiles);

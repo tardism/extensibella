@@ -34,6 +34,16 @@ induction on 1. intros IsN. IsN: case IsN.
   %Subgoal 2
    apply IH to IsN. search.
 
+Theorem $less_integer_posInt_right_step : forall A B,
+  $less_integer A ($posInt B) -> $less_integer A ($posInt ($succ B)).
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+  %Subgoal 3
+   search.
+
 Theorem $less_integer_drop_succ_pos_left : forall A B,
   $less_integer ($posInt ($succ A)) B ->
   $less_integer ($posInt A) B.
@@ -59,6 +69,15 @@ induction on 1. intros L. L: case L.
    search.
   %Subgoal 2
    apply IH to L. search.
+
+Theorem $less_integer_pos_self : forall A,
+  is_integer ($posInt A) ->
+  $less_integer ($posInt A) ($posInt ($succ A)).
+induction on 1. intros IsA. IsA: case IsA.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to IsA. search.
 
 Theorem extensibella-$-stdLib-$-less_integer_transitive :
   forall A B C,
