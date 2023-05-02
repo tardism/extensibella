@@ -591,12 +591,16 @@ function buildTransRelClauses
                transArgs, transTy, original, freshTransName, pcIndex,
                freshTransName::usedVars ++ binds.usedNames)
         in
-          (true,
-           bindingMetaterm(existsBinder(),
-              foldr(addBindings(_, nothingType(), _), binds,
-                    transRelStuff.1),
-              andMetaterm(transRelStuff.2,
-              andMetaterm(transRelStuff.3, newBody))))
+          if isExtRule
+          then
+             (true,
+              bindingMetaterm(existsBinder(),
+                 foldr(addBindings(_, nothingType(), _), binds,
+                       transRelStuff.1),
+                 andMetaterm(transRelStuff.2,
+                 andMetaterm(transRelStuff.3, newBody))))
+          else --don't add new premises
+             (true, bindingMetaterm(existsBinder(), binds, newBody))
         end end
       | just(m) ->
         let newBody::Metaterm = replaceRelsTransRels(allRels, m)
@@ -606,16 +610,19 @@ function buildTransRelClauses
                transArgs, transTy, original, freshTransName, pcIndex,
                freshTransName::usedVars)
         in
-          (true,
-           if null(transRelStuff.1)
-           then andMetaterm(transRelStuff.2,
-                andMetaterm(transRelStuff.3, newBody))
-           else bindingMetaterm(existsBinder(),
-                   foldrLastElem(addBindings(_, nothingType(), _),
-                      oneBinding(_, nothingType()),
-                      transRelStuff.1),
-                   andMetaterm(transRelStuff.2,
-                   andMetaterm(transRelStuff.3, newBody))))
+          if isExtRule
+          then
+             (true,
+              if null(transRelStuff.1)
+              then andMetaterm(transRelStuff.2,
+                   andMetaterm(transRelStuff.3, newBody))
+              else bindingMetaterm(existsBinder(),
+                      foldrLastElem(addBindings(_, nothingType(), _),
+                         oneBinding(_, nothingType()),
+                         transRelStuff.1),
+                      andMetaterm(transRelStuff.2,
+                      andMetaterm(transRelStuff.3, newBody))))
+          else (true, newBody) --don't add new premises
         end end
       | nothing() when isExtRule ->
         let transRelStuff::([String], Metaterm, Metaterm) =
@@ -676,5 +683,54 @@ function createTransRelPremises
     transArgs::[Term] transTy::QName original::String trans::String
     pcIndex::Integer usedNames::[String]
 {
-  return todoError("createTransRelPremises");
+  --replace varArgs vars with ones fresh in everything for safety in
+  --replacing them in the transArgs
+  local newVars::[String] =
+      foldr(\ x::String rest::[String] ->
+              freshName(x, rest ++ usedNames)::rest,
+            [], varArgs);
+  --replace varArgs with newVars in transArgs
+  local transArgs_step1::[Term] =
+      map(\ t::Term ->
+            foldr(\ p::(String, String) rest::Term ->
+                    decorate rest with {
+                       substName=p.1; substTerm=basicNameTerm(p.2);
+                    }.subst,
+                  t, zipWith(pair, varArgs, newVars)),
+          transArgs);
+  --replace newVars with the corresponding terms from the actualArgs
+  --in transArgs_step1, now that it is safe to do so
+  local transArgs_step2::[Term] =
+      map(\ t::Term ->
+            foldr(\ p::(String, Term) rest::Term ->
+                    decorate rest with {
+                       substName=p.1; substTerm=p.2;
+                    }.subst,
+                  t, zipWith(pair, newVars, actualArgs)),
+          transArgs_step1);
+  --full translation
+  local fullTranslation::Metaterm =
+      relationMetaterm(transName(transTy),
+         toTermList(transArgs_step2 ++
+            [elemAtIndex(actualArgs, pcIndex), basicNameTerm(trans)]),
+         emptyRestriction());
+
+  --replace only the primary component in the args
+  local newArgs::[Term] =
+      take(pcIndex, actualArgs) ++
+      basicNameTerm(trans)::drop(pcIndex + 1, actualArgs);
+  local newRelation::Metaterm =
+      relationMetaterm(transRel, toTermList(newArgs),
+                       emptyRestriction());
+
+  --new vars:  gather vars in fullTranslation and newRelation, then
+  --subtract those from the original args
+  local transVars::[String] = fullTranslation.usedNames;
+  local relVars::[String] = newRelation.usedNames;
+  local alreadyBoundVars::[String] =
+      flatMap((.usedNames), actualArgs);
+  local newBoundVars::[String] =
+      removeAll(nub(alreadyBoundVars), nub(transVars ++ relVars));
+
+  return (newBoundVars, fullTranslation, newRelation);
 }

@@ -53,6 +53,12 @@ synthesized attribute splitConjunctions::[Metaterm];
 synthesized attribute splitImplies::[Metaterm];
 
 
+--Substitute a term for a name
+inherited attribute substName::String;
+inherited attribute substTerm::Term;
+synthesized attribute subst<a>::a;
+
+
 
 --We often only want to replace the state and leave everything else
 inherited attribute replaceState::ProofState;

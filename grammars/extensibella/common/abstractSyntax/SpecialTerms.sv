@@ -197,6 +197,8 @@ top::Term ::= ty::QName
 
   top.headConstructor =
       error("unknownTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 abstract production intTerm
@@ -209,6 +211,8 @@ top::Term ::= i::Integer
   top.isStructured = true;
 
   top.headConstructor = error("intTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 abstract production stringTerm
@@ -221,6 +225,8 @@ top::Term ::= contents::String
   top.isStructured = true;
 
   top.headConstructor = error("stringTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 abstract production trueTerm
@@ -233,6 +239,8 @@ top::Term ::=
   top.isStructured = true;
 
   top.headConstructor = error("trueTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 abstract production falseTerm
@@ -245,6 +253,8 @@ top::Term ::=
   top.isStructured = true;
 
   top.headConstructor = error("falseTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 abstract production listTerm
@@ -257,6 +267,8 @@ top::Term ::= contents::ListContents
   top.isStructured = true;
 
   top.headConstructor = error("listTerm.headConstructor not valid");
+
+  top.subst = listTerm(contents.subst);
 }
 
 abstract production pairTerm
@@ -269,6 +281,8 @@ top::Term ::= contents::PairContents
   top.isStructured = true;
 
   top.headConstructor = error("pairTerm.headConstructor not valid");
+
+  top.subst = pairTerm(contents.subst);
 }
 
 abstract production charTerm
@@ -281,6 +295,8 @@ top::Term ::= char::String
   top.isStructured = true;
 
   top.headConstructor = error("charTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 
@@ -290,15 +306,17 @@ nonterminal ListContents with
    pp,
    toList<Term>,
    typeEnv, constructorEnv, relationEnv,
+   substName, substTerm, subst<ListContents>,
    boundNames, usedNames;
-propagate typeEnv, constructorEnv, relationEnv, boundNames
-   on ListContents;
+propagate typeEnv, constructorEnv, relationEnv, boundNames,
+          substName, substTerm on ListContents;
 
 abstract production emptyListContents
 top::ListContents ::=
 {
   top.pp = "";
   top.toList = [];
+  top.subst = top;
 }
 
 abstract production addListContents
@@ -306,6 +324,7 @@ top::ListContents ::= t::Term rest::ListContents
 {
   top.pp = t.pp ++ (if rest.pp == "" then "" else ", " ++ rest.pp);
   top.toList = t::rest.toList;
+  top.subst = addListContents(t.subst, rest.subst);
 }
 
 
@@ -315,15 +334,17 @@ nonterminal PairContents with
    pp,
    toList<Term>,
    typeEnv, constructorEnv, relationEnv,
+   substName, substTerm, subst<PairContents>,
    boundNames, usedNames;
-propagate typeEnv, constructorEnv, relationEnv, boundNames
-   on PairContents;
+propagate typeEnv, constructorEnv, relationEnv, boundNames,
+          substName, substTerm on PairContents;
 
 abstract production singlePairContents
 top::PairContents ::= t::Term
 {
   top.pp = t.pp;
   top.toList = [t];
+  top.subst = singlePairContents(t.subst);
 }
 
 abstract production addPairContents
@@ -331,5 +352,6 @@ top::PairContents ::= t::Term rest::PairContents
 {
   top.pp = t.pp ++ ", " ++ rest.pp;
   top.toList = t::rest.toList;
+  top.subst = addPairContents(t.subst, rest.subst);
 }
 

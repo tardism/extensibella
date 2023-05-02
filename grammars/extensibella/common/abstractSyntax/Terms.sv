@@ -246,8 +246,10 @@ nonterminal Term with
    pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
    isStructured, headConstructor,
+   substName, substTerm, subst<Term>,
    boundNames, usedNames;
-propagate typeEnv, constructorEnv, relationEnv, boundNames on Term;
+propagate typeEnv, constructorEnv, relationEnv, boundNames,
+          substName, substTerm on Term;
 
 --Easy equality check
 attribute compareTo, isEqual occurs on Type;
@@ -269,6 +271,8 @@ top::Term ::= f::Term args::TermList
   top.isStructured = true;
 
   top.headConstructor = f.headConstructor;
+
+  top.subst = applicationTerm(f.subst, args.subst);
 }
 
 abstract production nameTerm
@@ -289,6 +293,11 @@ top::Term ::= name::QName mty::MaybeType
   top.isStructured = name.constrFound;
 
   top.headConstructor = name;
+
+  top.subst =
+      if name == toQName(top.substName)
+      then top.substTerm
+      else top;
 }
 
 abstract production consTerm
@@ -313,6 +322,8 @@ top::Term ::= t1::Term t2::Term
   top.isStructured = true;
 
   top.headConstructor = error("consTerm.headConstructor not valid");
+
+  top.subst = consTerm(t1.subst, t2.subst);
 }
 
 abstract production nilTerm
@@ -325,6 +336,8 @@ top::Term ::=
   top.isStructured = true;
 
   top.headConstructor = error("nilTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 abstract production underscoreTerm
@@ -345,6 +358,8 @@ top::Term ::= mty::MaybeType
 
   top.headConstructor =
       error("underscoreTerm.headConstructor not valid");
+
+  top.subst = top;
 }
 
 
@@ -354,9 +369,10 @@ nonterminal TermList with
    pp, abella_pp, toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames,
+   substName, substTerm, subst<TermList>,
    isStructuredList;
-propagate typeEnv, constructorEnv, relationEnv, boundNames
-   on TermList;
+propagate typeEnv, constructorEnv, relationEnv, boundNames,
+          substName, substTerm on TermList;
 
 abstract production singleTermList
 top::TermList ::= t::Term
@@ -369,6 +385,8 @@ top::TermList ::= t::Term
   top.len = 1;
 
   top.isStructuredList = [t.isStructured];
+
+  top.subst = singleTermList(t.subst);
 }
 
 abstract production consTermList
@@ -383,6 +401,8 @@ top::TermList ::= t::Term rest::TermList
   top.len = 1 + rest.len;
 
   top.isStructuredList = t.isStructured::rest.isStructuredList;
+
+  top.subst = consTermList(t.subst, rest.subst);
 }
 
 abstract production emptyTermList
@@ -395,5 +415,7 @@ top::TermList ::=
   top.len = 0;
 
   top.isStructuredList = [];
+
+  top.subst = top;
 }
 
