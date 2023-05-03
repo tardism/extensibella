@@ -32,7 +32,7 @@ top::AnyCommand ::= c::TopCommand
       (length(c.toAbella),
        proverState(top.newProofState,
           top.proverState.debug,
-          top.proverState.knownTheorems,
+          c.newTheorems ++ top.proverState.knownTheorems,
           top.proverState.remainingObligations,
           addEnv(top.proverState.knownTypes, c.tys),
           addEnv(top.proverState.knownRels, c.rels),

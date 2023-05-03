@@ -14,6 +14,11 @@ synthesized attribute isUndo::Boolean;
 synthesized attribute isQuit::Boolean;
 
 
+--theorems proven by a command as part of what it does
+--different from provingTheorems because they are done, not being proven
+synthesized attribute newTheorems::[(QName, Metaterm)];
+
+
 --theorems currently being proven
 synthesized attribute provingTheorems::[(QName, Metaterm)];
 --commands that need to happen at points in the proof of an ext thm

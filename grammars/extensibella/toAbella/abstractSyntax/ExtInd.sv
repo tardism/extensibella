@@ -298,22 +298,22 @@ top::TopCommand ::= rels::[QName]
            foldrLastElem(consDefs, singleDefs, defs))
       end end;
 
-  --Lemmas that the extension size is always non-negative
-  --Necessary for using our definition of acc
-  --We would not need these if we used nats, but those lead to
-  --   problems with representing them vs. ints to the user
-  local extSizeLemmas::[AnyCommand] =
+  {-
+    Lemmas that the extension size is always non-negative and an
+    integer (is_integer).  The former are necessary for using our
+    definition of acc.  We would not need them if we used nats, but
+    those lead to problems with representing them vs. ints to the
+    user.  The latter are for the theorem for A + B = C where 0 < A
+    and 0 < B means B < C \/ B = C.
+  -}
+  local extSizeLemmas::[(QName, Metaterm)] =
       flatMap(
          \ p::(QName, [String], [Term], QName, String, String,
                RelationEnvItem) ->
-           let thmName::QName =
-               addQNameBase(p.1.moduleName,
-                            "ext_ind_pos_" ++ p.1.shortName)
-           in
            let argNames::[String] =
                foldr(\ x::Type rest::[String] ->
                        freshName("X", rest)::rest,
-                     ["N"], p.7.types.toList)
+                     ["N"], tail(p.7.types.toList)) --drop prop
            in
            let binds::Bindings =
                foldrLastElem(addBindings(_, nothingType(), _),
@@ -324,19 +324,32 @@ top::TopCommand ::= rels::[QName]
                   toTermList(map(basicNameTerm, argNames)),
                   emptyRestriction())
            in
-           let leq::Metaterm =
-               relationMetaterm(toQName(integerLessEqName),
-                  toTermList([integerToIntegerTerm(0),
-                              basicNameTerm("N")]),
-                  emptyRestriction())
+           let nonNegThmName::QName =
+               addQNameBase(p.1.moduleName,
+                            "ext_ind_pos_" ++ p.1.shortName)
            in
-           let thmBody::Metaterm =
+           let nonNegThmBody::Metaterm =
                bindingMetaterm(forallBinder(), binds,
-                  impliesMetaterm(extSize, leq))
+                  impliesMetaterm(extSize,
+                     relationMetaterm(toQName(integerLessEqName),
+                        toTermList([integerToIntegerTerm(0),
+                                    basicNameTerm("N")]),
+                        emptyRestriction())))
            in
-             [anyTopCommand(theoremDeclaration(thmName, [], thmBody)),
-              anyProofCommand(skipTactic())]
-            end end end end end end,
+           let isIntThmName::QName =
+               addQNameBase(p.1.moduleName,
+                            "ext_ind_is_int_" ++ p.1.shortName)
+           in
+           let isIntThmBody::Metaterm =
+               bindingMetaterm(forallBinder(), binds,
+                  impliesMetaterm(extSize,
+                     relationMetaterm(toQName("is_integer"),
+                        toTermList([basicNameTerm("N")]),
+                        emptyRestriction())))
+           in
+             [(nonNegThmName, nonNegThmBody),
+              (isIntThmName, isIntThmBody)]
+            end end end end end end end,
          fullRelInfo);
 
   local thmDecl::TopCommand =
@@ -350,12 +363,18 @@ top::TopCommand ::= rels::[QName]
          inductionTactic(noHint(), repeat(1, numRels))]
       end;
 
+  --Add these to the known theorems, as they are now proven
+  top.newTheorems = extSizeLemmas;
+
   top.duringCommands = todoError("proveExtInd.duringCommands");
   top.afterCommands = [];
 
   top.toAbella =
       [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
-      extSizeLemmas ++ [anyTopCommand(thmDecl)] ++
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              extSizeLemmas) ++ [anyTopCommand(thmDecl)] ++
       map(anyProofCommand, inductionCommands) ++
       todoError("proveExtInd.set-up proof");
 
