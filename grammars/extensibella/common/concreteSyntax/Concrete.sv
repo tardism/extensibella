@@ -59,6 +59,89 @@ concrete productions top::Metaterm_c
           right(relationMetaterm(q, args, emptyRestriction()))
         | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
         end; }
+--extension size
+| '<' rel::Id_t '{' 'ES' '}' '>' args::ExpList_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, emptyRestriction())); }
+| '<' rel::Id_t '{' 'ES' '}' '>' args::ExpList_c r::Stars_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Id_t '{' 'ES' '}' '>' args::ExpList_c r::Pluses_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Id_t '{' 'ES' '}' '>' args::ExpList_c r::Ats_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Id_t '{' 'ES' '}' '>' args::ExpList_c r::Hashes_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'ES' '}' '>' args::ExpList_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, emptyRestriction())); }
+| '<' rel::Qname_t '{' 'ES' '}' '>' args::ExpList_c r::Stars_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'ES' '}' '>' args::ExpList_c r::Pluses_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'ES' '}' '>' args::ExpList_c r::Ats_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'ES' '}' '>' args::ExpList_c r::Hashes_c
+  { top.ast =
+        right(relationMetaterm(extSizeQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+--translation version of a relation
+| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, emptyRestriction())); }
+| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Stars_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Pluses_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Ats_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Hashes_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, emptyRestriction())); }
+| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Stars_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Pluses_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Ats_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Hashes_c
+  { top.ast =
+        right(relationMetaterm(transRelQName(toQName(rel.lexeme).sub),
+                               args.ast, r.ast)); }
+--something else
 | s::SubMetaterm_c
   { top.ast = s.ast; }
 

@@ -71,6 +71,13 @@ terminal TransTurstyleEnd_t      '}-'    lexer classes {TOKEN};
 terminal TransArrow_t            '~~>'   lexer classes {TOKEN};
 
 
+--For extension size and translation version of a relation
+terminal ExtSize_t    'ES';
+terminal TransRel_t   'T';
+terminal LCurly_t     '{'    lexer classes {TOKEN};
+terminal RCurly_t     '}'    lexer classes {TOKEN};
+
+
 ignore terminal Whitespace_t /[\ \t\n\r]+/;
 -- Allows (one level of) nested comments.  Based on Silver comments.
 ignore terminal BlockComment_t /\/\*(\/\*([^\*]|\*+[^\/\*])*\*+\/|[^\*]|\*+[^\/\*])*\*+\// lexer classes {COMMENT};

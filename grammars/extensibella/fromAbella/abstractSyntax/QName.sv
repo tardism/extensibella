@@ -144,9 +144,9 @@ top::QName ::= rest::SubQName
   top.isTranslation = false;
   top.transFromAbella = error("Not a translation");
 
-  top.fromAbella = rest.fromAbella;
+  top.fromAbella = extSizeQName(rest.fromAbella.sub);
 
-  top.relFromAbella = rest.relFromAbella;
+  top.relFromAbella = extSizeQName(rest.relFromAbella.sub);
   top.tyFromAbella = rest.tyFromAbella;
   top.constrFromAbella = rest.constrFromAbella;
 }
@@ -158,9 +158,9 @@ top::QName ::= rest::SubQName
   top.isTranslation = false;
   top.transFromAbella = error("Not a translation");
 
-  top.fromAbella = rest.fromAbella;
+  top.fromAbella = transRelQName(rest.fromAbella.sub);
 
-  top.relFromAbella = rest.relFromAbella;
+  top.relFromAbella = transRelQName(rest.relFromAbella.sub);
   top.tyFromAbella = rest.tyFromAbella;
   top.constrFromAbella = rest.constrFromAbella;
 }
