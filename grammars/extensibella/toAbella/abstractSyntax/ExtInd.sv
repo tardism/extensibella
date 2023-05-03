@@ -298,6 +298,47 @@ top::TopCommand ::= rels::[QName]
            foldrLastElem(consDefs, singleDefs, defs))
       end end;
 
+  --Lemmas that the extension size is always non-negative
+  --Necessary for using our definition of acc
+  --We would not need these if we used nats, but those lead to
+  --   problems with representing them vs. ints to the user
+  local extSizeLemmas::[AnyCommand] =
+      flatMap(
+         \ p::(QName, [String], [Term], QName, String, String,
+               RelationEnvItem) ->
+           let thmName::QName =
+               addQNameBase(p.1.moduleName,
+                            "ext_ind_pos_" ++ p.1.shortName)
+           in
+           let argNames::[String] =
+               foldr(\ x::Type rest::[String] ->
+                       freshName("X", rest)::rest,
+                     ["N"], p.7.types.toList)
+           in
+           let binds::Bindings =
+               foldrLastElem(addBindings(_, nothingType(), _),
+                  oneBinding(_, nothingType()), argNames)
+           in
+           let extSize::Metaterm =
+               relationMetaterm(extSizeQName(p.1.sub),
+                  toTermList(map(basicNameTerm, argNames)),
+                  emptyRestriction())
+           in
+           let leq::Metaterm =
+               relationMetaterm(toQName(integerLessEqName),
+                  toTermList([integerToIntegerTerm(0),
+                              basicNameTerm("N")]),
+                  emptyRestriction())
+           in
+           let thmBody::Metaterm =
+               bindingMetaterm(forallBinder(), binds,
+                  impliesMetaterm(extSize, leq))
+           in
+             [anyTopCommand(theoremDeclaration(thmName, [], thmBody)),
+              anyProofCommand(skipTactic())]
+            end end end end end end,
+         fullRelInfo);
+
   local thmDecl::TopCommand =
       theoremDeclaration(tempThmName, [],
          foldr1(andMetaterm, map(snd, top.provingTheorems)));
@@ -306,8 +347,9 @@ top::TopCommand ::= rels::[QName]
   top.afterCommands = todoError("proveExtInd.afterCommands");
 
   top.toAbella =
-      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef),
-       anyTopCommand(thmDecl)] ++ todoError("proveExtInd.set-up proof");
+      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
+      extSizeLemmas ++ [anyTopCommand(thmDecl)] ++
+      todoError("proveExtInd.set-up proof");
 
   top.provingTheorems =
       map(\ p::(QName, [String], [Term], QName, String, String) ->
