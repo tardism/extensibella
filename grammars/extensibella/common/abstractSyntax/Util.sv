@@ -161,9 +161,10 @@ TermList ::= tms::[Term]
 function toBindings
 Bindings ::= names::[String]
 {
-  return if null(names) then error("toBindings([])")
-         else foldr(addBindings(_, nothingType(), _),
-                    oneBinding(head(names), nothingType()), names);
+  return
+     if null(names) then error("toBindings([])")
+     else foldrLastElem(addBindings(_, nothingType(), _),
+                        oneBinding(_, nothingType()), names);
 }
 
 

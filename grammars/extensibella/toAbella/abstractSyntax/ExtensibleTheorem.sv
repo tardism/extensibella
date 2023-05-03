@@ -205,7 +205,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                 | just(x) -> rest ++ [x]
                 | nothing() -> rest ++
                   --using "H" as base triggers an Abella error
-                  [makeUniqueNameFromBase("Hyp", rest ++ labels)]
+                  [freshName("Hyp", rest ++ labels)]
                 end,
               [], body.premises);
 

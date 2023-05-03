@@ -355,20 +355,22 @@ top::TopCommand ::= rels::[QName]
       map(\ p::(QName, [String], [Term], QName, String, String) ->
             (addQNameBase(basicQName(p.1.sub.moduleName),
                           "$extInd_" ++ p.1.shortName),
-             let usedVars::[String] =
-                 nub([p.5, p.6] ++ p.2 ++ flatMap((.usedNames), p.3))
-             in
-             let num::String = freshName("N", usedVars)
+             let num::String = freshName("N", p.2)
              in
                bindingMetaterm(forallBinder(),
-                  toBindings(num::usedVars),
+                  toBindings(num::p.2),
                   impliesMetaterm(
                      relationMetaterm(extSizeQName(p.1.sub),
-                        toTermList(p.3 ++ [basicNameTerm(num)]),
+                        toTermList(map(basicNameTerm, p.2 ++ [num])),
+                        emptyRestriction()),
+                  impliesMetaterm(
+                     relationMetaterm(intStrongInductionRel,
+                        toTermList([basicNameTerm(num)]),
                         emptyRestriction()),
                      relationMetaterm(transRelQName(p.1.sub),
-                        toTermList(p.3), emptyRestriction())))
-             end end),
+                        toTermList(map(basicNameTerm, p.2)),
+                        emptyRestriction()))))
+             end),
           obligations);
 }
 

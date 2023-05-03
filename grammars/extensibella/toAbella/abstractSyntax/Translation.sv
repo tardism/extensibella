@@ -33,28 +33,5 @@ Term ::= i::Integer
 }
 
 
-
-
-
-
---Make a name that isn't in usedNames, starting with the given base
-function makeUniqueNameFromBase
-String ::= base::String usedNames::[String]
-{
-  return
-     if contains(base, usedNames)
-     then makeUniqueName(base, 1, usedNames)
-     else base;
-}
-
-
---Make a name starting with base that isn't in usedNames
-function makeUniqueName
-String ::= base::String index::Integer usedNames::[String]
-{
-  return
-     if contains(base ++ toString(index), usedNames)
-     then makeUniqueName(base, index + 1, usedNames)
-     else base ++ toString(index);
-}
-
+--Name of accumulator relation for strong induction on ints
+global intStrongInductionRel::QName = toQName("acc");
