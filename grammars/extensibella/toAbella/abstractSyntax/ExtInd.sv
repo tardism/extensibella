@@ -366,7 +366,31 @@ top::TopCommand ::= rels::[QName]
   --Add these to the known theorems, as they are now proven
   top.newTheorems = extSizeLemmas;
 
-  top.duringCommands = todoError("proveExtInd.duringCommands");
+  --To get the appropriate skips and such for the during commands, we
+  --use ExtThms to compute them for us
+  local computeDuringCommands::ExtThms =
+      foldr(\ p::(QName, [String], [Term], QName, String, String,
+                  RelationEnvItem) rest::ExtThms ->
+              addExtThms(p.1, --name just needs to have right module
+                 oneBinding("", nothingType()), --unneeded for cmds
+                 --thm just needs right relations and names for intros
+                 addLabelExtBody("Rel",
+                    relationMetaterm(p.1, toTermList([]),
+                       emptyRestriction()),
+                 addLabelExtBody("Acc", trueMetaterm(),
+                    endExtBody(trueMetaterm()))),
+                 "Rel", rest),
+            endExtThms(), fullRelInfo);
+  computeDuringCommands.startingGoalNum =
+      --if only one thm, subgoals for it are 1, 2, ...
+      if length(rels) > 1 then [1] else [];
+  computeDuringCommands.typeEnv = top.typeEnv;
+  computeDuringCommands.relationEnv = top.relationEnv;
+  computeDuringCommands.currentModule = top.currentModule;
+  computeDuringCommands.constructorEnv = top.constructorEnv;
+  --tail because the first one is intros/case for first thm
+  top.duringCommands = tail(computeDuringCommands.duringCommands);
+  --nothing to do, since we don't need the theorems until composition
   top.afterCommands = [];
 
   top.toAbella =
@@ -376,7 +400,9 @@ top::TopCommand ::= rels::[QName]
                  anyProofCommand(skipTactic())],
               extSizeLemmas) ++ [anyTopCommand(thmDecl)] ++
       map(anyProofCommand, inductionCommands) ++
-      todoError("proveExtInd.set-up proof");
+      --intros/case for first thm
+      map(anyProofCommand,
+          head(computeDuringCommands.duringCommands).2);
 
   top.provingTheorems =
       map(\ p::(QName, [String], [Term], QName, String, String) ->
