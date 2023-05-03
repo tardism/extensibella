@@ -197,7 +197,7 @@ concrete productions top::ProcessingErrorMessage_c
 | 'Search failed'
   { top.ast = searchFailure(); }
 | 'Could not find hypothesis or lemma' name::ErrorId_t
-  { top.ast = unknownHypLemma(name.lexeme); }
+  { top.ast = unknownHypLemma(toQName(name.lexeme)); }
 | 'Unknown constant:' name::ErrorId_t
   { top.ast = unknownConstant(name.lexeme); }
 | 'Imported file makes reference to unknown types:' names::IdList_c

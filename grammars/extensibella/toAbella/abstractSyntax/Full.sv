@@ -103,6 +103,20 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 }
 
 
+aspect production extSizeMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.full = extSizeMetaterm(rel.fullRel.name, args.full, r);
+}
+
+
+aspect production transRelMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.full = transRelMetaterm(rel.fullRel.name, args.full, r);
+}
+
+
 aspect production trueMetaterm
 top::Metaterm ::=
 {

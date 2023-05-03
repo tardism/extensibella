@@ -52,22 +52,25 @@ top::ProofCommand ::= h::HHint nl::[Integer]
              if p.1 >= length(p.2)
              then [errorMsg("Premise " ++ toString(p.1) ++ " does " ++
                             "not exist")]
-             else 
-               case elemAtIndex(p.2, p.1 - 1) of
-               | relationMetaterm(rel, args, r) --allow induction on append
-                 when rel.shortName == appendName -> []
-               | relationMetaterm(rel, args, r) ->
-                 let decRel::Decorated QName with {relationEnv} =
-                     decorate rel with {
-                       relationEnv = top.relationEnv;}
-                 in
-                   if !decRel.fullRel.isExtensible
-                   then []
-                   else [errorMsg("Cannot induct on extensible " ++
-                            "judgment " ++ elemAtIndex(p.2, p.1 - 1).pp ++
-                            " outside of extensible theorems")]
+             else
+               let e::Metaterm = elemAtIndex(p.2, p.1 - 1)
+               in
+                 case e of
+                 --Allowed induction
+                 | relationMetaterm(rel, args, r)
+                   --allow induction on append
+                   when rel.shortName == appendName -> []
+                 | relationMetaterm(rel, args, r) when
+                   decorate rel with {
+                     relationEnv = top.relationEnv;}.relFound -> []
+                 | extSizeMetaterm(rel, args, r) -> []
+                 | transRelMetaterm(rel, args, r) -> []
+                 --Disallowed induction
+                 | relationMetaterm(rel, args, r) ->
+                   --should be a special relation or unknown
+                   [errorMsg("Cannot induct on " ++ e.pp)]
+                 | _ -> [errorMsg("Cannot induct on non-relation")]
                  end
-               | _ -> [errorMsg("Cannot induct on non-relation")]
                end,
            zipWith(pair, nl, splits));
 }

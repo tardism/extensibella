@@ -16,6 +16,26 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 }
 
 
+aspect production extSizeMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.toAbella = relationMetaterm(extSizeQName(rel.fullRel.name.sub),
+                                  args.toAbella, r);
+
+  top.toAbellaMsgs <- rel.relErrors;
+}
+
+
+aspect production transRelMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.toAbella = relationMetaterm(transRelQName(rel.fullRel.name.sub),
+                                  args.toAbella, r);
+
+  top.toAbellaMsgs <- rel.relErrors;
+}
+
+
 aspect production trueMetaterm
 top::Metaterm ::=
 {

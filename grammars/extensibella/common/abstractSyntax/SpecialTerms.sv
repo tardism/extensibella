@@ -182,6 +182,30 @@ top::Metaterm ::= t::Term result::Term
 }
 
 
+--Special relation applications for extSize and transRel
+abstract production extSizeMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.pp = "<" ++ rel.pp ++ " {ES}> " ++ args.pp ++ r.pp;
+  top.abella_pp = error("Should not access abella_pp");
+  top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
+}
+
+abstract production transRelMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.pp = "<" ++ rel.pp ++ " {T}> " ++ args.pp ++ r.pp;
+  top.abella_pp = error("Should not access abella_pp");
+  top.isAtomic = true;
+
+  top.splitImplies = [top];
+  top.splitConjunctions = [top];
+}
+
+
 
 
 

@@ -134,6 +134,26 @@ top::Metaterm ::= arg::Term result::Term
 
 
 {-
+  EXTENSION SIZE AND TRANSLATION VERSION OF RELATIONS
+-}
+
+aspect production extSizeMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.fromAbella = error("Should never be translating an extSizeMetaterm");
+}
+
+
+aspect production transRelMetaterm
+top::Metaterm ::= rel::QName args::TermList r::Restriction
+{
+  top.fromAbella = error("Should never be translating a transRelMetaterm");
+}
+
+
+
+
+{-
   BOOLEAN CONSTANTS
 -}
 

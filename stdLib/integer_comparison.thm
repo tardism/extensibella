@@ -79,6 +79,41 @@ induction on 1. intros IsA. IsA: case IsA.
   %Subgoal 2
    apply IH to IsA. search.
 
+Theorem $less_integer_neg_self : forall A,
+  is_integer ($negSuccInt A) ->
+  $less_integer ($negSuccInt ($succ A)) ($negSuccInt A).
+induction on 1. intros IsA. IsA: case IsA.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to IsA. search.
+
+Theorem $less_integer_sum_pos_neg : forall A B C,
+  $plus_integer ($posInt A) ($negSuccInt B) C ->
+  is_integer ($posInt A) -> $less_integer C ($posInt A).
+induction on 1. intros Plus IsA. Plus: case Plus.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   case IsA. backchain $less_integer_pos_self.
+  %Subgoal 3
+   case IsA. apply IH to Plus _. backchain $less_integer_posInt_right_step.
+
+Theorem $less_integer_sum_neg_pos : forall A B C,
+  $plus_integer ($negSuccInt A) ($posInt ($succ B)) C ->
+  is_integer ($negSuccInt A) -> $less_integer ($negSuccInt A) C.
+induction on 1. intros Plus IsA. Plus: case Plus.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   IsN1: case IsA. Plus': case Plus (keep).
+     %Subgoal 2.1
+      backchain $less_integer_neg_self.
+     %Subgoal 2.2
+      search.
+     %Subgoal 2.3
+      apply IH to Plus _. backchain $less_integer_negSuccInt_left_step.
+
 Theorem extensibella-$-stdLib-$-less_integer_transitive :
   forall A B C,
     $less_integer A B -> $less_integer B C -> $less_integer A C.
@@ -210,6 +245,116 @@ induction on 2. intros LAB LBC. LBC': case LBC.
    case LAB. search.
   %Subgoal 7
    LAB': case LAB. apply IH to LAB' LBC'. search.
+
+Theorem extensibella-$-stdLib-$-less_lesseq_integer_transitive :
+  forall A B C,
+    $less_integer A B -> $lesseq_integer B C -> $less_integer A C.
+induction on 2. intros LAB LBC. LBC: case LBC.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   L0SN2: assert $less_integer ($posInt $zero) ($posInt ($succ N2)).
+   apply extensibella-$-stdLib-$-less_integer_transitive to LAB L0SN2.
+   search.
+  %Subgoal 3
+   LAB: case LAB.
+     %Subgoal 3.1
+      search.
+     %Subgoal 3.2
+      apply IH to LAB LBC. search.
+     %Subgoal 3.3
+      search.
+  %Subgoal 4
+   LN1N2: assert $less_integer ($negSuccInt N1) ($posInt N2).
+   apply extensibella-$-stdLib-$-less_integer_transitive to LAB LN1N2.
+   search.
+  %Subgoal 5
+   search.
+  %Subgoal 6
+   LAB: case LAB. search.
+  %Subgoal 7
+   LAB: case LAB. apply IH to LAB LBC. search.
+
+Theorem extensibella-$-stdLib-$-lesseq_less_integer_transitive :
+  forall A B C,
+    $lesseq_integer A B -> $less_integer B C -> $less_integer A C.
+induction on 1. intros LAB LBC. LAB: case LAB.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply extensibella-$-stdLib-$-less_integer_transitive to _ LBC.
+   search.
+  %Subgoal 3
+   LBC: case LBC. apply IH to LAB LBC. search.
+  %Subgoal 4
+   apply $less_integer_posInt to LBC. search.
+  %Subgoal 5
+   search.
+  %Subgoal 6
+   case LBC. search.
+  %Subgoal 7
+   LBC: case LBC.
+     %Subgoal 7.1
+      search.
+     %Subgoal 7.2
+      search.
+     %Subgoal 7.3
+      apply IH to LAB LBC. search.
+
+Theorem extensibella-$-stdLib-$-less_sums : forall N1 N2 N3 Sum1 Sum2,
+  $plus_integer N1 N2 Sum1 -> $plus_integer N1 N3 Sum2 ->
+  is_integer N1 -> $less_integer N2 N3 ->
+  $less_integer Sum1 Sum2.
+induction on 1. intros PlusA PlusB IsN1 L. PlusA: case PlusA.
+  %Subgoal 1
+   case PlusB. search.
+  %Subgoal 2
+   PlusB: case PlusB.
+     %Subgoal 2.1
+      case IsN1. apply IH to PlusA PlusB _ _. search.
+     %Subgoal 2.2
+      case L.
+     %Subgoal 2.3
+      case L.
+  %Subgoal 3
+   case L. PlusB: case PlusB. skip. %true, but needs a lemma
+  %Subgoal 4
+   PlusB: case PlusB.
+     %Subgoal 4.1
+      case IsN1. apply IH to PlusA PlusB _ _.
+      backchain $less_integer_posInt_right_step.
+     %Subgoal 4.2
+      case IsN1. apply $less_integer_sum_pos_neg to PlusA _. search.
+     %Subgoal 4.3
+      case IsN1. case L. apply IH to PlusA PlusB _ _. search.
+  %Subgoal 5
+   case L. backchain $less_integer_sum_neg_pos.
+  %Subgoal 6
+   case L. case PlusB. search.
+  %Subgoal 7
+   PlusB: case PlusB.
+     %Subgoal 7.1
+      case L.
+     %Subgoal 7.2
+      case L. case IsN1. apply IH to PlusA PlusB _ _. search.
+     %Subgoal 7.3
+      case L.
+  %Subgoal 8
+   PlusB: case PlusB.
+     %Subgoal 8.1
+      search.
+     %Subgoal 8.2
+      search.
+     %Subgoal 8.3
+      search.
+  %Subgoal 9
+   PlusB: case PlusB.
+     %Subgoal 9.1
+      skip. %clear, but need a lemma
+     %Subgoal 9.2
+      skip.
+     %Subgoal 9.3
+      case IsN1. apply IH to PlusA PlusB _ _. search.
 
 Theorem extensibella-$-stdLib-$-less_integer__add_positive :
   forall N1 N2 Base Sum,

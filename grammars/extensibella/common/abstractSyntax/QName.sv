@@ -392,7 +392,7 @@ top::QName ::= rest::SubQName
 abstract production extSizeQName
 top::QName ::= rest::SubQName
 {
-  top.pp = "<" ++ rest.pp ++ " {ES}>";
+  top.pp = rest.pp;
   top.abella_pp = "$extSize__" ++ rest.abella_pp;
 
   top.isQualified = rest.isQualified;
@@ -425,7 +425,7 @@ top::QName ::= rest::SubQName
 abstract production transRelQName
 top::QName ::= rest::SubQName
 {
-  top.pp = "<" ++ rest.pp ++ " {T}>";
+  top.pp = rest.pp;
   top.abella_pp = "$transRel__" ++ rest.abella_pp;
 
   top.isQualified = rest.isQualified;

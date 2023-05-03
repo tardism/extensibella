@@ -52,6 +52,11 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
         else if relName == notName
         then notBoolMetaterm(a, b)
         else relationMetaterm(rel.relFromAbella, args.fromAbella, r)
+      --extSize and transRel relations
+      | extSizeQName(_), _ ->
+        extSizeMetaterm(rel.relFromAbella, args.fromAbella, r)
+      | transRelQName(_), _ ->
+        transRelMetaterm(rel.relFromAbella, args.fromAbella, r)
       --nothing special
       | _, _ ->
         relationMetaterm(rel.relFromAbella, args.fromAbella, r)

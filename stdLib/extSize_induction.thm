@@ -57,7 +57,7 @@ induction on 1. intros IsN LEq. IsN: case IsN.
    case LEq.
 
 
-Theorem lt_left : forall A B C,
+Theorem extensibella-$-stdLib-$-lt_left : forall A B C,
   $plus_integer A B C ->
   $lesseq_integer ($posInt $zero) A ->
   $lesseq_integer ($posInt $zero) B ->
@@ -87,7 +87,7 @@ induction on 1. intros Plus PosA PosB. Plus: case Plus.
    case PosA.
 
 
-Theorem lt_right : forall A B C,
+Theorem extensibella-$-stdLib-$-lt_right : forall A B C,
   $plus_integer A B C -> is_integer B ->
   $lesseq_integer ($posInt $zero) A ->
   $lesseq_integer ($posInt $zero) B ->
@@ -119,3 +119,15 @@ induction on 1. intros Plus IsB PosA PosB. Plus: case Plus.
    case PosA.
   %9:  (-N1 - 1) + -N2 = -N3
    case PosA.
+
+
+Theorem extensibella-$-stdLib-$-lt_plus_one : forall X Sum,
+  $plus_integer ($posInt ($succ $zero)) X Sum -> is_integer X ->
+  $less_integer X Sum.
+intros Plus IsX. Plus: case Plus.
+  %1:  1 + N2 = N3
+   case Plus. backchain $less_integer_pos_self.
+  %2:  1 + -1 = 0
+   search.
+  %3:  1 + (-N2 - 1) = Sum
+   case Plus. case IsX. backchain $less_integer_neg_self.

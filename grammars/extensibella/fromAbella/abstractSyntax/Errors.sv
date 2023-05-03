@@ -67,11 +67,11 @@ top::ProcessingErrorMessage ::=
 
 
 abstract production unknownHypLemma
-top::ProcessingErrorMessage ::= name::String
+top::ProcessingErrorMessage ::= name::QName
 {
-  top.pp = "Could not find hypothesis or lemma " ++ name;
+  top.pp = "Could not find hypothesis or lemma " ++ name.pp;
 
-  top.fromAbella = unknownHypLemma(name);
+  top.fromAbella = unknownHypLemma(name.fromAbella);
 }
 
 

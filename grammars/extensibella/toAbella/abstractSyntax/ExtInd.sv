@@ -299,12 +299,15 @@ top::TopCommand ::= rels::[QName]
       end end;
 
   {-
-    Lemmas that the extension size is always non-negative and an
-    integer (is_integer).  The former are necessary for using our
-    definition of acc.  We would not need them if we used nats, but
-    those lead to problems with representing them vs. ints to the
-    user.  The latter are for the theorem for A + B = C where 0 < A
-    and 0 < B means B < C \/ B = C.
+    Lemmas about the extension size:
+    1. size is always non-negative
+    2. size is always an integer (is_integer)
+    3. extSize implies the relation itself
+    The first group is necessary for using our definition of acc.  We
+    would not need it if we used nats, but those lead to problems with
+    representing them vs. ints to the user.  The second is for the
+    theorem for A + B = C where 0 < A and 0 < B means B < C \/ B = C.
+    The last is so we can use other properties to help us prove this.
   -}
   local extSizeLemmas::[(QName, Metaterm)] =
       flatMap(
@@ -347,9 +350,22 @@ top::TopCommand ::= rels::[QName]
                         toTermList([basicNameTerm("N")]),
                         emptyRestriction())))
            in
+           let dropExtSizeName::QName =
+               addQNameBase(p.1.moduleName,
+                            "drop_ext_ind_" ++ p.1.shortName)
+           in
+           let dropExtSizeBody::Metaterm =
+               bindingMetaterm(forallBinder(), binds,
+                  impliesMetaterm(extSize,
+                     relationMetaterm(p.7.name,
+                        toTermList(map(basicNameTerm,
+                                       init(argNames))), --drop N
+                        emptyRestriction())))
+           in
              [(nonNegThmName, nonNegThmBody),
-              (isIntThmName, isIntThmBody)]
-            end end end end end end end,
+              (isIntThmName, isIntThmBody),
+              (dropExtSizeName, dropExtSizeBody)]
+            end end end end end end end end end,
          fullRelInfo);
 
   local thmDecl::TopCommand =
@@ -406,8 +422,7 @@ top::TopCommand ::= rels::[QName]
 
   top.provingTheorems =
       map(\ p::(QName, [String], [Term], QName, String, String) ->
-            (addQNameBase(basicQName(p.1.sub.moduleName),
-                          "$extInd_" ++ p.1.shortName),
+            (extIndThmName(p.1),
              let num::String = freshName("N", p.2)
              in
                bindingMetaterm(forallBinder(),
