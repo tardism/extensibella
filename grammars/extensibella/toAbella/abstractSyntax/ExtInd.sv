@@ -343,12 +343,20 @@ top::TopCommand ::= rels::[QName]
       theoremDeclaration(tempThmName, [],
          foldr1(andMetaterm, map(snd, top.provingTheorems)));
 
+  local inductionCommands::[ProofCommand] =
+      let numRels::Integer = length(rels)
+      in --induction on (acc, extSize)
+        [inductionTactic(noHint(), repeat(2, numRels)),
+         inductionTactic(noHint(), repeat(1, numRels))]
+      end;
+
   top.duringCommands = todoError("proveExtInd.duringCommands");
-  top.afterCommands = todoError("proveExtInd.afterCommands");
+  top.afterCommands = [];
 
   top.toAbella =
       [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
       extSizeLemmas ++ [anyTopCommand(thmDecl)] ++
+      map(anyProofCommand, inductionCommands) ++
       todoError("proveExtInd.set-up proof");
 
   top.provingTheorems =
