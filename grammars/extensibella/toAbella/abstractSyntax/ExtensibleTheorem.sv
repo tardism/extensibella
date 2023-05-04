@@ -63,6 +63,10 @@ top::TopCommand ::= thms::ExtThms
                             "induction relations " ++
                             implode(", ", map((.pp), missing)))]
            end;
+
+  thms.useExtInd = if null(importedIndRels) || !extIndGroup.isJust
+                   then []
+                   else extIndGroup.fromJust;
 }
 
 
@@ -169,10 +173,11 @@ nonterminal ExtThms with
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
    inductionNums, inductionRels,
+   useExtInd,
    startingGoalNum, duringCommands,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
-propagate typeEnv, constructorEnv, relationEnv,
-          currentModule, proverState, toAbellaMsgs on ExtThms;
+propagate typeEnv, constructorEnv, relationEnv, currentModule,
+          proverState, toAbellaMsgs, useExtInd on ExtThms;
 
 --prefix for the subgoals arising from a theorem
 inherited attribute startingGoalNum::SubgoalNum;
@@ -180,6 +185,8 @@ inherited attribute startingGoalNum::SubgoalNum;
 synthesized attribute inductionNums::[Integer];
 --Relations on which we are doing induction
 synthesized attribute inductionRels::[QName];
+--Ext_Ind definition to use for preservability if needed
+inherited attribute useExtInd::[(QName, [String], [Term], QName, String, String)];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -307,6 +314,16 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | _ -> error("Should not access inductionRel")
       end;
 
+  --Preservability for imported relations requires us to add the
+  --translation assertion manually, which we do here
+  --This outer list is actually a maybe, but easier to add to others
+  local preservabilityAssert::[(Integer, [ProofCommand])] =
+      if sameModule(top.currentModule, fullName) && --new prop
+         !sameModule(top.currentModule, inductionRel.name) --old rel
+      then [(last(expectedSubgoals).1, --last number is preservability
+             todoError("preservabilityAssert"))]
+      else []; --nothing to do if not new prop/imported rel
+
   --for the subgoals that should arise, the last digit of the subgoal
   --number and whether we need to prove it
   local expectedSubgoals::[(Integer, Boolean)] =
@@ -329,7 +346,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                        map(\ x::(Integer, Boolean) ->
                              skipTactic(), l))]
                 else [], --nothing for things we need to prove
-              groupedExpectedSubgoals);
+              groupedExpectedSubgoals) ++ preservabilityAssert;
   --turned into full subgoals
   local subgoalDuringCommands::[(SubgoalNum, [ProofCommand])] =
       map(\ p::(Integer, [ProofCommand]) ->
