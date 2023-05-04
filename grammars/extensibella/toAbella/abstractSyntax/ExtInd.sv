@@ -298,75 +298,10 @@ top::TopCommand ::= rels::[QName]
            foldrLastElem(consDefs, singleDefs, defs))
       end end;
 
-  {-
-    Lemmas about the extension size:
-    1. size is always non-negative
-    2. size is always an integer (is_integer)
-    3. extSize implies the relation itself
-    The first group is necessary for using our definition of acc.  We
-    would not need it if we used nats, but those lead to problems with
-    representing them vs. ints to the user.  The second is for the
-    theorem for A + B = C where 0 < A and 0 < B means B < C \/ B = C.
-    The last is so we can use other properties to help us prove this.
-  -}
   local extSizeLemmas::[(QName, Metaterm)] =
-      flatMap(
-         \ p::(QName, [String], [Term], QName, String, String,
-               RelationEnvItem) ->
-           let argNames::[String] =
-               foldr(\ x::Type rest::[String] ->
-                       freshName("X", rest)::rest,
-                     ["N"], tail(p.7.types.toList)) --drop prop
-           in
-           let binds::Bindings =
-               foldrLastElem(addBindings(_, nothingType(), _),
-                  oneBinding(_, nothingType()), argNames)
-           in
-           let extSize::Metaterm =
-               relationMetaterm(extSizeQName(p.1.sub),
-                  toTermList(map(basicNameTerm, argNames)),
-                  emptyRestriction())
-           in
-           let nonNegThmName::QName =
-               addQNameBase(p.1.moduleName,
-                            "ext_ind_pos_" ++ p.1.shortName)
-           in
-           let nonNegThmBody::Metaterm =
-               bindingMetaterm(forallBinder(), binds,
-                  impliesMetaterm(extSize,
-                     relationMetaterm(toQName(integerLessEqName),
-                        toTermList([integerToIntegerTerm(0),
-                                    basicNameTerm("N")]),
-                        emptyRestriction())))
-           in
-           let isIntThmName::QName =
-               addQNameBase(p.1.moduleName,
-                            "ext_ind_is_int_" ++ p.1.shortName)
-           in
-           let isIntThmBody::Metaterm =
-               bindingMetaterm(forallBinder(), binds,
-                  impliesMetaterm(extSize,
-                     relationMetaterm(toQName("is_integer"),
-                        toTermList([basicNameTerm("N")]),
-                        emptyRestriction())))
-           in
-           let dropExtSizeName::QName =
-               addQNameBase(p.1.moduleName,
-                            "drop_ext_ind_" ++ p.1.shortName)
-           in
-           let dropExtSizeBody::Metaterm =
-               bindingMetaterm(forallBinder(), binds,
-                  impliesMetaterm(extSize,
-                     relationMetaterm(p.7.name,
-                        toTermList(map(basicNameTerm,
-                                       init(argNames))), --drop N
-                        emptyRestriction())))
-           in
-             [(nonNegThmName, nonNegThmBody),
-              (isIntThmName, isIntThmBody),
-              (dropExtSizeName, dropExtSizeBody)]
-            end end end end end end end end end,
-         fullRelInfo);
+      flatMap(\ p::(QName, [String], [Term], QName, String, String,
+                    RelationEnvItem) ->
+                buildExtSizeLemmas(p.1, p.2), fullRelInfo);
 
   local thmDecl::TopCommand =
       theoremDeclaration(tempThmName, [],
@@ -838,4 +773,73 @@ function createTransRelPremises
       removeAll(nub(alreadyBoundVars), nub(transVars ++ relVars));
 
   return (newBoundVars, fullTranslation, newRelation);
+}
+
+
+
+
+
+{--------------------------------------------------------------------
+  Extension Size Lemmas
+ --------------------------------------------------------------------}
+{-
+  Build the lemmas for using the extension size:
+  1. Size is always non-negative
+  2. Size is always an integer (is_integer)
+  3. ExtSize version implies the relation itself
+  The first one is necessary for using our definition of acc.  We
+  would not need it if we used nats, but that would lead to problems
+  with representing them to the user and showing the difference
+  compared to integers.  The second one is for using stdLib theorems
+  for addition and less/lesseq.  The last one is so we can use other
+  properties of the relation to help us prove Ext_Ind.
+
+  - rel is the relation for which we are defining extSize
+  - argNames is the list of (unique) names for the relation arguments
+    (does not include size number for extSize)
+-}
+function buildExtSizeLemmas
+[(QName, Metaterm)] ::= rel::QName argNames::[String]
+{
+  local numName::String = freshName("N", argNames);
+  local binds::Bindings = toBindings(argNames ++ [numName]);
+  local extSize::Metaterm =
+      relationMetaterm(extSizeQName(rel.sub),
+         toTermList(map(basicNameTerm, argNames ++ [numName])),
+         emptyRestriction());
+
+  --non-neg:  forall \bar{x} n.  extSize \bar{x} n  ->  0 <= n
+  local nonNegThmName::QName =
+      addQNameBase(rel.moduleName, "ext_ind_pos_" ++ rel.shortName);
+  local nonNegThmBody::Metaterm =
+      bindingMetaterm(forallBinder(), binds,
+         impliesMetaterm(extSize,
+            relationMetaterm(toQName(integerLessEqName),
+               toTermList([integerToIntegerTerm(0),
+                           basicNameTerm(numName)]),
+               emptyRestriction())));
+
+  --is int:  forall \bar{x} n.  extSize \bar{x} n  ->  is_integer n
+  local isIntThmName::QName =
+      addQNameBase(rel.moduleName, "ext_ind_is_int_" ++ rel.shortName);
+  local isIntThmBody::Metaterm =
+      bindingMetaterm(forallBinder(), binds,
+         impliesMetaterm(extSize,
+            relationMetaterm(toQName("is_integer"),
+               toTermList([basicNameTerm(numName)]),
+               emptyRestriction())));
+
+  --drop:  forall \bar{x} n.  extSize \bar{x} n  ->  R \bar{x}
+  local dropExtSizeName::QName =
+      addQNameBase(rel.moduleName, "drop_ext_ind_" ++ rel.shortName);
+  local dropExtSizeBody::Metaterm =
+      bindingMetaterm(forallBinder(), binds,
+         impliesMetaterm(extSize,
+            relationMetaterm(rel,
+               toTermList(map(basicNameTerm, argNames)),
+               emptyRestriction())));
+
+  return [(nonNegThmName, nonNegThmBody),
+          (isIntThmName, isIntThmBody),
+          (dropExtSizeName, dropExtSizeBody)];
 }

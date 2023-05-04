@@ -84,28 +84,14 @@ top::ThmElement ::=
   top.encode = error("extIndElement.encode");
   top.is_nonextensible = false;
 
+  --only user-relevant theorems are the lemmas about extSize
+  --the proven things are only for framework use
   top.thms =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
-            (addQNameBase(basicQName(p.1.sub.moduleName),
-                          "$extInd_" ++ p.1.shortName),
-             let usedVars::[String] =
-                 nub([p.5, p.6] ++ p.2 ++ flatMap((.usedNames), p.3))
-             in
-             let num::String = freshName("N", usedVars)
-             in
-               bindingMetaterm(forallBinder(),
-                  toBindings(num::usedVars),
-                  impliesMetaterm(
-                     relationMetaterm(extSizeQName(p.1.sub),
-                        toTermList(p.3 ++ [nameTerm(toQName(num),
-                                              nothingType())]),
-                        emptyRestriction()),
-                     relationMetaterm(transRelQName(p.1.sub),
-                        toTermList(p.3), emptyRestriction())))
-             end end),
-          rels);
+      flatMap(\ p::(QName, [String], [Term], QName, String, String) ->
+                buildExtSizeLemmas(p.1, p.2), rels);
 }
 
+--Create the contents of Ext_Ind from the tuple of its information
 function extIndInfo_to_extIndBody
 ExtIndBody ::=
    extIndInfo::[(QName, [String], [Term], QName, String, String)]
