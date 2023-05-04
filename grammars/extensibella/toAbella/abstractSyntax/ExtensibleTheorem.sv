@@ -37,6 +37,32 @@ top::TopCommand ::= thms::ExtThms
        if thms.len > 1
        then [1]
        else []; --only one thm, so subgoals for it are 1, 2, ...
+
+  --find extInd if needed for the relations
+  local extIndGroup::Maybe<[(QName, [String], [Term],
+                             QName, String, String)]> =
+      findExtIndGroup(head(thms.inductionRels), top.proverState);
+  --need extInd for all if any relations are imported
+  local importedIndRels::[QName] =
+      filter(\ r::QName -> !sameModule(top.currentModule, r),
+             thms.inductionRels);
+  top.toAbellaMsgs <-
+      if null(importedIndRels)
+      then []
+      else if !extIndGroup.isJust
+      then [errorMsg("Did not find Ext_Ind required for induction " ++
+                     "on relations " ++
+                     implode(", ", map((.pp), importedIndRels)))]
+      else let missing::[QName] =
+               removeAll(map(fst, extIndGroup.fromJust),
+                         thms.inductionRels)
+           in
+             if null(missing)
+             then []
+             else [errorMsg("Ext_Ind group does not include " ++
+                            "induction relations " ++
+                            implode(", ", map((.pp), missing)))]
+           end;
 }
 
 
@@ -142,7 +168,7 @@ nonterminal ExtThms with
    pp, len,
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
-   inductionNums,
+   inductionNums, inductionRels,
    startingGoalNum, duringCommands,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv,
@@ -152,6 +178,8 @@ propagate typeEnv, constructorEnv, relationEnv,
 inherited attribute startingGoalNum::SubgoalNum;
 --gather indices for induction
 synthesized attribute inductionNums::[Integer];
+--Relations on which we are doing induction
+synthesized attribute inductionRels::[QName];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -165,6 +193,7 @@ top::ExtThms ::=
   top.provingTheorems = [];
 
   top.inductionNums = [];
+  top.inductionRels = [];
 
   top.duringCommands = [];
 }
@@ -216,6 +245,16 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | nothing() ->
         error("Induction nums:  Did not find " ++ onLabel ++ " in " ++
            "intros names [" ++ implode(", ", introsNames) ++ "]")
+      end;
+  top.inductionRels =
+      case lookup(onLabel, zipWith(pair, introsNames,
+                                   map(snd, body.premises))) of
+      --premises already has full relations
+      | just(relationMetaterm(r, _, _)) -> r::rest.inductionRels
+      --bad form, so no relation and just check rest
+      | just(_) -> rest.inductionRels
+      --no such premise, so just check rest
+      | nothing() -> rest.inductionRels
       end;
 
   --the premise we declared for induction
