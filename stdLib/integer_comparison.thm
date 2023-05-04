@@ -114,6 +114,25 @@ induction on 1. intros Plus IsA. Plus: case Plus.
      %Subgoal 2.3
       apply IH to Plus _. backchain $less_integer_negSuccInt_left_step.
 
+Theorem $less_integer_sum_pos_pos : forall A B C,
+  $plus_integer ($posInt ($succ A)) ($posInt B) C ->
+  is_integer ($posInt A) -> $less_integer ($posInt A) C.
+induction on 1. intros Plus IsA. Plus: case Plus. P': case Plus (keep).
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   IsA: case IsA. apply IH to Plus _. search.
+
+Theorem $less_integer_sum_neg_neg : forall A B C,
+  $plus_integer ($negSuccInt A) ($negSuccInt B) C ->
+  is_integer ($negSuccInt A) -> $less_integer C ($negSuccInt A).
+induction on 1. intros Plus IsA. Plus: case Plus.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   case IsA. apply IH to Plus _. search.
+
+
 Theorem extensibella-$-stdLib-$-less_integer_transitive :
   forall A B C,
     $less_integer A B -> $less_integer B C -> $less_integer A C.
@@ -317,7 +336,8 @@ induction on 1. intros PlusA PlusB IsN1 L. PlusA: case PlusA.
      %Subgoal 2.3
       case L.
   %Subgoal 3
-   case L. PlusB: case PlusB. skip. %true, but needs a lemma
+   case L. PlusB': case PlusB (keep). case IsN1.
+   apply $less_integer_sum_pos_pos to PlusB _. search.
   %Subgoal 4
    PlusB: case PlusB.
      %Subgoal 4.1
@@ -350,9 +370,10 @@ induction on 1. intros PlusA PlusB IsN1 L. PlusA: case PlusA.
   %Subgoal 9
    PlusB: case PlusB.
      %Subgoal 9.1
-      skip. %clear, but need a lemma
+      case IsN1. apply $less_integer_sum_neg_neg to PlusA _. search.
      %Subgoal 9.2
-      skip.
+      case IsN1. LN6Sum2: apply IH to PlusA PlusB _ _.
+      backchain $less_integer_negSuccInt_left_step.
      %Subgoal 9.3
       case IsN1. apply IH to PlusA PlusB _ _. search.
 

@@ -457,14 +457,7 @@ function buildExtSizeDef
 [Def] ::= relInfo::[(QName, RelationEnvItem)] allRels::[QName]
 {
   local pcIndex::Integer = head(relInfo).2.pcIndex;
-  --filter out clauses for unknown
-  local defList::[([Term], Maybe<Metaterm>)] =
-      filter(\ p::([Term], Maybe<Metaterm>) ->
-               case elemAtIndex(p.1, pcIndex) of
-               | nameTerm(unknownQName(_), _) -> false
-               | _ -> true
-               end,
-             head(relInfo).2.defsList);
+  local defList::[([Term], Maybe<Metaterm>)] = head(relInfo).2.defsList;
   local firstRel::[Def] =
       buildExtSizeClauses(head(relInfo).1, defList, pcIndex, allRels);
   return case relInfo of
