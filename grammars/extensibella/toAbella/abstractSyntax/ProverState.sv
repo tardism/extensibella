@@ -9,9 +9,9 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal ProverState with
    pp, --solely for debugging purposes
-   state, debug, knownTheorems, remainingObligations,
+   state, debug, knownTheorems, knownExtInds, remainingObligations,
    knownTypes, knownRels, knownConstrs,
-   provingThms, duringCommands, afterCommands,
+   provingThms, provingExtInds, duringCommands, afterCommands,
    replaceState, replacedState<ProverState>;
 
 
@@ -22,6 +22,11 @@ synthesized attribute debug::Boolean;
 --Theorems we have proven and available
 --(qualified name, statement)
 synthesized attribute knownTheorems::[(QName, Metaterm)];
+
+--ExtInds we have proven and available
+--Each sublist is a group of mutually-ext-inded relations
+--[[(rel, rel arg names, trans args, trans ty, original, translated)]]
+synthesized attribute knownExtInds::[[(QName, [String], [Term], QName, String, String)]];
 
 --Things we will need to do in the proof based on imports that we
 --haven't done yet
@@ -42,6 +47,8 @@ top::ProverState ::=
    --theorems we have proven or imported and can use
    --should include the standard library's theorems
    knownThms::[(QName, Metaterm)]
+   --extInds we have proven and can use
+   knownExtInds::[[(QName, [String], [Term], QName, String, String)]]
    --things we will need to do in the proof based on imports
    obligations::[ThmElement]
    --current environments
@@ -51,6 +58,9 @@ top::ProverState ::=
    --theorems we are currently in the process of proving
    --should be added to knownThms when we finish the proof
    provingThms::[(QName, Metaterm)]
+   --extInds we are currently in the process of proving
+   --should be added to knownExtInds when we finish the proof
+   provingExtInds::[(QName, [String], [Term], QName, String, String)]
    --things to do when the subgoal reaches that number
    --should clear it once it has been sent to Abella
    --Note:  If there are commands for e.g. Subgoal 2 that are expected
@@ -77,6 +87,7 @@ top::ProverState ::=
   top.debug = debugMode;
 
   top.knownTheorems = knownThms;
+  top.knownExtInds = knownExtInds;
 
   top.remainingObligations = obligations;
 
@@ -85,6 +96,7 @@ top::ProverState ::=
   top.knownConstrs = constrEnv;
 
   top.provingThms = provingThms;
+  top.provingExtInds = provingExtInds;
   top.duringCommands = duringCommands;
   top.afterCommands = afterCommands;
 
@@ -97,22 +109,25 @@ top::ProverState ::=
       | proofCompleted() ->
         --leave provingThms because we will need them for the next step
         proverState(top.replaceState, debugMode,
-                    provingThms ++ knownThms, newObligations,
-                    tyEnv, relEnv, constrEnv, [], [],
+                    provingThms ++ knownThms,
+                    provingExtInds::knownExtInds, newObligations,
+                    tyEnv, relEnv, constrEnv, [], [], [],
                     afterCommands)
       | proofAborted() ->
-        proverState(top.replaceState, debugMode, knownThms,
-                    obligations, tyEnv, relEnv, constrEnv, [], [], [])
+        proverState(top.replaceState, debugMode, knownThms, knownExtInds,
+                    obligations, tyEnv, relEnv, constrEnv, [], [], [], [])
       | _ when !null(duringCommands) &&
                subgoalLess(head(duringCommands).1,
                            top.replaceState.currentSubgoal) ->
-        proverState(top.replaceState, debugMode, knownThms,
+        proverState(top.replaceState, debugMode, knownThms, knownExtInds,
                     obligations, tyEnv, relEnv, constrEnv,
-                    provingThms, tail(duringCommands), afterCommands)
+                    provingThms, provingExtInds,
+                    tail(duringCommands), afterCommands)
       | _ ->
-        proverState(top.replaceState, debugMode, knownThms,
+        proverState(top.replaceState, debugMode, knownThms, knownExtInds,
                     obligations, tyEnv, relEnv, constrEnv,
-                    provingThms, duringCommands, afterCommands)
+                    provingThms, provingExtInds,
+                    duringCommands, afterCommands)
       end;
 }
 
@@ -199,9 +214,9 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
   --currently no visible constructors from the standard library
   local knownConstrs::[ConstructorEnvItem] = buildEnv([]);
 
-  return proverState(noProof(), false, knownThms, obligations,
+  return proverState(noProof(), false, knownThms, [], obligations,
             addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),
-            addEnv(constrEnv, knownConstrs), [], [], []);
+            addEnv(constrEnv, knownConstrs), [], [], [], []);
 }
 
 
@@ -215,4 +230,20 @@ function findTheorem
         then \ p::(QName, Metaterm) -> p.1 == name
         else \ p::(QName, Metaterm) -> p.1.shortName == name.shortName,
         state.knownTheorems);
+}
+
+--Find an ExtInd declaration group including rel
+function findExtIndGroup
+Maybe<[(QName, [String], [Term], QName, String, String)]> ::=
+   name::QName state::ProverState
+{
+  local find::[[(QName, [String], [Term], QName, String, String)]] =
+      filter(\ l::[(QName, [String], [Term], QName, String, String)] ->
+               contains(name, map(fst, l)),
+             state.knownExtInds);
+  return case find of
+         | [] -> nothing()
+         | [x] -> just(x)
+         | _ -> error("findExtIndGroup impossible")
+         end;
 }

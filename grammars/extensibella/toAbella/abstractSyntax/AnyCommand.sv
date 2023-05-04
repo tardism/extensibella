@@ -33,11 +33,13 @@ top::AnyCommand ::= c::TopCommand
        proverState(top.newProofState,
           top.proverState.debug,
           c.newTheorems ++ top.proverState.knownTheorems,
+          top.proverState.knownExtInds,
           top.proverState.remainingObligations,
           addEnv(top.proverState.knownTypes, c.tys),
           addEnv(top.proverState.knownRels, c.rels),
           addEnv(top.proverState.knownConstrs, c.constrs),
           c.provingTheorems,
+          c.provingExtInds,
           c.duringCommands,
           c.afterCommands))::top.stateListIn;
 

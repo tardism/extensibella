@@ -303,33 +303,6 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
 
 attribute
-   extIndInfo
-occurs on ExtIndBody;
-
-synthesized attribute extIndInfo::[(QName, [String], [Term],
-                                    QName, String, String)];
-
-aspect production branchExtIndBody
-top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
-{
-  top.extIndInfo = e1.extIndInfo ++ e2.extIndInfo;
-}
-
-
-aspect production oneExtIndBody
-top::ExtIndBody ::= rel::QName relArgs::[String]
-                    boundVars::MaybeBindings transArgs::TermList
-                    transTy::QName original::String translated::String
-{
-  top.extIndInfo = [(rel, relArgs, transArgs.toList,
-                     transTy, original, translated)];
-}
-
-
-
-
-
-attribute
    defClauses
 occurs on Defs, Def;
 

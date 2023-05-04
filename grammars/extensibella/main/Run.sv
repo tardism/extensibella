@@ -253,6 +253,9 @@ IOVal<StateList> ::=
   --Add completed theorems
   local newKnownThms::[(QName, Metaterm)] =
       initProverState.knownTheorems ++ initProverState.provingThms;
+  --Add completed extInds
+  local newKnownExtInds::[[(QName, [String], [Term], QName, String, String)]] =
+      initProverState.provingExtInds::initProverState.knownExtInds;
   --Put it together
   local newStateList::StateList =
       (head(stateListIn).1 +
@@ -260,11 +263,12 @@ IOVal<StateList> ::=
        proverState(initProverState.state,
                    initProverState.debug,
                    newKnownThms,
+                   newKnownExtInds,
                    newObligations,
                    initProverState.knownTypes,
                    initProverState.knownRels,
                    initProverState.knownConstrs,
-                   [], [], []))::tail(stateListIn);
+                   [], [], [], []))::tail(stateListIn);
   return ioval(if runAfterCommands then outputAfterCommands else ioin,
                if proofDone then newStateList else stateListIn);
 }

@@ -8,7 +8,7 @@ nonterminal TopCommand with
    toAbella<[AnyCommand]>, toAbellaMsgs,
    newProofState,
    newTheorems,
-   provingTheorems, duringCommands, afterCommands,
+   provingTheorems, provingExtInds, duringCommands, afterCommands,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate constructorEnv, relationEnv, currentModule,
           toAbellaMsgs on TopCommand excluding definitionDeclaration;
@@ -21,6 +21,7 @@ top::TopCommand ::=
   top.duringCommands = [];
   top.afterCommands = [];
   top.newTheorems = [];
+  top.provingExtInds = [];
 }
 
 

@@ -9,6 +9,7 @@ top::TopCommand ::= body::ExtIndBody
       error("extIndDeclaration.abella_pp should not be accessed");
 
   top.provingTheorems = [];
+  top.provingExtInds = body.extIndInfo;
 
   top.toAbella =
       [anyTopCommand(
@@ -37,12 +38,14 @@ top::TopCommand ::= body::ExtIndBody
 nonterminal ExtIndBody with
    pp,
    toAbella<[(QName, Type, Def)]>, toAbellaMsgs,
-   relations,
+   relations, extIndInfo,
    currentModule, typeEnv, constructorEnv, relationEnv;
 propagate constructorEnv, relationEnv, typeEnv, currentModule,
           toAbellaMsgs on ExtIndBody;
 
 synthesized attribute relations::[QName];
+synthesized attribute extIndInfo::[(QName, [String], [Term],
+                                    QName, String, String)];
 
 abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
@@ -52,6 +55,8 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
   top.toAbella = e1.toAbella ++ e2.toAbella;
 
   top.relations = e1.relations ++ e2.relations;
+
+  top.extIndInfo = e1.extIndInfo ++ e2.extIndInfo;
 }
 
 
@@ -71,6 +76,9 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
   transArgs.boundNames = boundVars.usedNames ++ relArgs;
 
   top.relations = if rel.relFound then [rel.fullRel.name] else [];
+
+  top.extIndInfo = [(rel, relArgs, transArgs.toList,
+                     transTy, original, translated)];
 
   {-
     This "translation" seems a bit strange, and it is unrelated to
@@ -249,6 +257,8 @@ top::TopCommand ::= rels::[QName]
       | extIndElement(r) -> r
       | _ -> error("Not possible (proveExtInd.obligations)")
       end;
+  --This should only be accessed if there are no errors
+  top.provingExtInds = obligations;
 
   local tempThmName::QName =
       toQName("$$$$$ext_ind_" ++ toString(genInt()));
