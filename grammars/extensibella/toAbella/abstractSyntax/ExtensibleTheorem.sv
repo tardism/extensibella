@@ -186,7 +186,8 @@ synthesized attribute inductionNums::[Integer];
 --Relations on which we are doing induction
 synthesized attribute inductionRels::[QName];
 --Ext_Ind definition to use for preservability if needed
-inherited attribute useExtInd::[(QName, [String], [Term], QName, String, String)];
+inherited attribute useExtInd::[(QName, [String], [Term],
+                                 QName, String, String)];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -282,11 +283,15 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         in
           if !decRel.relFound
           then [] --covered by other errors
-          else if decRel.fullRel.isExtensible
-          then []
-          else [errorMsg("Can only induct on extensible relations " ++
+          else if !decRel.fullRel.isExtensible
+          then [errorMsg("Can only induct on extensible relations " ++
                    "for extensible theorems; " ++
                    decRel.fullRel.name.pp ++ " is not extensible")]
+          else if head(drop(decRel.fullRel.pcIndex,
+                            args.toList)).isStructured
+          then [errorMsg("Primary component of induction relation " ++
+                   "cannot be filled but is")]
+          else []
         end
       | just(m) ->
         [errorMsg("Can only induct on extensible relations for " ++
@@ -319,10 +324,45 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   --This outer list is actually a maybe, but easier to add to others
   local preservabilityAssert::[(Integer, [ProofCommand])] =
       if sameModule(top.currentModule, fullName) && --new prop
-         !sameModule(top.currentModule, inductionRel.name) --old rel
+         foundLabeledPremise.isJust && --not a relation error
+         !sameModule(top.currentModule, inductionRel.name) --old rel 
       then [(last(expectedSubgoals).1, --last number is preservability
-             todoError("preservabilityAssert"))]
+             [assertTactic(nameHint(transHypName), nothing(),
+                 translation), skipTactic()])]
       else []; --nothing to do if not new prop/imported rel
+  --
+  local thisExtInd::Maybe<(QName, [String], [Term],
+                           QName, String, String)> =
+      if foundLabeledPremise.isJust --guard against out-of-order access
+      then case lookup(inductionRel.name, top.useExtInd) of
+           | just(p) -> just((inductionRel.name, p))
+           | nothing() -> nothing()
+           end
+      else nothing();
+  --
+  local propUsedNames::[String] = body.thm.usedNames;
+  --It is named "Trans" in the definition file, so it will have either
+  --that name or a fresh version of it, if something else uses that
+  local translationName::String = freshName("Trans", propUsedNames);
+  local transArgs::[Term] =
+      safeReplace(thisExtInd.fromJust.3, thisExtInd.fromJust.2,
+         todoError("actual args in this theorem"));
+  local translation::Metaterm =
+      relationMetaterm(transName(thisExtInd.fromJust.4),
+         toTermList(transArgs ++
+                    [nameTerm(unknownQName(thisExtInd.fromJust.4.sub),
+                              nothingType()),
+                     basicNameTerm(translationName)]),
+         emptyRestriction());
+  --Using two freshNames, we get the same name as Abella will give the
+  --premise in the composition
+  local transHypName::String =
+      let prems::[String] = catMaybes(map(fst, body.premises))
+      in
+        freshName(onLabel, --the actual hyp
+           freshName(onLabel, --the sub-derivation of the relation
+            prems)::prems)
+      end;
 
   --for the subgoals that should arise, the last digit of the subgoal
   --number and whether we need to prove it

@@ -70,6 +70,49 @@ Maybe<Metaterm> ::= arg::ApplyArg hyps::[(String, Metaterm)]
 
 
 
+--Safely replace a whole list of variables with a list of variables
+--that might contain the same variables, but those should stay
+function safeReplace
+[Term] ::= replaceIn::[Term] replaceVars::[String] replaceTerms::[Term]
+{
+  local usedNames::[String] =
+      replaceVars ++ flatMap((.usedNames), replaceIn ++ replaceTerms);
+
+  --replace replaceVars with ones fresh in everything for safety in
+  --replacing them in the transArgs
+  local newVars::[String] =
+      foldr(\ x::String rest::[String] ->
+              freshName(x, rest ++ usedNames)::rest,
+            [], replaceVars);
+
+  --replace replaceVars with newVars in replaceIn
+  local step1::[Term] =
+      map(\ t::Term ->
+            foldr(\ p::(String, String) rest::Term ->
+                    decorate rest with {
+                      substName=p.1; substTerm=basicNameTerm(p.2);
+                    }.subst,
+                  t, zipWith(pair, replaceVars, newVars)),
+          replaceIn);
+
+  --replace newVars with the corresponding terms from replaceTerms,
+  --now that it is safe to do so
+  local step2::[Term] =
+      map(\ t::Term ->
+            foldr(\ p::(String, Term) rest::Term ->
+                    decorate rest with {
+                      substName=p.1; substTerm=p.2;
+                    }.subst,
+                  t, zipWith(pair, newVars, replaceTerms)),
+          step1);
+
+  return step2;
+}
+
+
+
+
+
 function subset
 Eq a => Boolean ::= sub::[a] super::[a]
 {

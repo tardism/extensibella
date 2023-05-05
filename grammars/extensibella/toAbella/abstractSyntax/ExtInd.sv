@@ -733,35 +733,13 @@ function createTransRelPremises
     transArgs::[Term] transTy::QName original::String trans::String
     pcIndex::Integer usedNames::[String]
 {
-  --replace varArgs vars with ones fresh in everything for safety in
-  --replacing them in the transArgs
-  local newVars::[String] =
-      foldr(\ x::String rest::[String] ->
-              freshName(x, rest ++ usedNames)::rest,
-            [], varArgs);
-  --replace varArgs with newVars in transArgs
-  local transArgs_step1::[Term] =
-      map(\ t::Term ->
-            foldr(\ p::(String, String) rest::Term ->
-                    decorate rest with {
-                       substName=p.1; substTerm=basicNameTerm(p.2);
-                    }.subst,
-                  t, zipWith(pair, varArgs, newVars)),
-          transArgs);
-  --replace newVars with the corresponding terms from the actualArgs
-  --in transArgs_step1, now that it is safe to do so
-  local transArgs_step2::[Term] =
-      map(\ t::Term ->
-            foldr(\ p::(String, Term) rest::Term ->
-                    decorate rest with {
-                       substName=p.1; substTerm=p.2;
-                    }.subst,
-                  t, zipWith(pair, newVars, actualArgs)),
-          transArgs_step1);
+  --replace varArgs with actualArgs in transArgs
+  local replacedTransArgs::[Term] =
+      safeReplace(transArgs, varArgs, actualArgs);
   --full translation
   local fullTranslation::Metaterm =
       relationMetaterm(transName(transTy),
-         toTermList(transArgs_step2 ++
+         toTermList(replacedTransArgs ++
             [elemAtIndex(actualArgs, pcIndex), basicNameTerm(trans)]),
          emptyRestriction());
 
