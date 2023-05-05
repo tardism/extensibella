@@ -84,15 +84,15 @@ IOVal<Integer> ::=
   {-
     FURTHER STATE PROCESSING
   -}
-  --Clear any subgoals not needed to be proven in this module
+  --Run any during commands for the current subgoal
   ----------------------------
-  local cleared::IOVal<(StateList, FullDisplay)> =
-      clearExtraSubgoals(any_a.stateListOut, full_a, from_parse,
-                         debug_output, abella, debug, config);
+  local duringed::IOVal<(StateList, FullDisplay)> =
+      runDuringCommands(any_a.stateListOut, full_a, from_parse,
+                        debug_output, abella, debug, config);
   --After-proof commands
   ----------------------------
   local aftered::IOVal<StateList> =
-      runAfterProofCommands(cleared.iovalue.1, cleared.io, abella,
+      runAfterProofCommands(duringed.iovalue.1, duringed.io, abella,
                             debug, config);
   --Process any imported theorems we can now add
   ----------------------------
@@ -101,7 +101,7 @@ IOVal<Integer> ::=
   local nonErrorStateList::StateList = incominged.iovalue;
   --Show to user
   ----------------------------
-  local finalDisplay::FullDisplay = cleared.iovalue.2;
+  local finalDisplay::FullDisplay = duringed.iovalue.2;
   finalDisplay.typeEnv = head(nonErrorStateList).2.knownTypes;
   finalDisplay.relationEnv = head(nonErrorStateList).2.knownRels;
   finalDisplay.constructorEnv =
@@ -176,9 +176,8 @@ IOVal<Integer> ::=
 
 
 
---Clear any extra subgoals Abella shows but this module doesn't need
---to prove
-function clearExtraSubgoals
+--Run any during commands that apply at this subgoal
+function runDuringCommands
 IOVal<(StateList, FullDisplay)> ::=
    stateListIn::StateList displayIn::FullDisplay
    from_parse::Parser<FullDisplay_c> ioin::IOToken
@@ -204,13 +203,14 @@ IOVal<(StateList, FullDisplay)> ::=
   local outputCleanCommands::IOToken =
       if shouldClean
       then debugOutput(debug, config, cleanCommands,
-              "Clear Extra Subgoals", cleaned.iovalue, cleaned.io)
+              "Run During Commands", cleaned.iovalue, cleaned.io)
       else debugOutput(debug, config, cleanCommands,
-              "Clear Extra Subgoals", "", ioin);
+              "Run During Commands", "", ioin);
   initProverState.replaceState = cleaned_display.proof;
   local cleanedStateList::StateList =
       (head(stateListIn).1 + length(cleanCommands),
-       initProverState.replacedState)::tail(stateListIn);
+       dropDuringCommand(initProverState.replacedState)
+      )::tail(stateListIn);
   return ioval(outputCleanCommands,
                if shouldClean
                then (cleanedStateList, cleaned_display)

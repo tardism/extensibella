@@ -131,6 +131,7 @@ top::TopCommand ::= names::[QName]
   thms.relationEnv = top.relationEnv;
   thms.constructorEnv = top.constructorEnv;
   thms.currentModule = top.currentModule;
+  thms.useExtInd = []; --don't need it for Prove
 
   production extName::QName =
       if length(names) > 1
@@ -287,11 +288,12 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
           then [errorMsg("Can only induct on extensible relations " ++
                    "for extensible theorems; " ++
                    decRel.fullRel.name.pp ++ " is not extensible")]
-          else if head(drop(decRel.fullRel.pcIndex,
-                            args.toList)).isStructured
-          then [errorMsg("Primary component of induction relation " ++
-                   "cannot be filled but is")]
-          else []
+          else case head(drop(decRel.fullRel.pcIndex, args.toList)) of
+               | nameTerm(q, _) when !q.isQualified -> [] --var
+               | _ -> --anything else is structured
+                 [errorMsg("Primary component of induction " ++
+                     "relation cannot be filled but is")]
+               end
         end
       | just(m) ->
         [errorMsg("Can only induct on extensible relations for " ++

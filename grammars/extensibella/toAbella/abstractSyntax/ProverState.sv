@@ -116,13 +116,8 @@ top::ProverState ::=
       | proofAborted() ->
         proverState(top.replaceState, debugMode, knownThms, knownExtInds,
                     obligations, tyEnv, relEnv, constrEnv, [], [], [], [])
-      | _ when !null(duringCommands) &&
-               subgoalLess(head(duringCommands).1,
-                           top.replaceState.currentSubgoal) ->
-        proverState(top.replaceState, debugMode, knownThms, knownExtInds,
-                    obligations, tyEnv, relEnv, constrEnv,
-                    provingThms, provingExtInds,
-                    tail(duringCommands), afterCommands)
+      --Note:  During commands are shortened elsewhere and should be
+      --       left alone here
       | _ ->
         proverState(top.replaceState, debugMode, knownThms, knownExtInds,
                     obligations, tyEnv, relEnv, constrEnv,
@@ -217,6 +212,18 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
   return proverState(noProof(), false, knownThms, [], obligations,
             addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),
             addEnv(constrEnv, knownConstrs), [], [], [], []);
+}
+
+
+--Drop a duringCommand from the beginning, leaving all else the same
+--This should only be used when the first command has just run
+function dropDuringCommand
+ProverState ::= p::ProverState
+{
+  return proverState(p.state, p.debug, p.knownTheorems, p.knownExtInds,
+            p.remainingObligations, p.knownTypes, p.knownRels,
+            p.knownConstrs, p.provingThms, p.provingExtInds,
+            tail(p.duringCommands), p.afterCommands);
 }
 
 

@@ -267,8 +267,11 @@ top::TopCommand ::= rels::[QName]
   local fullRelInfo::[(QName, [String], [Term], QName, String, String,
                        RelationEnvItem)] =
       map(\ p::(QName, [String], [Term], QName, String, String) ->
-            (p.1, p.2, p.3, p.4, p.5, p.6,
-             decorate p.1 with {relationEnv=top.relationEnv;}.fullRel),
+            let rel::RelationEnvItem =
+                decorate p.1 with {relationEnv=top.relationEnv;}.fullRel
+            in
+              (rel.name, p.2, p.3, p.4, p.5, p.6, rel)
+            end,
           obligations);
 
   --definition of R_{ES}
@@ -349,6 +352,7 @@ top::TopCommand ::= rels::[QName]
   computeDuringCommands.relationEnv = top.relationEnv;
   computeDuringCommands.currentModule = top.currentModule;
   computeDuringCommands.constructorEnv = top.constructorEnv;
+  computeDuringCommands.useExtInd = []; --none needed here
   --tail because the first one is intros/case for first thm
   top.duringCommands = tail(computeDuringCommands.duringCommands);
   --nothing to do, since we don't need the theorems until composition
