@@ -195,12 +195,18 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
            then [] --can do case analysis on non-extensible whenever
            else if length(args.isStructuredList) <= rel.fullRel.pcIndex
            then [] --too few args
-           else if elemAtIndex(args.isStructuredList,
-                               rel.fullRel.pcIndex)
-           then [] --pc is structured
-           else [errorMsg("Cannot do case analysis on extensible " ++
+           else if !elemAtIndex(args.isStructuredList,
+                                rel.fullRel.pcIndex)
+           then [errorMsg("Cannot do case analysis on extensible " ++
                     "relation " ++ rel.pp ++ " with unstructured " ++
                     "primary component")]
+           else if elemAtIndex(args.toList,
+                               rel.fullRel.pcIndex).isUnknownTerm &&
+                   !sameModule(top.currentModule, rel.fullRel.name)
+           then [errorMsg("Cannot do case analysis on host " ++
+                    "extensible relation with unknown primary " ++
+                    "component")]
+           else []
          | _ -> []
          end;
 }

@@ -245,7 +245,7 @@ top::Binder::=
 nonterminal Term with
    pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
-   isStructured, headConstructor,
+   isStructured, headConstructor, isUnknownTerm,
    substName, substTerm, subst<Term>,
    boundNames, usedNames;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
@@ -254,6 +254,13 @@ propagate typeEnv, constructorEnv, relationEnv, boundNames,
 --Easy equality check
 attribute compareTo, isEqual occurs on Type;
 propagate compareTo, isEqual on Type;
+
+aspect default production
+top::Term ::=
+{
+  top.isUnknownTerm = false;
+}
+
 
 abstract production applicationTerm
 top::Term ::= f::Term args::TermList
@@ -291,6 +298,10 @@ top::Term ::= name::QName mty::MaybeType
   top.usedNames := if name.isQualified then [] else [name.shortName];
 
   top.isStructured = name.constrFound;
+  top.isUnknownTerm = case name of
+                      | unknownQName(_) -> true
+                      | _ -> false
+                      end;
 
   top.headConstructor = name;
 

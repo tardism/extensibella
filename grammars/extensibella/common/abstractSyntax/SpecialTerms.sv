@@ -218,6 +218,7 @@ top::Term ::= ty::QName
   top.isAtomic = true;
 
   top.isStructured = true;
+  top.isUnknownTerm = true;
 
   top.headConstructor =
       error("unknownTerm.headConstructor not valid");

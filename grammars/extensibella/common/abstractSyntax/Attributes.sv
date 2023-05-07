@@ -47,6 +47,10 @@ synthesized attribute isStructuredList::[Boolean];
 --Constructor building a term, if one exists
 synthesized attribute headConstructor::QName;
 
+--Whether a term is the unknown constructor standing in for
+--constructors from other extensions
+synthesized attribute isUnknownTerm::Boolean;
+
 
 --Split into a list along the given production
 synthesized attribute splitConjunctions::[Metaterm];
