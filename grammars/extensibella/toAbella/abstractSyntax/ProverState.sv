@@ -11,8 +11,7 @@ nonterminal ProverState with
    pp, --solely for debugging purposes
    state, debug, knownTheorems, knownExtInds, remainingObligations,
    knownTypes, knownRels, knownConstrs,
-   provingThms, provingExtInds, duringCommands, afterCommands,
-   replaceState, replacedState<ProverState>;
+   provingThms, provingExtInds, duringCommands, afterCommands;
 
 
 synthesized attribute state::ProofState;
@@ -99,31 +98,30 @@ top::ProverState ::=
   top.provingExtInds = provingExtInds;
   top.duringCommands = duringCommands;
   top.afterCommands = afterCommands;
+}
 
-  --Determine whether we need to remove an extensible mutual group
-  --   from the beginning because we just proved it
-  local newObligations::[ThmElement] =
-      removeFinishedObligation(obligations, provingThms);
-  top.replacedState =
-      case top.replaceState of
-      | proofCompleted() ->
-        --leave provingThms because we will need them for the next step
-        proverState(top.replaceState, debugMode,
-                    provingThms ++ knownThms,
-                    provingExtInds::knownExtInds, newObligations,
-                    tyEnv, relEnv, constrEnv, [], [], [],
-                    afterCommands)
-      | proofAborted() ->
-        proverState(top.replaceState, debugMode, knownThms, knownExtInds,
-                    obligations, tyEnv, relEnv, constrEnv, [], [], [], [])
-      --Note:  During commands are shortened elsewhere and should be
-      --       left alone here
-      | _ ->
-        proverState(top.replaceState, debugMode, knownThms, knownExtInds,
-                    obligations, tyEnv, relEnv, constrEnv,
-                    provingThms, provingExtInds,
-                    duringCommands, afterCommands)
-      end;
+
+--Move all non-extensble obligations from the front of the obligation
+--   set and add them to the knownThms
+--Leaves everything else the same
+--The commands must have already been sent to Abella
+function removeNonextensibleObligations
+ProverState ::= current::ProverState
+{
+  local outObligations::[ThmElement] =
+      dropWhile((.is_nonextensible), current.remainingObligations);
+  local take::[ThmElement] =
+      takeWhile((.is_nonextensible), current.remainingObligations);
+  local outThms::[(QName, Metaterm)] =
+      foldl(\ rest::[(QName, Metaterm)] t::ThmElement ->
+              decorate t with {knownThms = rest;}.thms ++ rest,
+            current.knownTheorems, take);
+  return proverState(current.state, current.debug,
+            outThms, current.knownExtInds,
+            outObligations, current.knownTypes, current.knownRels,
+            current.knownConstrs, current.provingThms,
+            current.provingExtInds, current.duringCommands,
+            current.afterCommands);
 }
 
 
@@ -156,6 +154,83 @@ function removeFinishedObligation
       | _ -> obligations
       end;
   return newObligations;
+}
+
+
+--A proof is done successfully, so modify the prover state accordingly
+--Assumes current.state is already the one for it being completed
+function finishProof
+ProverState ::= current::ProverState
+{
+  return proverState(current.state, current.debug,
+            current.provingThms ++ current.knownTheorems,
+            --keep blanks out of the list for efficiency
+            if null(current.provingExtInds) then current.knownExtInds
+                else current.provingExtInds::current.knownExtInds,
+            removeFinishedObligation(current.remainingObligations,
+               current.provingThms),
+            current.knownTypes, current.knownRels,
+            current.knownConstrs, [], [], [], []);
+}
+
+
+--A proof is quit, so modify the prover state accordingly
+--Assumes current.state is already the one for it being aborted
+function abortProof
+ProverState ::= current::ProverState
+{
+  return proverState(current.state, current.debug,
+            current.knownTheorems, current.knownExtInds,
+            current.remainingObligations, current.knownTypes,
+            current.knownRels, current.knownConstrs,
+            [], [], [], []);
+}
+
+
+--Set debug to debugVal, leaving everything else the same
+function setProverDebug
+ProverState ::= current::ProverState debugVal::Boolean
+{
+  return proverState(current.state, current.debug,
+            current.knownTheorems, current.knownExtInds,
+            current.remainingObligations, current.knownTypes,
+            current.knownRels, current.knownConstrs,
+            current.provingThms, current.provingExtInds,
+            current.duringCommands, current.afterCommands);
+}
+
+
+--General updates that might happen in a top command
+--Assumes we were not in a proof before
+function updateProverStateTop
+ProverState ::= current::ProverState newProofState::ProofState
+   newThms::[(QName, Metaterm)] newTys::[TypeEnvItem]
+   newRels::[RelationEnvItem] newConstrs::[ConstructorEnvItem]
+   provingThms::[(QName, Metaterm)]
+   provingExtInds::[(QName, [String], [Term], QName, String, String)]
+   duringCmds::[(SubgoalNum, [ProofCommand])]
+   afterCmds::[AnyCommand]
+{
+  return proverState(newProofState, current.debug,
+            newThms ++ current.knownTheorems, current.knownExtInds,
+            current.remainingObligations,
+            addEnv(current.knownTypes, newTys),
+            addEnv(current.knownRels, newRels),
+            addEnv(current.knownConstrs, newConstrs),
+            provingThms, provingExtInds, duringCmds, afterCmds);
+}
+
+
+--Replace only the state in a prover state
+function setProofState
+ProverState ::= current::ProverState newProofState::ProofState
+{
+  return proverState(newProofState, current.debug,
+            current.knownTheorems, current.knownExtInds,
+            current.remainingObligations, current.knownTypes,
+            current.knownRels, current.knownConstrs,
+            current.provingThms, current.provingExtInds,
+            current.duringCommands, current.afterCommands);
 }
 
 

@@ -206,10 +206,10 @@ IOVal<(StateList, FullDisplay)> ::=
               "Run During Commands", cleaned.iovalue, cleaned.io)
       else debugOutput(debug, config, cleanCommands,
               "Run During Commands", "", ioin);
-  initProverState.replaceState = cleaned_display.proof;
   local cleanedStateList::StateList =
       (head(stateListIn).1 + length(cleanCommands),
-       dropDuringCommand(initProverState.replacedState)
+       dropDuringCommand(setProofState(initProverState,
+                            cleaned_display.proof))
       )::tail(stateListIn);
   return ioval(outputCleanCommands,
                if shouldClean
@@ -245,30 +245,12 @@ IOVal<StateList> ::=
               "After-Proof Commands", aftered.iovalue, aftered.io)
       else debugOutput(debug, config, afterCommands,
               "After-Proof Commands", "", ioin);
-  --Determine whether we need to remove an obligation from the
-  --   beginning because we just proved it
-  local newObligations::[ThmElement] =
-      removeFinishedObligation(initProverState.remainingObligations,
-                               initProverState.provingThms);
-  --Add completed theorems
-  local newKnownThms::[(QName, Metaterm)] =
-      initProverState.knownTheorems ++ initProverState.provingThms;
-  --Add completed extInds
-  local newKnownExtInds::[[(QName, [String], [Term], QName, String, String)]] =
-      initProverState.provingExtInds::initProverState.knownExtInds;
+
   --Put it together
   local newStateList::StateList =
       (head(stateListIn).1 +
        if runAfterCommands then length(afterCommands) else 0,
-       proverState(initProverState.state,
-                   initProverState.debug,
-                   newKnownThms,
-                   newKnownExtInds,
-                   newObligations,
-                   initProverState.knownTypes,
-                   initProverState.knownRels,
-                   initProverState.knownConstrs,
-                   [], [], [], []))::tail(stateListIn);
+       finishProof(initProverState))::tail(stateListIn);
   return ioval(if runAfterCommands then outputAfterCommands else ioin,
                if proofDone then newStateList else stateListIn);
 }
@@ -295,7 +277,7 @@ IOVal<StateList> ::=
       then debugOutput(debug, config, incomingCommands,
               "Imported Theorems", incominged.iovalue, incominged.io)
       else debugOutput(debug, config, incomingCommands,
-              "ImportedTheorems", "", ioin);
+              "Imported Theorems", "", ioin);
   local completeStateList::[(Integer, ProverState)] =
       (head(stateListIn).1 + length(handleIncoming.1),
        handleIncoming.2)::tail(stateListIn);

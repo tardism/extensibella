@@ -31,9 +31,5 @@ function handleIncomingThms
                 rest ++ decorate t with {knownThms = rest;}.thms,
               initialState.knownTheorems, doThms);
   --
-  return (commands,
-          proverState(initialState.state, initialState.debug, outThms,
-             initialState.knownExtInds, outObligations,
-             initialState.knownTypes, initialState.knownRels,
-             initialState.knownConstrs, [], [], [], []));
+  return (commands, removeNonextensibleObligations(initialState));
 }

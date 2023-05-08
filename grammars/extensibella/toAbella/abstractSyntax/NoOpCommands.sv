@@ -27,20 +27,9 @@ top::NoOpCommand ::= opt::String val::String
 
   top.stateListOut =
       (if abellaSetting then 1 else 0,
-       proverState(top.proverState.state,
-                   if opt == "debug" then val == "on"
-                                     else top.proverState.debug,
-                   top.proverState.knownTheorems,
-                   top.proverState.knownExtInds,
-                   top.proverState.remainingObligations,
-                   top.proverState.knownTypes,
-                   top.proverState.knownRels,
-                   top.proverState.knownConstrs,
-                   top.proverState.provingThms,
-                   top.proverState.provingExtInds,
-                   top.proverState.duringCommands,
-                   top.proverState.afterCommands)
-      )::top.stateListIn;
+       if opt == "debug"
+       then setProverDebug(top.proverState, val == "on")
+       else top.proverState)::top.stateListIn;
 
   top.toAbellaMsgs <-
       if opt == "debug"

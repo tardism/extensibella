@@ -30,18 +30,10 @@ top::AnyCommand ::= c::TopCommand
 
   top.stateListOut =
       (length(c.toAbella),
-       proverState(top.newProofState,
-          top.proverState.debug,
-          c.newTheorems ++ top.proverState.knownTheorems,
-          top.proverState.knownExtInds,
-          top.proverState.remainingObligations,
-          addEnv(top.proverState.knownTypes, c.tys),
-          addEnv(top.proverState.knownRels, c.rels),
-          addEnv(top.proverState.knownConstrs, c.constrs),
-          c.provingTheorems,
-          c.provingExtInds,
-          c.duringCommands,
-          c.afterCommands))::top.stateListIn;
+       updateProverStateTop(top.proverState, top.newProofState,
+          c.newTheorems, c.tys, c.rels, c.constrs, c.provingTheorems,
+          c.provingExtInds, c.duringCommands, c.afterCommands)
+      )::top.stateListIn;
 
   top.isQuit = false;
 }
@@ -61,13 +53,12 @@ top::AnyCommand ::= c::ProofCommand
       else [errorMsg("Cannot use proof commands when not in proof")];
 
   c.stateListIn = top.stateListIn;
-  local currentState::ProverState = top.proverState;
-  currentState.replaceState = top.newProofState;
   top.stateListOut =
       if c.isUndo
       then c.stateListOut
       else (length(c.toAbella),
-            currentState.replacedState)::top.stateListIn;
+            setProofState(top.proverState, top.newProofState)
+           )::top.stateListIn;
 
   top.isQuit = false;
 }
