@@ -10,7 +10,7 @@ nonterminal TopCommand with
    newTheorems,
    provingTheorems, provingExtInds, duringCommands, afterCommands,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
-propagate constructorEnv, relationEnv, currentModule,
+propagate constructorEnv, relationEnv, currentModule, proverState,
           toAbellaMsgs on TopCommand excluding definitionDeclaration;
 propagate typeEnv on TopCommand excluding definitionDeclaration,
                                           theoremDeclaration;
@@ -67,6 +67,12 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
                     " have correct module (expected " ++
                     top.currentModule.pp)]
       else [];
+  --check there are no existing theorems with this full name
+  top.toAbellaMsgs <-
+      if null(findTheorem(fullName, top.proverState))
+      then []
+      else [errorMsg("Theorem named " ++ fullName.pp ++
+                     " already exists")];
 
   top.provingTheorems = [(fullName, body)];
 }

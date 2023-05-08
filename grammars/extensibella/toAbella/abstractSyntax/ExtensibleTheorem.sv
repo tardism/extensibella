@@ -309,6 +309,12 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                     " does not have correct module (expected " ++
                     top.currentModule.pp ++ ")")]
       else [];
+  --check there are no existing theorems with this full name
+  top.toAbellaMsgs <-
+      if null(findTheorem(fullName, top.proverState))
+      then []
+      else [errorMsg("Theorem named " ++ fullName.pp ++
+                     " already exists")];
 
   top.provingTheorems = (fullName, body.thm)::rest.provingTheorems;
 

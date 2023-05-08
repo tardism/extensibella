@@ -55,6 +55,12 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
         [errorMsg("First premise in translation constraint " ++
             name.pp ++ " must be a translation; found " ++ m.pp)]
       end;
+  --check there are no existing theorems with this full name
+  top.toAbellaMsgs <-
+      if null(findTheorem(fullName, top.proverState))
+      then []
+      else [errorMsg("Theorem named " ++ fullName.pp ++
+                     " already exists")];
 
   top.toAbella =
       [anyTopCommand(theoremDeclaration(fullName, [],
