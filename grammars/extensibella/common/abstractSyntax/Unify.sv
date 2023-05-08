@@ -48,12 +48,12 @@ Boolean ::= eqs::[(Term, Term)]
                         substName = sub.1; substTerm = sub.2;
                      }.subst),
                   p, tm.unifySubst),
-          eqs);
+          tail(eqs));
 
   return
       case eqs of
       | [] -> true
-      | _::rest ->
+      | (a, b)::rest ->
         if !tm.unifySuccess
         then false
         else if !null(tm.unifyEqs)

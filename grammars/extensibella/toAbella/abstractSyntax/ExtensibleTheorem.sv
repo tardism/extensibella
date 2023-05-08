@@ -386,15 +386,19 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                elemAtIndex(now.1, inductionRel.pcIndex)
            in
            let pcMod::QName =
-               if pc.isStructured
+               if decorate pc with {
+                     relationEnv = top.relationEnv;
+                     constructorEnv = top.constructorEnv;
+                  }.isStructured
                then pc.headConstructor.moduleName
                else inductionRel.name.moduleName
            in
-             if (fullName.moduleName == top.currentModule || --new thm
-                 pcMod == top.currentModule) && --new constr
-                unifyTermsSuccess(now.1, relArgs) --rule applies
-             then (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, true)])
-             else (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, false)])
+             if unifyTermsSuccess(now.1, relArgs) --rule applies
+             then if fullName.moduleName == top.currentModule || --new thm
+                     pcMod == top.currentModule --new constr
+                  then (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, true)])
+                  else (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, false)])
+             else thusFar --doesn't apply:  just continue with next
            end end,
          (1, []), inductionRel.defsList).2;
   --group consecutive skips

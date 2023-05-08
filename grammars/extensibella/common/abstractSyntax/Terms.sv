@@ -289,7 +289,7 @@ top::Term ::= f::Term args::TermList
       end;
   top.unifySuccess =
       case top.unifyWith of
-      | applicationTerm(_, _) -> f.unifySuccess && args.unifySuccess
+      | applicationTerm(_, _) -> true
       | nameTerm(q, _) when !q.isQualified -> true
       | _ -> false
       end;
