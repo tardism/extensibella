@@ -321,9 +321,13 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | _ -> error("Should not access inductionRel")
       end;
 
-  --Preservability for imported relations requires us to add the
-  --translation assertion manually, which we do here
-  --This outer list is actually a maybe, but easier to add to others
+  {-
+   - Preservability for imported relations requires us to add the
+     translation assertion manually, which we do here
+   - Because the PC has to be a variable, the rule for preservability
+     will always apply, so we don't need to check if it unifies
+   - This outer list is actually a maybe, but easier to add to others
+  -}
   local preservabilityAssert::[(Integer, [ProofCommand])] =
       if sameModule(top.currentModule, fullName) && --new prop
          foundLabeledPremise.isJust && --not a relation error
@@ -366,15 +370,33 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
             prems)::prems)
       end;
 
+  local relArgs::[Term] =
+      case foundLabeledPremise of
+      | just(relationMetaterm(_, a, _)) -> a.toList
+      | _ -> [] --should not need in this case
+      end;
+
   --for the subgoals that should arise, the last digit of the subgoal
   --number and whether we need to prove it
   local expectedSubgoals::[(Integer, Boolean)] =
-      foldl(\ thusFar::(Integer, [(Integer, Boolean)]) now::QName ->
-              if fullName.moduleName == top.currentModule || --new thm
-                 now == top.currentModule --new constr
-              then (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, true)])
-              else (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, false)]),
-            (1, []), inductionRel.clauseModules).2;
+      foldl(
+         \ thusFar::(Integer, [(Integer, Boolean)])
+           now::([Term], Maybe<Metaterm>) ->
+           let pc::Term =
+               elemAtIndex(now.1, inductionRel.pcIndex)
+           in
+           let pcMod::QName =
+               if pc.isStructured
+               then pc.headConstructor.moduleName
+               else inductionRel.name.moduleName
+           in
+             if (fullName.moduleName == top.currentModule || --new thm
+                 pcMod == top.currentModule) && --new constr
+                unifyTermsSuccess(now.1, relArgs) --rule applies
+             then (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, true)])
+             else (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, false)])
+           end end,
+         (1, []), inductionRel.defsList).2;
   --group consecutive skips
   local groupedExpectedSubgoals::[[(Integer, Boolean)]] =
       groupBy(\ p1::(Integer, Boolean) p2::(Integer, Boolean) ->

@@ -247,6 +247,7 @@ nonterminal Term with
    typeEnv, constructorEnv, relationEnv,
    isStructured, headConstructor, isUnknownTerm,
    substName, substTerm, subst<Term>,
+   unifyWith<Term>, unifySuccess, unifyEqs, unifySubst,
    boundNames, usedNames;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm on Term;
@@ -280,6 +281,28 @@ top::Term ::= f::Term args::TermList
   top.headConstructor = f.headConstructor;
 
   top.subst = applicationTerm(f.subst, args.subst);
+
+  args.unifyWith =
+      case top.unifyWith of
+      | applicationTerm(_, a) -> a
+      | _ -> error("Should not access")
+      end;
+  top.unifySuccess =
+      case top.unifyWith of
+      | applicationTerm(_, _) -> f.unifySuccess && args.unifySuccess
+      | nameTerm(q, _) when !q.isQualified -> true
+      | _ -> false
+      end;
+  top.unifyEqs =
+      case top.unifyWith of
+      | applicationTerm(f2, _) -> (f, f2)::args.unifyEqs
+      | _ -> [] --shouldn't really access
+      end;
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> [] --shouldn't really access
+      end;
 }
 
 abstract production nameTerm
@@ -309,6 +332,23 @@ top::Term ::= name::QName mty::MaybeType
       if name == toQName(top.substName)
       then top.substTerm
       else top;
+
+  top.unifySuccess =
+      if name.isQualified
+      then case top.unifyWith of
+           | nameTerm(q, _) when q.isQualified -> q == name
+           | nameTerm(x, _) -> true
+           | _ -> false
+           end
+      else true;
+  top.unifyEqs = []; --nothing more to unify here
+  top.unifySubst =
+      if name.isQualified
+      then case top.unifyWith of
+           | nameTerm(x, _) -> [(x.shortName, top)]
+           | _ -> []
+           end
+      else [(name.shortName, top.unifyWith)];
 }
 
 abstract production consTerm
@@ -335,6 +375,27 @@ top::Term ::= t1::Term t2::Term
   top.headConstructor = error("consTerm.headConstructor not valid");
 
   top.subst = consTerm(t1.subst, t2.subst);
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | consTerm(_, _) -> true
+      | listTerm(c) -> c.len > 0
+      | nameTerm(q, _) when !q.isQualified -> true
+      | _ -> false
+      end;
+  top.unifyEqs =
+      case top.unifyWith of
+      | consTerm(a, b) -> [(t1, a), (t2, b)]
+      | listTerm(c) ->
+        [(t1, head(c.toList)),
+         (t2, foldr(consTerm, nilTerm(), tail(c.toList)))]
+      | _ -> []
+      end;
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production nilTerm
@@ -349,6 +410,20 @@ top::Term ::=
   top.headConstructor = error("nilTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | nilTerm() -> true
+      | listTerm(c) -> c.len == 0
+      | nameTerm(q, _) when !q.isQualified -> true
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production underscoreTerm
@@ -371,6 +446,10 @@ top::Term ::= mty::MaybeType
       error("underscoreTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess = error("underscoreTerm.unifySuccess");
+  top.unifyEqs = error("underscoreTerm.unifyEqs");
+  top.unifySubst = error("underscoreTerm.unifySubst");
 }
 
 
@@ -381,6 +460,7 @@ nonterminal TermList with
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames,
    substName, substTerm, subst<TermList>,
+   unifyWith<TermList>, unifyEqs, unifySuccess,
    isStructuredList;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm on TermList;
@@ -398,12 +478,26 @@ top::TermList ::= t::Term
   top.isStructuredList = [t.isStructured];
 
   top.subst = singleTermList(t.subst);
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | singleTermList(_) -> true
+      | consTermList(_, emptyTermList()) -> true
+      | _ -> false
+      end;
+  top.unifyEqs =
+      case top.unifyWith of
+      | singleTermList(t2) -> [(t, t2)]
+      | consTermList(t2, _) -> [(t, t2)]
+      | _ -> []
+      end;
 }
 
 abstract production consTermList
 top::TermList ::= t::Term rest::TermList
 {
-  top.pp = (if t.isAtomic then t.pp else "(" ++ t.pp ++ ")") ++ " " ++ rest.pp;
+  top.pp = (if t.isAtomic then t.pp else "(" ++ t.pp ++ ")") ++
+           " " ++ rest.pp;
   top.abella_pp = (if t.isAtomic then t.abella_pp
                                  else "(" ++ t.abella_pp ++ ")") ++
                   " " ++ rest.abella_pp;
@@ -414,6 +508,24 @@ top::TermList ::= t::Term rest::TermList
   top.isStructuredList = t.isStructured::rest.isStructuredList;
 
   top.subst = consTermList(t.subst, rest.subst);
+
+  rest.unifyWith =
+      case top.unifyWith of
+      | consTermList(_, r) -> r
+      | _ -> emptyTermList() --valid for single, no better for empty
+      end;
+  top.unifySuccess =
+      case top.unifyWith of
+      | consTermList(_, _) -> rest.unifySuccess
+      | singleTermList(_) -> rest.unifySuccess
+      | _ -> false
+      end;
+  top.unifyEqs =
+      case top.unifyWith of
+      | consTermList(t2, _) -> (t, t2)::rest.unifyEqs
+      | singleTermList(t2) -> (t, t2)::rest.unifyEqs
+      | emptyTermList() -> []
+      end;
 }
 
 abstract production emptyTermList
@@ -428,5 +540,12 @@ top::TermList ::=
   top.isStructuredList = [];
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | emptyTermList() -> true
+      | _ -> false
+      end;
+  top.unifyEqs = [];
 }
 

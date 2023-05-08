@@ -63,6 +63,14 @@ inherited attribute substTerm::Term;
 synthesized attribute subst<a>::a;
 
 
+--Unify the top-level structure, getting a set of new equations
+inherited attribute unifyWith<a>::a;
+synthesized attribute unifySuccess::Boolean;
+--only access these if unifySuccess is true
+synthesized attribute unifyEqs::[(Term, Term)];
+synthesized attribute unifySubst::[(String, Term)];
+
+
 
 --We often only want to replace the state and leave everything else
 inherited attribute replaceState::ProofState;

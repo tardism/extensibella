@@ -224,6 +224,19 @@ top::Term ::= ty::QName
       error("unknownTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | unknownTerm(ty2) -> ty == ty2
+      | nameTerm(q, _) when !q.isQualified -> true
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production intTerm
@@ -238,6 +251,19 @@ top::Term ::= i::Integer
   top.headConstructor = error("intTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | intTerm(j) -> i == j
+      | nameTerm(q, _) -> !q.isQualified
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production stringTerm
@@ -252,6 +278,19 @@ top::Term ::= contents::String
   top.headConstructor = error("stringTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | stringTerm(s) -> contents == s
+      | nameTerm(q, _) -> !q.isQualified
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production trueTerm
@@ -266,6 +305,19 @@ top::Term ::=
   top.headConstructor = error("trueTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | trueTerm() -> true
+      | nameTerm(q, _) -> !q.isQualified
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production falseTerm
@@ -280,6 +332,19 @@ top::Term ::=
   top.headConstructor = error("falseTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | falseTerm() -> true
+      | nameTerm(q, _) -> !q.isQualified
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production listTerm
@@ -294,6 +359,28 @@ top::Term ::= contents::ListContents
   top.headConstructor = error("listTerm.headConstructor not valid");
 
   top.subst = listTerm(contents.subst);
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | listTerm(c) -> contents.len == c.len
+      | consTerm(_, _) -> contents.len > 0
+      | nilTerm() -> contents.len == 0
+      | nameTerm(q, _) -> !q.isQualified
+      | _ -> false
+      end;
+  top.unifyEqs =
+      case top.unifyWith of
+      | listTerm(c) -> zipWith(pair, contents.toList, c.toList)
+      | consTerm(a, b) ->
+        [(head(contents.toList), a),
+         (foldr(consTerm, nilTerm(), tail(contents.toList)), b)]
+      | _ -> []
+      end;
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production pairTerm
@@ -308,6 +395,24 @@ top::Term ::= contents::PairContents
   top.headConstructor = error("pairTerm.headConstructor not valid");
 
   top.subst = pairTerm(contents.subst);
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | pairTerm(c) -> contents.len == c.len
+      | nameTerm(q, _) -> !q.isQualified
+      | _ -> false
+      end;
+  top.unifyEqs =
+      case top.unifyWith of
+      | pairTerm(c) ->
+        zipWith(pair, contents.toList, c.toList)
+      | _ -> []
+      end;
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 abstract production charTerm
@@ -322,6 +427,19 @@ top::Term ::= char::String
   top.headConstructor = error("charTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | charTerm(c) -> char == c
+      | nameTerm(q, _) -> !q.isQualified
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
 }
 
 
@@ -329,7 +447,7 @@ top::Term ::= char::String
 
 nonterminal ListContents with
    pp,
-   toList<Term>,
+   toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<ListContents>,
    boundNames, usedNames;
@@ -341,6 +459,7 @@ top::ListContents ::=
 {
   top.pp = "";
   top.toList = [];
+  top.len = 0;
   top.subst = top;
 }
 
@@ -349,6 +468,7 @@ top::ListContents ::= t::Term rest::ListContents
 {
   top.pp = t.pp ++ (if rest.pp == "" then "" else ", " ++ rest.pp);
   top.toList = t::rest.toList;
+  top.len = 1 + rest.len;
   top.subst = addListContents(t.subst, rest.subst);
 }
 
@@ -357,7 +477,7 @@ top::ListContents ::= t::Term rest::ListContents
 
 nonterminal PairContents with
    pp,
-   toList<Term>,
+   toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<PairContents>,
    boundNames, usedNames;
@@ -369,6 +489,7 @@ top::PairContents ::= t::Term
 {
   top.pp = t.pp;
   top.toList = [t];
+  top.len = 1;
   top.subst = singlePairContents(t.subst);
 }
 
@@ -377,6 +498,7 @@ top::PairContents ::= t::Term rest::PairContents
 {
   top.pp = t.pp ++ ", " ++ rest.pp;
   top.toList = t::rest.toList;
+  top.len = 1 + rest.len;
   top.subst = addPairContents(t.subst, rest.subst);
 }
 
