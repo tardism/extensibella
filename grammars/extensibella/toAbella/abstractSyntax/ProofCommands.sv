@@ -452,6 +452,26 @@ top::ProofCommand ::= all::Boolean
   top.abella_pp = top.pp;
 
   top.toAbella = [top];
+
+  top.toAbellaMsgs <-
+      case top.proverState.state.goal of
+      | just(relationMetaterm(r, a, _)) ->
+        let rel::RelationEnvItem = --r must be qualified, so only one
+            head(lookupEnv(r, top.proverState.knownRels))
+        in
+          if !rel.isExtensible
+          then [] --always fine, since no other rules can be added
+          else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
+                     relationEnv=top.relationEnv;
+                     constructorEnv=top.constructorEnv;
+                  }.isStructured
+          then [] --no new rules can be added, so fine
+          else [errorMsg("Cannot unfold conclusion of extensible " ++
+                   "relation with unfilled primary component")]
+        end
+      | just(_) -> [errorMsg("Cannot unfold conclusion of this form")]
+      | nothing() -> error("Impossible (unfoldTactic)")
+      end;
 }
 
 
