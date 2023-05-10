@@ -69,3 +69,19 @@ to install the `extensibella` script.  Extensibella can then be run as
 
 Extensibella has been tested on Linux, but may run on MacOS or the
 Windows Subsystem for Linux (WSL).
+
+
+## Documentation
+Documentation for writing language encodings and proving properties
+about them in Extensibella can be found in the [docs
+directory](docs/).
+
+Additionally the [example encoding directory](exampleEncoding/)
+contains an example encoding and proofs of a few properties about it.
+
+Finally, the [SOS-Ext
+repository](https://github.com/RandomActsOfGrammar/sos-ext) contains
+several example SOS-Ext languages, some of which have Extensibella
+proofs of their properties.  Of particular note is the
+[`sec_SOS`](https://github.com/RandomActsOfGrammar/sos-ext/tree/master/examples/sec_SOS)
+language.

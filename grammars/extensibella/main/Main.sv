@@ -112,7 +112,7 @@ top::CmdArgs ::= rest::CmdArgs
 }
 
 
---Compile the file to allow its theorems to be discovered for grammars
+--Compile the file to allow its theorems to be discovered for modules
 --   importing it
 abstract production compileFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -192,8 +192,8 @@ Either<String  Decorated CmdArgs> ::= args::[String]
                help="compile file for importing into other modules",
                flagParser=flag(compileFlag)),
       flagSpec(name="--generate",
-               paramString=just("<grammar> <filename>"),
-               help="generate a basic theorem file for the given modules",
+               paramString=just("<module> <filename>"),
+               help="generate a basic theorem file for the given module",
                flagParser=nOptions(2, generateFlag))];
 
   production attribute debugFlags::[FlagSpec] with ++;
