@@ -191,7 +191,7 @@ ProverState ::= current::ProverState
 function setProverDebug
 ProverState ::= current::ProverState debugVal::Boolean
 {
-  return proverState(current.state, current.debug,
+  return proverState(current.state, debugVal,
             current.knownTheorems, current.knownExtInds,
             current.remainingObligations, current.knownTypes,
             current.knownRels, current.knownConstrs,
