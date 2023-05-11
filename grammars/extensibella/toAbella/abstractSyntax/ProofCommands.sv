@@ -33,9 +33,6 @@ top::ProofCommand ::= h::HHint nl::[Integer]
 
   top.toAbella = [top];
 
-  --Check none of the numbers correspond to extensible relations
-  --Only way for induction on those should be extensible theorems
-  --If that is not the case, I can change this
   local goal::Metaterm = top.proverState.state.goal.fromJust;
   local splits::[[Metaterm]] =
       map((.splitImplies), goal.splitConjunctions);

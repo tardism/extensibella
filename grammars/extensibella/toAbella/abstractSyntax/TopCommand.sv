@@ -324,7 +324,7 @@ top::TopCommand ::= names::[QName] ty::Type
             else addQNameBase(top.currentModule, q.shortName),
           names);
 
-  --redifining a previously-defined type from this module
+  --redifining a previously-defined constructor from this module
   top.toAbellaMsgs <-
       foldr(\ q::QName rest::[Message] ->
               case lookupEnv(q, top.constructorEnv) of
@@ -350,6 +350,22 @@ top::TopCommand ::= names::[QName] ty::Type
                               "module (expected " ++
                               top.currentModule.pp ++ ")")]
                 else [], names);
+  --check it is defining a proof-level type
+  top.toAbellaMsgs <-
+      case last(ty.full.toList) of
+      | underscoreType() -> [] --not valid anyway
+      | arrowType(_, _) -> [] --not possible
+      | ty ->
+        let fullTy::TypeEnvItem =
+            decorate ty.headConstructor with
+            {typeEnv = top.typeEnv;}.fullType
+        in
+          if fullTy.isProofType
+          then [] --fine to add
+          else [errorMsg("Cannot add new constructor to type " ++
+                         fullTy.name.pp)]
+        end
+      end;
 
   top.provingTheorems = [];
 }

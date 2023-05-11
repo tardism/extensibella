@@ -4,6 +4,7 @@ grammar extensibella:common:abstractSyntax;
 nonterminal Type with
    pp, abella_pp, isAtomic,
    toList<Type>, --type broken into a list across arrows
+   headConstructor,
    typeEnv;
 propagate typeEnv on Type;
 
@@ -19,6 +20,8 @@ top::Type ::= ty1::Type ty2::Type
                   " -> " ++ ty2.abella_pp;
   top.isAtomic = false;
 
+  top.headConstructor = error("arrowType.headConstructor");
+
   top.toList = ty1.toList ++ ty2.toList;
 }
 
@@ -28,6 +31,8 @@ top::Type ::= name::QName
   top.pp = name.pp;
   top.abella_pp = name.abella_pp;
   top.isAtomic = true;
+
+  top.headConstructor = name;
 
   top.toList = [top];
 }
@@ -44,6 +49,8 @@ top::Type ::= functorTy::Type argTy::Type
                   else "(" ++ argTy.abella_pp ++ ")";
   top.isAtomic = false;
 
+  top.headConstructor = functorTy.headConstructor;
+
   top.toList = [top];
 }
 
@@ -53,6 +60,8 @@ top::Type ::=
   top.pp = "_";
   top.abella_pp = "_";
   top.isAtomic = true;
+
+  top.headConstructor = error("underscoreType.headConstructor");
 
   top.toList = [top];
 }

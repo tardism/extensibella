@@ -51,9 +51,12 @@ attribute name {} occurs on a => String ::= e::Env<a>
 
 
 nonterminal TypeEnvItem with
-   name, transTypes, isLangType, kind, unknownConstr, clauseModules;
+   name, transTypes, isLangType, isProofType, isLibType, kind,
+   unknownConstr, clauseModules;
 
 synthesized attribute isLangType::Boolean;
+synthesized attribute isProofType::Boolean;
+synthesized attribute isLibType::Boolean;
 synthesized attribute transTypes::TypeList;
 synthesized attribute kind::Integer; --number of args to type
 synthesized attribute unknownConstr::QName;
@@ -69,6 +72,8 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
   top.name = name;
 
   top.isLangType = true;
+  top.isProofType = false;
+  top.isLibType = false;
 
   top.kind = kind;
 
@@ -87,6 +92,8 @@ top::TypeEnvItem ::= name::QName kind::Integer
   top.name = name;
 
   top.isLangType = false;
+  top.isProofType = false;
+  top.isLibType = true;
 
   top.kind = kind;
 
@@ -108,6 +115,8 @@ top::TypeEnvItem ::= name::QName kind::Integer
   top.name = name;
 
   top.isLangType = false;
+  top.isProofType = true;
+  top.isLibType = false;
 
   top.kind = kind;
 
@@ -129,6 +138,8 @@ top::TypeEnvItem ::= name::String
   top.name = basicQName(baseName(name));
 
   top.isLangType = false;
+  top.isProofType = false;
+  top.isLibType = false;
 
   top.kind = 0;
 

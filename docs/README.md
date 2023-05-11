@@ -9,7 +9,10 @@ Documentation is available on several topics:
 * The Extensibella language:
   + The module system as used in Extensibella:
     [modules.md](modules.md)
-  + TODO
+  + The syntax and commands in the Extensibella language:
+    [reference.md](reference.md)
+  + The way extensibility interacts with proving properties in
+    Extensibella:  [extensibility.md](extensibility.md)
 * How to run Extensibella for writing, checking, and compiling files:
   [running.md](running.md)
 * The Extensibella standard library:  [stdLib.md](stdLib.md)
