@@ -156,3 +156,19 @@ IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
                 (buildEnv(comms.tys), buildEnv(comms.rels),
                  buildEnv(comms.constrs)));
 }
+
+
+--Get the actual definitions out of def elements to add to the context
+function defElementsDefinitions
+([TypeEnvItem], [RelationEnvItem], [ConstructorEnvItem]) ::=
+   elems::[DefElement]
+{
+  local defs::ListOfCommands =
+      foldr(addListOfCommands, emptyListOfCommands(),
+            flatMap((.encode), elems));
+  defs.typeEnv = buildEnv([]);
+  defs.relationEnv = buildEnv([]);
+  defs.constructorEnv = buildEnv([]);
+  defs.currentModule = error("defElementsDefinitions.currentModule");
+  return (defs.tys, defs.rels, defs.constrs);
+}

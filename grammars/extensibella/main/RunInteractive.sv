@@ -24,19 +24,27 @@ IOVal<Integer> ::=
       startAbella(moduleName.io, config);
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
       importStdLibThms(import_parse, started.io);
-  --
+  --basic context information from the definition file
   local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
                               Env<ConstructorEnvItem>)> =
       set_up_abella_module(moduleName.iovalue,
          processed.iovalue.fromRight.1,
          processed.iovalue.fromRight.2, from_parse,
          started.iovalue.fromRight, stdLibThms.io, config);
+  --context information for imported definitions
+  local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
+                            [ConstructorEnvItem]) =
+      defElementsDefinitions(processed.iovalue.fromRight.2);
+  --combine definition file and imported proof definitions
+  local startProverState::ProverState =
+      defaultProverState(processed.iovalue.fromRight.3,
+         addEnv(build_context.iovalue.1, importedProofDefs.1),
+         addEnv(build_context.iovalue.2, importedProofDefs.2),
+         addEnv(build_context.iovalue.3, importedProofDefs.3),
+         stdLibThms.iovalue.fromRight);
   --
   local handleIncoming::([AnyCommand], ProverState) =
-      handleIncomingThms(
-         defaultProverState(processed.iovalue.fromRight.3,
-            build_context.iovalue.1, build_context.iovalue.2,
-            build_context.iovalue.3, stdLibThms.iovalue.fromRight));
+      handleIncomingThms(startProverState);
   local sendIncoming::IOVal<String> =
       sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
          started.iovalue.fromRight, build_context.io, config);

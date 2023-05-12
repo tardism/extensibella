@@ -85,10 +85,15 @@ IOVal<Integer> ::=
   --
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
       importStdLibThms(import_parse, processed.io);
+  local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
+                            [ConstructorEnvItem]) =
+      defElementsDefinitions(processed.iovalue.fromRight.2);
   local proverState::ProverState =
       defaultProverState(processed.iovalue.fromRight.3,
-         buildEnv(modComms.tys), buildEnv(modComms.rels),
-         buildEnv(modComms.constrs), stdLibThms.iovalue.fromRight);
+         buildEnv(modComms.tys ++ importedProofDefs.1),
+         buildEnv(modComms.rels ++ importedProofDefs.2),
+         buildEnv(modComms.constrs ++ importedProofDefs.3),
+         stdLibThms.iovalue.fromRight);
   --
   local compiledContents::String =
       buildCompiledOutput(fileAST.1, fileAST.2, proverState);
