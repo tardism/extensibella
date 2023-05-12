@@ -26,17 +26,17 @@ on the translation.
 
 ## Language Encodings
 Extensibella uses encodings of extensible languages into
-[Abella](abella-prover.org/index.html) for reasoning.  An example
+[Abella](https://abella-prover.org/index.html) for reasoning.  An example
 language is found in the `exampleEncoding/` directory along with an
 Extensibella proof script proving a few properties about it.
 
 Languages written in
-[SOS-Ext](github.com/RandomActsOfGrammar/extensibella) can be encoded
+[SOS-Ext](https://github.com/RandomActsOfGrammar/extensibella) can be encoded
 into Extensibella using the `--extensibella` flag.  These encoded
 languages will be found by Extensibella automatically.
 
 We plan to implement an encoding to Extensibella for a restricted
-subset of [Silver](github.com/melt-umn/silver) grammars as well.  Once
+subset of [Silver](https://github.com/melt-umn/silver) grammars as well.  Once
 implemented, these encoded languages will also be found by
 Extensibella automatically.
 
@@ -49,9 +49,9 @@ the `EXTENSIBELLA_ENCODED` environment variable before running the
 
 
 ## Required Software and Set-Up
-Extensibella is written in [Silver](github.com/melt-umn/silver) and
+Extensibella is written in [Silver](https://github.com/melt-umn/silver) and
 thus requires Silver for building.  Extensibella uses the [Abella
-Proof Assistant](abella-prover.org/index.html) as a logical back-end
+Proof Assistant](https://abella-prover.org/index.html) as a logical back-end
 for handling proof aspects other than extensibility.  Running
 Extensibella requires Java 8, Bash, and Abella.
 

@@ -1,13 +1,13 @@
 # Extensibility in Extensibella
 Other documents discuss the general [notion of extensible
-languages](extensibleLanguages.md) on which Extensibella is based and
+languages](extensible_languages.md) on which Extensibella is based and
 [how we can prove properties of these languages
-modularly](modularReasoning.md).  Here we take the general theory and
+modularly](modular_reasoning.md).  Here we take the general theory and
 explain how it is implemented in Extensibella.
 
 
 ## Extensible Languages in Extensibella
-As discussed [elsewhere](extensibleLanguages.md), extensible languages
+As discussed [elsewhere](extensible_languages.md), extensible languages
 are built by modules introducing syntax and semantics, where both may
 be extended by other modules building on those modules.
 

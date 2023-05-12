@@ -1,7 +1,7 @@
 
 In order for Extensibella to read encoded language specifications, the
 specifications must follow an expected format.  This format gives
-Extensibella the information it needs to properly handle
+Extensibella the information it needs to handle properly
 extensibility.
 
 All definitions are put into a single definition file.  This
@@ -14,11 +14,9 @@ all combined.
 
 Qualified Names
 ======================================================================
-Names are qualified by the module in which they occur.  These are
-displayed using colons as separators, with modules also possibly being
-qualified.  For example, we might have a module `mo:du:le` that
-declares a name `name`.  This produces a fully-qualified name
-`mo:du:le:name`.
+Names are qualified by the module in which they occur, as discussed in
+[modules.md]().  These are displayed to the user using colons as
+separators, with modules also possibly being qualified.
 
 In the encoding into Abella, such qualified names have the colons
 replaced by `-$-`, so we get `mod-$-du-$-le-$-name` for our example
@@ -87,21 +85,21 @@ Define $ext__1__mod-$-rel : a -> b -> c -> prop by
 ...
 ```
 where we fill in the clauses as appropriate.  Notice that the relation
-name includes the zero-based index of the primary component.
+name includes the zero-based index of the primary component.  This is
+necessary for communicating to Extensibella which argument is the
+primary component.
 
-Because these relations are extensible, and therefore new rules might
-introduce new dependencies between relations that were formerly
-independent, all extensible relations must be defined in the same
-definition block.  That is, if we have extensible relations `a`, `b`,
-and `c`, they must be defined as
+Any relations that are mutually-recursive need to be defined in the
+same definition block.  That is, if we have relations `a`, `b`, and
+`c` that each define themselves in terms of the other, they must be
+defined as
 ```
 Define $ext__pca__a : <args a> -> prop,
        $ext__pcb__b : <args b> -> prop,
        $ext__pcc__c : <args c> -> prop by
 ...
 ```
-The clauses for all the extensible relations are then filled in as
-appropriate.
+The clauses for all the relations are then filled in as appropriate.
 
 We consider two types of extensible relations,
 host-language-introduced relations and extension-introduced relations.
@@ -161,6 +159,12 @@ definition file.  In doing so, the order of imported clauses for a
 relation must be maintained.  This is so the proofs written in one
 component will remain valid by order in the composition.
 
+For the same reason, if modules `C` and `D` both import modules `A`
+and `B`, the clauses from `A` and `B` must be in the same order
+relative to one another in the definition files for both `C` and `D`.
+It cannot be that `A`'s clauses come first in one file and `B`'s
+clauses come first in the other.
+
 We must also fill in translation clauses for extension relations with
 concrete terms as we import relations into new modules.  Suppose we
 have a module `ext1` defining a relation `ext1:rel` with primary
@@ -174,6 +178,22 @@ reasoning in the `comp` module about `ext1:rel` to take advantage of
 the knowledge that the rule for this relation when the primary
 component is built by `ext2:prod` uses these translation rules, and is
 necessary for a correct definition and reasoning.
+
+Finally, we must fill in a placeholder rule for any imported relation
+standing in for the rules introduced by unknown extensions to be used
+in the preservability case when using a declaration of `Ext_Ind` to
+allow induction on an imported relation for a new property.  For a
+relation `mod:rel` with three arguments where the second argument is
+the primary component, this would be a definition clause as follows:
+```
+$ext__1__mod-$-rel A $unknown_mod-$-Nt B :=
+   exists Trans, $ext__1__mod-$-rel A Trans B
+```
+All the arguments are the same in the case being defined and the
+sub-derivation other than the primary component being new.  Note that
+the primary component **MUST** be named `Trans` in order for
+Extensibella to work correctly.  This should be the last rule for the
+relation in the definition.
 
 
 
@@ -192,10 +212,3 @@ Define $fix__mod-$-rel : a -> b -> c -> prop by
 ...
 ```
 where we fill in the clauses as appropriate.
-
-Unlike extensible relations, fixed relations need not all be defined
-in the same block.  They can be defined as such, if desired.  They can
-be defined as part of the block of extensible relations, if desired.
-This can be helpful as it allows a defined relation that is shorthand
-for some combination of extensible relations and to be used also to
-define an extensible relation.

@@ -49,7 +49,7 @@ To ensure this does not happen, we restrict case analysis within
 modular proofs.  Specifically, we restrict it to analyze only
 derivations where the primary component of the relation derived is
 built by a known constructor.  Recall from [our discussion of
-extensible languages](extensibleLanguages.md) that new rules written
+extensible languages](extensible_languages.md) that new rules written
 for an imported relation in a module must have the primary component
 built by new syntax constructors also from that module.  This prevents
 new rules from being added in further extension modules that will

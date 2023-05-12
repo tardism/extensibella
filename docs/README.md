@@ -3,9 +3,9 @@ Documentation is available on several topics:
 * Theory:
   + The notion of extensibility Extensibella uses in reasoning about
     extensible languages:
-    [extensibleLanguages.md](extensibleLanguages.md)
+    [extensible_languages.md](extensible_languages.md)
   + The method of proving properties modularly:
-    [modularReasoning.md](modularReasoning.md)
+    [modular_reasoning.md](modular_reasoning.md)
 * The Extensibella language:
   + The module system as used in Extensibella:
     [modules.md](modules.md)
@@ -22,4 +22,5 @@ Documentation is available on several topics:
   + The expectations of language encodings so Extensibella can read
     them to reason about them correctly:
     [encoding_format.md](encoding_format.md)
-  + How Extensibella communicates with Abella:  TODO
+  + How Extensibella communicates with Abella:
+    [abella_communication.md](abella_communication.md)

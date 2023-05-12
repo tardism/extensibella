@@ -5,8 +5,9 @@ outerface file.  We discuss each in turn.
 
 Throughout we will mention the `EXTENSIBELLA_ENCODED` set of
 directories.  This is an environment variable listing the directories
-where special Extensibella files may be found.  It defaults to
-including the Silver and Extensibella `generated` directories, but
+where special Extensibella files (i.e. every file other than the
+theorem file) may be found.  It defaults to
+including the SOS-Ext and Extensibella `generated` directories, but
 other directories may be added by setting the variable before running
 Extensibella.
 
@@ -61,7 +62,10 @@ Theorem File
 ======================================================================
 The theorem file contains the Extensibella code for declaring and
 proving properties.  This is the only file expected to be written by
-hand.
+hand, and is the only one a user of Extensibella should generally need
+to concern himself with understanding.  Users do not need to know the
+other files exist, beyond a notion of needing to compile things before
+writing a theorem file.
 
 The theorem file can be located anywhere.  It can also be given any
 name, but should generally have the `.xthm` file extension.
