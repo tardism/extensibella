@@ -5,8 +5,8 @@ abstract production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms
 {
   top.pp = "Extensible_Theorem " ++ thms.pp ++ ".\n";
-  top.abella_pp =
-      error("extensibleTheoremDeclaration.abella_pp should not be accessed");
+  --need this for compilation
+  top.abella_pp = "Extensible_Theorem " ++ thms.abella_pp ++ ".\n";
 
   production extName::QName =
       if thms.len > 1
@@ -170,7 +170,7 @@ top::TopCommand ::= names::[QName]
 
 
 nonterminal ExtThms with
-   pp, len,
+   pp, abella_pp, len,
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
    inductionNums, inductionRels,
@@ -194,6 +194,7 @@ abstract production endExtThms
 top::ExtThms ::=
 {
   top.pp = "";
+  top.abella_pp = "";
 
   top.len = 0;
 
@@ -215,6 +216,10 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   top.pp = name.pp ++ " : forall " ++ bindings.pp ++ ", " ++
            body.pp ++ " on " ++ onLabel ++
            if rest.pp == "" then "" else ", " ++ rest.pp;
+  top.abella_pp =
+      name.abella_pp ++ " : forall " ++ bindings.abella_pp ++ ", " ++
+      body.abella_pp ++ " on " ++ onLabel ++
+      if rest.abella_pp == "" then "" else ", " ++ rest.abella_pp;
 
   top.len = 1 + rest.len;
 
@@ -466,7 +471,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
 
 nonterminal ExtBody with
-   pp,
+   pp, abella_pp,
    toAbella<Metaterm>, toAbellaMsgs,
    premises, thm,
    boundNames,
@@ -483,6 +488,7 @@ abstract production endExtBody
 top::ExtBody ::= conc::Metaterm
 {
   top.pp = conc.pp;
+  top.abella_pp = conc.abella_pp;
 
   top.thm = conc;
 
@@ -501,6 +507,8 @@ abstract production addLabelExtBody
 top::ExtBody ::= label::String m::Metaterm rest::ExtBody
 {
   top.pp = label ++ " : (" ++ m.pp ++ ") -> " ++ rest.pp;
+  top.abella_pp =
+      label ++ " : (" ++ m.abella_pp ++ ") -> " ++ rest.abella_pp;
 
   top.thm = impliesMetaterm(m, rest.thm);
 
@@ -525,6 +533,9 @@ top::ExtBody ::= m::Metaterm rest::ExtBody
 {
   top.pp = (if m.isAtomic then m.pp else "(" ++ m.pp ++ ")") ++
            " -> " ++ rest.pp;
+  top.abella_pp =
+      (if m.isAtomic then m.abella_pp else "(" ++ m.abella_pp ++ ")") ++
+      " -> " ++ rest.abella_pp;
 
   top.thm = impliesMetaterm(m, rest.thm);
 

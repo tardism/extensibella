@@ -5,8 +5,7 @@ abstract production extIndDeclaration
 top::TopCommand ::= body::ExtIndBody
 {
   top.pp = "Ext_Ind " ++ body.pp ++ ".\n";
-  top.abella_pp =
-      error("extIndDeclaration.abella_pp should not be accessed");
+  top.abella_pp = "Ext_Ind " ++ body.abella_pp ++ ".\n";
 
   top.provingTheorems = [];
   top.provingExtInds = body.extIndInfo;
@@ -36,7 +35,7 @@ top::TopCommand ::= body::ExtIndBody
 
 
 nonterminal ExtIndBody with
-   pp,
+   pp, abella_pp,
    toAbella<[(QName, Type, Def)]>, toAbellaMsgs,
    relations, extIndInfo,
    currentModule, typeEnv, constructorEnv, relationEnv;
@@ -51,6 +50,7 @@ abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 {
   top.pp = e1.pp ++ ",\n        " ++ e2.pp;
+  top.abella_pp = e1.abella_pp ++ ",\n        " ++ e2.abella_pp;
 
   top.toAbella = e1.toAbella ++ e2.toAbella;
 
@@ -72,6 +72,14 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
             end) ++
            transArgs.pp ++ " |{" ++ transTy.pp ++ "}- " ++
            original ++ " ~~> " ++ translated;
+  top.abella_pp =
+      implode(" ", rel.abella_pp::relArgs) ++ " with " ++
+      (case boundVars of
+       | justBindings(b) -> "forall " ++ b.abella_pp ++ ", "
+       | nothingBindings() -> ""
+       end) ++
+      transArgs.abella_pp ++ " |{" ++ transTy.abella_pp ++ "}- " ++
+      original ++ " ~~> " ++ translated;
 
   transArgs.boundNames = boundVars.usedNames ++ relArgs;
 

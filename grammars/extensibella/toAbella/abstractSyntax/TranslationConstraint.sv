@@ -6,7 +6,8 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
   top.pp = "Translation_Constraint " ++ name.pp ++ " : " ++
            "forall " ++ binds.pp ++ ", " ++ body.pp ++ ".\n";
   top.abella_pp =
-      error("translationConstraint.abella_pp should not be accessed");
+      "Translation_Constraint " ++ name.abella_pp ++ " : " ++
+      "forall " ++ binds.abella_pp ++ ", " ++ body.abella_pp ++ ".\n";
 
   production fullName::QName =
       if name.isQualified

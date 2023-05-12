@@ -30,7 +30,7 @@ terminal Underscore_t  '_'       lexer classes {TOKEN};
 terminal Cons_t        '::'      lexer classes {TOKEN}, precedence=11, association=right;
 terminal Nil_t         'nil'     lexer classes {TOKEN};
 --These two have Abella uses with no precedence or associativity
---   and Silver uses with precedence and associativity (arithmetic)
+--   and language uses with precedence and associativity (arithmetic)
 terminal Plus_t        '+'       lexer classes {TOKEN}, precedence=9, association=left;
 terminal Star_t        '*'       lexer classes {TOKEN}, precedence=10, association=left;
 
@@ -39,8 +39,7 @@ terminal Star_t        '*'       lexer classes {TOKEN}, precedence=10, associati
 terminal StringTy_t   'string'   dominates {Id_t};
 
 
---Qname_t is a qualified name as in Silver
---The module part is a Silver name, so it only needs Silver-allowed characters
+--Qname_t is a qualified name as in Silver/SOS-Ext
 terminal Qname_t  /([A-Za-z0-9_]+:)+[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
 terminal Id_t  /[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
 terminal Number_t  /[0-9]+/;
@@ -61,13 +60,13 @@ terminal LessEq_t     '<='   lexer classes {TOKEN}, precedence=7, association=le
 terminal Greater_t    '>'    lexer classes {TOKEN}, precedence=7, association=left;
 terminal GreaterEq_t  '>='   lexer classes {TOKEN}, precedence=7, association=left;
 terminal Append_t     '++'   lexer classes {TOKEN}, precedence=8, association=left;
-terminal SilverOr_t   '||'   lexer classes {TOKEN}, precedence=3, association=left;
-terminal SilverAnd_t  '&&'   lexer classes {TOKEN}, precedence=4, association=left;
-terminal SilverNot_t  '!'    lexer classes {TOKEN}, precedence=5;
+terminal BoolOr_t     '||'   lexer classes {TOKEN}, precedence=3, association=left;
+terminal BoolAnd_t    '&&'   lexer classes {TOKEN}, precedence=4, association=left;
+terminal BoolNot_t    '!'    lexer classes {TOKEN}, precedence=5;
 terminal Tilde_t      '~'    lexer classes {TOKEN};
 
 terminal TransTurnstyleStart_t   '|{'    lexer classes {TOKEN};
-terminal TransTurstyleEnd_t      '}-'    lexer classes {TOKEN};
+terminal TransTurnstyleEnd_t     '}-'    lexer classes {TOKEN};
 terminal TransArrow_t            '~~>'   lexer classes {TOKEN};
 
 

@@ -132,7 +132,8 @@ String ::= currentModule::QName comms::ListOfCommands
   comms.constructorEnv = proverState.knownConstrs;
   comms.proverState = proverState;
   comms.currentModule = currentModule;
-  return comms.compiled.pp;
+  --use abella_pp to get correct prefixes for relations, types, etc.
+  return comms.compiled.abella_pp;
 }
 
 
