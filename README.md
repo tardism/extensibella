@@ -31,7 +31,7 @@ language is found in the `exampleEncoding/` directory along with an
 Extensibella proof script proving a few properties about it.
 
 Languages written in
-[SOS-Ext](https://github.com/RandomActsOfGrammar/extensibella) can be encoded
+[SOS-Ext](https://github.com/RandomActsOfGrammar/sos-ext) can be encoded
 into Extensibella using the `--extensibella` flag.  These encoded
 languages will be found by Extensibella automatically.
 
