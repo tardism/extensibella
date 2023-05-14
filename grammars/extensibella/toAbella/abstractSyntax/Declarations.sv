@@ -198,6 +198,14 @@ top::Def ::= defRel::QName args::TermList
                | nothing() -> []
                end
         end
+      | [(transQName(sub), ty)] ->
+        let fullList::[Term] = args.full.toList
+        in
+          case elemAtIndex(fullList, length(fullList) - 2).headRel of
+          | just(x) -> [(transQName(sub), x.moduleName)]
+          | nothing() -> []
+          end
+        end
       | _ -> []
       end;
 
@@ -253,6 +261,18 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
                | just(x) -> [(extQName(pc, sub), x.moduleName)]
                | nothing() -> []
                end
+        end
+      | [(transQName(sub), ty)] ->
+        let fullList::[Term] = args.full.toList
+        in
+          case elemAtIndex(fullList, length(fullList) - 2).headRel,
+               body of
+          | _, falseMetaterm() ->
+            --placeholder clause because we can't have empty relations
+            []
+          | just(x), _ -> [(transQName(sub), x.moduleName)]
+          | nothing(), _ -> []
+          end
         end
       | _ -> []
       end;

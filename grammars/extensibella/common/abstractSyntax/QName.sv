@@ -57,7 +57,8 @@ top::SubQName ::= name::String
 
   top.isQualified = false;
   top.shortName = name;
-  top.moduleName = error("Cannot access moduleName if unqualified");
+  top.moduleName = error("Cannot access moduleName if unqualified " ++
+                         "(" ++ name ++ ")");
 
   top.baseAdded = addModule(name, baseName(top.addBase));
 
