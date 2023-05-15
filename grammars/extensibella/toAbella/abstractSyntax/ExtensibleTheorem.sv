@@ -343,9 +343,31 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       if sameModule(top.currentModule, fullName) && --new prop
          foundLabeledPremise.isJust && --not a relation error
          !sameModule(top.currentModule, inductionRel.name) --old rel 
-      then [(last(expectedSubgoals).1, --last number is preservability
-             [assertTactic(nameHint(transHypName), nothing(),
-                 translation), skipTactic()])]
+      then let subgoalNum::Integer =
+               last(expectedSubgoals).1 --last number is preservability
+           in
+           let prems::[String] = catMaybes(map(fst, body.premises))
+           in
+           let transHyp1::String = freshName(onLabel, prems)
+           in
+           let transHyp2::String = freshName(onLabel, transHyp1::prems)
+           in
+               --clear (0 = 0 -> false)
+           let clearImpossible::ProofCommand =
+               clearCommand([transHyp1], false)
+           in
+               --move (R Trans *) to transHyp1
+           let renameSub::ProofCommand =
+               renameTactic(transHyp2, transHyp1)
+           in
+               --put (|{ty}- <unknown ty> ~~> Trans) in transHyp2
+           let assertTrans::ProofCommand =
+               assertTactic(nameHint(transHyp2), nothing(),
+                  translation)
+           in
+             [(subgoalNum, [clearImpossible, renameSub,
+                            assertTrans, skipTactic()])]
+           end end end end end end end
       else []; --nothing to do if not new prop/imported rel
   --
   local thisExtInd::Maybe<(QName, [String], [Term],
@@ -371,15 +393,6 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                               nothingType()),
                      basicNameTerm(translationName)]),
          emptyRestriction());
-  --Using two freshNames, we get the same name as Abella will give the
-  --premise in the composition
-  local transHypName::String =
-      let prems::[String] = catMaybes(map(fst, body.premises))
-      in
-        freshName(onLabel, --the actual hyp
-           freshName(onLabel, --the sub-derivation of the relation
-            prems)::prems)
-      end;
 
   local relArgs::[Term] =
       case foundLabeledPremise of

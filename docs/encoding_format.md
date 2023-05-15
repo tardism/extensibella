@@ -187,13 +187,22 @@ relation `mod:rel` with three arguments where the second argument is
 the primary component, this would be a definition clause as follows:
 ```
 $ext__1__mod-$-rel A $unknown_mod-$-Nt B :=
-   exists Trans, $ext__1__mod-$-rel A Trans B
+   exists Trans, (0 = 0 -> false) /\ $ext__1__mod-$-rel A Trans B
 ```
-All the arguments are the same in the case being defined and the
-sub-derivation other than the primary component being new.  Note that
-the primary component **MUST** be named `Trans` in order for
+Both the `0 = 0 -> false` and sub-derivation of the relation are
+required. All the arguments are the same in the case being defined and
+the sub-derivation other than the primary component being new.  Note
+that the primary component **MUST** be named `Trans` in order for
 Extensibella to work correctly.  This should be the last rule for the
 relation in the definition.
+
+The reason we include the `0 = 0 -> false` requirement is to prevent
+Abella from using this rule to show the relation holds for the unknown
+constructor.  Without this, Abella might use this rule to show the
+relation holds for the unknown constructor; since the rules given by
+the other extensions for which this rule is standing in will not have
+this form, that would be invalid.  Adding this impossible assumption
+prevents Abella from doing so.
 
 
 

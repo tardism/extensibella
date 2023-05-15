@@ -170,15 +170,30 @@ Bindings ::= names::[String]
 
 
 
+--Create a fresh name by adding a number or incrementing an ending
+--number, as Abella does
 function freshName
-String ::= base::String used::[String]
+String ::= s::String used::[String]
 {
   local reservedWords::[String] =
       ["Module", "Close", "CoDefine", "Define", "Kind", "Query",
        "Quit", "Set", "Show", "Split", "Theorem", "Type", "Prove"];
-  return if contains(base, reservedWords ++ used)
+  --remove any digits from the end
+  local base::String = stripDigits(s);
+         --try for the original name
+  return if contains(s, reservedWords ++ used)
+           --if that is used, drop any numbers and try to name it
          then freshName_help(base, 1, reservedWords ++ used)
-         else base;
+         else s;
+}
+--remove digits from the end
+function stripDigits
+String ::= s::String
+{
+  local len::Integer = length(s);
+  return if isDigit(substring(len - 1, len, s))
+         then stripDigits(substring(0, len - 1, s))
+         else s;
 }
 function freshName_help
 String ::= base::String index::Integer used::[String]

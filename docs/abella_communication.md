@@ -123,16 +123,18 @@ If it is a rule standing in for rules introduced by other extensions,
 we need to put in more work.  Recall from the [encoding
 format](encoding_format.md) that the stand-in rule has the form
 ```
-rel A <unknown ty> B := exists Trans, rel A Trans B
+rel A <unknown ty> B :=
+   exists Trans, (0 = 0 -> false) /\ rel A Trans B
 ```
 where the arguments to the relation are the same other than replacing
 the primary component with a variable named `Trans`.  Recall also from
 the [discussion of extensibility](extensibility.md) that we need to
 have an `Ext_Ind` definition for the relation for this induction to be
-valid.  We assert the translation from the `Ext_Ind` holds, skipping
-the proof of it:
+valid.  We remove the first assumption, as we don't need it and must
+not have it, then assert the translation from the `Ext_Ind` holds,
+skipping the proof of it:
 ```
-assert |{ty}- <unknown ty> ~~> Trans. skip.
+clear <name>. assert |{ty}- <unknown ty> ~~> Trans. skip.
 ```
 This adds the translation assumption we need for proving
 preservability, so the property will hold for an existing derivation
