@@ -89,40 +89,11 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
                      transTy, original, translated)];
 
   {-
-    This "translation" seems a bit strange, and it is unrelated to
-    anything.  However, we don't have any actual work to do here, as
-    the actual definitions and proof requirements aren't required in
-    the introducing module.  That would allow us to have a blank
-    translation, but we don't have typing defined, so we need to check
-    the types of transArgs make sense.  This random-looking definition
-    lets us do that.
+    We don't have any actual work to do here, as the actual
+    definitions and proof requirements aren't required in the
+    introducing module.
   -}
-  top.toAbella = [(testRelQName, testRelTy,
-                   ruleDef(testRelQName, testRelArgs, testRelBody))];
-  local testRelName::String = "$$$ext_ind_test_def_" ++ rel.shortName;
-  local testRelQName::QName = toQName(testRelName);
-  local testRelTy::Type = --rel tys, transTy
-      foldr(arrowType, nameType(toQName("prop")),
-            init(rel.fullRel.types.toList) ++ --drop ending prop
-            transTy.fullType.transTypes.toList ++
-            [nameType(transTy.fullType.name)]);
-  local testRelArgs::TermList = --relArgs, orig, trans
-      toTermList(map(basicNameTerm, relArgs) ++
-                 [basicNameTerm(original)]);
-  local testRelBody::Metaterm =
-      bindingMetaterm(existsBinder(),
-         case boundVars of
-         | justBindings(b) ->
-           addBindings(translated, nothingType(), b)
-         | nothingBindings() ->
-           oneBinding(translated, nothingType())
-         end,
-         --transArgs |- original ~~> translated
-         relationMetaterm(transQName(transTy.fullType.name.sub),
-            toTermList(transArgs.toList ++
-                       [basicNameTerm(original),
-                        basicNameTerm(translated)]),
-            emptyRestriction()));
+  top.toAbella = [];
 
   --Check relation is an extensible relation from this module
   top.toAbellaMsgs <-
@@ -182,6 +153,54 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
                " for relation " ++ rel.pp ++
                " should not be included in bound variables")]
       else [];
+
+  --Check it is well-typed
+  top.toAbellaMsgs <-
+      case unifyTransArgs.upSubst of
+      | right(_) -> []
+      | left(_) ->
+        --given the messages are not terribly useful:
+        [errorMsg("Type error in Ext_Ind for " ++ rel.pp)]
+      end;
+
+  --typing
+  local relArgTys::[(String, Type)] =
+      map(\ x::String ->
+            (x, varType("__RelArg" ++ toString(genInt()))),
+          relArgs);
+  local unifyRelArgs::TypeUnify =
+      if rel.relFound && rel.fullRel.isExtensible
+      then typeUnify(
+              foldr(arrowType, propType, rel.fullRel.types.toList),
+              foldr(arrowType, propType, map(snd, relArgTys)))
+      else blankUnify();
+  local unifyTransTy::TypeUnify =
+      if transTy.typeFound && contains(original, relArgs)
+      then typeUnify(nameType(transTy.fullType.name),
+              lookup(original, relArgTys).fromJust)
+      else blankUnify();
+  local unifyTransArgs::TypeUnify =
+      if transTy.typeFound
+      then typeUnify( --propType for convenience
+              foldr(arrowType, propType,
+                    transTy.fullType.transTypes.toList),
+              foldr(arrowType, propType, transArgs.types.toList))
+      else blankUnify();
+  transArgs.downVarTys =
+      (translated, if transTy.typeFound
+                   then nameType(transTy)
+                   else varType("__Trans" ++ toString(genInt()))
+      )::relArgTys ++
+      map(\ p::(String, MaybeType) ->
+            (p.1,
+             case p.2 of
+             | justType(t) -> t
+             | nothingType() -> varType("__X" ++ toString(genInt()))
+             end), boundVars.toList);
+  transArgs.downSubst = emptySubst();
+  unifyRelArgs.downSubst = transArgs.upSubst;
+  unifyTransTy.downSubst = unifyRelArgs.upSubst;
+  unifyTransArgs.downSubst = unifyTransTy.upSubst;
 }
 
 

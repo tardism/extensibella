@@ -63,6 +63,24 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       else [errorMsg("Theorem named " ++ fullName.pp ++
                      " already exists")];
 
+  --check the body is well-typed
+  top.toAbellaMsgs <-
+      case body.upSubst of
+      | right(_) -> []
+      | left(e) ->
+        --given the messages are not terribly useful:
+        [errorMsg("Type error in " ++ name.pp ++ ":  " ++ showSubst(left(e)))]
+      end;
+  body.downVarTys =
+      map(\ p::(String, MaybeType) ->
+            (p.1,
+             case p.2 of
+             | justType(t) -> t
+             | nothingType() -> varType("__X" ++ toString(genInt()))
+             end),
+          binds.toList);
+  body.downSubst = emptySubst();
+
   top.toAbella =
       [anyTopCommand(theoremDeclaration(fullName, [],
           bindingMetaterm(forallBinder(), binds, body.toAbella))),

@@ -94,7 +94,6 @@ inherited attribute downSubst::Substitution;
 synthesized attribute upSubst::Substitution;
 --variable types
 inherited attribute downVarTys::[(String, Type)];
-synthesized attribute upVarTys::[(String, Type)];
 
 synthesized attribute isExtensible::Boolean;
 

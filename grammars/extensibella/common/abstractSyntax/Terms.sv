@@ -24,7 +24,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   local unify::TypeUnify =
       if rel.relFound
       then typeUnify(
-              foldr(arrowType, propType, rel.fullRel.types.toList),
+              foldr1(arrowType, rel.fullRel.types.toList),
               foldr(arrowType, propType, args.types.toList))
       else blankUnify();
   args.downSubst = top.downSubst;
@@ -173,7 +173,7 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
                   | nothingType() ->
                     varType("__Bound" ++ toString(genInt()))
                   end),
-          nameBindings.toList);
+          nameBindings.toList) ++ top.downVarTys;
 
   body.downSubst = top.downSubst;
   top.upSubst = body.upSubst;

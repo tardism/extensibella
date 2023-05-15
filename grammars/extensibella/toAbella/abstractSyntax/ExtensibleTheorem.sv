@@ -321,6 +321,24 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       else [errorMsg("Theorem named " ++ fullName.pp ++
                      " already exists")];
 
+  --check the body is well-typed
+  top.toAbellaMsgs <-
+      case body.upSubst of
+      | right(_) -> []
+      | left(e) ->
+        --given the messages are not terribly useful:
+        [errorMsg("Type error in " ++ name.pp ++ ":  " ++ showSubst(left(e)))]
+      end;
+  body.downVarTys =
+      map(\ p::(String, MaybeType) ->
+            (p.1,
+             case p.2 of
+             | justType(t) -> t
+             | nothingType() -> varType("__X" ++ toString(genInt()))
+             end),
+          bindings.toList);
+  body.downSubst = emptySubst();
+
   top.provingTheorems = (fullName, body.thm)::rest.provingTheorems;
 
   rest.startingGoalNum = [head(top.startingGoalNum) + 1];
@@ -488,9 +506,11 @@ nonterminal ExtBody with
    toAbella<Metaterm>, toAbellaMsgs,
    premises, thm,
    boundNames,
-   typeEnv, constructorEnv, relationEnv, currentModule, proverState;
+   typeEnv, constructorEnv, relationEnv, currentModule, proverState,
+   upSubst, downSubst, downVarTys;
 propagate typeEnv, constructorEnv, relationEnv,
-          currentModule, proverState, toAbellaMsgs on ExtBody;
+          currentModule, proverState, toAbellaMsgs,
+          downVarTys on ExtBody;
 
 --premises should have full version of premise
 synthesized attribute premises::[(Maybe<String>, Metaterm)];
@@ -513,6 +533,9 @@ top::ExtBody ::= conc::Metaterm
   top.premises =
       map(pair(nothing(), _),
          take(length(conc.splitImplies) - 1, conc.splitImplies));
+
+  conc.downSubst = top.downSubst;
+  top.upSubst = conc.upSubst;
 }
 
 
@@ -531,6 +554,10 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
   rest.boundNames = top.boundNames;
 
   top.premises = (just(label), m.full)::rest.premises;
+
+  m.downSubst = top.downSubst;
+  rest.downSubst = m.upSubst;
+  top.upSubst = rest.upSubst;
 
   --labels of the form H<num> cause Abella errors
   top.toAbellaMsgs <-
@@ -558,4 +585,8 @@ top::ExtBody ::= m::Metaterm rest::ExtBody
   rest.boundNames = top.boundNames;
 
   top.premises = (nothing(), m.full)::rest.premises;
+
+  m.downSubst = top.downSubst;
+  rest.downSubst = m.upSubst;
+  top.upSubst = rest.upSubst;
 }
