@@ -14,6 +14,26 @@ top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unifyTransTy::TypeUnify =
+      if ty.typeFound
+      then typeUnify(nameType(ty.fullType.name), orig.type)
+      else blankUnify();
+  local unifyTerms::TypeUnify = typeUnify(orig.type, trans.type);
+  local unifyArgs::TypeUnify =
+      if ty.typeFound
+      then typeUnify(
+              --propType is a placeholder to make this easier to write
+              foldr(arrowType, propType, ty.fullType.transTypes.toList),
+              foldr(arrowType, propType, args.types.toList))
+      else blankUnify();
+  args.downSubst = top.downSubst;
+  orig.downSubst = args.upSubst;
+  trans.downSubst = orig.upSubst;
+  unifyTransTy.downSubst = trans.upSubst;
+  unifyTerms.downSubst = unifyTransTy.upSubst;
+  unifyArgs.downSubst = unifyTerms.upSubst;
+  top.upSubst = unifyArgs.upSubst;
 }
 
 
@@ -38,6 +58,17 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  local unify3::TypeUnify = typeUnify(integerType, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production minusMetaterm
@@ -50,6 +81,17 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  local unify3::TypeUnify = typeUnify(integerType, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production multiplyMetaterm
@@ -62,6 +104,17 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  local unify3::TypeUnify = typeUnify(integerType, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production divideMetaterm
@@ -74,6 +127,17 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  local unify3::TypeUnify = typeUnify(integerType, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production modulusMetaterm
@@ -86,6 +150,17 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  local unify3::TypeUnify = typeUnify(integerType, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production negateMetaterm
@@ -97,6 +172,14 @@ top::Metaterm ::= t::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t.type);
+  local unify2::TypeUnify = typeUnify(integerType, result.type);
+  t.downSubst = top.downSubst;
+  result.downSubst = t.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  top.upSubst = unify2.upSubst;
 }
 
 abstract production lessMetaterm
@@ -108,6 +191,14 @@ top::Metaterm ::= t1::Term t2::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  unify1.downSubst = t2.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  top.upSubst = unify2.upSubst;
 }
 
 abstract production lessEqMetaterm
@@ -119,6 +210,14 @@ top::Metaterm ::= t1::Term t2::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  unify1.downSubst = t2.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  top.upSubst = unify2.upSubst;
 }
 
 abstract production greaterMetaterm
@@ -130,6 +229,14 @@ top::Metaterm ::= t1::Term t2::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  unify1.downSubst = t2.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  top.upSubst = unify2.upSubst;
 }
 
 abstract production greaterEqMetaterm
@@ -141,6 +248,14 @@ top::Metaterm ::= t1::Term t2::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(integerType, t1.type);
+  local unify2::TypeUnify = typeUnify(integerType, t2.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  unify1.downSubst = t2.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  top.upSubst = unify2.upSubst;
 }
 
 --because we can do induction on append, should have a restriction
@@ -154,6 +269,20 @@ top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local lis::Type =
+      functorType(nameType(toQName("list")),
+         varType("__Append" ++ toString(genInt())));
+  local unify1::TypeUnify = typeUnify(lis, t1.type);
+  local unify2::TypeUnify = typeUnify(lis, t2.type);
+  local unify3::TypeUnify = typeUnify(lis, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production orBoolMetaterm
@@ -166,6 +295,17 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(boolType, t1.type);
+  local unify2::TypeUnify = typeUnify(boolType, t2.type);
+  local unify3::TypeUnify = typeUnify(boolType, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production andBoolMetaterm
@@ -178,6 +318,17 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(boolType, t1.type);
+  local unify2::TypeUnify = typeUnify(boolType, t2.type);
+  local unify3::TypeUnify = typeUnify(boolType, result.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  result.downSubst = t2.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  unify3.downSubst = unify2.upSubst;
+  top.upSubst = unify3.upSubst;
 }
 
 abstract production notBoolMetaterm
@@ -189,6 +340,14 @@ top::Metaterm ::= t::Term result::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify1::TypeUnify = typeUnify(boolType, t.type);
+  local unify2::TypeUnify = typeUnify(boolType, result.type);
+  t.downSubst = top.downSubst;
+  result.downSubst = t.upSubst;
+  unify1.downSubst = result.upSubst;
+  unify2.downSubst = unify1.upSubst;
+  top.upSubst = unify2.upSubst;
 }
 
 
@@ -203,6 +362,16 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify::TypeUnify =
+      if rel.relFound
+      then typeUnify( --end with integer because ES adds integer
+              foldr(arrowType, integerType, rel.fullRel.types.toList),
+              foldr(arrowType, integerType, args.types.toList))
+      else blankUnify();
+  args.downSubst = top.downSubst;
+  unify.downSubst = args.upSubst;
+  top.upSubst = unify.upSubst;
 }
 
 abstract production transRelMetaterm
@@ -215,6 +384,16 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify::TypeUnify =
+      if rel.relFound
+      then typeUnify(
+              foldr(arrowType, propType, rel.fullRel.types.toList),
+              foldr(arrowType, propType, args.types.toList))
+      else blankUnify();
+  args.downSubst = top.downSubst;
+  unify.downSubst = args.upSubst;
+  top.upSubst = unify.upSubst;
 }
 
 

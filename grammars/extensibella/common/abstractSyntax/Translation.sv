@@ -50,6 +50,8 @@ global notName::String = "$not_bool";
 global trueName::String = "$btrue";
 global falseName::String = "$bfalse";
 
+global propType::Type = nameType(toQName("prop"));
+
 
 
 function transName

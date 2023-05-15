@@ -5,9 +5,11 @@ nonterminal Metaterm with
    pp, abella_pp, isAtomic,
    splitImplies, splitConjunctions,
    typeEnv, constructorEnv, relationEnv,
-   boundNames, usedNames;
+   boundNames, usedNames,
+   upSubst, downSubst, downVarTys;
 propagate typeEnv, constructorEnv, relationEnv on Metaterm;
-propagate boundNames on Metaterm excluding bindingMetaterm;
+propagate boundNames, downVarTys on Metaterm
+   excluding bindingMetaterm;
 
 abstract production relationMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
@@ -18,6 +20,16 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify::TypeUnify =
+      if rel.relFound
+      then typeUnify(
+              foldr(arrowType, propType, rel.fullRel.types.toList),
+              foldr(arrowType, propType, args.types.toList))
+      else blankUnify();
+  args.downSubst = top.downSubst;
+  unify.downSubst = args.upSubst;
+  top.upSubst = unify.upSubst;
 }
 
 abstract production trueMetaterm
@@ -29,6 +41,8 @@ top::Metaterm ::=
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  top.upSubst = top.downSubst;
 }
 
 abstract production falseMetaterm
@@ -40,6 +54,8 @@ top::Metaterm ::=
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  top.upSubst = top.downSubst;
 }
 
 abstract production eqMetaterm
@@ -51,6 +67,12 @@ top::Metaterm ::= t1::Term t2::Term
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  local unify::TypeUnify = typeUnify(t1.type, t2.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  unify.downSubst = t2.upSubst;
+  top.upSubst = unify.upSubst;
 }
 
 abstract production impliesMetaterm
@@ -67,6 +89,10 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 
   top.splitImplies = t1::t2.splitImplies;
   top.splitConjunctions = [top];
+
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  top.upSubst = t2.upSubst;
 }
 
 abstract production orMetaterm
@@ -90,6 +116,10 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
+
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  top.upSubst = t2.upSubst;
 }
 
 abstract production andMetaterm
@@ -114,6 +144,10 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
   top.splitImplies = [top];
   --split both because associative
   top.splitConjunctions = t1.splitConjunctions ++ t2.splitConjunctions;
+
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  top.upSubst = t2.upSubst;
 }
 
 abstract production bindingMetaterm
@@ -131,6 +165,18 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
   top.usedNames := nameBindings.usedNames ++ body.usedNames;
 
   body.boundNames = top.boundNames ++ nameBindings.usedNames;
+
+  body.downVarTys =
+      map(\ p::(String, MaybeType) ->
+            (p.1, case p.2 of
+                  | justType(t) -> t
+                  | nothingType() ->
+                    varType("__Bound" ++ toString(genInt()))
+                  end),
+          nameBindings.toList);
+
+  body.downSubst = top.downSubst;
+  top.upSubst = body.upSubst;
 }
 
 
@@ -367,7 +413,7 @@ top::Term ::= name::QName mty::MaybeType
         if name.constrFound
         then case name.fullConstr of
              | left(rel) ->
-               freshenType(foldr(arrowType, nameType(toQName("prop")),
+               freshenType(foldr(arrowType, propType,
                                  rel.types.toList))
              | right(con) -> freshenType(foldr(arrowType, con.type,
                                                con.types.toList))
