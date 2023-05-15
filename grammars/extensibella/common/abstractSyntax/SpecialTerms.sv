@@ -249,6 +249,12 @@ top::Term ::= ty::QName
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type =
+      if ty.typeFound
+      then nameType(ty.fullType.name)
+      else errorType();
+  top.upSubst = top.downSubst;
 }
 
 abstract production intTerm
@@ -276,6 +282,9 @@ top::Term ::= i::Integer
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = integerType;
+  top.upSubst = top.downSubst;
 }
 
 abstract production stringTerm
@@ -303,6 +312,9 @@ top::Term ::= contents::String
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = stringType;
+  top.upSubst = top.downSubst;
 }
 
 abstract production trueTerm
@@ -330,6 +342,9 @@ top::Term ::=
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = boolType;
+  top.upSubst = top.downSubst;
 }
 
 abstract production falseTerm
@@ -357,6 +372,9 @@ top::Term ::=
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = boolType;
+  top.upSubst = top.downSubst;
 }
 
 abstract production listTerm
@@ -393,6 +411,10 @@ top::Term ::= contents::ListContents
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = functorType(nameType(toQName("list")), contents.type);
+  contents.downSubst = top.downSubst;
+  top.upSubst = contents.upSubst;
 }
 
 abstract production pairTerm
@@ -425,6 +447,10 @@ top::Term ::= contents::PairContents
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = contents.type;
+  contents.downSubst = top.downSubst;
+  top.upSubst = contents.upSubst;
 }
 
 abstract production charTerm
@@ -452,6 +478,9 @@ top::Term ::= char::String
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = stringType;
+  top.upSubst = top.downSubst;
 }
 
 
@@ -462,9 +491,10 @@ nonterminal ListContents with
    toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<ListContents>,
-   boundNames, usedNames;
+   boundNames, usedNames,
+   type, upSubst, downSubst, downVarTys; --type is type of contents
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm on ListContents;
+          substName, substTerm, downVarTys on ListContents;
 
 abstract production emptyListContents
 top::ListContents ::=
@@ -474,6 +504,9 @@ top::ListContents ::=
   top.toList = [];
   top.len = 0;
   top.subst = top;
+
+  top.type = varType("__EmptyListContents" ++ toString(genInt()));
+  top.upSubst = top.downSubst;
 }
 
 abstract production addListContents
@@ -485,6 +518,13 @@ top::ListContents ::= t::Term rest::ListContents
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
   top.subst = addListContents(t.subst, rest.subst);
+
+  top.type = t.type;
+
+  local unify::TypeUnify = typeUnify(t.type, rest.type);
+  t.downSubst = top.downSubst;
+  rest.downSubst = t.upSubst;
+  top.upSubst = rest.upSubst;
 }
 
 
@@ -495,9 +535,10 @@ nonterminal PairContents with
    toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<PairContents>,
-   boundNames, usedNames;
+   boundNames, usedNames,
+   type, upSubst, downSubst, downVarTys; --type is full pair type
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm on PairContents;
+          substName, substTerm, downVarTys on PairContents;
 
 abstract production singlePairContents
 top::PairContents ::= t::Term
@@ -507,6 +548,10 @@ top::PairContents ::= t::Term
   top.toList = [t];
   top.len = 1;
   top.subst = singlePairContents(t.subst);
+
+  top.type = t.type;
+  t.downSubst = top.downSubst;
+  top.upSubst = t.upSubst;
 }
 
 abstract production addPairContents
@@ -517,5 +562,11 @@ top::PairContents ::= t::Term rest::PairContents
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
   top.subst = addPairContents(t.subst, rest.subst);
+
+  top.type = functorType(functorType(nameType(toQName("pair")),
+                            t.type), rest.type);
+  t.downSubst = top.downSubst;
+  rest.downSubst = t.upSubst;
+  top.upSubst = rest.upSubst;
 }
 

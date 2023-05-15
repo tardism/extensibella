@@ -43,6 +43,7 @@ global appendName::String = "$append";
 global pairTypeName::String = "$lib__pair";
 global pairConstructorName::String = "$pair_c";
 
+global boolType::Type = nameType(toQName("$lib__bool"));
 global orName::String = "$or_bool";
 global andName::String = "$and_bool";
 global notName::String = "$not_bool";

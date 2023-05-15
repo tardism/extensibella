@@ -547,8 +547,6 @@ concrete productions top::Knd_c
 concrete productions top::UTy_c
 | t::Ty_c
   { top.ast = t.ast; }
-| '_'
-  { top.ast = underscoreType(); }
 
 
 concrete productions top::UTyList_c

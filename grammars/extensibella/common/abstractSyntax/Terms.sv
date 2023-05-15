@@ -248,13 +248,11 @@ nonterminal Term with
    isStructured, headConstructor, isUnknownTerm,
    substName, substTerm, subst<Term>,
    unifyWith<Term>, unifySuccess, unifyEqs, unifySubst,
-   boundNames, usedNames;
+   boundNames, usedNames,
+   upSubst, downSubst, downVarTys, type;
+--note typeErrors does not include errors for not finding definitions of QNames
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm on Term;
-
---Easy equality check
-attribute compareTo, isEqual occurs on Type;
-propagate compareTo, isEqual on Type;
+          substName, substTerm, downVarTys on Term;
 
 aspect default production
 top::Term ::=
@@ -303,6 +301,18 @@ top::Term ::= f::Term args::TermList
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> [] --shouldn't really access
       end;
+
+  top.type = appResult;
+  local appResult::Type =
+      varType("__AppResult" ++ toString(genInt()));
+  --(arg ty 1) -> (arg ty 2) -> ... -> (arg ty n) -> appResult
+  local argArrowType::Type =
+      foldr(arrowType, appResult, args.types.toList);
+  local unify::TypeUnify = typeUnify(f.type, argArrowType);
+  f.downSubst = top.downSubst;
+  args.downSubst = f.upSubst;
+  unify.downSubst = args.upSubst;
+  top.upSubst = unify.upSubst;
 }
 
 abstract production nameTerm
@@ -349,6 +359,23 @@ top::Term ::= name::QName mty::MaybeType
            | _ -> []
            end
       else [(name.shortName, top.unifyWith)];
+
+  top.type =
+      case lookup(name.shortName, top.downVarTys) of
+      | just(t) -> t
+      | _ ->
+        if name.constrFound
+        then case name.fullConstr of
+             | left(rel) ->
+               freshenType(foldr(arrowType, nameType(toQName("prop")),
+                                 rel.types.toList))
+             | right(con) -> freshenType(foldr(arrowType, con.type,
+                                               con.types.toList))
+             end
+        else errorType()
+      end;
+
+  top.upSubst = top.downSubst;
 }
 
 abstract production consTerm
@@ -396,6 +423,16 @@ top::Term ::= t1::Term t2::Term
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  --use this to ensure it has a list shape
+  top.type = functorType(nameType(toQName("list")), t1.type);
+  local unify::TypeUnify =
+      typeUnify(functorType(nameType(toQName("list")), t1.type),
+                t2.type);
+  t1.downSubst = top.downSubst;
+  t2.downSubst = t1.upSubst;
+  unify.downSubst = t2.upSubst;
+  top.upSubst = unify.upSubst;
 }
 
 abstract production nilTerm
@@ -424,6 +461,10 @@ top::Term ::=
       | nameTerm(q, _) -> [(q.shortName, top)]
       | _ -> []
       end;
+
+  top.type = functorType(nameType(toQName("list")),
+                varType("__Nil" ++ toString(genInt())));
+  top.upSubst = top.downSubst;
 }
 
 abstract production underscoreTerm
@@ -447,9 +488,17 @@ top::Term ::= mty::MaybeType
 
   top.subst = top;
 
-  top.unifySuccess = error("underscoreTerm.unifySuccess");
-  top.unifyEqs = error("underscoreTerm.unifyEqs");
-  top.unifySubst = error("underscoreTerm.unifySubst");
+  top.unifySuccess = true;
+  top.unifyEqs = [];
+  top.unifySubst = [];
+
+  top.type =
+      case mty of
+      | justType(t) -> t
+      | nothingType() ->
+        varType("__Underscore" ++ toString(genInt()))
+      end;
+  top.upSubst = top.downSubst;
 }
 
 
@@ -461,9 +510,10 @@ nonterminal TermList with
    boundNames, usedNames,
    substName, substTerm, subst<TermList>,
    unifyWith<TermList>, unifyEqs, unifySuccess,
-   isStructuredList;
+   isStructuredList,
+   types, downSubst, upSubst, downVarTys;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm on TermList;
+          substName, substTerm, downVarTys on TermList;
 
 abstract production singleTermList
 top::TermList ::= t::Term
@@ -491,6 +541,10 @@ top::TermList ::= t::Term
       | consTermList(t2, _) -> [(t, t2)]
       | _ -> []
       end;
+
+  top.types = addTypeList(t.type, emptyTypeList());
+  t.downSubst = top.downSubst;
+  top.upSubst = t.upSubst;
 }
 
 abstract production consTermList
@@ -526,6 +580,11 @@ top::TermList ::= t::Term rest::TermList
       | singleTermList(t2) -> (t, t2)::rest.unifyEqs
       | emptyTermList() -> []
       end;
+
+  top.types = addTypeList(t.type, rest.types);
+  t.downSubst = top.downSubst;
+  rest.downSubst = t.upSubst;
+  top.upSubst = rest.upSubst;
 }
 
 abstract production emptyTermList
@@ -547,5 +606,8 @@ top::TermList ::=
       | _ -> false
       end;
   top.unifyEqs = [];
+
+  top.types = emptyTypeList();
+  top.upSubst = top.downSubst;
 }
 

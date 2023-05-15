@@ -50,10 +50,17 @@ top::Type ::= functorTy::Type argTy::Type
 }
 
 
-aspect production underscoreType
-top::Type ::=
+aspect production varType
+top::Type ::= name::String
 {
   top.toAbella = top;
+}
+
+
+aspect production errorType
+top::Type ::=
+{
+  top.toAbella = error("errorTyp.toAbella");
 }
 
 

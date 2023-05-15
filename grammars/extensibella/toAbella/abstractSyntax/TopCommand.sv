@@ -353,7 +353,6 @@ top::TopCommand ::= names::[QName] ty::Type
   --check it is defining a proof-level type
   top.toAbellaMsgs <-
       case last(ty.full.toList) of
-      | underscoreType() -> [] --not valid anyway
       | arrowType(_, _) -> [] --not possible
       | ty ->
         let fullTy::TypeEnvItem =

@@ -23,6 +23,10 @@ replaced by `-$-`, so we get `mod-$-du-$-le-$-name` for our example
 above.  This is used in the encoded Abella definitions whenever we
 want to refer to the item with this name.
 
+Because we can use the short name alone, in order to distinguish
+between meta-variables and short names, all short names should be
+lowercase.
+
 
 
 

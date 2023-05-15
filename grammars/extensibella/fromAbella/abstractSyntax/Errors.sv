@@ -525,10 +525,17 @@ top::Type ::= functorTy::Type argTy::Type
 }
 
 
-aspect production underscoreType
+aspect production varType
+top::Type ::= name::String
+{
+  top.fromAbella = top;
+}
+
+
+aspect production errorType
 top::Type ::=
 {
-  top.fromAbella = underscoreType();
+  top.fromAbella = error("errorType.fromAbella");
 }
 
 

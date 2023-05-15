@@ -541,10 +541,17 @@ top::Type ::= functorTy::Type argTy::Type
 }
 
 
-aspect production underscoreType
+aspect production varType
+top::Type ::= name::String
+{
+  top.full = top;
+}
+
+
+aspect production errorType
 top::Type ::=
 {
-  top.full = underscoreType();
+  top.full = top; --not sure this should be accessed
 }
 
 
