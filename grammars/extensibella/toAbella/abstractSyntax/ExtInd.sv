@@ -10,7 +10,51 @@ top::TopCommand ::= body::ExtIndBody
   top.provingTheorems = [];
   top.provingExtInds = body.extIndInfo;
 
-  top.toAbella = [];
+  top.toAbella =
+      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)];
+
+  local fullRelInfo::[(QName, [String], [Term], QName,
+                       String, String, RelationEnvItem)] =
+      zipWith(\ p::(QName, [String], [Term], QName, String, String)
+                e::RelationEnvItem ->
+                (e.name, p.2, p.3, p.4, p.5, p.6, e),
+              body.extIndInfo, body.relationEnvItems);
+
+  --definition of R_{ES}
+  local extSizeDef::TopCommand =
+      let preds::[(QName, Type)] =
+          map(\ p::(QName, [String], [Term], QName, String, String,
+                    RelationEnvItem) ->
+                (extSizeQName(p.7.name.sub),
+                 foldr1(arrowType,
+                        init(p.7.types.toList) ++ --drop prop at end
+                        [integerType, propType])),
+              fullRelInfo)
+      in
+      let defs::[Def] =
+          buildExtSizeDef(
+             map(\ e::RelationEnvItem -> (e.name, e),
+                 body.relationEnvItems), body.relations)
+      in
+        definitionDeclaration(preds,
+           foldrLastElem(consDefs, singleDefs, defs))
+      end end;
+
+  --definition of R_T
+  local transRelDef::TopCommand =
+      let preds::[(QName, Type)] =
+          map(\ p::(QName, [String], [Term], QName, String, String,
+                    RelationEnvItem) ->
+                (transRelQName(p.7.name.sub),
+                 foldr1(arrowType, p.7.types.toList)),
+              fullRelInfo)
+      in
+      let defs::[Def] =
+          buildTransRelDef(fullRelInfo, body.relations)
+      in
+        definitionDeclaration(preds,
+           foldrLastElem(consDefs, singleDefs, defs))
+      end end;
 
   --Check each relation occurs at most once
   top.toAbellaMsgs <- --([duplicated], [seen])
@@ -31,7 +75,7 @@ top::TopCommand ::= body::ExtIndBody
 nonterminal ExtIndBody with
    pp, abella_pp,
    toAbellaMsgs,
-   relations, extIndInfo,
+   relations, extIndInfo, relationEnvItems,
    currentModule, typeEnv, constructorEnv, relationEnv;
 propagate constructorEnv, relationEnv, typeEnv, currentModule,
           toAbellaMsgs on ExtIndBody;
@@ -39,6 +83,7 @@ propagate constructorEnv, relationEnv, typeEnv, currentModule,
 synthesized attribute relations::[QName];
 synthesized attribute extIndInfo::[(QName, [String], [Term],
                                     QName, String, String)];
+synthesized attribute relationEnvItems::[RelationEnvItem];
 
 abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
@@ -49,6 +94,8 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
   top.relations = e1.relations ++ e2.relations;
 
   top.extIndInfo = e1.extIndInfo ++ e2.extIndInfo;
+
+  top.relationEnvItems = e1.relationEnvItems ++ e2.relationEnvItems;
 }
 
 
@@ -79,6 +126,8 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
 
   top.extIndInfo = [(rel, relArgs, transArgs.toList,
                      transTy, original, translated)];
+
+  top.relationEnvItems = if rel.relFound then [rel.fullRel] else [];
 
   --Check relation is an extensible relation from this module
   top.toAbellaMsgs <-

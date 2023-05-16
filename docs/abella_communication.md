@@ -170,16 +170,15 @@ way as for extensible theorems.
 
 
 ## Extension Induction Declarations
-An `Ext_Ind` declaration itself does not generate any useful
-definitions, as there is nothing to do until we add an extension.
+An `Ext_Ind` declaration generates two definitions.  One is the
+extension size for the relation, `<r {ES}>`, and the other is the
+translation version of the relation, `<r {T}>`.  These are generated
+based on the original clauses in the relation as discussed in the
+[discussion of Ext_Ind](extensibility.md).
 
 `Prove_Ext_Ind` generates two definitions and a theorem.  The
-definitions are of the extension size for the relation, `<r {ES}>`,
-and the translation version of the relation, `<r {T}>`.  These are
-generated based on the original clauses in the relation as discussed
-in the [discussion of Ext_Ind](extensibility.md).
-
-It also generates a theorem `forall x, <r {ES}> x -> <r {T}> x.`  This
-is an extensible theorem, and the handling of setting it up and
-skipping the cases the current module need not prove is handled as for
-extensible theorems.
+definitions are the same as for the original `Ext_Ind`, the extension
+size and the translation version.  It also generates a theorem `forall
+x, <r {ES}> x -> <r {T}> x.` This is an extensible theorem, and the
+handling of setting it up and skipping the cases the current module
+need not prove is handled as for extensible theorems.
