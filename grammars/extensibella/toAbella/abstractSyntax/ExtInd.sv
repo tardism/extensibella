@@ -295,7 +295,7 @@ top::TopCommand ::= rels::[QName]
                 (extSizeQName(p.1.sub),
                  foldr1(arrowType,
                         init(p.7.types.toList) ++ --drop prop at end
-                        [integerType, nameType(toQName("prop"))])),
+                        [integerType, propType])),
               fullRelInfo)
       in
       let defs::[Def] =

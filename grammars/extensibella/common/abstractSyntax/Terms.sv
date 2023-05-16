@@ -471,10 +471,9 @@ top::Term ::= t1::Term t2::Term
       end;
 
   --use this to ensure it has a list shape
-  top.type = functorType(nameType(toQName("list")), t1.type);
+  top.type = listType(t1.type);
   local unify::TypeUnify =
-      typeUnify(functorType(nameType(toQName("list")), t1.type),
-                t2.type);
+      typeUnify(listType(t1.type), t2.type);
   t1.downSubst = top.downSubst;
   t2.downSubst = t1.upSubst;
   unify.downSubst = t2.upSubst;
@@ -508,8 +507,7 @@ top::Term ::=
       | _ -> []
       end;
 
-  top.type = functorType(nameType(toQName("list")),
-                varType("__Nil" ++ toString(genInt())));
+  top.type = listType(varType("__Nil" ++ toString(genInt())));
   top.upSubst = top.downSubst;
 }
 

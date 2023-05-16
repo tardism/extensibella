@@ -271,8 +271,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
   top.splitConjunctions = [top];
 
   local lis::Type =
-      functorType(nameType(toQName("list")),
-         varType("__Append" ++ toString(genInt())));
+      listType(varType("__Append" ++ toString(genInt())));
   local unify1::TypeUnify = typeUnify(lis, t1.type);
   local unify2::TypeUnify = typeUnify(lis, t2.type);
   local unify3::TypeUnify = typeUnify(lis, result.type);
@@ -591,7 +590,7 @@ top::Term ::= contents::ListContents
       | _ -> []
       end;
 
-  top.type = functorType(nameType(toQName("list")), contents.type);
+  top.type = listType(contents.type);
   contents.downSubst = top.downSubst;
   top.upSubst = contents.upSubst;
 }
