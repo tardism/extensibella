@@ -17,6 +17,52 @@ IOVal<Maybe<String>> ::= filename::String dirs::[String] ioin::IOToken
 }
 
 
+{-
+  Read a file and produce
+  * an error for why it didn't work or
+  * (file AST, module information)
+-}
+function processFile
+IOVal<
+   Either<String ((Maybe<QName>, ListOfCommands),
+                  (ListOfCommands, [DefElement], [ThmElement]))>> ::=
+   filename::String file_parse::Parser<FullFile_c>
+   import_parse::Parser<ListOfCommands_c>
+   interface_parse::Parser<ModuleList_c>
+   outerface_parse::Parser<Outerface_c> ioin::IOToken
+{
+  local fileExists::IOVal<Boolean> = isFileT(filename, ioin);
+  local fileContents::IOVal<String> =
+      readFileT(filename, fileExists.io);
+  local fileParsed::ParseResult<FullFile_c> =
+      file_parse(fileContents.iovalue, filename);
+  local fileAST::(Maybe<QName>, ListOfCommands) =
+      fileParsed.parseTree.ast;
+  local processed::IOVal<Either<String (ListOfCommands, [DefElement],
+                                        [ThmElement])>> =
+      processModuleDecl(fileAST.1.fromJust, import_parse,
+         interface_parse, outerface_parse, fileContents.io);
+
+  return
+     if !fileExists.iovalue
+     then ioval(fileExists.io,
+                left("Error:  Given file" ++ filename ++
+                     " does not exist\n"))
+     else if !fileParsed.parseSuccess
+     then ioval(fileContents.io,
+             left("Syntax error:\n" ++ fileParsed.parseErrors ++ "\n"))
+     else if !fileAST.1.isJust
+     then ioval(fileContents.io,
+             left("Error:  Module declarations cannot be " ++
+                  "Quit in " ++ filename ++ "\n"))
+     else if !processed.iovalue.isRight
+     then ioval(processed.io,
+             left("Error:  " ++ processed.iovalue.fromLeft ++ "\n"))
+     else ioval(processed.io,
+             right((fileAST, processed.iovalue.fromRight)));
+}
+
+
 --Produce file names for interface files, definitions, outerface files
 synthesized attribute interfaceFileName::String occurs on SubQName, QName;
 synthesized attribute outerfaceFileName::String occurs on SubQName, QName;

@@ -6,19 +6,85 @@ type Configuration = Decorated CmdArgs;
 
 
 {--
-  - Walk through a list of commands, processing the proofs they represent
-  -
-  - @inputCommands  The list of commands through which to walk
-  - @filename  The name of the file we are processing, if any
-  - @tyEnv  The types we know, both in the language ond defined in proof files
-  - @relationEnv  The relations we know, both in the language and defined in proof files
-  - @constructorEnv  The constructors we know, both in the language and defined in proof files
-  - @statelist  The state of the prover after each command issued to the prover.
-  -             The current state of the prover is the first element of the list.
-  - @config  The configuration of the process
-  - @abella  The process in which Abella is running
-  - @ioin  The incoming IO token
-  - @return  The resulting IO token and exit status
+ - Set up and walk through a list of commands, presenting the proofs they represent
+ -
+ - @filename  The name of the file we are processing, if any
+ - @cmds  Commands being processed
+ - @import_parse  Parser for reading imported files
+ - @from_parse  Parser for reading Abella output
+ - @currentModule  Module about which we are proving properties
+ - @definitionCmds  Commands for imports
+ - @importDefs  Proof definitions being imported
+ - @importThms  Proof obligations being imported
+ - @config  The configuration of the process
+ - @ioin  The incoming IO token
+ - @return  The resulting IO token and exit status
+-}
+function run
+IOVal<Integer> ::=
+   filename::String cmds::[AnyCommand]
+   import_parse::Parser<ListOfCommands_c>
+   from_parse::Parser<FullDisplay_c>
+   currentModule::QName
+   definitionCmds::ListOfCommands
+   importDefs::[DefElement]
+   importThms::[ThmElement]
+   config::Configuration ioin::IOToken
+{
+  local started::IOVal<Either<String ProcessHandle>> =
+      startAbella(ioin, config);
+  local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
+      importStdLibThms(import_parse, started.io);
+  --basic context information from the definition file
+  local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
+                              Env<ConstructorEnvItem>)> =
+      set_up_abella_module(currentModule, definitionCmds, importDefs,
+         from_parse, started.iovalue.fromRight, stdLibThms.io,
+         config);
+  --context information for imported definitions
+  local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
+                            [ConstructorEnvItem]) =
+      defElementsDefinitions(importDefs);
+  --combine definition file and imported proof definitions
+  local startProverState::ProverState =
+      defaultProverState(importThms,
+         addEnv(build_context.iovalue.1, importedProofDefs.1),
+         addEnv(build_context.iovalue.2, importedProofDefs.2),
+         addEnv(build_context.iovalue.3, importedProofDefs.3),
+         stdLibThms.iovalue.fromRight);
+  --
+  local handleIncoming::([AnyCommand], ProverState) =
+      handleIncomingThms(startProverState);
+  local sendIncoming::IOVal<String> =
+      sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
+         started.iovalue.fromRight, build_context.io, config);
+
+  return
+     if !started.iovalue.isRight
+     then ioval(printT("Error:  " ++ started.iovalue.fromLeft ++
+                       "\n", started.io), 1)
+     else if !stdLibThms.iovalue.isRight
+     then ioval(printT("Error:  " ++ stdLibThms.iovalue.fromLeft ++
+                       "\n", stdLibThms.io), 1)
+     else run_step(cmds, filename, from_parse, currentModule,
+             [(-1, handleIncoming.2)], config,
+             started.iovalue.fromRight, sendIncoming.io);
+}
+
+
+{--
+ - Walk through a list of commands, processing the proofs they represent
+ -
+ - @inputCommands  The list of commands through which to walk
+ - @filename  The name of the file we are processing, if any
+ - @from_parse  Parser for reading Abella output
+ - @currentModule  Module about which we are proving properties
+ - @statelist  The state of the prover after each command issued to the prover.
+ -             The current state of the prover is the first element of the list.
+ - @config  The configuration of the process
+ - @abella  The process in which Abella is running
+ - @ioin  The incoming IO token
+ - @return  The resulting IO token and exit status
 -}
 function run_step
 IOVal<Integer> ::=

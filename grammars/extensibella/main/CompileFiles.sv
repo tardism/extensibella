@@ -66,18 +66,17 @@ IOVal<Integer> ::=
    outerface_parse::Parser<Outerface_c>
    ioin::IOToken filename::String
 {
-  local fileExists::IOVal<Boolean> = isFileT(filename, ioin);
-  local fileContents::IOVal<String> =
-      readFileT(filename, fileExists.io);
-  local fileParsed::ParseResult<FullFile_c> =
-      file_parse(fileContents.iovalue, filename);
+  local fileInfo::
+        IOVal<Either<String ((Maybe<QName>, ListOfCommands),
+                     (ListOfCommands, [DefElement], [ThmElement]))>> =
+      processFile(filename, file_parse, import_parse, interface_parse,
+                  outerface_parse, ioin);
   local fileAST::(Maybe<QName>, ListOfCommands) =
-      fileParsed.parseTree.ast;
-  local processed::IOVal<Either<String (ListOfCommands, [DefElement],
-                                        [ThmElement])>> =
-      processModuleDecl(fileAST.1.fromJust, import_parse,
-         interface_parse, outerface_parse, fileContents.io);
-  local modComms::ListOfCommands = processed.iovalue.fromRight.1;
+      fileInfo.iovalue.fromRight.1;
+  local processed::(ListOfCommands, [DefElement], [ThmElement]) =
+      fileInfo.iovalue.fromRight.snd;
+  --
+  local modComms::ListOfCommands = processed.1;
   modComms.typeEnv = [];
   modComms.relationEnv = [];
   modComms.constructorEnv = [];
@@ -85,12 +84,12 @@ IOVal<Integer> ::=
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
-      importStdLibThms(import_parse, processed.io);
+      importStdLibThms(import_parse, fileInfo.io);
   local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
                             [ConstructorEnvItem]) =
-      defElementsDefinitions(processed.iovalue.fromRight.2);
+      defElementsDefinitions(processed.2);
   local proverState::ProverState =
-      defaultProverState(processed.iovalue.fromRight.3,
+      defaultProverState(processed.3,
          buildEnv(modComms.tys ++ importedProofDefs.1),
          buildEnv(modComms.rels ++ importedProofDefs.2),
          buildEnv(modComms.constrs ++ importedProofDefs.3),
@@ -106,27 +105,19 @@ IOVal<Integer> ::=
       writeFileT(outputFile, compiledContents, extensibellaGen.io);
 
   return
-     if !fileExists.iovalue
-     then ioval(printT("Given file " ++ filename ++ " does not exist\n",
-                       fileExists.io), 1)
-     else if !fileParsed.parseSuccess
-     then ioval(printT("Syntax error:\n" ++ fileParsed.parseErrors ++
-                       "\n", fileContents.io), 1)
-     else if !fileAST.1.isJust
-     then ioval(printT("Error:  Module declaration cannot be Quit " ++
-                       "in " ++ filename ++ "\n", fileContents.io), 1)
-     else if !processed.iovalue.isRight
-     then ioval(printT("Error:  " ++ processed.iovalue.fromLeft ++
-                       "\n", processed.io), 1)
-     else if !null(fileErrors)
-     then ioval(printT("Processing errors:\n" ++
-                       implode("\n", map((.pp), fileErrors)) ++ "\n",
-                       processed.io), 1)
-     else if extensibellaGen.iovalue == ""
-     then ioval(printT("Extensibella generated location not set\n",
-                       extensibellaGen.io), 1)
-     else ioval(printT("Successfully compiled file " ++ filename ++ "\n",
-                       written), 0);
+     case fileInfo.iovalue of
+     | left(err) -> ioval(printT(err, fileInfo.io), 1)
+     | right(_) ->
+       if !null(fileErrors)
+       then ioval(printT("Processing errors:\n" ++
+                         implode("\n", map((.pp), fileErrors)) ++ "\n",
+                         fileInfo.io), 1)
+       else if extensibellaGen.iovalue == ""
+       then ioval(printT("Extensibella generated location not set\n",
+                         extensibellaGen.io), 1)
+       else ioval(printT("Successfully compiled file " ++ filename ++
+                         "\n", written), 0)
+     end;
 }
 
 

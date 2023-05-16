@@ -18,53 +18,15 @@ IOVal<Integer> ::=
                                 [ThmElement])>> =
       get_module_interactive(module_decl_parse, import_parse,
          interface_parse, outerface_parse, ioin);
-  --
-  local started::IOVal<Either<String ProcessHandle>> =
-      startAbella(processed.io, config);
-  local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
-      importStdLibThms(import_parse, started.io);
-  --basic context information from the definition file
-  local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
-                              Env<ConstructorEnvItem>)> =
-      set_up_abella_module(processed.iovalue.fromJust.1,
-         processed.iovalue.fromJust.2, processed.iovalue.fromJust.3,
-         from_parse, started.iovalue.fromRight, stdLibThms.io,
-         config);
-  --context information for imported definitions
-  local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
-                            [ConstructorEnvItem]) =
-      defElementsDefinitions(processed.iovalue.fromJust.3);
-  --combine definition file and imported proof definitions
-  local startProverState::ProverState =
-      defaultProverState(processed.iovalue.fromJust.4,
-         addEnv(build_context.iovalue.1, importedProofDefs.1),
-         addEnv(build_context.iovalue.2, importedProofDefs.2),
-         addEnv(build_context.iovalue.3, importedProofDefs.3),
-         stdLibThms.iovalue.fromRight);
-  --
-  local handleIncoming::([AnyCommand], ProverState) =
-      handleIncomingThms(startProverState);
-  local sendIncoming::IOVal<String> =
-      sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
-         started.iovalue.fromRight, build_context.io, config);
 
   return
-     if !started.iovalue.isRight
-     then ioval(printT("Error:  " ++ started.iovalue.fromLeft ++
-                       "\n", started.io), 1)
-     else if !stdLibThms.iovalue.isRight
-     then ioval(printT("Error:  " ++ stdLibThms.iovalue.fromLeft ++
-                       "\n", stdLibThms.io), 1)
-     else if !processed.iovalue.isJust
+     if !processed.iovalue.isJust
      then ioval(processed.io, 0) --quit, so return
-     else run_step(
-             build_interactive_commands(cmd_parse),
-             "<<user input>>", from_parse,
-             processed.iovalue.fromJust.1,
-             [(-1, handleIncoming.2)],
-             config,
-             started.iovalue.fromRight,
-             sendIncoming.io);
+     else run("<<user input>>", build_interactive_commands(cmd_parse),
+              import_parse, from_parse, processed.iovalue.fromJust.1,
+              processed.iovalue.fromJust.2,
+              processed.iovalue.fromJust.3,
+              processed.iovalue.fromJust.4, config, processed.io);
 }
 
 
