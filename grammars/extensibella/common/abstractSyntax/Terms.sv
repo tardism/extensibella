@@ -24,7 +24,8 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   local unify::TypeUnify =
       if rel.relFound
       then typeUnify(
-              foldr1(arrowType, rel.fullRel.types.toList),
+              freshenType(
+                 foldr1(arrowType, rel.fullRel.types.toList)),
               foldr(arrowType, propType, args.types.toList))
       else blankUnify();
   args.downSubst = top.downSubst;
@@ -413,8 +414,7 @@ top::Term ::= name::QName mty::MaybeType
         if name.constrFound
         then case name.fullConstr of
              | left(rel) ->
-               freshenType(foldr(arrowType, propType,
-                                 rel.types.toList))
+               freshenType(foldr1(arrowType, rel.types.toList))
              | right(con) -> freshenType(foldr(arrowType, con.type,
                                                con.types.toList))
              end

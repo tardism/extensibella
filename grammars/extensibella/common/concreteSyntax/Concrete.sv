@@ -370,7 +370,9 @@ concrete productions top::PTy_c
 | 'string'
   { top.ast = stringType; }
 | i::Id_t
-  { top.ast = nameType(toQName(i.lexeme)); }
+  { top.ast = if isUpper(substring(0, 1, i.lexeme))
+              then varType(i.lexeme)
+              else nameType(toQName(i.lexeme)); }
 | i::Qname_t
   { top.ast = nameType(toQName(i.lexeme)); }
 | '(' t::Ty_c ')'
@@ -381,7 +383,9 @@ concrete productions top::ATy_c
 | 'string'
   { top.ast = stringType; }
 | i::Id_t
-  { top.ast = nameType(toQName(i.lexeme)); }
+  { top.ast = if isUpper(substring(0, 1, i.lexeme))
+              then varType(i.lexeme)
+              else nameType(toQName(i.lexeme)); }
 | i::Qname_t
   { top.ast = nameType(toQName(i.lexeme)); }
 | a::ATy_c p::PTy_c

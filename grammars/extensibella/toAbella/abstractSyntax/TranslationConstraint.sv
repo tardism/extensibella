@@ -67,9 +67,9 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
   top.toAbellaMsgs <-
       case body.upSubst of
       | right(_) -> []
-      | left(e) ->
+      | left(_) ->
         --given the messages are not terribly useful:
-        [errorMsg("Type error in " ++ name.pp ++ ":  " ++ showSubst(left(e)))]
+        [errorMsg("Type error in " ++ name.pp)]
       end;
   body.downVarTys =
       map(\ p::(String, MaybeType) ->

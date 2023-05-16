@@ -103,7 +103,7 @@ top::Type ::= ty1::Type ty2::Type
 abstract production nameType
 top::Type ::= name::QName
 {
-  top.pp = name.pp;
+  top.pp = "(" ++ name.pp ++ " : Name)";
   top.abella_pp = name.abella_pp;
   top.isAtomic = true;
 
@@ -223,7 +223,7 @@ top::Type ::= functorTy::Type argTy::Type
 abstract production varType
 top::Type ::= name::String
 {
-  top.pp = name;
+  top.pp = "(" ++ name ++ " : Var)";
   top.abella_pp = name;
   top.isAtomic = true;
 

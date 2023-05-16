@@ -253,34 +253,26 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
           --not our library, but still *a* library
           libTypeEnvItem(toQName("list"), 1),
           libTypeEnvItem(toQName("prop"), 0)]);
-  --a couple of these have type variables in them
   local knownRels::[RelationEnvItem] =
       buildEnv(
          [fixedRelationEnvItem(toQName("is_pair"),
-             toTypeList([arrowType(nameType(toQName("A")),
-                                   nameType(toQName("prop"))),
-                         arrowType(nameType(toQName("B")),
-                                   nameType(toQName("prop"))),
-                         functorType(
-                         functorType(nameType(toQName(pairTypeName)),
-                                     nameType(toQName("A"))),
-                                     nameType(toQName("B")))])),
+             toTypeList([arrowType(varType("A"), propType),
+                         arrowType(varType("B"), propType),
+                         pairType(varType("A"), varType("B")),
+                         propType])),
           fixedRelationEnvItem(toQName("is_string"),
-             toTypeList([stringType])),
+             toTypeList([stringType, propType])),
           fixedRelationEnvItem(toQName("is_bool"),
-             toTypeList([nameType(toQName("$lib__bool"))])),
+             toTypeList([boolType, propType])),
           fixedRelationEnvItem(toQName("is_integer"),
-             toTypeList([nameType(toQName("$lib__integer"))])),
+             toTypeList([integerType, propType])),
           fixedRelationEnvItem(toQName("is_list"),
-             toTypeList([arrowType(nameType(toQName("A")),
-                                   nameType(toQName("prop"))),
-                         functorType(nameType(toQName("list")),
-                                     nameType(toQName("A")))])),
+             toTypeList([arrowType(varType("A"), propType),
+                         listType(varType("A")), propType])),
           --once again, not our library, but *a* library
           fixedRelationEnvItem(toQName("member"),
-             toTypeList([nameType(toQName("A")),
-                         functorType(nameType(toQName("list")),
-                                     nameType(toQName("A")))]))]);
+             toTypeList([varType("A"),
+                         listType(varType("A")), propType]))]);
   --currently no visible constructors from the standard library
   local knownConstrs::[ConstructorEnvItem] = buildEnv([]);
 

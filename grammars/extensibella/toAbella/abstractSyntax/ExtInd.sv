@@ -10,13 +10,7 @@ top::TopCommand ::= body::ExtIndBody
   top.provingTheorems = [];
   top.provingExtInds = body.extIndInfo;
 
-  top.toAbella =
-      [anyTopCommand(
-          definitionDeclaration(
-             map(\ p::(QName, Type, Def) -> (p.1, p.2), body.toAbella),
-             foldr(consDefs, singleDefs(head(body.toAbella).3),
-                   map(\ p::(QName, Type, Def) -> p.3,
-                       tail(body.toAbella)))))];
+  top.toAbella = [];
 
   --Check each relation occurs at most once
   top.toAbellaMsgs <- --([duplicated], [seen])
@@ -36,7 +30,7 @@ top::TopCommand ::= body::ExtIndBody
 
 nonterminal ExtIndBody with
    pp, abella_pp,
-   toAbella<[(QName, Type, Def)]>, toAbellaMsgs,
+   toAbellaMsgs,
    relations, extIndInfo,
    currentModule, typeEnv, constructorEnv, relationEnv;
 propagate constructorEnv, relationEnv, typeEnv, currentModule,
@@ -51,8 +45,6 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 {
   top.pp = e1.pp ++ ",\n        " ++ e2.pp;
   top.abella_pp = e1.abella_pp ++ ",\n        " ++ e2.abella_pp;
-
-  top.toAbella = e1.toAbella ++ e2.toAbella;
 
   top.relations = e1.relations ++ e2.relations;
 
@@ -87,13 +79,6 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
 
   top.extIndInfo = [(rel, relArgs, transArgs.toList,
                      transTy, original, translated)];
-
-  {-
-    We don't have any actual work to do here, as the actual
-    definitions and proof requirements aren't required in the
-    introducing module.
-  -}
-  top.toAbella = [];
 
   --Check relation is an extensible relation from this module
   top.toAbellaMsgs <-
@@ -171,7 +156,8 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
   local unifyRelArgs::TypeUnify =
       if rel.relFound && rel.fullRel.isExtensible
       then typeUnify(
-              foldr(arrowType, propType, rel.fullRel.types.toList),
+              freshenType(
+                 foldr1(arrowType, rel.fullRel.types.toList)),
               foldr(arrowType, propType, map(snd, relArgTys)))
       else blankUnify();
   local unifyTransTy::TypeUnify =
@@ -181,7 +167,7 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
       else blankUnify();
   local unifyTransArgs::TypeUnify =
       if transTy.typeFound
-      then typeUnify( --propType for convenience
+      then typeUnify( --propType for convenience (need if empty)
               foldr(arrowType, propType,
                     transTy.fullType.transTypes.toList),
               foldr(arrowType, propType, transArgs.types.toList))

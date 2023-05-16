@@ -52,6 +52,20 @@ global falseName::String = "$bfalse";
 
 global propType::Type = nameType(toQName("prop"));
 
+function listType
+Type ::= ty::Type
+{
+  return functorType(nameType(toQName("list")), ty);
+}
+
+function pairType
+Type ::= a::Type b::Type
+{
+  return functorType(
+           functorType(nameType(toQName(pairTypeName)),
+                       a), b);
+}
+
 
 
 function transName

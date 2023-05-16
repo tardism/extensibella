@@ -530,7 +530,8 @@ top::Type ::= ty1::Type ty2::Type
 aspect production nameType
 top::Type ::= name::QName
 {
-  top.full = nameType(name.fullType.name);
+  --fullType.type is guaranteed to be full
+  top.full = name.fullType.type;
 }
 
 

@@ -39,7 +39,7 @@ top::Type ::= ty1::Type ty2::Type
 aspect production nameType
 top::Type ::= name::QName
 {
-  top.toAbella = nameType(name.fullType.name);
+  top.toAbella = name.fullType.type;
 }
 
 
@@ -60,7 +60,7 @@ top::Type ::= name::String
 aspect production errorType
 top::Type ::=
 {
-  top.toAbella = error("errorTyp.toAbella");
+  top.toAbella = error("errorType.toAbella");
 }
 
 
