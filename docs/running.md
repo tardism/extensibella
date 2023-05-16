@@ -18,12 +18,7 @@ it printed to the terminal followed by a new prompt, waiting for the
 next command.
 
 When running Extensibella in the terminal, the `Quit.` command will
-exit, as will `Ctrl+D`.  Due to a quirk in the implementation of
-Extensibella, these two methods will only work once a module has been
-loaded.  However, exiting before loading a valid module can be
-accomplished by entering an invalid module name (one for which
-Extensibella cannot find the definition), as this will cause
-Extensibella to exit.
+exit, as will `Ctrl+D`.
 
 
 ## Running in Proof General

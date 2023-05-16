@@ -40,11 +40,12 @@ IOVal<Integer> ::=
         readFileT(filename, fileExists.io);
   local fileParsed::ParseResult<FullFile_c> =
         file_parse(fileContents.iovalue, filename);
-  local fileAST::(QName, ListOfCommands) = fileParsed.parseTree.ast;
+  local fileAST::(Maybe<QName>, ListOfCommands) =
+        fileParsed.parseTree.ast;
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
                                         [ThmElement])>> =
-      processModuleDecl(fileAST.1, import_parse, interface_parse,
-                        outerface_parse, fileContents.io);
+      processModuleDecl(fileAST.1.fromJust, import_parse,
+          interface_parse, outerface_parse, fileContents.io);
   --
   local started::IOVal<Either<String ProcessHandle>> =
       startAbella(processed.io, config);
@@ -53,7 +54,7 @@ IOVal<Integer> ::=
   --basic context information from the definition file
   local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
                               Env<ConstructorEnvItem>)> =
-      set_up_abella_module(fileAST.1,
+      set_up_abella_module(fileAST.1.fromJust,
          processed.iovalue.fromRight.1,
          processed.iovalue.fromRight.2, from_parse,
          started.iovalue.fromRight, stdLibThms.io, config);
@@ -82,6 +83,9 @@ IOVal<Integer> ::=
      else if !fileParsed.parseSuccess
      then ioval(printT("Syntax error:\n" ++ fileParsed.parseErrors ++
                        "\n", fileContents.io), 1)
+     else if !fileAST.1.isJust
+     then ioval(printT("Error:  Module declaration cannot be Quit " ++
+                       "in " ++ filename ++ "\n", fileContents.io), 1)
      else if !processed.iovalue.isRight
      then ioval(printT("Error:  " ++ processed.iovalue.fromLeft ++
                        "\n", processed.io), 1)
@@ -95,7 +99,7 @@ IOVal<Integer> ::=
              fileAST.2.commandList,
              filename,
              from_parse,
-             fileAST.1,
+             fileAST.1.fromJust,
              [(-1, handleIncoming.2)],
              config,
              started.iovalue.fromRight,

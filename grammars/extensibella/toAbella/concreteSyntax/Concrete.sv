@@ -7,13 +7,15 @@ grammar extensibella:toAbella:concreteSyntax;
 
 closed nonterminal ModuleDecl_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
-   with ast<QName>;
+   with ast<Maybe<QName>>; --just if module decl, nothing if quit
 
 concrete productions top::ModuleDecl_c
 | 'Module' q::Qname_t '.'
-  { top.ast = toQName(q.lexeme); }
+  { top.ast = just(toQName(q.lexeme)); }
 | 'Module' q::Id_t '.' --Because Qname_t assumes at least one colon
-  { top.ast = toQName(q.lexeme); }
+  { top.ast = just(toQName(q.lexeme)); }
+| 'Quit' '.'
+  { top.ast = nothing(); }
 
 
 
@@ -22,7 +24,7 @@ concrete productions top::ModuleDecl_c
 
 closed nonterminal FullFile_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
-   with ast<(QName, ListOfCommands)>;
+   with ast<(Maybe<QName>, ListOfCommands)>;
 closed nonterminal ListOfCommands_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
    with ast<ListOfCommands>;

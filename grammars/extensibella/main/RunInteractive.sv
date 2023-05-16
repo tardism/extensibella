@@ -13,31 +13,30 @@ IOVal<Integer> ::=
    outerface_parse::Parser<Outerface_c>
    ioin::IOToken config::Decorated CmdArgs
 {
-  local moduleName::IOVal<QName> =
-      get_module_interactive(module_decl_parse, ioin);
-  local processed::IOVal<Either<String (ListOfCommands, [DefElement],
-                                        [ThmElement])>> =
-      processModuleDecl(moduleName.iovalue, import_parse,
-         interface_parse, outerface_parse, moduleName.io);
+  --get the module information
+  local processed::IOVal<Maybe<(QName, ListOfCommands, [DefElement],
+                                [ThmElement])>> =
+      get_module_interactive(module_decl_parse, import_parse,
+         interface_parse, outerface_parse, ioin);
   --
   local started::IOVal<Either<String ProcessHandle>> =
-      startAbella(moduleName.io, config);
+      startAbella(processed.io, config);
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
       importStdLibThms(import_parse, started.io);
   --basic context information from the definition file
   local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
                               Env<ConstructorEnvItem>)> =
-      set_up_abella_module(moduleName.iovalue,
-         processed.iovalue.fromRight.1,
-         processed.iovalue.fromRight.2, from_parse,
-         started.iovalue.fromRight, stdLibThms.io, config);
+      set_up_abella_module(processed.iovalue.fromJust.1,
+         processed.iovalue.fromJust.2, processed.iovalue.fromJust.3,
+         from_parse, started.iovalue.fromRight, stdLibThms.io,
+         config);
   --context information for imported definitions
   local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
                             [ConstructorEnvItem]) =
-      defElementsDefinitions(processed.iovalue.fromRight.2);
+      defElementsDefinitions(processed.iovalue.fromJust.3);
   --combine definition file and imported proof definitions
   local startProverState::ProverState =
-      defaultProverState(processed.iovalue.fromRight.3,
+      defaultProverState(processed.iovalue.fromJust.4,
          addEnv(build_context.iovalue.1, importedProofDefs.1),
          addEnv(build_context.iovalue.2, importedProofDefs.2),
          addEnv(build_context.iovalue.3, importedProofDefs.3),
@@ -50,19 +49,18 @@ IOVal<Integer> ::=
          started.iovalue.fromRight, build_context.io, config);
 
   return
-     if !processed.iovalue.isRight
-     then ioval(printT("Error:  " ++ processed.iovalue.fromLeft ++
-                       "\n", processed.io), 1)
-     else if !started.iovalue.isRight
+     if !started.iovalue.isRight
      then ioval(printT("Error:  " ++ started.iovalue.fromLeft ++
                        "\n", started.io), 1)
      else if !stdLibThms.iovalue.isRight
      then ioval(printT("Error:  " ++ stdLibThms.iovalue.fromLeft ++
                        "\n", stdLibThms.io), 1)
+     else if !processed.iovalue.isJust
+     then ioval(processed.io, 0) --quit, so return
      else run_step(
              build_interactive_commands(cmd_parse),
              "<<user input>>", from_parse,
-             moduleName.iovalue,
+             processed.iovalue.fromJust.1,
              [(-1, handleIncoming.2)],
              config,
              started.iovalue.fromRight,
@@ -73,22 +71,42 @@ IOVal<Integer> ::=
 --Continue trying to get a module declaration from the user until
 --   they actually give one
 function get_module_interactive
-IOVal<QName> ::=
-   module_decl_parse::(ParseResult<ModuleDecl_c> ::= String String)
-   ioin::IOToken
+IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
+   module_decl_parse::Parser<ModuleDecl_c>
+   import_parse::Parser<ListOfCommands_c>
+   interface_parse::Parser<ModuleList_c>
+   outerface_parse::Parser<Outerface_c> ioin::IOToken
 {
+  --Get input
   local printed_prompt::IOToken = printT(" < ", ioin);
   local raw_input::IOVal<String> = read_full_input(printed_prompt);
   local input::String = stripExternalWhiteSpace(raw_input.iovalue);
-  --
+
+  --Process input
   local result::ParseResult<ModuleDecl_c> =
-        module_decl_parse(input, "<<input>>");
+      module_decl_parse(input, "<<input>>");
+  local processed::IOVal<Either<String (ListOfCommands, [DefElement],
+                                        [ThmElement])>> =
+      processModuleDecl(result.parseTree.ast.fromJust, import_parse,
+         interface_parse, outerface_parse, raw_input.io);
+
   return
-     if result.parseSuccess
-     then ioval(raw_input.io, result.parseTree.ast)
-     else get_module_interactive(module_decl_parse,
+     if !result.parseSuccess
+     then get_module_interactive(module_decl_parse, import_parse,
+             interface_parse, outerface_parse,
              printT("Error:  First entry must be a module\n" ++
-                    result.parseErrors ++ "\n\n", raw_input.io));
+                    result.parseErrors ++ "\n\n", raw_input.io))
+     else if !result.parseTree.ast.isJust
+     then ioval(raw_input.io, nothing()) --quit
+     else case processed.iovalue of
+          | left(err) ->
+            get_module_interactive(module_decl_parse, import_parse,
+               interface_parse, outerface_parse,
+               printT("Error:  " ++ err ++ "\n\n", processed.io))
+          | right((a, b, c)) ->
+            ioval(processed.io,
+                  just((result.parseTree.ast.fromJust, a, b, c)))
+          end;
 }
 
 
