@@ -104,7 +104,7 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
 
 --Create a list of commands by reading them from the user
 function build_interactive_commands
-[AnyCommand] ::= cmd_parse::Parser<AnyCommand_c>
+ListOfCommands ::= cmd_parse::Parser<AnyCommand_c>
 {
   local printed_prompt::IOToken = printT(" < ", unsafeIO());
   local raw_input::IOVal<String> = read_full_input(printed_prompt);
@@ -117,7 +117,8 @@ function build_interactive_commands
         else anyParseFailure(result.parseErrors);
   return if isSpace(input)
          then build_interactive_commands(cmd_parse)
-         else any_a::build_interactive_commands(cmd_parse);
+         else addListOfCommands(any_a,
+                 build_interactive_commands(cmd_parse));
 }
 
 

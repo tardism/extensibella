@@ -110,7 +110,7 @@ top::NoOpCommand ::= n::Integer
   top.toAbella = repeat(backCommand(1), trans_n);
 
   top.toAbellaMsgs <-
-      if length(top.stateListIn) <= n
+      if length(top.stateListIn) < n
       then [errorMsg("Cannot go back that far")]
       else [];
 

@@ -63,7 +63,7 @@ IOVal<Integer> ::=
      case fileInfo.iovalue of
      | left(err) -> ioval(printT(err, fileInfo.io), 1)
      | right(_) ->
-       run(filename, fileAST.2.commandList, import_parse, from_parse,
+       run(filename, fileAST.2, import_parse, from_parse,
            fileAST.1.fromJust, processed.1, processed.2, processed.3,
            config, annotatedModule)
      end;

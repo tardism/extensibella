@@ -22,7 +22,7 @@ type Configuration = Decorated CmdArgs;
 -}
 function run
 IOVal<Integer> ::=
-   filename::String cmds::[AnyCommand]
+   filename::String cmds::ListOfCommands
    import_parse::Parser<ListOfCommands_c>
    from_parse::Parser<FullDisplay_c>
    currentModule::QName
@@ -59,6 +59,15 @@ IOVal<Integer> ::=
       sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
          started.iovalue.fromRight, build_context.io, config);
 
+  --set inh attrs for processing file
+  cmds.currentModule = currentModule;
+  cmds.filename = filename;
+  cmds.from_parse = from_parse;
+  cmds.stateList = [(-1, handleIncoming.2)];
+  cmds.config = config;
+  cmds.abella = started.iovalue.fromRight;
+  cmds.ioin = sendIncoming.io;
+
   return
      if !started.iovalue.isRight
      then ioval(printT("Error:  " ++ started.iovalue.fromLeft ++
@@ -66,37 +75,63 @@ IOVal<Integer> ::=
      else if !stdLibThms.iovalue.isRight
      then ioval(printT("Error:  " ++ stdLibThms.iovalue.fromLeft ++
                        "\n", stdLibThms.io), 1)
-     else run_step(cmds, filename, from_parse, currentModule,
-             [(-1, handleIncoming.2)], config,
-             started.iovalue.fromRight, sendIncoming.io);
+     else cmds.runResult;
 }
 
 
-{--
- - Walk through a list of commands, processing the proofs they represent
- -
- - @inputCommands  The list of commands through which to walk
- - @filename  The name of the file we are processing, if any
- - @from_parse  Parser for reading Abella output
- - @currentModule  Module about which we are proving properties
- - @statelist  The state of the prover after each command issued to the prover.
- -             The current state of the prover is the first element of the list.
- - @config  The configuration of the process
- - @abella  The process in which Abella is running
- - @ioin  The incoming IO token
- - @return  The resulting IO token and exit status
--}
-function run_step
-IOVal<Integer> ::=
-   inputCommands::[AnyCommand]
-   filename::String
-   from_parse::Parser<FullDisplay_c>
-   currentModule::QName
-   stateList::StateList
-   config::Configuration
-   abella::ProcessHandle ioin::IOToken
+
+
+inherited attribute filename::String;
+inherited attribute from_parse::Parser<FullDisplay_c>;
+inherited attribute stateList::StateList;
+inherited attribute config::Configuration;
+inherited attribute abella::ProcessHandle;
+inherited attribute ioin::IOToken;
+
+synthesized attribute runResult::IOVal<Integer>;
+
+synthesized attribute isNull::Boolean;
+
+attribute
+   filename, from_parse, stateList, config, abella, ioin, runResult,
+   isNull
+occurs on ListOfCommands;
+propagate filename, from_parse, config, abella on ListOfCommands;
+
+
+aspect production emptyListOfCommands
+top::ListOfCommands ::=
 {
-  local currentProverState::ProverState = head(stateList).snd;
+  top.isNull = true;
+
+  local currentProverState::ProverState = head(top.stateList).snd;
+  local state::ProofState = currentProverState.state;
+
+  --Permit the addition of extra actions to be carried out
+  production attribute io::(IOToken ::= IOToken) with combineIO;
+  io := \ i::IOToken -> i;
+
+  local finalIO::IOToken = io(top.ioin);
+  top.runResult =
+      if !top.config.runningFile --non-file can quit whenever
+      then ioval(finalIO, 0)
+      else if state.inProof
+      then ioval(printT("Proof in progress at end of file " ++
+                        top.filename ++ "\n", finalIO), 1)
+      else if !null(head(top.stateList).2.remainingObligations)
+      then ioval(printT("Not all proof obligations fulfilled in " ++
+                        "file " ++ top.filename ++ "\n", finalIO), 1)
+      else ioval(printT("Successfully processed file " ++
+                        top.filename ++ "\n", finalIO), 0);
+}
+
+
+aspect production addListOfCommands
+top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
+{
+  top.isNull = false;
+
+  local currentProverState::ProverState = head(top.stateList).snd;
   local state::ProofState = currentProverState.state;
   local debug::Boolean = currentProverState.debug;
 
@@ -109,161 +144,169 @@ IOVal<Integer> ::=
   -}
   --Translate command
   ----------------------------
-  local any_a::AnyCommand = head(inputCommands);
-  any_a.currentModule = currentModule;
+  --we need a copy because we need to set the envs differently here
+  --than for imports that also use ListOfCommands
+  local any_a::AnyCommand = a;
+  any_a.currentModule = top.currentModule;
   any_a.typeEnv = currentProverState.knownTypes;
   any_a.relationEnv = currentProverState.knownRels;
   any_a.constructorEnv = currentProverState.knownConstrs;
   any_a.proverState = currentProverState;
   any_a.boundNames = state.usedNames;
-  any_a.stateListIn = stateList;
+  any_a.stateListIn = top.stateList;
   --whether we have an error
   local is_error::Boolean = any(map((.isError), any_a.toAbellaMsgs));
-  --whether we have something to send to Abella
-  local speak_to_abella::Boolean =
-      !is_error && !null(any_a.toAbella);
+  local speak_to_abella::Boolean = !is_error && !null(any_a.toAbella);
   --an error or message based on our own checking
-  local our_own_output::String =
-      errors_to_string(any_a.toAbellaMsgs);
+  local our_own_output::String = errors_to_string(any_a.toAbellaMsgs);
   --Send to Abella and read output
   ----------------------------
-  local back_from_abella::IOVal<String> =
+  local io_action_1::IOVal<String> =
       if speak_to_abella
-      then sendCmdsToAbella(map((.abella_pp), any_a.toAbella), abella,
-                            ioin, config)
-      else ioval(ioin, "");
+      then sendCmdsToAbella(map((.abella_pp), any_a.toAbella),
+              top.abella, top.ioin, top.config)
+      else ioval(top.ioin, "");
+  local back_from_abella::String = io_action_1.iovalue;
   local full_a::FullDisplay =
-      processDisplay(back_from_abella.iovalue, from_parse);
+      processDisplay(back_from_abella, top.from_parse);
   any_a.newProofState = full_a.proof;
   --Output if in debugging mode
   ----------------------------
-  local debug_output::IOToken =
+  local io_action_2::IOToken =
       if speak_to_abella
-      then debugOutput(debug, config, any_a.toAbella,
-              "Entered Command", back_from_abella.iovalue,
-              back_from_abella.io)
-                                    --Why?  Solving type constraints
-      else debugOutput(debug, config, tail([anyParseFailure("")]),
-              "Entered Command", "", ioin);
-
+      then debugOutput(debug, top.config, any_a.toAbella,
+              "Entered Command", back_from_abella, io_action_1.io)
+                                      --Why?  Solving type constraints
+      else debugOutput(debug, top.config, tail([anyParseFailure("")]),
+              "Entered Command", "", io_action_1.io);
 
   {-
     FURTHER STATE PROCESSING
   -}
+  --whether to do the processing or launder the IOToken through
+  local continueProcessing::Boolean =
+      speak_to_abella && !is_error && !null(any_a.stateListOut);
   --Run any during commands for the current subgoal
-  ----------------------------
-  local duringed::IOVal<(StateList, FullDisplay)> =
-      runDuringCommands(any_a.stateListOut, full_a, from_parse,
-                        debug_output, abella, debug, config);
+  local io_action_3::IOVal<(StateList, FullDisplay)> =
+      if continueProcessing
+      then runDuringCommands(any_a.stateListOut, full_a, top.from_parse,
+              io_action_2, top.abella, debug, top.config)
+      else ioval(io_action_2, error("Should not access (3)"));
+  local duringed::(StateList, FullDisplay) = io_action_3.iovalue;
   --After-proof commands
-  ----------------------------
-  local aftered::IOVal<StateList> =
-      runAfterProofCommands(duringed.iovalue.1, duringed.io, abella,
-                            debug, config);
+  local io_action_4::IOVal<StateList> =
+      if continueProcessing
+      then runAfterProofCommands(duringed.1, io_action_3.io,
+              top.abella, debug, top.config)
+      else ioval(io_action_3.io, error("Should not access (4)"));
+  local aftered::StateList = io_action_4.iovalue;
   --Process any imported theorems we can now add
-  ----------------------------
-  local incominged::IOVal<StateList> =
-      runIncoming(aftered.iovalue, aftered.io, abella, debug, config);
-  local nonErrorStateList::StateList = incominged.iovalue;
+  local io_action_5::IOVal<StateList> =
+      if continueProcessing
+      then runIncoming(aftered, io_action_4.io, top.abella,
+                       debug, top.config)
+      else ioval(io_action_4.io, error("Should not access (5)"));
+  local nonErrorStateList::StateList = io_action_5.iovalue;
+  local nonErrorProverState::ProverState = head(nonErrorStateList).2;
   --Show to user
   ----------------------------
-  local finalDisplay::FullDisplay = duringed.iovalue.2;
-  finalDisplay.typeEnv = head(nonErrorStateList).2.knownTypes;
-  finalDisplay.relationEnv = head(nonErrorStateList).2.knownRels;
-  finalDisplay.constructorEnv =
-      head(nonErrorStateList).2.knownConstrs;
+  local finalDisplay::FullDisplay = duringed.2;
+  finalDisplay.typeEnv = nonErrorProverState.knownTypes;
+  finalDisplay.relationEnv = nonErrorProverState.knownRels;
+  finalDisplay.constructorEnv = nonErrorProverState.knownConstrs;
   local output_output::String =
-      if speak_to_abella
+      if speak_to_abella && continueProcessing
       then finalDisplay.fromAbella.pp ++ "\n"
       else our_own_output ++ state.fromAbella.pp ++ "\n";
-  local printed_output::IOToken =
-      if config.showUser
-      then printT(output_output, incominged.io)
-      else incominged.io;
-
-
-  {-
-    ANNOTATED FILE
-  -}
-  local annotated_output::IOToken =
-      if config.outputAnnotated
-      then appendFileT(config.annotatedFile,
-              --create block
-              "<pre class=\"code\">\n" ++
-                --add prompt and command
-                " < <b>" ++ stripExternalWhiteSpace(any_a.pp) ++
-                   "</b>\n\n" ++
-                --Extensibella output
-                stripExternalWhiteSpace(output_output) ++ "\n" ++
-              --end block
-              "</pre>\n",
-              printed_output)
-      else printed_output;
-
+  local io_action_6::IOToken =
+      if top.config.showUser
+      then printT(output_output, io_action_5.io)
+      else io_action_5.io;
 
   {-
     EXIT
   -}
-  local exited::IOToken =
-      exitAbella(any_a.toAbella, ioin, abella, debug, config);
+  --this is outside the io_action numbering scheme because it doesn't
+  --strictly happen in sync with the rest of them
+  local exited::IOToken = exitAbella(any_a.toAbella, top.ioin,
+                                     top.abella, debug, top.config);
 
 
-  {-
-    RUN REPL AGAIN
-  -}
-  local finalStateList::StateList =
-      if speak_to_abella
-      then nonErrorStateList
-      else if is_error
-      then stateList
-      else any_a.stateListOut;
-  local again::IOVal<Integer> =
+  --Permit the addition of extra actions to be carried out after the
+  --processing above
+  production attribute io::(IOToken ::= IOToken) with combineIO;
+  io := \ i::IOToken -> i;
+
+  --Annotated HTML file with command and non-dying output
+  io <- \ i::IOToken ->
+          if top.config.outputAnnotated
+          then appendFileT(top.config.annotatedFile,
+                  --create block
+                  "<pre class=\"code\">\n" ++
+                    --add prompt and command
+                    " < <b>" ++ stripExternalWhiteSpace(any_a.pp) ++
+                       "</b>\n\n" ++
+                    --Extensibella output
+                    stripExternalWhiteSpace(output_output) ++ "\n" ++
+                  --end block
+                  "</pre>\n",
+                  i)
+          else i;
+
+  --finalIO is the IOToken for all this command's IO being done,
+  --including any extra actions added apart from the basic sequence
+  local finalIO::IOToken =
+      io(if any_a.isQuit then exited else io_action_6);
+
+  rest.ioin = finalIO;
+  rest.stateList =
+       if speak_to_abella
+       then nonErrorStateList
+       else if is_error
+       then top.stateList
+       else any_a.stateListOut;
+
+  top.runResult =
+      if top.config.runningFile
+      then if is_error
+           then ioval(printT("Could not process full file " ++
+                         top.filename ++ ":\n" ++ our_own_output ++
+                         "\n", finalIO), 1)
+           else if full_a.isError
+           then ioval(printT("Colud not process full file " ++
+                         top.filename ++ ":\n" ++ full_a.pp,
+                         finalIO), 1)
+           else if any_a.isQuit && !rest.isNull
+           then ioval(printT("Warning:  File contains Quit before " ++
+                             "end\n", finalIO), 1)
+           else rest.runResult
+      else if any_a.isQuit
+           then ioval(finalIO, 0)
+           else if !is_error &&
+                   null(any_a.stateListOut) --full undo in PG
+           then expect_quit("Error:  After full undo, must have a " ++
+                   "Quit command to finish", finalIO)
                --use unsafeTrace to force it to print output
-      run_step(tail(unsafeTrace(inputCommands, annotated_output)),
-               filename, from_parse, currentModule,
-               finalStateList, config,
-               abella, annotated_output);
-
-
-  return
-     case inputCommands of
-     | [] ->
-       if !config.runningFile
-       then ioval(ioin, 0)
-       else if state.inProof
-       then ioval(printT("Proof in progress at end of file " ++
-                         filename ++ "\n", ioin), 1)
-       else if !null(head(stateList).2.remainingObligations)
-       then ioval(printT("Not all proof obligations fulfilled" ++
-                         " in file " ++ filename ++ "\n", ioin), 1)
-       else ioval(printT("Successfully processed file " ++
-                         filename ++ "\n", ioin), 0)
-     --File-specific considerations
-     | _::tl when config.runningFile ->
-       if is_error
-       then ioval(printT("Could not process full file " ++ filename ++
-                         ":\n" ++ our_own_output ++ "\n",
-                         back_from_abella.io), 1)
-       else if full_a.isError
-       then ioval(printT("Could not process full file " ++ filename ++
-                         ":\n" ++ full_a.pp, back_from_abella.io), 1)
-       else if any_a.isQuit && !null(tl)
-       then ioval(printT("Warning:  File contains Quit before end\n",
-                         back_from_abella.io), 1)
-       else again
-     --Interactive-specific considerations
-     | _::tl ->
-       if any_a.isQuit
-       then ioval(exited, 0)
-       else if null(any_a.stateListOut) --full undo in PG
-       then expect_quit("Error:  After full undo, must have a Quit" ++
-                        " command to finish", debug_output)
-       else again
-     end;
+           else unsafeTrace(rest.runResult, finalIO);
 }
 
 
 
+--Combine two IO actions into one
+function combineIO
+(IOToken ::= IOToken) ::= first::(IOToken ::= IOToken)
+                          second::(IOToken ::= IOToken)
+{
+  return \ i::IOToken -> second(first(i));
+}
+
+
+
+
+
+{-
+  Functions assisting in checking a file
+-}
 
 --Run any during commands that apply at this subgoal
 function runDuringCommands
