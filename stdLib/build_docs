@@ -1,0 +1,14 @@
+#!/bin/bash
+
+GRAMMAR=extensibella:genStdLibDocs
+JAR_NAME=build_docs.jar
+
+#SVJVM_FLAGS="-Xmx8000M -Xss40M"
+if ! silver --mwda -o $JAR_NAME -I ../grammars/ $GRAMMAR; then
+    "Build of doc generator failed"
+    exit 1
+fi
+
+java -Xmx4G -Xss16M -jar $JAR_NAME --markdown $@
+
+rm $JAR_NAME build.xml

@@ -926,7 +926,7 @@ Theorem extensibella-$-stdLib-$-divide_integer_near_total : forall A B,
   exists Q, $divide_integer A B Q.
 intros. apply $divR_help_near_total to _ _ _. search.
 
-Theorem extensibella-$-stdLib-$-$divide_integer_is_integer : forall A B Q,
+Theorem extensibella-$-stdLib-$-divide_integer_is_integer : forall A B Q,
   is_integer A -> is_integer B -> $divide_integer A B Q ->
   is_integer Q.
 intros. case H3. apply $divR_help_is_integer to H1 H2 H4. search.
@@ -965,7 +965,7 @@ Theorem extensibella-$-stdLib-$-modulus_integer_near_total : forall A B,
   exists R, $modulus_integer A B R.
 intros. apply $divR_help_near_total to _ _ _. search.
 
-Theorem extensibella-$-stdLib-$-$modulus_integer_is_integer : forall A B R,
+Theorem extensibella-$-stdLib-$-modulus_integer_is_integer : forall A B R,
   is_integer A -> is_integer B -> $modulus_integer A B R ->
   is_integer R.
 intros. case H3. apply $divR_help_is_integer to H1 H2 H4. search.

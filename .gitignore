@@ -11,6 +11,10 @@ Parser_*_parse.html
 # Output from compiling Abella files
 *.out
 
+# Generated stdLib documentation
+stdLib/*.md
+stdLib/*.html
+
 # Emacs autosave
 *~
 
