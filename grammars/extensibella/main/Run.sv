@@ -209,33 +209,37 @@ IOVal<Integer> ::=
   return
      case inputCommands of
      | [] ->
-       if config.runningFile
-       then if state.inProof
-            then ioval(printT("Proof in progress at end of file " ++
-                              filename ++ "\n", ioin), 1)
-            else if !null(head(stateList).2.remainingObligations)
-            then ioval(printT("Not all proof obligations fulfilled" ++
-                              " in file " ++ filename ++ "\n", ioin),
-                       1)
-            else ioval(printT("Successfully processed file " ++
-                              filename ++ "\n", ioin), 0)
-       else ioval(ioin, 0)
+       if !config.runningFile
+       then ioval(ioin, 0)
+       else if state.inProof
+       then ioval(printT("Proof in progress at end of file " ++
+                         filename ++ "\n", ioin), 1)
+       else if !null(head(stateList).2.remainingObligations)
+       then ioval(printT("Not all proof obligations fulfilled" ++
+                         " in file " ++ filename ++ "\n", ioin), 1)
+       else ioval(printT("Successfully processed file " ++
+                         filename ++ "\n", ioin), 0)
+     --File-specific considerations
+     | _::tl when config.runningFile ->
+       if is_error
+       then ioval(printT("Could not process full file " ++ filename ++
+                         ":\n" ++ our_own_output ++ "\n",
+                         back_from_abella.io), 1)
+       else if full_a.isError
+       then ioval(printT("Could not process full file " ++ filename ++
+                         ":\n" ++ full_a.pp, back_from_abella.io), 1)
+       else if any_a.isQuit && !null(tl)
+       then ioval(printT("Warning:  File contains Quit before end\n",
+                         back_from_abella.io), 1)
+       else again
+     --Interactive-specific considerations
      | _::tl ->
        if any_a.isQuit
        then ioval(exited, 0)
-       else if config.runningFile --running file should not error
-            then if is_error
-                 then ioval(printT("Could not process full file " ++
-                                   filename ++ ":\n" ++
-                                   our_own_output ++ "\n",
-                                   back_from_abella.io),
-                            1)
-                 else if full_a.isError
-                 then ioval(printT("Could not process full file " ++
-                                   filename ++ ":\n" ++ full_a.pp,
-                                   back_from_abella.io), 1)
-                 else again
-            else again
+       else if null(any_a.stateListOut) --full undo in PG
+       then expect_quit("Error:  After full undo, must have a Quit" ++
+                        " command to finish", debug_output)
+       else again
      end;
 }
 

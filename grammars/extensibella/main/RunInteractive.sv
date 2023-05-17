@@ -74,8 +74,7 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
 
 --Create a list of commands by reading them from the user
 function build_interactive_commands
-[AnyCommand] ::=
-   cmd_parse::(ParseResult<AnyCommand_c> ::= String String)
+[AnyCommand] ::= cmd_parse::Parser<AnyCommand_c>
 {
   local printed_prompt::IOToken = printT(" < ", unsafeIO());
   local raw_input::IOVal<String> = read_full_input(printed_prompt);
@@ -177,5 +176,28 @@ String ::= line::String
      if quote < slashquote --quote must be found for valid syntax
      then substring(quote + 1, length(line), line)
      else clear_string(substring(slashquote + 2, length(line), line));
+}
+
+
+
+
+{-
+  - If we need a quit, generally based on a full undo in Proof General, this looks for one
+  -
+  - @msg  String to print if a Quit is not found
+  - @ioin  The incoming IO token
+  - @return  The resulting IO token and exit status
+-}
+function expect_quit
+IOVal<Integer> ::= msg::String ioin::IOToken
+{
+  local printed_prompt::IOToken = printT(" < ", ioin);
+  local raw_input::IOVal<String> = read_full_input(printed_prompt);
+  local input::String = stripExternalWhiteSpace(raw_input.iovalue);
+  return if isSpace(input)
+         then expect_quit(msg, raw_input.io)
+         else if startsWith("Quit", input)
+         then ioval(raw_input.io, 0)
+         else ioval(printT(msg, raw_input.io), 2);
 }
 
