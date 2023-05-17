@@ -45,12 +45,26 @@ IOVal<Integer> ::=
   local processed::(ListOfCommands, [DefElement], [ThmElement]) =
       fileInfo.iovalue.fromRight.snd;
 
+  --output the module declaration in the annotated file
+  local annotatedModule::IOToken =
+      if config.outputAnnotated
+      then appendFileT(config.annotatedFile,
+              --create block
+              "<pre class=\"code\">\n" ++
+                --add prompt and module declaration (no output)
+                " < <b>Module " ++ fileAST.1.fromJust.pp ++
+                   ".</b>\n" ++
+              --end block
+              "</pre>\n",
+              fileInfo.io)
+      else fileInfo.io;
+
   return
      case fileInfo.iovalue of
      | left(err) -> ioval(printT(err, fileInfo.io), 1)
      | right(_) ->
        run(filename, fileAST.2.commandList, import_parse, from_parse,
            fileAST.1.fromJust, processed.1, processed.2, processed.3,
-           config, fileInfo.io)
+           config, annotatedModule)
      end;
 }

@@ -26,13 +26,14 @@ IOVal<Integer> ::=
   local generate::IOVal<Boolean> =
         generateSkeletonFiles(parsedArgs.fromRight.generateFiles,
            import_parse, interface_parse, outerface_parse, ioin);
+
   return
      case parsedArgs of
      | left(errs) -> ioval(printT(errs, ioin), 1)
      | right(args) ->
        if !generate.iovalue
        then ioval(generate.io, 1)
-       else if (args.compileFile && args.checkFile)
+       else if args.compileFile && args.checkFile
        then check_compile_files(file_parse, from_parse, import_parse,
                interface_parse, outerface_parse, generate.io,
                args.filenames, args)
@@ -75,6 +76,13 @@ synthesized attribute showUser::Boolean occurs on CmdArgs;
 synthesized attribute dumpAbella::Boolean occurs on CmdArgs;
 synthesized attribute dumpAbellaFile::String occurs on CmdArgs;
 
+synthesized attribute displayHelp::Boolean occurs on CmdArgs;
+
+--whether the Extensibella commands and output should be placed in the
+--given file
+synthesized attribute outputAnnotated::Boolean occurs on CmdArgs;
+synthesized attribute annotatedFile::String occurs on CmdArgs;
+
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -90,6 +98,36 @@ top::CmdArgs ::= l::[String]
   top.dumpAbella = false;
   top.dumpAbellaFile =
       error("Shouldn't access dumpAbellaFile if dumpAbella = false");
+
+  top.displayHelp = false;
+
+  top.outputAnnotated = false;
+  top.annotatedFile =
+      error("Shouldn't access annotatedFile if outputAnnotated = false");
+}
+
+
+--Display the help WITHOUT an error message
+abstract production helpFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.checkFile = rest.checkFile;
+  top.compileFile = rest.compileFile;
+  top.filenames = rest.filenames;
+  top.generateFiles = rest.generateFiles;
+
+  top.runningFile = rest.runningFile;
+  top.showUser = rest.showUser;
+
+  top.dumpAbella = rest.dumpAbella;
+  top.dumpAbellaFile = rest.dumpAbellaFile;
+
+  top.displayHelp = true;
+
+  top.outputAnnotated = rest.outputAnnotated;
+  top.annotatedFile = rest.annotatedFile;
+
+  forwards to rest;
 }
 
 
@@ -107,6 +145,11 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = rest.dumpAbellaFile;
+
+  top.displayHelp = rest.displayHelp;
+
+  top.outputAnnotated = rest.outputAnnotated;
+  top.annotatedFile = rest.annotatedFile;
 
   forwards to rest;
 }
@@ -127,6 +170,11 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = rest.dumpAbellaFile;
+
+  top.displayHelp = rest.displayHelp;
+
+  top.outputAnnotated = rest.outputAnnotated;
+  top.annotatedFile = rest.annotatedFile;
 
   forwards to rest;
 }
@@ -153,6 +201,36 @@ top::CmdArgs ::= moduleInfo::[String] rest::CmdArgs
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = rest.dumpAbellaFile;
 
+  top.displayHelp = rest.displayHelp;
+
+  top.outputAnnotated = rest.outputAnnotated;
+  top.annotatedFile = rest.annotatedFile;
+
+  forwards to rest;
+}
+
+
+--Output an HTML version of the commands with the Extensibella output
+abstract production annotatedOutputFlag
+top::CmdArgs ::= name::String rest::CmdArgs
+{
+  --if there are files, this requires checking
+  top.checkFile = rest.checkFile || !null(rest.filenames);
+  top.compileFile = rest.compileFile;
+  top.filenames = rest.filenames;
+  top.generateFiles = rest.generateFiles;
+
+  top.runningFile = rest.runningFile;
+  top.showUser = rest.showUser;
+
+  top.dumpAbella = rest.dumpAbella;
+  top.dumpAbellaFile = rest.dumpAbellaFile;
+
+  top.displayHelp = rest.displayHelp;
+
+  top.outputAnnotated = true;
+  top.annotatedFile = name;
+
   forwards to rest;
 }
 
@@ -171,6 +249,11 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.dumpAbella = true;
   top.dumpAbellaFile = "abella_dump.thm";
+
+  top.displayHelp = rest.displayHelp;
+
+  top.outputAnnotated = rest.outputAnnotated;
+  top.annotatedFile = rest.annotatedFile;
 
   forwards to rest;
 }
@@ -194,7 +277,11 @@ Either<String  Decorated CmdArgs> ::= args::[String]
       flagSpec(name="--generate",
                paramString=just("<module> <filename>"),
                help="generate a basic theorem file for the given module",
-               flagParser=nOptions(2, generateFlag))];
+               flagParser=nOptions(2, generateFlag)),
+      flagSpec(name="--annotate",
+               paramString=just("<filename>"),
+               help="output an HTML version of the interaction",
+               flagParser=option(annotatedOutputFlag))];
 
   production attribute debugFlags::[FlagSpec] with ++;
   debugFlags := [];
@@ -204,6 +291,15 @@ Either<String  Decorated CmdArgs> ::= args::[String]
                help="dump translated Abella commands to a file",
                flagParser=flag(dumpAbellaFlag))];
 
+  --flags to display help without error message, but without being
+  --part of the usage
+  local helpFlags::[FlagSpec] =
+      map(\ s::String ->
+            flagSpec(name=s, paramString=nothing(),
+                     help="display usage and exit",
+                     flagParser=flag(helpFlag)),
+          ["--help", "-help", "-h"]);
+
   local usage::String = 
         "Usage: extensibella [options] [filenames]\n\n" ++
         "Flag options:\n" ++ flagSpecsToHelpText(flags) ++ "\n" ++
@@ -211,7 +307,8 @@ Either<String  Decorated CmdArgs> ::= args::[String]
         "\n";
 
   -- Parse the command line
-  production a::CmdArgs = interpretCmdArgs(flags ++ debugFlags, args);
+  production a::CmdArgs =
+      interpretCmdArgs(flags ++ debugFlags ++ helpFlags, args);
 
   production attribute errors::[String] with ++;
   errors := if a.cmdError.isJust then [a.cmdError.fromJust] else [];
@@ -232,8 +329,16 @@ Either<String  Decorated CmdArgs> ::= args::[String]
      then ["Can give generate XOR filenames, not both"]
      else [];
 
+  errors <-
+     if a.outputAnnotated && length(a.filenames) > 1
+     then ["Can only check one file with annotated HTML output; " ++
+           "multiple files would all be in the same HTML file"]
+     else [];
+
   return if !null(errors)
          then left(implode("\n", errors) ++ "\n\n" ++ usage)
+         else if a.displayHelp
+         then left(usage)
          else right(a);
 }
 

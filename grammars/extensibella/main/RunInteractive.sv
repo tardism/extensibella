@@ -17,7 +17,7 @@ IOVal<Integer> ::=
   local processed::IOVal<Maybe<(QName, ListOfCommands, [DefElement],
                                 [ThmElement])>> =
       get_module_interactive(module_decl_parse, import_parse,
-         interface_parse, outerface_parse, ioin);
+         interface_parse, outerface_parse, config, ioin);
 
   return
      if !processed.iovalue.isJust
@@ -37,7 +37,8 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
    module_decl_parse::Parser<ModuleDecl_c>
    import_parse::Parser<ListOfCommands_c>
    interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c> ioin::IOToken
+   outerface_parse::Parser<Outerface_c>
+   config::Configuration ioin::IOToken
 {
   --Get input
   local printed_prompt::IOToken = printT(" < ", ioin);
@@ -49,24 +50,53 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
       module_decl_parse(input, "<<input>>");
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
                                         [ThmElement])>> =
-      processModuleDecl(result.parseTree.ast.fromJust, import_parse,
-         interface_parse, outerface_parse, raw_input.io);
+      if result.parseSuccess && result.parseTree.ast.isJust
+      then processModuleDecl(result.parseTree.ast.fromJust, import_parse,
+              interface_parse, outerface_parse, raw_input.io)
+      else ioval(raw_input.io,
+              error("Should not access in the presence of errors"));
+
+  --Output to be printed (put it here so annotatedModule can use it)
+  local output::String =
+      if !result.parseSuccess
+      then "Error:  First entry must be a module\n" ++
+           result.parseErrors ++ "\n\n"
+      else if !result.parseTree.ast.isJust
+      then ""
+      else case processed.iovalue of
+           | left(err) -> "Error:  " ++ err ++ "\n\n"
+           | right(_) -> ""
+           end;
+
+  --Annotated output
+  local annotatedModule::IOToken =
+      if config.outputAnnotated
+      then appendFileT(config.annotatedFile,
+              --create block
+              "<pre class=\"code\">\n" ++
+                --add prompt and user input
+                " < <b>" ++ input ++ "</b>\n\n" ++
+                --add output
+                stripExternalWhiteSpace(output) ++
+              --end block
+              "</pre>\n",
+              processed.io)
+      else processed.io;
 
   return
      if !result.parseSuccess
      then get_module_interactive(module_decl_parse, import_parse,
-             interface_parse, outerface_parse,
-             printT("Error:  First entry must be a module\n" ++
-                    result.parseErrors ++ "\n\n", raw_input.io))
+             interface_parse, outerface_parse, config,
+             printT(output, annotatedModule))
      else if !result.parseTree.ast.isJust
-     then ioval(raw_input.io, nothing()) --quit
+     then ioval(annotatedModule, nothing()) --quit
      else case processed.iovalue of
           | left(err) ->
             get_module_interactive(module_decl_parse, import_parse,
-               interface_parse, outerface_parse,
-               printT("Error:  " ++ err ++ "\n\n", processed.io))
+               interface_parse, outerface_parse, config,
+               printT(output, annotatedModule))
           | right((a, b, c)) ->
-            ioval(processed.io,
+            ioval(annotatedModule,
                   just((result.parseTree.ast.fromJust, a, b, c)))
           end;
 }

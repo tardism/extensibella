@@ -131,7 +131,7 @@ IOVal<Integer> ::=
       if speak_to_abella
       then sendCmdsToAbella(map((.abella_pp), any_a.toAbella), abella,
                             ioin, config)
-      else ioval(debug_output, "");
+      else ioval(ioin, "");
   local full_a::FullDisplay =
       processDisplay(back_from_abella.iovalue, from_parse);
   any_a.newProofState = full_a.proof;
@@ -183,6 +183,25 @@ IOVal<Integer> ::=
 
 
   {-
+    ANNOTATED FILE
+  -}
+  local annotated_output::IOToken =
+      if config.outputAnnotated
+      then appendFileT(config.annotatedFile,
+              --create block
+              "<pre class=\"code\">\n" ++
+                --add prompt and command
+                " < <b>" ++ stripExternalWhiteSpace(any_a.pp) ++
+                   "</b>\n\n" ++
+                --Extensibella output
+                stripExternalWhiteSpace(output_output) ++ "\n" ++
+              --end block
+              "</pre>\n",
+              printed_output)
+      else printed_output;
+
+
+  {-
     EXIT
   -}
   local exited::IOToken =
@@ -200,10 +219,10 @@ IOVal<Integer> ::=
       else any_a.stateListOut;
   local again::IOVal<Integer> =
                --use unsafeTrace to force it to print output
-      run_step(tail(unsafeTrace(inputCommands, printed_output)),
+      run_step(tail(unsafeTrace(inputCommands, annotated_output)),
                filename, from_parse, currentModule,
                finalStateList, config,
-               abella, printed_output);
+               abella, annotated_output);
 
 
   return
