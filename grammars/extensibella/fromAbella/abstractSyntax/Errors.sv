@@ -517,8 +517,7 @@ top::Type ::= functorTy::Type argTy::Type
   top.fromAbella =
       case functorTy, argTy of
       | nameType(basicQName(baseName("list"))),
-        nameType(basicQName(baseName("$char"))) ->
-        nameType(toQName("string"))
+        nameType(basicQName(baseName("$char"))) -> stringType()
       | _, _ ->
         functorType(functorTy.fromAbella, argTy.fromAbella)
       end;

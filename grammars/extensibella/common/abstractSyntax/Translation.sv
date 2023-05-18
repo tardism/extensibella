@@ -33,9 +33,6 @@ global integerLessEqName::String = "$lesseq_integer";
 global integerGreaterName::String = "$greater_integer";
 global integerGreaterEqName::String = "$greatereq_integer";
 
-global stringType::Type =
-       functorType(nameType(toQName("list")),
-                   nameType(toQName("$char")));
 global is_string::QName = toQName("is_string");
 
 global appendName::String = "$append";

@@ -299,6 +299,15 @@ top::Type ::=
 }
 
 
+--The purpose of this production is only for printing it nicely
+abstract production stringType
+top::Type ::=
+{
+  top.pp = "string";
+  forwards to listType(nameType(toQName("$char")));
+}
+
+
 
 
 

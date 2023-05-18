@@ -368,7 +368,7 @@ closed nonterminal Ty_c with ast<Type>;
 
 concrete productions top::PTy_c
 | 'string'
-  { top.ast = stringType; }
+  { top.ast = stringType(); }
 | i::Id_t
   { top.ast = if isUpper(substring(0, 1, i.lexeme))
               then varType(i.lexeme)
@@ -381,7 +381,7 @@ concrete productions top::PTy_c
 
 concrete productions top::ATy_c
 | 'string'
-  { top.ast = stringType; }
+  { top.ast = stringType(); }
 | i::Id_t
   { top.ast = if isUpper(substring(0, 1, i.lexeme))
               then varType(i.lexeme)

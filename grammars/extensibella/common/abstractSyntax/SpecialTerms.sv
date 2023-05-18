@@ -491,7 +491,7 @@ top::Term ::= contents::String
       | _ -> []
       end;
 
-  top.type = stringType;
+  top.type = stringType();
   top.upSubst = top.downSubst;
 }
 
@@ -657,7 +657,7 @@ top::Term ::= char::String
       | _ -> []
       end;
 
-  top.type = stringType;
+  top.type = stringType();
   top.upSubst = top.downSubst;
 }
 

@@ -261,7 +261,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
                          pairType(varType("A"), varType("B")),
                          propType])),
           fixedRelationEnvItem(toQName("is_string"),
-             toTypeList([stringType, propType])),
+             toTypeList([stringType(), propType])),
           fixedRelationEnvItem(toQName("is_bool"),
              toTypeList([boolType, propType])),
           fixedRelationEnvItem(toQName("is_integer"),
