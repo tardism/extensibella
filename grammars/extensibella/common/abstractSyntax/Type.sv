@@ -31,9 +31,8 @@ attribute compareTo, isEqual occurs on Type;
 abstract production arrowType
 top::Type ::= ty1::Type ty2::Type
 {
-  top.pp = (if ty1.isAtomic
-            then ty1.pp
-            else "(" ++ ty1.pp ++ ")") ++ " -> " ++ ty2.pp;
+  top.pp = ppConcat([if ty1.isAtomic then ty1.pp else parens(ty1.pp),
+                     text(" ->"), line(), ty2.pp]);
   top.abella_pp = (if ty1.isAtomic
                    then ty1.abella_pp
                    else "(" ++ ty1.abella_pp ++ ")") ++
@@ -65,8 +64,8 @@ top::Type ::= ty1::Type ty2::Type
       | arrowType(t1, t2) -> ty2.upSubst
       | varType(v) -> addSubst(v, top, top.downSubst)
       | _ ->
-        addErrSubst("Cannot unify " ++ top.unifyWith.pp ++ " and " ++
-                    top.pp, top.downSubst)
+        addErrSubst("Cannot unify " ++ justShow(top.unifyWith.pp) ++
+                    " and " ++ justShow(top.pp), top.downSubst)
       end;
 
   top.freshen = arrowType(ty1.freshen, ty2.freshen);
@@ -116,12 +115,12 @@ top::Type ::= name::QName
       case top.unifyWith of
       | nameType(n) when n == name -> top.downSubst
       | nameType(n) ->
-        addErrSubst("Cannot unify " ++ top.unifyWith.pp ++ " and " ++
-                    top.pp, top.downSubst)
+        addErrSubst("Cannot unify " ++ justShow(top.unifyWith.pp) ++
+                    " and " ++ justShow(top.pp), top.downSubst)
       | varType(v) -> addSubst(v, top, top.downSubst)
       | _ ->
-        addErrSubst("Cannot unify " ++ top.unifyWith.pp ++ " and " ++
-                    top.pp, top.downSubst)
+        addErrSubst("Cannot unify " ++ justShow(top.unifyWith.pp) ++
+                    " and " ++ justShow(top.pp), top.downSubst)
       end;
 
   top.freshen = nameType(name);
@@ -149,9 +148,9 @@ top::Type ::= name::QName
 abstract production functorType
 top::Type ::= functorTy::Type argTy::Type
 {
-  top.pp = functorTy.pp ++ " " ++ if argTy.isAtomic
-                                  then argTy.pp
-                                  else "(" ++ argTy.pp ++ ")";
+  top.pp = ppConcat([functorTy.pp, text(" "),
+                     if argTy.isAtomic then argTy.pp
+                                       else parens(argTy.pp)]);
   top.abella_pp = functorTy.abella_pp ++ " " ++
                   if argTy.isAtomic
                   then argTy.abella_pp
@@ -184,8 +183,8 @@ top::Type ::= functorTy::Type argTy::Type
       | functorType(_, _) -> argTy.upSubst
       | varType(v) -> addSubst(v, top, top.downSubst)
       | _ ->
-        addErrSubst("Cannot unify " ++ top.unifyWith.pp ++ " and " ++
-                    top.pp, top.downSubst)
+        addErrSubst("Cannot unify " ++ justShow(top.unifyWith.pp) ++
+                    " and " ++ justShow(top.pp), top.downSubst)
       end;
 
   top.freshen = functorType(functorTy.freshen, argTy.freshen);
@@ -223,7 +222,7 @@ top::Type ::= functorTy::Type argTy::Type
 abstract production varType
 top::Type ::= name::String
 {
-  top.pp = name;
+  top.pp = text(name);
   top.abella_pp = name;
   top.isAtomic = true;
 
@@ -273,7 +272,7 @@ top::Type ::= name::String
 abstract production errorType
 top::Type ::=
 {
-  top.pp = "<error>";
+  top.pp = text("<error>");
   top.abella_pp = error("errorType.abella_pp");
   top.isAtomic = true;
 
@@ -303,7 +302,7 @@ top::Type ::=
 abstract production stringType
 top::Type ::=
 {
-  top.pp = "string";
+  top.pp = text("string");
   forwards to listType(nameType(toQName("$char")));
 }
 
@@ -312,7 +311,7 @@ top::Type ::=
 
 
 nonterminal TypeList with
-   pp, abella_pp,
+   pps, abella_pp,
    toList<Type>, len,
    typeEnv,
    isError,
@@ -328,7 +327,7 @@ attribute compareTo, isEqual occurs on TypeList;
 abstract production emptyTypeList
 top::TypeList ::=
 {
-  top.pp = "";
+  top.pps = [];
   top.abella_pp = "";
 
   top.toList = [];
@@ -347,8 +346,9 @@ top::TypeList ::=
       case top.unifyWith of
       | emptyTypeList() -> top.downSubst
       | addTypeList(_, _) ->
-        addErrSubst("Cannot unify [" ++ top.pp ++ "] and [" ++
-           top.unifyWith.pp ++ "]", top.downSubst)
+        addErrSubst("Cannot unify [] and [" ++
+           justShow(ppImplode(text(", "), top.unifyWith.pps)) ++ "]",
+           top.downSubst)
       end;
 
   top.isEqual =
@@ -364,9 +364,7 @@ top::TypeList ::=
 abstract production addTypeList
 top::TypeList ::= ty::Type rest::TypeList
 {
-  top.pp = if rest.pp == ""
-           then ty.pp
-           else ty.pp ++ ", " ++ rest.pp;
+  top.pps = ty.pp::rest.pps;
   top.abella_pp = if rest.abella_pp == ""
                   then ty.abella_pp
                   else ty.abella_pp ++ ", " ++ rest.abella_pp;
@@ -397,14 +395,16 @@ top::TypeList ::= ty::Type rest::TypeList
   rest.unifyWith =
       case top.unifyWith of
       | addTypeList(_, x) -> x
-      | _ -> error("Sholud not access")
+      | _ -> error("Should not access")
       end;
   top.upSubst =
       case top.unifyWith of
       | addTypeList(_, _) -> rest.upSubst
       | emptyTypeList() ->
-        addErrSubst("Cannot unify [" ++ top.pp ++ "] and [" ++
-           top.unifyWith.pp ++ "]", top.downSubst)
+        addErrSubst("Cannot unify [" ++
+           justShow(ppImplode(text(", "), top.pps)) ++ "] and [" ++
+           justShow(ppImplode(text(", "), top.unifyWith.pps)) ++ "]",
+           top.downSubst)
       end;
 
   ty.compareTo =
@@ -439,7 +439,7 @@ propagate typeEnv on MaybeType;
 abstract production nothingType
 top::MaybeType ::=
 {
-  top.pp = "";
+  top.pp = text("");
   top.abella_pp = "";
 
   top.isJust = false;
@@ -544,12 +544,12 @@ String ::= s::Either<[Message] [(String, Type)]>
   return
      case s of
      | left(errs) ->
-       "Error:  [" ++ implode("; ", map((.pp), errs)) ++ "]"
+       "Error:  [" ++ implode("; ", map((.msg_pp), errs)) ++ "]"
      | right(lst) ->
        "Subst:  [" ++ 
           implode(", ",
              map(\ p::(String, Type) ->
-                   "(" ++ p.1 ++ ", " ++ p.2.pp ++ ")",
+                   "(" ++ p.1 ++ ", " ++ justShow(p.2.pp) ++ ")",
                  lst)) ++ "]"
      end;
 }

@@ -207,6 +207,20 @@ String ::= base::String index::Integer used::[String]
 
 
 {-
+  Sometimes you just want to show something and don't care about the
+  width, such as in error messages
+-}
+function justShow
+String ::= d::Document
+{
+  --that ought to be long enough for anything we use this for
+  return showDoc(99999, d);
+}
+
+
+
+
+{-
   Error for when something is yet to be completed
 -}
 function todoError

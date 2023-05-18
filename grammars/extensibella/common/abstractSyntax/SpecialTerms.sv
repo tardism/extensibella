@@ -5,11 +5,13 @@ grammar extensibella:common:abstractSyntax;
 abstract production translationMetaterm
 top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
 {
-  top.pp = (if args.len == 0 then "" else args.pp ++ " ") ++
-           "|{" ++ ty.pp ++ "}- " ++ orig.pp ++ " ~~> " ++ trans.pp;
+  top.pp = ppImplode(text(" "),
+              args.pps ++ [ppConcat([text("|{"), ty.pp, text("}-")]),
+                           orig.pp, text("~~>"), trans.pp]);
   top.abella_pp =
       (if args.len == 0 then "" else args.abella_pp ++ " ") ++
-      "|{" ++ ty.pp ++ "}- " ++ orig.abella_pp ++ " ~~> " ++ trans.pp;
+      "|{" ++ ty.abella_pp ++ "}- " ++ orig.abella_pp ++ " ~~> " ++
+                                       trans.abella_pp;
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -51,7 +53,8 @@ top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
 abstract production plusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  top.pp = t1.pp ++ " + " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp =
+      ppConcat([t1.pp, text(" + "), t2.pp, text(" = "), result.pp]);
   top.abella_pp = t1.abella_pp ++ " + " ++ t2.abella_pp ++ " = " ++
                   result.abella_pp;
   top.isAtomic = true;
@@ -74,7 +77,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 abstract production minusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  top.pp = t1.pp ++ " - " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp =
+      ppConcat([t1.pp, text(" - "), t2.pp, text(" = "), result.pp]);
   top.abella_pp = t1.abella_pp ++ " - " ++ t2.abella_pp ++ " = " ++
                   result.abella_pp;
   top.isAtomic = true;
@@ -97,7 +101,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 abstract production multiplyMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  top.pp = t1.pp ++ " * " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp =
+      ppConcat([t1.pp, text(" * "), t2.pp, text(" = "), result.pp]);
   top.abella_pp = t1.abella_pp ++ " * " ++ t2.abella_pp ++ " = " ++
                   result.abella_pp;
   top.isAtomic = true;
@@ -120,7 +125,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 abstract production divideMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  top.pp = t1.pp ++ " / " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp =
+      ppConcat([t1.pp, text(" / "), t2.pp, text(" = "), result.pp]);
   top.abella_pp = t1.abella_pp ++ " / " ++ t2.abella_pp ++ " = " ++
                   result.abella_pp;
   top.isAtomic = true;
@@ -143,7 +149,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 abstract production modulusMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  top.pp = t1.pp ++ " mod " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp =
+      ppConcat([t1.pp, text(" mod "), t2.pp, text(" = "), result.pp]);
   top.abella_pp = t1.abella_pp ++ " mod " ++ t2.abella_pp ++ " = " ++
                   result.abella_pp;
   top.isAtomic = true;
@@ -166,7 +173,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 abstract production negateMetaterm
 top::Metaterm ::= t::Term result::Term
 {
-  top.pp = "- " ++ t.pp ++ " = " ++ result.pp;
+  top.pp = ppConcat([text("- "), t.pp, text(" = "), result.pp]);
   top.abella_pp = "- " ++ t.abella_pp ++ " = " ++ result.abella_pp;
   top.isAtomic = true;
 
@@ -185,7 +192,7 @@ top::Metaterm ::= t::Term result::Term
 abstract production lessMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " < " ++ t2.pp;
+  top.pp = ppConcat([t1.pp, text(" < "), t2.pp]);
   top.abella_pp = t1.abella_pp ++ " < " ++ t2.abella_pp;
   top.isAtomic = true;
 
@@ -204,7 +211,7 @@ top::Metaterm ::= t1::Term t2::Term
 abstract production lessEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " <= " ++ t2.pp;
+  top.pp = ppConcat([t1.pp, text(" <= "), t2.pp]);
   top.abella_pp = t1.abella_pp ++ " <= " ++ t2.abella_pp;
   top.isAtomic = true;
 
@@ -223,7 +230,7 @@ top::Metaterm ::= t1::Term t2::Term
 abstract production greaterMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " > " ++ t2.pp;
+  top.pp = ppConcat([t1.pp, text(" > "), t2.pp]);
   top.abella_pp = t1.abella_pp ++ " > " ++ t2.abella_pp;
   top.isAtomic = true;
 
@@ -242,7 +249,7 @@ top::Metaterm ::= t1::Term t2::Term
 abstract production greaterEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " >= " ++ t2.pp;
+  top.pp = ppConcat([t1.pp, text(" >= "), t2.pp]);
   top.abella_pp = t1.abella_pp ++ " >= " ++ t2.abella_pp;
   top.isAtomic = true;
 
@@ -262,9 +269,10 @@ top::Metaterm ::= t1::Term t2::Term
 abstract production appendMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 {
-  top.pp = t1.pp ++ " ++ " ++ t2.pp ++ " = " ++ result.pp ++ r.pp;
+  top.pp = ppConcat([t1.pp, text(" ++ "), t2.pp, text(" = "),
+                     result.pp, r.pp]);
   top.abella_pp = t1.abella_pp ++ " ++ " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp ++ r.pp;
+                  result.abella_pp ++ r.abella_pp;
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -287,7 +295,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 abstract production orBoolMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  top.pp = t1.pp ++ " || " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp =
+      ppConcat([t1.pp, text(" || "), t2.pp, text(" = "), result.pp]);
   top.abella_pp = t1.abella_pp ++ " || " ++ t2.abella_pp ++ " = " ++
                   result.abella_pp;
   top.isAtomic = true;
@@ -310,7 +319,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 abstract production andBoolMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term
 {
-  top.pp = t1.pp ++ " && " ++ t2.pp ++ " = " ++ result.pp;
+  top.pp =
+      ppConcat([t1.pp, text(" && "), t2.pp, text(" = "), result.pp]);
   top.abella_pp = t1.abella_pp ++ " && " ++ t2.abella_pp ++ " = " ++
                   result.abella_pp;
   top.isAtomic = true;
@@ -333,7 +343,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 abstract production notBoolMetaterm
 top::Metaterm ::= t::Term result::Term
 {
-  top.pp = "! " ++ t.pp ++ " = " ++ result.pp;
+  top.pp = ppConcat([text("! "), t.pp, text(" = "), result.pp]);
   top.abella_pp = "! " ++ t.abella_pp ++ " = " ++ result.abella_pp;
   top.isAtomic = true;
 
@@ -354,9 +364,11 @@ top::Metaterm ::= t::Term result::Term
 abstract production extSizeMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.pp = "<" ++ rel.pp ++ " {ES}> " ++ args.pp ++ r.pp;
-  top.abella_pp =
-      "<" ++ rel.abella_pp ++ " {ES}> " ++ args.abella_pp ++ r.pp;
+  top.pp = cat(ppImplode(text(" "),
+                  ppConcat([text("<"), rel.pp, text(" {ES}>")]
+                          )::args.pps), r.pp);
+  top.abella_pp = "<" ++ rel.abella_pp ++ " {ES}> " ++
+                  args.abella_pp ++ r.abella_pp;
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -376,9 +388,11 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 abstract production transRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.pp = "<" ++ rel.pp ++ " {T}> " ++ args.pp ++ r.pp;
+  top.pp = cat(ppImplode(text(" "),
+                  ppConcat([text("<"), rel.pp, text(" {T}>")]
+                          )::args.pps), r.pp);
   top.abella_pp = "<" ++ rel.abella_pp ++ " {T}> " ++
-                  args.abella_pp ++ r.pp; 
+                  args.abella_pp ++ r.abella_pp;
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -403,7 +417,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 abstract production unknownTerm
 top::Term ::= ty::QName
 {
-  top.pp = "<unknown " ++ ty.pp ++ ">";
+  top.pp = ppConcat([text("<unknown "), ty.pp, text(">")]);
   top.abella_pp = "<unknown " ++ ty.abella_pp ++ ">";
   top.isAtomic = true;
 
@@ -438,7 +452,7 @@ top::Term ::= ty::QName
 abstract production intTerm
 top::Term ::= i::Integer
 {
-  top.pp = toString(i);
+  top.pp = text(toString(i));
   top.abella_pp = toString(i);
   top.isAtomic = true;
 
@@ -468,7 +482,7 @@ top::Term ::= i::Integer
 abstract production stringTerm
 top::Term ::= contents::String
 {
-  top.pp = "\"" ++ contents ++ "\"";
+  top.pp = text("\"" ++ contents ++ "\"");
   top.abella_pp = "\"" ++ contents ++ "\"";
   top.isAtomic = true;
 
@@ -498,7 +512,7 @@ top::Term ::= contents::String
 abstract production trueTerm
 top::Term ::=
 {
-  top.pp = "true";
+  top.pp = text("true");
   top.abella_pp = "true";
   top.isAtomic = true;
 
@@ -528,7 +542,7 @@ top::Term ::=
 abstract production falseTerm
 top::Term ::=
 {
-  top.pp = "false";
+  top.pp = text("false");
   top.abella_pp = "false";
   top.isAtomic = true;
 
@@ -558,7 +572,8 @@ top::Term ::=
 abstract production listTerm
 top::Term ::= contents::ListContents
 {
-  top.pp = "[" ++ contents.pp ++ "]";
+  top.pp = ppConcat([text("["), ppImplode(text(", "), contents.pps),
+                     text("]")]);
   top.abella_pp = "[" ++ contents.abella_pp ++ "]";
   top.isAtomic = true;
 
@@ -598,7 +613,8 @@ top::Term ::= contents::ListContents
 abstract production pairTerm
 top::Term ::= contents::PairContents
 {
-  top.pp = "(" ++ contents.pp ++ ")";
+  top.pp = ppConcat([text("("), ppImplode(text(", "), contents.pps),
+                     text(")")]);
   top.abella_pp = "(" ++ contents.abella_pp ++ ")";
   top.isAtomic = true;
 
@@ -634,7 +650,7 @@ top::Term ::= contents::PairContents
 abstract production charTerm
 top::Term ::= char::String
 {
-  top.pp = "\"" ++ char ++ "\"";
+  top.pp = text("\"" ++ char ++ "\"");
   top.abella_pp = "\"" ++ char ++ "\"";
   top.isAtomic = true;
 
@@ -665,7 +681,7 @@ top::Term ::= char::String
 
 
 nonterminal ListContents with
-   pp, abella_pp,
+   pps, abella_pp,
    toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<ListContents>,
@@ -677,7 +693,7 @@ propagate typeEnv, constructorEnv, relationEnv, boundNames,
 abstract production emptyListContents
 top::ListContents ::=
 {
-  top.pp = "";
+  top.pps = [];
   top.abella_pp = "";
   top.toList = [];
   top.len = 0;
@@ -690,7 +706,7 @@ top::ListContents ::=
 abstract production addListContents
 top::ListContents ::= t::Term rest::ListContents
 {
-  top.pp = t.pp ++ (if rest.pp == "" then "" else ", " ++ rest.pp);
+  top.pps = t.pp::rest.pps;
   top.abella_pp = t.abella_pp ++ (if rest.abella_pp == "" then ""
                                   else ", " ++ rest.abella_pp);
   top.toList = t::rest.toList;
@@ -709,7 +725,7 @@ top::ListContents ::= t::Term rest::ListContents
 
 
 nonterminal PairContents with
-   pp, abella_pp,
+   pps, abella_pp,
    toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<PairContents>,
@@ -721,7 +737,7 @@ propagate typeEnv, constructorEnv, relationEnv, boundNames,
 abstract production singlePairContents
 top::PairContents ::= t::Term
 {
-  top.pp = t.pp;
+  top.pps = [t.pp];
   top.abella_pp = t.abella_pp;
   top.toList = [t];
   top.len = 1;
@@ -735,7 +751,7 @@ top::PairContents ::= t::Term
 abstract production addPairContents
 top::PairContents ::= t::Term rest::PairContents
 {
-  top.pp = t.pp ++ ", " ++ rest.pp;
+  top.pps = t.pp::rest.pps;
   top.abella_pp = t.abella_pp ++ ", " ++ rest.abella_pp;
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;

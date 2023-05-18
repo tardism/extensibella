@@ -14,8 +14,9 @@ propagate boundNames, downVarTys on Metaterm
 abstract production relationMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.pp = rel.pp ++ " " ++ args.pp ++ r.pp;
-  top.abella_pp = rel.abella_pp ++ " " ++ args.abella_pp ++ r.pp;
+  top.pp = cat(ppImplode(text(" "), rel.pp::args.pps), r.pp);
+  top.abella_pp =
+      rel.abella_pp ++ " " ++ args.abella_pp ++ r.abella_pp;
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -36,7 +37,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 abstract production trueMetaterm
 top::Metaterm ::=
 {
-  top.pp = "true";
+  top.pp = text("true");
   top.abella_pp = "true";
   top.isAtomic = true;
 
@@ -49,7 +50,7 @@ top::Metaterm ::=
 abstract production falseMetaterm
 top::Metaterm ::=
 {
-  top.pp = "false";
+  top.pp = text("false");
   top.abella_pp = "false";
   top.isAtomic = true;
 
@@ -62,7 +63,7 @@ top::Metaterm ::=
 abstract production eqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
-  top.pp = t1.pp ++ " = " ++ t2.pp;
+  top.pp = ppImplode(text(" "), [t1.pp, text("="), t2.pp]);
   top.abella_pp = t1.abella_pp ++ " = " ++ t2.abella_pp;
   top.isAtomic = true;
 
@@ -79,9 +80,8 @@ top::Metaterm ::= t1::Term t2::Term
 abstract production impliesMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
-  top.pp = (if t1.isAtomic
-            then t1.pp
-            else "(" ++ t1.pp ++ ")") ++ " -> " ++ t2.pp;
+  top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
+                     text(" ->"), line(), t2.pp]);
   top.abella_pp =
       (if t1.isAtomic
        then t1.abella_pp
@@ -99,13 +99,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 abstract production orMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
-  top.pp =
-    ( if t1.isAtomic
-      then t1.pp
-      else "(" ++ t1.pp ++ ")" ) ++ " \\/ " ++
-    ( if t2.isAtomic
-      then t2.pp
-      else "(" ++ t2.pp ++ ")" );
+  top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
+                     text(" \\/"), line(),
+                     if t2.isAtomic then t2.pp else parens(t2.pp)]);
   top.abella_pp =
     ( if t1.isAtomic
       then t1.abella_pp
@@ -126,13 +122,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 abstract production andMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
-  top.pp =
-    ( if t1.isAtomic
-      then t1.pp
-      else "(" ++ t1.pp ++ ")" ) ++ " /\\ " ++
-    ( if t2.isAtomic
-      then t2.pp
-      else "(" ++ t2.pp ++ ")" );
+  top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
+                     text(" /\\"), line(),
+                     if t2.isAtomic then t2.pp else parens(t2.pp)]);
   top.abella_pp =
     ( if t1.isAtomic
       then t1.abella_pp
@@ -154,9 +146,11 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 abstract production bindingMetaterm
 top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
 {
-  top.pp = b.pp ++ " " ++ nameBindings.pp ++ ", " ++ body.pp;
-  top.abella_pp = b.pp ++ " " ++ nameBindings.abella_pp ++ ", " ++
-                  body.abella_pp;
+  top.pp = ppConcat([b.pp, text(" "),
+                     ppImplode(text(" "), nameBindings.pps),
+                     text(","), line(), body.pp]);
+  top.abella_pp = b.abella_pp ++ " " ++ nameBindings.abella_pp ++
+                  ", " ++ body.abella_pp;
   top.isAtomic = false;
 
   top.splitImplies = body.splitImplies;
@@ -185,7 +179,7 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
 
 
 nonterminal Bindings with
-   pp, abella_pp,
+   pps, abella_pp,
    toList<(String, MaybeType)>, len,
    usedNames,
    typeEnv;
@@ -194,10 +188,10 @@ propagate typeEnv on Bindings;
 abstract production oneBinding
 top::Bindings ::= name::String mty::MaybeType
 {
-  top.pp =
+  top.pps =
       if mty.isJust
-      then "(" ++ name ++ " : " ++ mty.pp ++ ")"
-      else name;
+      then [parens(ppConcat([text(name), text(" : "), mty.pp]))]
+      else [text(name)];
   top.abella_pp =
       if mty.isJust
       then "(" ++ name ++ " : " ++ mty.abella_pp ++ ")"
@@ -213,10 +207,10 @@ top::Bindings ::= name::String mty::MaybeType
 abstract production addBindings
 top::Bindings ::= name::String mty::MaybeType rest::Bindings
 {
-  top.pp =
-      ( if mty.isJust
-        then "(" ++ name ++ " : " ++ mty.pp ++ ")"
-        else name ) ++ " " ++ rest.pp;
+  top.pps =
+     (if mty.isJust
+      then parens(ppConcat([text(name), text(" : "), mty.pp]))
+      else text(name))::rest.pps;
   top.abella_pp =
       ( if mty.isJust
         then "(" ++ name ++ " : " ++ mty.abella_pp ++ ")"
@@ -231,59 +225,67 @@ top::Bindings ::= name::String mty::MaybeType rest::Bindings
 
 
 
-nonterminal Restriction with pp;
+nonterminal Restriction with pp, abella_pp;
 
 abstract production emptyRestriction
 top::Restriction ::=
 {
-  top.pp = "";
+  top.pp = notext();
+  top.abella_pp = "";
 }
 
 abstract production starRestriction
 top::Restriction ::= n::Integer
 {
-  top.pp = " " ++ replicate(n, "*");
+  top.pp = cat(text(" "), text(replicate(n, "*")));
+  top.abella_pp = " " ++ replicate(n, "*");
 }
 
 abstract production atRestriction
 top::Restriction ::= n::Integer
 {
-  top.pp = " " ++ replicate(n, "@");
+  top.pp = cat(text(" "), text(replicate(n, "@")));
+  top.abella_pp = " " ++ replicate(n, "@");
 }
 
 abstract production plusRestriction
 top::Restriction ::= n::Integer
 {
-  top.pp = " " ++ replicate(n, "+");
+  top.pp = cat(text(" "), text(replicate(n, "+")));
+  top.abella_pp = " " ++ replicate(n, "+");
 }
 
 abstract production hashRestriction
 top::Restriction ::= n::Integer
 {
-  top.pp = " " ++ replicate(n, "#");
+  top.pp = cat(text(" "), text(replicate(n, "#")));
+  top.abella_pp = " " ++ replicate(n, "#");
 }
 
 
 
 
-nonterminal Binder with pp;
+nonterminal Binder with pp, abella_pp;
 
 abstract production forallBinder
 top::Binder ::=
 {
-  top.pp = "forall";
+  top.pp = text("forall");
+  top.abella_pp = "forall";
 }
 
 abstract production existsBinder
 top::Binder ::=
 {
-  top.pp = "exists";
+  top.pp = text("exists");
+  top.abella_pp = "exists";
 }
 
 abstract production nablaBinder
 top::Binder::=
 {
-  top.pp = "nabla";
+  top.pp = text("nabla");
+  top.abella_pp = "nabla";
 }
 
 
@@ -311,10 +313,8 @@ top::Term ::=
 abstract production applicationTerm
 top::Term ::= f::Term args::TermList
 {
-  top.pp =
-    ( if f.isAtomic
-      then f.pp
-      else "(" ++ f.pp ++ ")" ) ++ " " ++ args.pp;
+  top.pp = ppImplode(line(),
+              (if f.isAtomic then f.pp else parens(f.pp))::args.pps);
   top.abella_pp =
     ( if f.isAtomic
       then f.abella_pp
@@ -367,7 +367,7 @@ top::Term ::= name::QName mty::MaybeType
 {
   top.pp =
       if mty.isJust
-      then "(" ++ name.pp ++ " : " ++ mty.pp ++ ")"
+      then parens(ppConcat([name.pp, text(" : "), mty.pp]))
       else name.pp;
   top.abella_pp =
       if mty.isJust
@@ -427,13 +427,9 @@ top::Term ::= name::QName mty::MaybeType
 abstract production consTerm
 top::Term ::= t1::Term t2::Term
 {
-  top.pp =
-    ( if t1.isAtomic
-      then t1.pp
-      else "(" ++ t1.pp ++ ")" ) ++ "::" ++
-    ( if t2.isAtomic
-      then t2.pp
-      else "(" ++ t2.pp ++ ")" );
+  top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
+                     text("::"),
+                     if t2.isAtomic then t2.pp else parens(t2.pp)]);
   top.abella_pp =
     ( if t1.isAtomic
       then t1.abella_pp
@@ -483,7 +479,7 @@ top::Term ::= t1::Term t2::Term
 abstract production nilTerm
 top::Term ::=
 {
-  top.pp = "nil";
+  top.pp = text("nil");
   top.abella_pp = "nil";
   top.isAtomic = true;
 
@@ -516,8 +512,8 @@ top::Term ::= mty::MaybeType
 {
   top.pp =
       if mty.isJust
-      then "(_ : " ++ mty.pp ++ ")"
-      else "_";
+      then parens(cat(text("_ : "), mty.pp))
+      else text("_");
   top.abella_pp =
       if mty.isJust
       then "(_ : " ++ mty.abella_pp ++ ")"
@@ -549,7 +545,7 @@ top::Term ::= mty::MaybeType
 
 
 nonterminal TermList with
-   pp, abella_pp, toList<Term>, len,
+   pps, abella_pp, toList<Term>, len,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames,
    substName, substTerm, subst<TermList>,
@@ -562,7 +558,7 @@ propagate typeEnv, constructorEnv, relationEnv, boundNames,
 abstract production singleTermList
 top::TermList ::= t::Term
 {
-  top.pp = if t.isAtomic then t.pp else "(" ++ t.pp ++ ")";
+  top.pps = [if t.isAtomic then t.pp else parens(t.pp)];
   top.abella_pp = if t.isAtomic then t.abella_pp
                                 else "(" ++ t.abella_pp ++ ")";
 
@@ -594,8 +590,7 @@ top::TermList ::= t::Term
 abstract production consTermList
 top::TermList ::= t::Term rest::TermList
 {
-  top.pp = (if t.isAtomic then t.pp else "(" ++ t.pp ++ ")") ++
-           " " ++ rest.pp;
+  top.pps = (if t.isAtomic then t.pp else parens(t.pp))::rest.pps;
   top.abella_pp = (if t.isAtomic then t.abella_pp
                                  else "(" ++ t.abella_pp ++ ")") ++
                   " " ++ rest.abella_pp;
@@ -634,7 +629,7 @@ top::TermList ::= t::Term rest::TermList
 abstract production emptyTermList
 top::TermList ::=
 {
-  top.pp = "";
+  top.pps = [];
   top.abella_pp = "";
 
   top.toList = [];

@@ -1,10 +1,17 @@
 grammar extensibella:common:abstractSyntax;
 
+imports silver:langutil:pp;
+imports silver:langutil only pp, pps;
 
---pp using colons for joining
-synthesized attribute pp::String;
-flowtype pp {} on Subgoal,  Hypothesis, Context, CurrentGoal,
-                  ProofState, Metaterm, Term, TermList;
+{-
+  Attribute pp is from silver:langutil:pp.  We use this to get the
+  easy wrapping it provides, which is necessary as formulas can get
+  quite long.
+
+  Attribute pp uses colons for joining QNames, where abella_pp uses
+  the encoded separator name_sep for joining QNames.
+-}
+
 --pp using name_sep for joining
 synthesized attribute abella_pp::String;
 flowtype abella_pp {} on Metaterm, Term, TermList;

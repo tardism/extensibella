@@ -17,12 +17,14 @@ abstract production proofInProgress
 top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
                     futureGoals::[Subgoal]
 {
-  local subgoalString::String =
+  local subgoalPP::Document =
       if subgoalNum != initialSubgoalNum
-      then "Subgoal " ++ subgoalNumToString(subgoalNum) ++ ":\n"
-      else "";
-  top.pp = subgoalString ++ "\n" ++ currGoal.pp ++ "\n" ++
-           implode("\n\n", map((.pp), futureGoals));
+      then cat(text("Subgoal " ++ subgoalNumToString(subgoalNum) ++
+                    ":"), realLine())
+      else text("");
+  top.pp = ppConcat([subgoalPP, realLine(), currGoal.pp, realLine(),
+                     ppImplode(cat(realLine(), realLine()),
+                               map((.pp), futureGoals))]);
 
   top.hypList = currGoal.hypList;
 
@@ -36,7 +38,7 @@ top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
 abstract production noProof
 top::ProofState ::=
 {
-  top.pp = "";
+  top.pp = text("");
 
   top.hypList = [];
 
@@ -51,7 +53,7 @@ top::ProofState ::=
 abstract production proofCompleted
 top::ProofState ::=
 {
-  top.pp = "Proof completed.";
+  top.pp = text("Proof completed.");
 
   top.hypList = [];
 
@@ -68,7 +70,7 @@ top::ProofState ::=
 abstract production proofAborted
 top::ProofState ::=
 {
-  top.pp = "Proof ABORTED.";
+  top.pp = text("Proof ABORTED.");
 
   top.hypList = [];
 
@@ -93,14 +95,15 @@ propagate typeEnv, constructorEnv, relationEnv on CurrentGoal;
 abstract production currentGoal
 top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
 {
-  local varsString::String =
+  local varsPP::Document =
         if null(vars)
-        then ""
-        else "Variables: " ++ foldr1(\ x::String y::String ->
-                                       x ++ " " ++ y, vars) ++ "\n";
-  top.pp = varsString ++ ctx.pp ++
-          "============================\n " ++
-           goal.pp ++ "\n";
+        then text("")
+        else ppConcat([text("Variables: "),
+                ppImplode(text(" "), map(text, vars)), realLine()]);
+  top.pp = ppConcat([varsPP,
+                     ppImplode(realLine(), ctx.pps),
+                     text("============================"), realLine(),
+                     text(" "), goal.pp, realLine()]);
 
   top.hypList = ctx.hypList;
 
@@ -114,7 +117,7 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
 
 --A context is the hypotheses available for proving the current goal
 nonterminal Context with
-   pp, hypList,
+   pps, hypList,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
 propagate typeEnv, constructorEnv, relationEnv on Context;
@@ -123,7 +126,7 @@ propagate boundNames on Context;
 abstract production emptyContext
 top::Context ::=
 {
-  top.pp = "";
+  top.pps = [];
 
   top.hypList = [];
 }
@@ -132,8 +135,7 @@ top::Context ::=
 abstract production singleContext
 top::Context ::= h::Hypothesis
 {
-  --We don't want to put blank lines for hidden hypotheses
-  top.pp = if h.pp == "" then "" else h.pp ++ "\n";
+  top.pps = h.pps;
 
   top.hypList = h.hypList;
 }
@@ -142,7 +144,7 @@ top::Context ::= h::Hypothesis
 abstract production branchContext
 top::Context ::= c1::Context c2::Context
 {
-  top.pp = c1.pp ++ c2.pp;
+  top.pps = c1.pps ++ c2.pps;
 
   top.hypList = c1.hypList ++ c2.hypList;
 }
@@ -150,7 +152,7 @@ top::Context ::= c1::Context c2::Context
 
 
 nonterminal Hypothesis with
-   pp,
+   pps, --more of a maybe than a list
    hypList,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames;
@@ -160,7 +162,9 @@ propagate boundNames on Hypothesis;
 abstract production metatermHyp
 top::Hypothesis ::= name::String body::Metaterm
 {
-  top.pp = name ++ " : " ++ body.pp;
+  top.pps = [ppConcat([text(name), text(" : "),
+                       --indent it so it is further over than "name : "
+                       nest(length(name) + 3, body.pp)])];
 
   top.hypList = [(name, new(body))];
 }
@@ -176,14 +180,17 @@ type SubgoalNum = [Integer];
 abstract production subgoal
 top::Subgoal ::= num::SubgoalNum goal::Metaterm
 {
-  top.pp = "Subgoal " ++ subgoalNumToString(num) ++ " is:\n " ++ goal.pp;
+  top.pp =
+      ppConcat([text("Subgoal " ++ subgoalNumToString(num) ++ " is:"),
+                realLine(), text(" "), goal.pp]);
 }
 
 
 abstract production hiddenSubgoals
 top::Subgoal ::= num::Integer
 {
-  top.pp = toString(num) ++ " other subgoal" ++ (if num == 1 then "." else "s.");
+  top.pp = text(toString(num) ++ " other subgoal" ++
+                (if num == 1 then "." else "s."));
 }
 
 

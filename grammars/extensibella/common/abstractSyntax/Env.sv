@@ -43,7 +43,7 @@ function findAllEnv
 function printEnv
 attribute name {} occurs on a => String ::= e::Env<a>
 {
-  return "[" ++ implode(", ", map(\ a::a -> a.name.pp, e)) ++ "]";
+  return "[" ++ implode(", ", map(\ a::a -> justShow(a.name.pp), e)) ++ "]";
 }
 
 

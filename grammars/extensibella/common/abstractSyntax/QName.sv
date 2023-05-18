@@ -52,7 +52,7 @@ synthesized attribute sub::SubQName occurs on QName;
 abstract production baseName
 top::SubQName ::= name::String
 {
-  top.pp = name;
+  top.pp = text(name);
   top.abella_pp = name;
 
   top.isQualified = false;
@@ -67,19 +67,19 @@ top::SubQName ::= name::String
      lookupEnv(basicQName(top), top.typeEnv);
   top.typeErrors =
       case possibleTys of
-      | [] -> [errorMsg("Unknown type " ++ top.pp)]
+      | [] -> [errorMsg("Unknown type " ++ name)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate type " ++ top.pp ++ "; " ++
+        [errorMsg("Indeterminate type " ++ name ++ "; " ++
                   "possibilities are " ++
-                  implode(", ", map((.pp),
-                                map((.name), possibleTys))))]
+                  implode(", ", map(justShow, map((.pp),
+                                map((.name), possibleTys)))))]
       end;
   top.typeFound = length(possibleTys) == 1;
   top.fullType =
       case possibleTys of
       | x::_ -> x
-      | [] -> error("Could not find full type for " ++ top.pp)
+      | [] -> error("Could not find full type for " ++ name)
       end;
 
   --lookup name as a relation
@@ -87,19 +87,19 @@ top::SubQName ::= name::String
      lookupEnv(basicQName(top), top.relationEnv);
   top.relErrors =
       case possibleRels of
-      | [] -> [errorMsg("Unknown relation " ++ top.pp)]
+      | [] -> [errorMsg("Unknown relation " ++ name)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate relation " ++ top.pp ++
+        [errorMsg("Indeterminate relation " ++ name ++
                   "; possibilities are " ++
-                  implode(", ", map((.pp),
-                                map((.name), possibleRels))))]
+                  implode(", ", map(justShow, map((.pp),
+                                map((.name), possibleRels)))))]
       end;
   top.relFound = length(possibleRels) == 1;
   top.fullRel =
       case possibleRels of
       | x::_ -> x
-      | [] -> error("Could not find full relation for " ++ top.pp)
+      | [] -> error("Could not find full relation for " ++ name)
       end;
 
   --lookup name as a constructor
@@ -109,14 +109,14 @@ top::SubQName ::= name::String
      lookupEnv(basicQName(top), top.constructorEnv);
   top.constrErrors =
       case possibleConstrs, possibleRels of
-      | [], [] -> [errorMsg("Unknown constant " ++ top.pp)]
+      | [], [] -> [errorMsg("Unknown constant " ++ name)]
       | [_], [] -> []
       | [], [_] -> []
       | l1, l2 ->
-        [errorMsg("Indeterminate constant " ++ top.pp ++ "; " ++
+        [errorMsg("Indeterminate constant " ++ name ++ "; " ++
             "possibilities are " ++
-            implode(", ",
-                map((.pp), map((.name), l1) ++ map((.name), l2))))]
+            implode(", ", map(justShow,
+                map((.pp), map((.name), l1) ++ map((.name), l2)))))]
       end;
   top.constrFound =
       length(possibleConstrs) + length(possibleRels) == 1;
@@ -125,7 +125,7 @@ top::SubQName ::= name::String
       | x::_, _ -> right(x)
       | _, x::_ -> left(x)
       | [], [] ->
-        error("Could not find full constructor for " ++ top.pp)
+        error("Could not find full constructor for " ++ name)
       end;
 
   propagate compareTo, isEqual;
@@ -135,8 +135,10 @@ top::SubQName ::= name::String
 abstract production addModule
 top::SubQName ::= name::String rest::SubQName
 {
-  top.pp = name ++ ":" ++ rest.pp;
+  top.pp = ppConcat([text(name), text(":"), rest.pp]);
   top.abella_pp = name ++ name_sep ++ rest.abella_pp;
+
+  local showed::String = justShow(top.pp);
 
   top.isQualified = true;
   top.shortName = rest.shortName;
@@ -153,19 +155,19 @@ top::SubQName ::= name::String rest::SubQName
      lookupEnv(basicQName(top), top.typeEnv);
   top.typeErrors =
       case possibleTys of
-      | [] -> [errorMsg("Unknown type " ++ top.pp)]
+      | [] -> [errorMsg("Unknown type " ++ showed)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate type " ++ top.pp ++ "; " ++
+        [errorMsg("Indeterminate type " ++ showed ++ "; " ++
                   "possibilities are " ++
-                  implode(", ", map((.pp),
-                                map((.name), possibleTys))))]
+                  implode(", ", map(justShow, map((.pp),
+                                map((.name), possibleTys)))))]
       end;
   top.typeFound = length(possibleTys) == 1;
   top.fullType =
       case possibleTys of
       | x::_ -> x
-      | [] -> error("Could not find full type for " ++ top.pp)
+      | [] -> error("Could not find full type for " ++ showed)
       end;
 
   --lookup name as a relation
@@ -173,19 +175,19 @@ top::SubQName ::= name::String rest::SubQName
      lookupEnv(basicQName(top), top.relationEnv);
   top.relErrors =
       case possibleRels of
-      | [] -> [errorMsg("Unknown relation " ++ top.pp)]
+      | [] -> [errorMsg("Unknown relation " ++ showed)]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate relation " ++ top.pp ++
+        [errorMsg("Indeterminate relation " ++ showed ++
                   "; possibilities are " ++
-                  implode(", ", map((.pp),
-                                map((.name), possibleRels))))]
+                  implode(", ", map(justShow, map((.pp),
+                                map((.name), possibleRels)))))]
       end;
   top.relFound = length(possibleRels) == 1;
   top.fullRel =
       case possibleRels of
       | x::_ -> x
-      | [] -> error("Could not find full relation for " ++ top.pp)
+      | [] -> error("Could not find full relation for " ++ showed)
       end;
 
   --lookup name as a constructor
@@ -195,14 +197,14 @@ top::SubQName ::= name::String rest::SubQName
      lookupEnv(basicQName(top), top.constructorEnv);
   top.constrErrors =
       case possibleConstrs, possibleRels of
-      | [], [] -> [errorMsg("Unknown constant " ++ top.pp)]
+      | [], [] -> [errorMsg("Unknown constant " ++ showed)]
       | [_], [] -> []
       | [], [_] -> []
       | l1, l2 ->
-        [errorMsg("Indeterminate constant " ++ top.pp ++ "; " ++
+        [errorMsg("Indeterminate constant " ++ showed ++ "; " ++
             "possibilities are " ++
-            implode(", ",
-                map((.pp), map((.name), l1) ++ map((.name), l2))))]
+            implode(", ", map(justShow,
+                map((.pp), map((.name), l1) ++ map((.name), l2)))))]
       end;
   top.constrFound =
       length(possibleConstrs) + length(possibleRels) == 1;
@@ -211,7 +213,7 @@ top::SubQName ::= name::String rest::SubQName
       | x::_, _ -> right(x)
       | _, x::_ -> left(x)
       | [], [] ->
-        error("Could not find full constructor for " ++ top.pp)
+        error("Could not find full constructor for " ++ showed)
       end;
 
   propagate compareTo, isEqual;
@@ -538,7 +540,7 @@ Boolean ::= moduleName::QName identifier::QName
 {
   return if !identifier.isQualified
          then error("Identifier must be qualified (" ++
-                    identifier.pp ++ ")")
+                    justShow(identifier.pp) ++ ")")
          else addQNameBase(moduleName, identifier.shortName) ==
               basicQName(identifier.sub); --drop any special qualifiers
 }

@@ -1,14 +1,15 @@
 grammar extensibella:common:abstractSyntax;
 
 
-nonterminal Message with pp, isError;
+nonterminal Message with msg_pp, isError;
 
+synthesized attribute msg_pp::String;
 synthesized attribute isError::Boolean;
 
 abstract production errorMsg
 top::Message ::= msg::String
 {
-  top.pp = "Error:  " ++ msg;
+  top.msg_pp = "Error:  " ++ msg;
 
   top.isError = true;
 }
@@ -17,7 +18,7 @@ top::Message ::= msg::String
 abstract production warningMsg
 top::Message ::= msg::String
 {
-  top.pp = "Warning:  " ++ msg;
+  top.msg_pp = "Warning:  " ++ msg;
 
   top.isError = false;
 }
@@ -27,7 +28,7 @@ top::Message ::= msg::String
 function errors_to_string
 String ::= msgs::[Message]
 {
-  return foldr(\ m::Message rest::String -> m.pp ++ "\n" ++ rest,
+  return foldr(\ m::Message rest::String -> m.msg_pp ++ "\n" ++ rest,
                "", msgs);
 }
 
