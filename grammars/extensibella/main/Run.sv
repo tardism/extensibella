@@ -242,13 +242,16 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
           if top.config.outputAnnotated
           then appendFileT(top.config.annotatedFile,
                   --create block
-                  "<pre class=\"code\">\n" ++
+                  "<pre class=\"code extensibella\">\n" ++
                     --add prompt and command
-                    " < <b>" ++ stripExternalWhiteSpace(
-                                   showDoc(80, nest(3, any_a.pp))) ++
-                       "</b>\n\n" ++
+                    " &lt; <b>" ++ stripExternalWhiteSpace(
+                                      makeHTMLSafe(
+                                         showDoc(80,
+                                            nest(3, any_a.pp)))) ++
+                          "</b>\n\n" ++
                     --Extensibella output
-                    stripExternalWhiteSpace(output_output) ++ "\n" ++
+                    stripExternalWhiteSpace(
+                       makeHTMLSafe(output_output)) ++ "\n" ++
                   --end block
                   "</pre>\n",
                   i)
@@ -495,4 +498,18 @@ IOToken ::= debug::Boolean config::Configuration commands::[command]
   return if debug && config.showUser
          then printT(full, ioin)
          else ioin;
+}
+
+
+
+
+{-
+  In the HTML output, the extension size and translation versions of a
+  relation are disappearing because they are treated as tags.  This
+  replaces the literal "<" and ">" with HTML-safe versions.
+-}
+function makeHTMLSafe
+String ::= s::String
+{
+  return substitute("<", "&lt;", substitute(">", "&gt;", s));
 }
