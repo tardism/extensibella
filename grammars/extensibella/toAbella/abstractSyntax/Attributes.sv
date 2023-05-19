@@ -2,6 +2,9 @@ grammar extensibella:toAbella:abstractSyntax;
 
 imports extensibella:common:abstractSyntax;
 
+imports silver:langutil:pp;
+imports silver:langutil only pp, pps;
+
 --translation to pass commands to Abella
 synthesized attribute toAbella<a>::a;
 

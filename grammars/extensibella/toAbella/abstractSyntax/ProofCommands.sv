@@ -4,7 +4,7 @@ grammar extensibella:toAbella:abstractSyntax;
 --things you can do inside of proofs
 
 nonterminal ProofCommand with
-   --pp/abella_pp should end with two spaces
+   --pp/abella_pp should end with space
    pp, abella_pp,
    boundNames,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState,
@@ -26,9 +26,10 @@ top::ProofCommand ::=
 abstract production inductionTactic
 top::ProofCommand ::= h::HHint nl::[Integer]
 {
-  top.pp = h.pp ++ "induction on " ++
-           implode(" ", map(toString, nl)) ++ ".  ";
-  top.abella_pp = h.pp ++ "induction on " ++
+  top.pp = ppConcat([h.pp, text("induction on "),
+              ppImplode(text(" "), map(text, map(toString, nl))),
+              ".", line()]);
+  top.abella_pp = h.abella_pp ++ "induction on " ++
                   implode(" ", map(toString, nl)) ++ ".  ";
 
   top.toAbella = [top];
@@ -76,8 +77,8 @@ top::ProofCommand ::= h::HHint nl::[Integer]
 abstract production coinductionTactic
 top::ProofCommand ::= h::HHint
 {
-  top.pp = h.pp ++ "coinduction.  ";
-  top.abella_pp = h.pp ++ "coinduction.  ";
+  top.pp = ppConcat([h.pp, text("coinduction."), line()]);
+  top.abella_pp = h.abella_pp ++ "coinduction.  ";
 
   top.toAbella = [top];
 }
@@ -90,7 +91,7 @@ top::ProofCommand ::= names::[String]
      if null(names)
      then ""
      else " " ++ implode(" ", names);
-  top.pp = "intros" ++ namesString ++ ".  ";
+  top.pp = cat(text("intros " ++ namesString ++ "."), line());
   top.abella_pp = "intros" ++ namesString ++ ".  ";
 
   top.toAbella = [top];
@@ -106,16 +107,15 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
-  local argsString::String =
-     if args.len == 0
-     then ""
-     else " to " ++ args.pp;
-  local withsString::String =
-     if withs.len == 0
-     then ""
-     else " with " ++ withs.pp;
-  top.pp = h.pp ++ "apply " ++ depthString ++ theorem.pp ++
-           argsString ++ withsString ++ ".  ";
+  top.pp = ppConcat([h.pp, text("apply "), text(depthString),
+              theorem.pp,
+              ( if args.len == 0 then text("")
+                else ppConcat([text(" to"), line(),
+                        ppImplode(line(), args.pps)]) ),
+              ( if withs.len == 0 then text("")
+                else ppConcat([text(" with"), line(),
+                        ppImplode(line(), withs.pps)]) ),
+              text("."), line()]);
   local argsString_abella::String =
      if args.len == 0
      then ""
@@ -125,7 +125,7 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
      then ""
      else " with " ++ withs.abella_pp;
   top.abella_pp =
-      h.pp ++ "apply " ++ depthString ++ theorem.abella_pp ++
+      h.abella_pp ++ "apply " ++ depthString ++ theorem.abella_pp ++
       argsString_abella ++ withsString_abella ++ ".  ";
 
   top.toAbella =
@@ -143,12 +143,11 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
-  local withsString::String =
-     if withs.len == 0
-     then ""
-     else " with " ++ withs.pp;
-  top.pp = "backchain " ++ depthString ++ theorem.pp ++
-           withsString ++ ".  ";
+  top.pp = ppConcat([text("backchain "), text(depthString),
+              theorem.pp, (if withs.len == 0 then text("")
+                           else ppConcat([text(" to"), line(),
+                                   ppImplode(line(), withs.pp)]) ),
+              text("."), line()]);
   local withsString_abella::String =
      if withs.len == 0
      then ""
@@ -164,10 +163,11 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
 abstract production caseTactic
 top::ProofCommand ::= h::HHint hyp::String keep::Boolean
 {
-  top.pp = h.pp ++ "case " ++ hyp ++ if keep then " (keep).  "
-                                             else ".  ";
-  top.abella_pp = h.pp ++ "case " ++ hyp ++ if keep then " (keep).  "
-                                                    else ".  ";
+  top.pp = ppConcapt([h.pp, text("case "), text(hyp),
+                      (if keep then text(" (keep).") else text(".")),
+                      line()]);
+  top.abella_pp = h.abella_pp ++ "case " ++ hyp ++
+                  if keep then " (keep).  " else ".  ";
 
   top.toAbella = [top];
 
@@ -217,7 +217,8 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
-  top.pp = h.pp ++ "assert " ++ depthString ++ m.pp ++ ".  ";
+  top.pp = ppConcat(h.pp, text("assert "), text(depthString), m.pp,
+                    text("."), line());
   top.abella_pp = h.pp ++ "assert " ++ depthString ++
                   m.abella_pp ++ ".  ";
 
@@ -228,7 +229,9 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
 abstract production existsTactic
 top::ProofCommand ::= ew::EWitnesses
 {
-  top.pp = "exists " ++ ew.pp ++ ".  ";
+  top.pp = ppConcat([text("exists "),
+              ppImplode(cat(text(","), line()), ew.pps), text("."),
+              line()]);
   top.abella_pp = "exists " ++ ew.abella_pp ++ ".  ";
 
   top.toAbella = [existsTactic(ew.toAbella)];
@@ -238,7 +241,9 @@ top::ProofCommand ::= ew::EWitnesses
 abstract production witnessTactic
 top::ProofCommand ::= ew::EWitnesses
 {
-  top.pp = "witness " ++ ew.pp ++ ".  ";
+  top.pp = ppConcat([text("witness "),
+              ppImplode(cat(text(","), line()), ew.pps), text("."),
+              line()]);
   top.abella_pp = "witness " ++ ew.abella_pp ++ ".  ";
 
   top.toAbella = [witnessTactic(ew.toAbella)];
@@ -248,7 +253,7 @@ top::ProofCommand ::= ew::EWitnesses
 abstract production searchTactic
 top::ProofCommand ::=
 {
-  top.pp = "search.  ";
+  top.pp = cat(text("search."), line());
   top.abella_pp = "search.  ";
 
   top.toAbella = [top];
@@ -258,7 +263,7 @@ top::ProofCommand ::=
 abstract production searchDepthTactic
 top::ProofCommand ::= n::Integer
 {
-  top.pp = "search " ++ toString(n) ++ ".  ";
+  top.pp = cat(text("search " ++ toString(n) ++ "."), line());
   top.abella_pp = "search " ++ toString(n) ++ ".  ";
 
   top.toAbella = [top];
@@ -278,7 +283,7 @@ top::ProofCommand ::= sw::SearchWitness
 abstract production asyncTactic
 top::ProofCommand ::=
 {
-  top.pp = "async.  ";
+  top.pp = cat(text("async."), line());
   top.abella_pp = "async.  ";
 
   top.toAbella = [top];
@@ -288,7 +293,7 @@ top::ProofCommand ::=
 abstract production splitTactic
 top::ProofCommand ::=
 {
-  top.pp = "split.  ";
+  top.pp = cat(text("split."), line());
   top.abella_pp = "split.  ";
 
   top.toAbella = [top];
@@ -298,7 +303,7 @@ top::ProofCommand ::=
 abstract production splitStarTactic
 top::ProofCommand ::=
 {
-  top.pp = "split*.  ";
+  top.pp = cat(text("split*."), line());
   top.abella_pp = "split*.  ";
 
   top.toAbella = [top];
@@ -308,7 +313,7 @@ top::ProofCommand ::=
 abstract production leftTactic
 top::ProofCommand ::=
 {
-  top.pp = "left.  ";
+  top.pp = cat(text("left."), line());
   top.abella_pp = "left.  ";
 
   top.toAbella = [top];
@@ -318,7 +323,7 @@ top::ProofCommand ::=
 abstract production rightTactic
 top::ProofCommand ::=
 {
-  top.pp = "right.  ";
+  top.pp = cat(text("right."), line());
   top.abella_pp = "right.  ";
 
   top.toAbella = [top];
@@ -328,7 +333,7 @@ top::ProofCommand ::=
 abstract production skipTactic
 top::ProofCommand ::=
 {
-  top.pp = "skip.  ";
+  top.pp = cat(text("skip."), line());
   top.abella_pp = "skip.  ";
 
   top.toAbella = [top];
@@ -338,7 +343,7 @@ top::ProofCommand ::=
 abstract production abortCommand
 top::ProofCommand ::=
 {
-  top.pp = "abort.  ";
+  top.pp = cat(text("abort."), line());
   top.abella_pp = "abort.  ";
 
   top.toAbella = [top];
@@ -348,7 +353,7 @@ top::ProofCommand ::=
 abstract production undoCommand
 top::ProofCommand ::=
 {
-  top.pp = "undo.  ";
+  top.pp = cat(text("undo."), line());
   top.abella_pp = "undo.  ";
 
   top.toAbella = repeat(undoCommand(), head(top.stateListIn).1);
@@ -362,9 +367,11 @@ top::ProofCommand ::=
 abstract production clearCommand
 top::ProofCommand ::= removes::[String] hasArrow::Boolean
 {
-  top.pp = "clear " ++ (if hasArrow then "-> " else "") ++
-           implode(" ", removes) ++ ".  ";
-  top.abella_pp = top.pp;
+  top.pp = ppConcat([text("clear "),
+              text(if hasArrow then "-> " else ""),
+              ppImplode(line(), map(text, removes)), text("."),
+              line()]);
+  top.abella_pp = justShow(top.pp);
 
   top.toAbella = [top];
 }
@@ -373,7 +380,8 @@ top::ProofCommand ::= removes::[String] hasArrow::Boolean
 abstract production renameTactic
 top::ProofCommand ::= original::String renamed::String
 {
-  top.pp = "rename " ++ original ++ " to " ++ renamed ++ ".  ";
+  top.pp = cat(text("rename " ++ original ++ " to " ++
+                    renamed ++ "."), line());
   top.abella_pp = "rename " ++ original ++ " to " ++ renamed ++ ".  ";
 
   top.toAbella = [top];
@@ -384,8 +392,8 @@ top::ProofCommand ::= original::String renamed::String
 abstract production abbrevCommand
 top::ProofCommand ::= hyps::[String] newText::String
 {
-  top.pp = "abbrev " ++ implode(" ", hyps) ++
-           " \"" ++ newText ++ "\".  ";
+  top.pp = cat(text("abbrev " ++ implode(" ", hyps) ++
+                    " \"" ++ newText ++ "\"."), line());
   top.abella_pp = top.pp;
 
   top.toAbella = error("Cannot abbreviate");
@@ -397,7 +405,8 @@ top::ProofCommand ::= hyps::[String] newText::String
 abstract production unabbrevCommand
 top::ProofCommand ::= hyps::[String]
 {
-  top.pp = "unabbrev " ++ implode(" ", hyps) ++ "\".  ";
+  top.pp = cat(text("unabbrev " ++ implode(" ", hyps) ++ "\"."),
+               line());
   top.abella_pp = top.pp;
 
   top.toAbella = error("Cannot abbreviate");
@@ -410,9 +419,10 @@ abstract production permuteTactic
 top::ProofCommand ::= names::[String] hyp::Maybe<String>
 {
   local hypString::String = case hyp of | just(h) -> " " ++ h | nothing() -> "" end;
-  top.pp = "permute " ++ foldr1(\a::String b::String -> a ++ " " ++ b, names) ++
-           hypString ++ ".  ";
-  top.abella_pp = top.pp;
+  top.pp = ppConcat([text("permute "),
+              ppImplode(line(), map(text, names)), text(hypString),
+              text("."), line()]);
+  top.abella_pp = justShow(top.pp);
 
   top.toAbella = [top];
 }
@@ -421,9 +431,9 @@ top::ProofCommand ::= names::[String] hyp::Maybe<String>
 abstract production unfoldStepsTactic
 top::ProofCommand ::= steps::Integer all::Boolean
 {
-  top.pp = "unfold " ++ toString(steps) ++ if all then "(all).  "
-                                                  else ".  ";
-  top.abella_pp = top.pp;
+  top.pp = cat(text("unfold " ++ toString(steps) ++
+                    if all then "(all)." else "."), line());
+  top.abella_pp = justShow(top.pp);
 
   top.toAbella = [top];
 }
@@ -432,7 +442,8 @@ top::ProofCommand ::= steps::Integer all::Boolean
 abstract production unfoldIdentifierTactic
 top::ProofCommand ::= id::QName all::Boolean
 {
-  top.pp = "unfold " ++ id.pp ++ if all then "(all).  " else ".  ";
+  top.pp = cat(text("unfold " ++ id.pp ++ if all then "(all)."
+                                                 else "."), line());
   top.abella_pp = "unfold " ++ id.abella_pp ++ if all then "(all).  "
                                                       else ".  ";
 
@@ -445,7 +456,8 @@ top::ProofCommand ::= id::QName all::Boolean
 abstract production unfoldTactic
 top::ProofCommand ::= all::Boolean
 {
-  top.pp = "unfold " ++ if all then "(all).  " else ".  ";
+  top.pp = cat(text("unfold " ++ if all then "(all)." else "."),
+               line());
   top.abella_pp = top.pp;
 
   top.toAbella = [top];
@@ -486,11 +498,12 @@ propagate toAbellaMsgs, proverState,
 abstract production clearable
 top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 {
-  local instString::String =
-     if instantiation.pp == ""
-     then ""
-     else "[" ++ instantiation.pp ++ "]";
-  top.pp = (if star then "*" else "") ++ hyp.pp ++ instString;
+  local instPP::Document =
+     if isSpace(justShow(instantiation.pp))
+     then text("")
+     else ppConcat([text("["), instantiation.pp, text("]")]);
+  top.pp = ppConcat([text(if star then "*" else ""), hyp.pp,
+                     group(instString), text("."), line()]);
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -528,7 +541,7 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 
 
 nonterminal ApplyArgs with
-   pp, abella_pp,
+   pps, abella_pp,
    toList<ApplyArg>, len,
    boundNames,
    toAbella<ApplyArgs>, toAbellaMsgs,
@@ -539,7 +552,7 @@ propagate typeEnv, constructorEnv, relationEnv,
 abstract production endApplyArgs
 top::ApplyArgs ::=
 {
-  top.pp = "";
+  top.pps = [];
   top.abella_pp = "";
 
   top.toList = [];
@@ -552,7 +565,7 @@ top::ApplyArgs ::=
 abstract production addApplyArgs
 top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
 {
-  top.pp = a.pp ++ if rest.pp == "" then "" else " " ++ rest.pp;
+  top.pps = a.pp::rest.pps;
   top.abella_pp = a.abella_pp ++
            if rest.abella_pp == "" then "" else " " ++ rest.abella_pp;
 
@@ -578,11 +591,11 @@ propagate typeEnv, constructorEnv, relationEnv,
 abstract production hypApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
 {
-  local instString::String =
-     if instantiation.pp == ""
-     then ""
-     else "[" ++ instantiation.pp ++ "]";
-  top.pp = hyp ++ instString;
+  local instPP::Document =
+     if isSpace(justShow(instantiation.pp))
+     then text("")
+     else ppConcat([text("["), instantiation.pp, text("]")]);
+  top.pp = cat(text(hyp), instString);
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -595,11 +608,11 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
 abstract production starApplyArg
 top::ApplyArg ::= name::String instantiation::TypeList
 {
-  local instString::String =
-     if instantiation.pp == ""
-     then ""
-     else "[" ++ instantiation.pp ++ "]";
-  top.pp = "*" ++ name ++ instString;
+  local instPP::Document =
+     if isSpace(justShow(instantiation.pp))
+     then text("")
+     else ppConcat([text("["), instantiation.pp, text("]")]);
+  top.pp = ppConcat([text("*"), text(name), instPP]);
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -614,7 +627,7 @@ top::ApplyArg ::= name::String instantiation::TypeList
 
 
 nonterminal Withs with
-   pp, abella_pp,
+   pps, abella_pp,
    toList<(String, Term)>, len,
    boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState,
@@ -625,7 +638,7 @@ propagate typeEnv, constructorEnv, relationEnv, currentModule,
 abstract production endWiths
 top::Withs ::=
 {
-  top.pp = "";
+  top.pps = [];
   top.abella_pp = "";
 
   top.toList = [];
@@ -638,8 +651,7 @@ top::Withs ::=
 abstract production addWiths
 top::Withs ::= name::String term::Term rest::Withs
 {
-  top.pp = name ++ " = " ++ term.pp ++
-           if rest.len == 0 then "" else ", " ++ rest.pp;
+  top.pps = ppConcat([text(name), text(" = "), term.pp])::rest.pps;
   top.abella_pp = name ++ " = " ++ term.abella_pp ++
                  if rest.len == 0 then "" else ", " ++ rest.abella_pp;
 
@@ -654,7 +666,7 @@ top::Withs ::= name::String term::Term rest::Withs
 
 
 nonterminal EWitnesses with
-   pp, abella_pp,
+   pps, abella_pp,
    boundNames,
    typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<EWitnesses>, toAbellaMsgs;
@@ -664,7 +676,7 @@ propagate typeEnv, constructorEnv, relationEnv,
 abstract production oneEWitnesses
 top::EWitnesses ::= e::EWitness
 {
-  top.pp = e.pp;
+  top.pps = [e.pp];
   top.abella_pp = e.abella_pp;
 
   top.toAbella = oneEWitnesses(e.toAbella);
@@ -674,7 +686,7 @@ top::EWitnesses ::= e::EWitness
 abstract production addEWitnesses
 top::EWitnesses ::= e::EWitness rest::EWitnesses
 {
-  top.pp = e.pp ++ ", " ++ rest.pp;
+  top.pps = e.pp::rest.pps;
   top.abella_pp = e.abella_pp ++ ", " ++ rest.abella_pp;
 
   top.toAbella = addEWitnesses(e.toAbella, rest.toAbella);
@@ -705,7 +717,7 @@ top::EWitness ::= t::Term
 abstract production nameEWitness
 top::EWitness ::= name::String t::Term
 {
-  top.pp = name ++ " = " ++ t.pp;
+  top.pp = cat(text(name ++ " = "), t.pp);
   top.abella_pp = name ++ " = " ++ t.abella_pp;
 
   top.toAbella = nameEWitness(name, t.toAbella);
@@ -721,13 +733,13 @@ nonterminal HHint with
 abstract production nameHint
 top::HHint ::= name::String
 {
-  top.pp = name ++ ": ";
+  top.pp = text(name ++ ": ");
 }
 
 
 abstract production noHint
 top::HHint ::=
 {
-  top.pp = "";
+  top.pp = text("");
 }
 

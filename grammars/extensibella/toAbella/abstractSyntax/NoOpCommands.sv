@@ -18,7 +18,7 @@ propagate proverState, toAbellaMsgs on NoOpCommand;
 abstract production setCommand
 top::NoOpCommand ::= opt::String val::String
 {
-  top.pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
+  top.pp = cat(text("Set " ++ opt ++ " " ++ val ++ "."), realLine());
   top.abella_pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
 
   local abellaSetting::Boolean = opt != "debug";
@@ -56,7 +56,8 @@ top::NoOpCommand ::= opt::String val::String
 abstract production showCommand
 top::NoOpCommand ::= theoremName::QName
 {
-  top.pp = "Show " ++ theoremName.pp ++ ".\n";
+  top.pp = ppConcat([text("Show "), theoremName.pp, text("."),
+                     realLine()]);
   top.abella_pp = "Show " ++ theoremName.abella_pp ++ ".\n";
 
   local possibleThms::[(QName, Metaterm)] =
@@ -83,7 +84,7 @@ top::NoOpCommand ::= theoremName::QName
 abstract production quitCommand
 top::NoOpCommand ::=
 {
-  top.pp = "Quit.\n";
+  top.pp = cat(text("Quit."), realLine());
   top.abella_pp = "Quit.\n";
 
   top.toAbella = [top];
@@ -99,8 +100,9 @@ top::NoOpCommand ::=
 abstract production backCommand
 top::NoOpCommand ::= n::Integer
 {
-  top.pp = implode(" ", repeat("#back.", n)) ++ "\n";
-  top.abella_pp = top.pp;
+  top.pp = cat(ppImplode(line(), repeat(text("#back."), n)),
+               realLine());
+  top.abella_pp = justShow(top.pp);
 
   local trans_n::Integer =
       foldr(\ p::(Integer, ProverState) rest::Integer -> p.1 + rest,
@@ -123,7 +125,7 @@ top::NoOpCommand ::= n::Integer
 abstract production resetCommand
 top::NoOpCommand ::=
 {
-  top.pp = "#reset.\n";
+  top.pp = cat(text("#reset."), realLine());
   top.abella_pp = "#reset.\n";
 
   top.toAbella = [top];
@@ -140,7 +142,7 @@ top::NoOpCommand ::=
 abstract production showCurrentCommand
 top::NoOpCommand ::=
 {
-  top.pp = "Show $$current.\n";
+  top.pp = cat(text("Show $$current."), realLine());
   top.abella_pp =
       error("showCurrentCommand.abella_pp should not be accessed");
 

@@ -41,8 +41,9 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
      if null(params)
      then ""
      else " [" ++ buildParams(params) ++ "] ";
-  top.pp = "Theorem " ++ name.pp ++ " " ++ paramsString ++
-           " : " ++ body.pp ++ ".\n";
+  top.pp = ppConcat([text("Theorem"), name.pp, text(" "),
+                     text(paramsString), text(":"), line(), body.pp,
+                     text("."), realLine()]);
   top.abella_pp = "Theorem " ++ name.abella_pp ++ " " ++
                   paramsString ++ " : " ++ body.abella_pp ++ ".\n";
 
@@ -81,12 +82,16 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
 abstract production definitionDeclaration
 top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
-  local predsString::String =
-     if null(preds)
-     then error("Definition should not be empty; definitionDeclaration")
-     else implode(",\n       ", map(\ p::(QName, Type) ->
-                                  p.1.pp ++ " : " ++ p.2.pp, preds));
-  top.pp = "Define " ++ predsString ++ " by " ++ defs.pp ++ ".\n";
+  top.pp = ppConcat([text("Define"),
+              nest(7,
+                 group(ppImplode(cat(text(","), line()),
+                          map(\ p::(QName, Type) ->
+                                group(ppConcat([p.1.pp, text(" : "),
+                                                p.2.pp])),
+                              preds)))),
+              text("by"), realLine(),
+              ppImplode(cat(text(";"), realLine()), defs.pps),
+              text("."), realLine()]);
   local predsString_abella::String =
      if null(preds)
      then error("Definition should not be empty; definitionDeclaration")
@@ -136,12 +141,16 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 abstract production codefinitionDeclaration
 top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
-  local predsString::String =
-     if null(preds)
-     then error("CoDefinition should not be empty; codefinitionDeclaration")
-     else implode(",\n       ", map(\ p::(QName, Type) ->
-                                  p.1.pp ++ " : " ++ p.2.pp, preds));
-  top.pp = "CoDefine " ++ predsString ++ " by " ++ defs.pp ++ ".";
+  top.pp = ppConcat([text("Codefine"),
+              nest(9,
+                 group(ppImplode(cat(text(","), line()),
+                          map(\ p::(QName, Type) ->
+                                group(ppConcat([p.1.pp, text(" : "),
+                                                p.2.pp])),
+                              preds)))),
+              text("by"), realLine(),
+              ppImplode(cat(text(";"), realLine()), defs.pps),
+              text("."), realLine()]);
   local predsString_abella::String =
      if null(preds)
      then error("CoDefinition should not be empty; codefinitionDeclaration")
@@ -182,7 +191,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 abstract production queryCommand
 top::TopCommand ::= m::Metaterm
 {
-  top.pp = "Query " ++ m.pp ++ ".\n";
+  top.pp = ppConcat([text("Query "), m.pp, text("."), realLine()]);
   top.abella_pp = "Query " ++ m.abella_pp ++ ".\n";
 
   m.boundNames = [];
@@ -201,6 +210,10 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
      then ""
      else " as " ++ implode(", ", map((.pp), newTheoremNames));
   top.pp = "Split " ++ theoremName.pp ++ namesString ++ ".\n";
+  top.pp = ppConcat([text("Split"), theoremName.pp, text(" as"),
+              line(), ppImplode(cat(",", line()),
+                         map((.pp), newTheoremNames)),
+              text("."), realLine()]);
   local namesString_abella::String =
       if null(newTheoremNames)
       then ""
@@ -237,7 +250,8 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
 abstract production closeCommand
 top::TopCommand ::= tys::TypeList
 {
-  top.pp = "Close " ++ tys.pp ++ ".\n";
+  top.pp = ppConcat([text("Close "), ppImplode(text(", "), tys.pps),
+                     text("."), realLine()]);
   top.abella_pp = "Close " ++ tys.abella_pp ++ ".\n";
 
   top.toAbella = error("closeCommand.toAbella");
@@ -249,11 +263,9 @@ top::TopCommand ::= tys::TypeList
 abstract production kindDeclaration
 top::TopCommand ::= names::[QName] k::Kind
 {
-  local namesString::String =
-     if null(names)
-     then ""
-     else " " ++ implode(", ", map((.pp), names));
-  top.pp = "Kind" ++ namesString ++ "   " ++ k.pp ++ ".\n";
+  top.pp = ppConcat([text("Kind "), ppImplode(cat(text(","), line()),
+                                       map((.pp), names)),
+                     line(), k.pp, text("."), realLine()]);
   local namesString_abella::String =
      if null(names)
      then ""
@@ -303,11 +315,9 @@ top::TopCommand ::= names::[QName] k::Kind
 abstract production typeDeclaration
 top::TopCommand ::= names::[QName] ty::Type
 {
-  local namesString::String =
-     if null(names)
-     then ""
-     else implode(", ", map((.pp), names));
-  top.pp = "Type " ++ namesString ++ "   " ++ ty.pp ++ ".\n";
+  top.pp = ppConcat([text("Type "), ppImplode(cat(text(","), line()),
+                                       map((.pp), names)),
+                     line(), k.pp, text("."), realLine()]);
   local namesString_abella::String =
      if null(names)
      then ""
@@ -373,7 +383,7 @@ top::TopCommand ::= names::[QName] ty::Type
 abstract production importCommand
 top::TopCommand ::= name::String
 {
-  top.pp = "Import \"" ++ name ++ "\".\n";
+  top.pp = cat(text("Import \"" ++ name ++ "\"."), realLine());
   top.abella_pp = top.pp;
 
   top.toAbella = [];
