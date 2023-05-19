@@ -46,7 +46,7 @@ IOVal<
   return
      if !fileExists.iovalue
      then ioval(fileExists.io,
-                left("Error:  Given file" ++ filename ++
+                left("Error:  Given file " ++ filename ++
                      " does not exist\n"))
      else if !fileParsed.parseSuccess
      then ioval(fileContents.io,

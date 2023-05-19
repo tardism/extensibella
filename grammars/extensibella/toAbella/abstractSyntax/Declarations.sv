@@ -7,7 +7,7 @@ abstract production typeKind
 top::Kind ::=
 {
   top.pp = text("type");
-  top.abella_pp = "typ";
+  top.abella_pp = "type";
 
   top.len = 0;
 }

@@ -216,8 +216,8 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   finalDisplay.constructorEnv = nonErrorProverState.knownConstrs;
   local output_output::String =
       if speak_to_abella && continueProcessing
-      then finalDisplay.fromAbella.pp ++ "\n"
-      else our_own_output ++ state.fromAbella.pp ++ "\n";
+      then showDoc(80, finalDisplay.fromAbella.pp) ++ "\n"
+      else our_own_output ++ showDoc(80, state.fromAbella.pp) ++ "\n";
   local io_action_6::IOToken =
       if top.config.showUser
       then printT(output_output, io_action_5.io)
@@ -244,7 +244,8 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
                   --create block
                   "<pre class=\"code\">\n" ++
                     --add prompt and command
-                    " < <b>" ++ stripExternalWhiteSpace(any_a.pp) ++
+                    " < <b>" ++ stripExternalWhiteSpace(
+                                   showDoc(80, any_a.pp)) ++
                        "</b>\n\n" ++
                     --Extensibella output
                     stripExternalWhiteSpace(output_output) ++ "\n" ++
@@ -273,8 +274,9 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
                          top.filename ++ ":\n" ++ our_own_output ++
                          "\n", finalIO), 1)
            else if full_a.isError
-           then ioval(printT("Colud not process full file " ++
-                         top.filename ++ ":\n" ++ full_a.pp,
+           then ioval(printT("Could not process full file " ++
+                             top.filename ++ ":\n" ++
+                             showDoc(80, full_a.pp),
                          finalIO), 1)
            else if any_a.isQuit && !rest.isNull
            then ioval(printT("Warning:  File contains Quit before " ++

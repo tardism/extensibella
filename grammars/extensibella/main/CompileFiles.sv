@@ -110,8 +110,8 @@ IOVal<Integer> ::=
      | right(_) ->
        if !null(fileErrors)
        then ioval(printT("Processing errors:\n" ++
-                         implode("\n", map((.pp), fileErrors)) ++ "\n",
-                         fileInfo.io), 1)
+                     implode("\n", map((.msg_pp), fileErrors)) ++ "\n",
+                     fileInfo.io), 1)
        else if extensibellaGen.iovalue == ""
        then ioval(printT("Extensibella generated location not set\n",
                          extensibellaGen.io), 1)

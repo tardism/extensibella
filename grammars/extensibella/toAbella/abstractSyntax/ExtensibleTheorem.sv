@@ -77,7 +77,8 @@ top::TopCommand ::= thms::ExtThms
 abstract production proveObligations
 top::TopCommand ::= names::[QName]
 {
-  top.pp = text("Prove ") ++ ppImplode(text(", "), map((.pp), names)) ++
+  top.pp = text("Prove ") ++ nest(6, ppImplode(text(",") ++ line(),
+                                        map((.pp), names))) ++
            text(".") ++ realLine();
   top.abella_pp =
       error("proveObligations.abella_pp should not be accessed");

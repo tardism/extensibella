@@ -3,6 +3,8 @@ grammar extensibella:common:concreteSyntax;
 
 import extensibella:common:abstractSyntax;
 
+import silver:langutil only pp, pps;
+
 
 synthesized attribute ast<a>::a;
 
@@ -57,7 +59,8 @@ concrete productions top::Metaterm_c
         | falseTerm() -> right(falseMetaterm())
         | applicationTerm(nameTerm(q, _), args) ->
           right(relationMetaterm(q, args, emptyRestriction()))
-        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        | t -> left("Cannot treat " ++ justShow(t.pp) ++
+                    " as a proposition")
         end; }
 --extension size
 | '<' rel::Id_t '{' 'ES' '}' '>' args::ExpList_c
@@ -167,7 +170,8 @@ concrete productions top::SubMetaterm_c
           left("Cannot have restrictions on false")
         | applicationTerm(nameTerm(q, _), args) ->
           right(relationMetaterm(q, args, s.ast))
-        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        | t -> left("Cannot treat " ++ justShow(t.pp) ++
+                    " as a proposition")
         end; }
 | tm::Term_c p::Pluses_c
   { top.ast =
@@ -178,7 +182,8 @@ concrete productions top::SubMetaterm_c
           left("Cannot have restrictions on false")
         | applicationTerm(nameTerm(q, _), args) ->
           right(relationMetaterm(q, args, p.ast))
-        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        | t -> left("Cannot treat " ++ justShow(t.pp) ++
+                    " as a proposition")
         end; }
 | tm::Term_c a::Ats_c
   { top.ast =
@@ -189,7 +194,8 @@ concrete productions top::SubMetaterm_c
           left("Cannot have restrictions on false")
         | applicationTerm(nameTerm(q, _), args) ->
           right(relationMetaterm(q, args, a.ast))
-        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        | t -> left("Cannot treat " ++ justShow(t.pp) ++
+                    " as a proposition")
         end; }
 | tm::Term_c h::Hashes_c
   { top.ast =
@@ -200,7 +206,8 @@ concrete productions top::SubMetaterm_c
           left("Cannot have restrictions on false")
         | applicationTerm(nameTerm(q, _), args) ->
           right(relationMetaterm(q, args, h.ast))
-        | t -> left("Cannot treat " ++ t.pp ++ " as a proposition")
+        | t -> left("Cannot treat " ++ justShow(t.pp) ++
+                    " as a proposition")
         end; }
 --Translation
 | args::ExpList_c '|{' ty::Id_t '}-' o::Term_c '~~>' t::Term_c

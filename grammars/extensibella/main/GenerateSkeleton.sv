@@ -18,7 +18,7 @@ IOVal<Boolean> ::= gen::[(QName, String)]
   local outputThms::[ThmElement] =
       filter((.inSkeleton), processModule.iovalue.fromRight.3);
   local outputString::String =
-      "Module " ++ module.pp ++ ".\n\n\n" ++
+      "Module " ++ justShow(module.pp) ++ ".\n\n\n" ++
       implode("\n\n\n", map(\ p::ThmElement -> p.skeletonText,
                             outputThms)) ++ "\n\n";
   --
@@ -41,9 +41,9 @@ IOVal<Boolean> ::= gen::[(QName, String)]
       substring(0, 1, askReplace.iovalue) == "y";
   local message::IOToken =
       if doOutput
-      then printT("Writing contents for " ++ module.pp ++ " into " ++
-                  filename ++ "\n", askReplace.io)
-      else printT("Skipping module " ++ module.pp ++ "\n",
+      then printT("Writing contents for " ++ justShow(module.pp) ++
+                  " into " ++ filename ++ "\n", askReplace.io)
+      else printT("Skipping module " ++ justShow(module.pp) ++ "\n",
                   askReplace.io);
   local output::IOToken =
       if doOutput
@@ -83,8 +83,9 @@ top::ThmElement ::= thms::[(QName, Bindings, ExtBody, String)]
 {
   top.inSkeleton = true;
   top.skeletonText =
-      "Prove " ++ implode(",\n      ",
-                          map((.pp), map(fst, thms))) ++ ".";
+      showDoc(80, text("Prove ") ++
+         nest(6, ppImplode(text(",") ++ line(),
+                    map((.pp), map(fst, thms)))) ++ text("."));
 }
 
 
@@ -92,7 +93,7 @@ aspect production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 {
   top.inSkeleton = true;
-  top.skeletonText = "Prove_Constraint " ++ name.pp ++ ".";
+  top.skeletonText = "Prove_Constraint " ++ justShow(name.pp) ++ ".";
 }
 
 
@@ -117,6 +118,8 @@ top::ThmElement ::=
    rels::[(QName, [String], [Term], QName, String, String)]
 {
   top.inSkeleton = true;
-  top.skeletonText = "Prove_Ext_Ind " ++
-                     implode(", ", map((.pp), map(fst, rels))) ++ ".";
+  top.skeletonText =
+      showDoc(80, text("Prove_Ext_Ind ") ++
+         ppImplode(text(",") ++ line(), map((.pp), map(fst, rels))) ++
+         text("."));
 }

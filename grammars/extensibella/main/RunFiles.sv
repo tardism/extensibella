@@ -52,7 +52,8 @@ IOVal<Integer> ::=
               --create block
               "<pre class=\"code\">\n" ++
                 --add prompt and module declaration (no output)
-                " < <b>Module " ++ fileAST.1.fromJust.pp ++
+                  --module name had best be fairly short
+                " < <b>Module " ++ justShow(fileAST.1.fromJust.pp) ++
                    ".</b>\n" ++
               --end block
               "</pre>\n",

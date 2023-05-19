@@ -89,11 +89,12 @@ IOVal<Either<String
      else if !interface_file.iovalue.isJust
      then ioval(interface_file.io,
                 left("Could not find interface file for module " ++
-                     moduleName.pp ++ "; must compile module first"))
+                     justShow(moduleName.pp) ++
+                     "; must compile module first"))
      else if !parsed_interface.parseSuccess
      then ioval(interface_file_contents.io,
                 left("Could not parse interface file for module " ++
-                     moduleName.pp ++ ":\n" ++
+                     justShow(moduleName.pp) ++ ":\n" ++
                      parsed_interface.parseErrors ++ "\n"))
      --outerface errors
      else if !null(findOuterfaceFileErrors)
@@ -101,20 +102,21 @@ IOVal<Either<String
              left("Could not find outerface " ++
                 (if length(findOuterfaceFileErrors) == 1
                  then "file for module " ++
-                      head(findOuterfaceFileErrors).pp
+                      justShow(head(findOuterfaceFileErrors).pp)
                  else "files for modules " ++
-                      implode(", ",
-                         map((.pp), findOuterfaceFileErrors))) ++
+                      implode(", ", map(justShow,
+                         map((.pp), findOuterfaceFileErrors)))) ++
                 "; must compile first"))
      --definition errors
      else if !definition_file.iovalue.isJust
      then ioval(definition_file.io,
                 left("Could not find definition file for module " ++
-                     moduleName.pp ++ "; must compile module first"))
+                     justShow(moduleName.pp) ++
+                     "; must compile module first"))
      else if !parsed_definition.parseSuccess
      then ioval(definition_file_contents.io,
                 left("Could not parse definition file for module " ++
-                     moduleName.pp ++ ":\n" ++
+                     justShow(moduleName.pp) ++ ":\n" ++
                      parsed_definition.parseErrors ++ "\n"))
      --success
      else ioval(definition_file_contents.io,
@@ -151,7 +153,7 @@ IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
                 back.iovalue ++ "\n\n" ++ parsedOutput.parseErrors)
      else if parsedOutput.parseTree.ast.isError
      then error("Error passing module specifications to Abella:\n" ++
-                parsedOutput.parseTree.ast.pp)
+                showDoc(80, parsedOutput.parseTree.ast.pp))
      else ioval(back.io,
                 (buildEnv(comms.tys), buildEnv(comms.rels),
                  buildEnv(comms.constrs)));

@@ -3,6 +3,9 @@ grammar extensibella:outerfaceFile:abstractSyntax;
 imports extensibella:common:abstractSyntax;
 imports extensibella:toAbella:abstractSyntax;
 
+imports silver:langutil:pp;
+imports silver:langutil only pp, pps;
+
 
 
 function processModuleOuterfaces
@@ -15,7 +18,7 @@ function processModuleOuterfaces
           mods);
   local sortedThms::[(QName, [ThmElement])] =
       sortBy(\ p1::(QName, [ThmElement]) p2::(QName, [ThmElement]) ->
-               p1.1.pp < p2.1.pp, allThms);
+               justShow(p1.1.pp) < justShow(p2.1.pp), allThms);
   local justThms::[[ThmElement]] = map(snd, sortedThms);
   local finalThms::[ThmElement] = combineAllThms(justThms);
   return (allDefs, finalThms);
@@ -121,7 +124,7 @@ nonterminal TopCommands with pp, len, defElements, thmElements;
 abstract production endTopCommands
 top::TopCommands ::=
 {
-  top.pp = "";
+  top.pp = text("");
   top.len = 0;
 
   top.defElements = [];
