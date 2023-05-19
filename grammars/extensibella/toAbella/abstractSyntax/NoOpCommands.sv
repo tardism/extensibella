@@ -56,8 +56,7 @@ top::NoOpCommand ::= opt::String val::String
 abstract production showCommand
 top::NoOpCommand ::= theoremName::QName
 {
-  top.pp = ppConcat([text("Show "), theoremName.pp, text("."),
-                     realLine()]);
+  top.pp = text("Show ") ++ theoremName.pp ++ text(".") ++ realLine();
   top.abella_pp = "Show " ++ theoremName.abella_pp ++ ".\n";
 
   local possibleThms::[(QName, Metaterm)] =
@@ -67,12 +66,14 @@ top::NoOpCommand ::= theoremName::QName
   top.toAbellaMsgs <-
       case possibleThms of
       | [] ->
-        [errorMsg("Unknown theorem " ++ theoremName.pp)]
+        [errorMsg("Unknown theorem " ++ justShow(theoremName.pp))]
       | [_] -> []
       | l ->
-        [errorMsg("Indeterminate theorem " ++ theoremName.pp ++
+        [errorMsg("Indeterminate theorem " ++ 
+                  justShow(theoremName.pp) ++
                   "; possibilities are " ++
-                  implode(", ", map((.pp), map(fst, possibleThms))))]
+                  implode(", ", map(justShow, map((.pp),
+                                  map(fst, possibleThms)))))]
       end;
 
   top.stateListOut = (1, top.proverState)::top.stateListIn;

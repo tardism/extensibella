@@ -34,7 +34,7 @@ top::SubQName ::= name::String rest::SubQName
   --only translates 
   top.relFromAbella =
       case lookupEnv(basicQName(baseName(rest.shortName)), top.relationEnv) of
-      | [] -> error("Not possible (rel):  " ++ top.pp)
+      | [] -> error("Not possible (rel):  " ++ justShow(top.pp))
       | [_] -> basicQName(baseName(rest.shortName)) --no confusion
       | l -> basicQName(top)
       end;
@@ -42,7 +42,7 @@ top::SubQName ::= name::String rest::SubQName
   --check if there are other types by the same short name
   top.tyFromAbella =
       case lookupEnv(basicQName(baseName(rest.shortName)), top.typeEnv) of
-      | [] -> error("Not possible (ty):  " ++ top.pp)
+      | [] -> error("Not possible (ty):  " ++ justShow(top.pp))
       | [_] -> basicQName(baseName(rest.shortName)) --no confusion
       | l -> basicQName(top)
       end;
@@ -50,9 +50,9 @@ top::SubQName ::= name::String rest::SubQName
   --check if there are other constructors by the same short name
   top.constrFromAbella =
       case lookupEnv(basicQName(baseName(rest.shortName)), top.constructorEnv) of
-      | [] -> error("Not possible (constr):  " ++ top.pp ++ "  [" ++
-                 implode(", ", map((.pp), map((.name),
-                    top.constructorEnv))) ++ "]")
+      | [] -> error("Not possible (constr):  " ++ justShow(top.pp) ++ "  [" ++
+                 implode(", ", map(justShow, map((.pp), map((.name),
+                    top.constructorEnv)))) ++ "]")
       | [_] -> basicQName(baseName(rest.shortName)) --no confusion
       | l -> basicQName(top)
       end;

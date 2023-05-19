@@ -12,7 +12,7 @@ propagate typeEnv, relationEnv, constructorEnv, proverState,
 abstract production trueSearchWitness
 top::SearchWitness ::=
 {
-  top.pp = "true";
+  top.pp = text("true");
   top.abella_pp = "true";
 
   top.toAbella = top;
@@ -22,7 +22,7 @@ top::SearchWitness ::=
 abstract production applySearchWitness
 top::SearchWitness ::= name::String
 {
-  top.pp = "apply " ++ name;
+  top.pp = text("apply " ++ name);
   top.abella_pp = "apply " ++ name;
 
   top.toAbella = top;
@@ -32,7 +32,7 @@ top::SearchWitness ::= name::String
 abstract production leftSearchWitness
 top::SearchWitness ::= sub::SearchWitness
 {
-  top.pp = "left (" ++ sub.pp ++ ")";
+  top.pp = ppConcat([text("left ("), sub.pp, text(")")]);
   top.abella_pp = "left (" ++ sub.abella_pp ++ ")";
 
   top.toAbella = leftSearchWitness(sub.toAbella);
@@ -42,7 +42,7 @@ top::SearchWitness ::= sub::SearchWitness
 abstract production rightSearchWitness
 top::SearchWitness ::= sub::SearchWitness
 {
-  top.pp = "right (" ++ sub.pp ++ ")";
+  top.pp = ppConcat([text("right ("), sub.pp, text(")")]);
   top.abella_pp = "right (" ++ sub.abella_pp ++ ")";
 
   top.toAbella = rightSearchWitness(sub.toAbella);
@@ -52,7 +52,7 @@ top::SearchWitness ::= sub::SearchWitness
 abstract production splitSearchWitness
 top::SearchWitness ::= l::SearchWitness r::SearchWitness
 {
-  top.pp = "split(" ++l.pp ++ ", " ++ r.pp ++ ")";
+  top.pp = ppConcat([text("split("), l.pp, text(", "), r.pp, text(")")]);
   top.abella_pp =
       "split(" ++l.abella_pp ++ ", " ++ r.abella_pp ++ ")";
 
@@ -63,9 +63,9 @@ top::SearchWitness ::= l::SearchWitness r::SearchWitness
 abstract production introsSearchWitness
 top::SearchWitness ::= names::[String] sub::SearchWitness
 {
-  top.pp =
-     "intros [" ++ foldr1(\a::String b::String -> a ++ ", " ++ b, names) ++
-     "] (" ++ sub.pp ++ ")";
+  top.pp = ppConcat([text("intros ["),
+              ppImplode(cat(text(","), line()), map(text, names)),
+              text("]"), line(), text("("), sub.pp, text(")")]);
   top.abella_pp =
      "intros [" ++ foldr1(\a::String b::String -> a ++ ", " ++ b, names) ++
      "] (" ++ sub.abella_pp ++ ")";
@@ -77,9 +77,9 @@ top::SearchWitness ::= names::[String] sub::SearchWitness
 abstract production forallSearchWitness
 top::SearchWitness ::= names::[String] sub::SearchWitness
 {
-  top.pp =
-     "forall [" ++ foldr1(\a::String b::String -> a ++ ", " ++ b, names) ++
-     "] (" ++ sub.pp ++ ")";
+  top.pp = ppConcat([text("forall ["),
+              ppImplode(cat(text(","), line()), map(text, names)),
+              text("]"), line(), text("("), sub.pp, text(")")]);
   top.abella_pp =
      "forall [" ++ foldr1(\a::String b::String -> a ++ ", " ++ b, names) ++
      "] (" ++ sub.abella_pp ++ ")";
@@ -91,11 +91,10 @@ top::SearchWitness ::= names::[String] sub::SearchWitness
 abstract production existsSearchWitness
 top::SearchWitness ::= withs::Withs sub::SearchWitness
 {
-  local withsString::String =
-     if withs.len == 0
-     then ""
-     else " with " ++ withs.pp;
-  top.pp = "exists [" ++ withsString ++ "] (" ++ sub.pp ++ ")";
+  top.pp = ppConcat([text("exists ["),
+              if withs.len == 0 then text("")
+               else cat(text(" with "), ppImplode(line(), withs.pps)),
+              text("]"), line(), text("("), sub.pp, text(")")]);
   local withsString_abella::String =
      if withs.len == 0
      then ""
@@ -110,12 +109,11 @@ top::SearchWitness ::= withs::Withs sub::SearchWitness
 abstract production unfoldSearchWitness
 top::SearchWitness ::= name::String n::Integer swl::[SearchWitness]
 {
-  local swlString::String =
-     if null(swl)
-     then ""
-     else foldr1(\a::String b::String -> a ++ ", " ++ b,
-                 map(\x::SearchWitness -> x.pp, swl));
-  top.pp = "unfold(" ++ name ++ ", " ++ toString(n) ++ swlString ++ ")";
+  top.pp = ppConcat([text("unfold("), text(name), text(", "),
+                     text(toString(n)),
+                     if null(swl) then text("")
+                      else ppImplode(cat(text(","), line()),
+                              map((.pp), swl)), text(")")]);
   local swlString_abella::String =
      if null(swl)
      then ""
@@ -131,7 +129,7 @@ top::SearchWitness ::= name::String n::Integer swl::[SearchWitness]
 abstract production starSearchWitness
 top::SearchWitness ::=
 {
-  top.pp = "*";
+  top.pp = text("*");
   top.abella_pp = "*";
 
   top.toAbella = top;
@@ -141,7 +139,7 @@ top::SearchWitness ::=
 abstract production eqSearchWitness
 top::SearchWitness ::=
 {
-  top.pp = "=";
+  top.pp = text("=");
   top.abella_pp = "=";
 
   top.toAbella = top;

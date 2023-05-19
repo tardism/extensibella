@@ -26,9 +26,9 @@ top::ProofCommand ::=
 abstract production inductionTactic
 top::ProofCommand ::= h::HHint nl::[Integer]
 {
-  top.pp = ppConcat([h.pp, text("induction on "),
-              ppImplode(text(" "), map(text, map(toString, nl))),
-              ".", line()]);
+  top.pp = h.pp ++ text("induction on ") ++
+           ppImplode(text(" "), map(text, map(toString, nl))) ++
+           text(".") ++ line();
   top.abella_pp = h.abella_pp ++ "induction on " ++
                   implode(" ", map(toString, nl)) ++ ".  ";
 
@@ -66,7 +66,7 @@ top::ProofCommand ::= h::HHint nl::[Integer]
                  --Disallowed induction
                  | relationMetaterm(rel, args, r) ->
                    --should be a special relation or unknown
-                   [errorMsg("Cannot induct on " ++ e.pp)]
+                   [errorMsg("Cannot induct on " ++ justShow(e.pp))]
                  | _ -> [errorMsg("Cannot induct on non-relation")]
                  end
                end,
@@ -143,11 +143,11 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
-  top.pp = ppConcat([text("backchain "), text(depthString),
-              theorem.pp, (if withs.len == 0 then text("")
-                           else ppConcat([text(" to"), line(),
-                                   ppImplode(line(), withs.pp)]) ),
-              text("."), line()]);
+  top.pp = text("backchain ") ++ text(depthString) ++
+           theorem.pp ++ (if withs.len == 0 then text("")
+                           else text(" to") ++ line() ++
+                                ppImplode(line(), withs.pps)) ++
+              text(".") ++ line();
   local withsString_abella::String =
      if withs.len == 0
      then ""
@@ -163,9 +163,8 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
 abstract production caseTactic
 top::ProofCommand ::= h::HHint hyp::String keep::Boolean
 {
-  top.pp = ppConcapt([h.pp, text("case "), text(hyp),
-                      (if keep then text(" (keep).") else text(".")),
-                      line()]);
+  top.pp = h.pp ++ text("case ") ++ text(hyp) ++
+           (if keep then text(" (keep).") else text(".")) ++ line();
   top.abella_pp = h.abella_pp ++ "case " ++ hyp ++
                   if keep then " (keep).  " else ".  ";
 
@@ -187,7 +186,7 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
            then [] --already covered
            else if rel.fullRel.name == is_string
            then [errorMsg("Cannot do case analysis on " ++
-                    is_string.pp ++ " relation")] --because $is_char
+                    justShow(is_string.pp) ++ " relation")] --because $is_char
            else if !rel.fullRel.isExtensible
            then [] --can do case analysis on non-extensible whenever
            else if length(args.isStructuredList) <= rel.fullRel.pcIndex
@@ -195,8 +194,8 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
            else if !elemAtIndex(args.isStructuredList,
                                 rel.fullRel.pcIndex)
            then [errorMsg("Cannot do case analysis on extensible " ++
-                    "relation " ++ rel.pp ++ " with unstructured " ++
-                    "primary component")]
+                    "relation " ++ justShow(rel.pp) ++ " with " ++
+                    "unstructured primary component")]
            else if elemAtIndex(args.toList,
                                rel.fullRel.pcIndex).isUnknownTerm &&
                    !sameModule(top.currentModule, rel.fullRel.name)
@@ -217,9 +216,9 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
-  top.pp = ppConcat(h.pp, text("assert "), text(depthString), m.pp,
-                    text("."), line());
-  top.abella_pp = h.pp ++ "assert " ++ depthString ++
+  top.pp = h.pp ++ text("assert ") ++ text(depthString) ++ m.pp ++
+           text(".") ++ line();
+  top.abella_pp = h.abella_pp ++ "assert " ++ depthString ++
                   m.abella_pp ++ ".  ";
 
   top.toAbella = [assertTactic(h, depth, m.toAbella)];
@@ -273,7 +272,7 @@ top::ProofCommand ::= n::Integer
 abstract production searchWitnessTactic
 top::ProofCommand ::= sw::SearchWitness
 {
-  top.pp = "search with " ++ sw.pp ++ ".  ";
+  top.pp = text("search with ") ++ sw.pp ++ text(".") ++ line();
   top.abella_pp = "search with " ++ sw.abella_pp ++ ".  ";
 
   top.toAbella = [searchWitnessTactic(sw.toAbella)];
@@ -394,7 +393,7 @@ top::ProofCommand ::= hyps::[String] newText::String
 {
   top.pp = cat(text("abbrev " ++ implode(" ", hyps) ++
                     " \"" ++ newText ++ "\"."), line());
-  top.abella_pp = top.pp;
+  top.abella_pp = justShow(top.pp);
 
   top.toAbella = error("Cannot abbreviate");
   top.toAbellaMsgs <-
@@ -407,7 +406,7 @@ top::ProofCommand ::= hyps::[String]
 {
   top.pp = cat(text("unabbrev " ++ implode(" ", hyps) ++ "\"."),
                line());
-  top.abella_pp = top.pp;
+  top.abella_pp = justShow(top.pp);
 
   top.toAbella = error("Cannot abbreviate");
   top.toAbellaMsgs <-
@@ -442,8 +441,8 @@ top::ProofCommand ::= steps::Integer all::Boolean
 abstract production unfoldIdentifierTactic
 top::ProofCommand ::= id::QName all::Boolean
 {
-  top.pp = cat(text("unfold " ++ id.pp ++ if all then "(all)."
-                                                 else "."), line());
+  top.pp = text("unfold ") ++ id.pp ++ text(if all then "(all)."
+                                            else ".") ++ line();
   top.abella_pp = "unfold " ++ id.abella_pp ++ if all then "(all).  "
                                                       else ".  ";
 
@@ -456,9 +455,8 @@ top::ProofCommand ::= id::QName all::Boolean
 abstract production unfoldTactic
 top::ProofCommand ::= all::Boolean
 {
-  top.pp = cat(text("unfold " ++ if all then "(all)." else "."),
-               line());
-  top.abella_pp = top.pp;
+  top.pp = text("unfold " ++ if all then "(all)." else ".") ++ line();
+  top.abella_pp = justShow(top.pp);
 
   top.toAbella = [top];
 
@@ -499,11 +497,12 @@ abstract production clearable
 top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 {
   local instPP::Document =
-     if isSpace(justShow(instantiation.pp))
+     if instantiation.len == 0
      then text("")
-     else ppConcat([text("["), instantiation.pp, text("]")]);
-  top.pp = ppConcat([text(if star then "*" else ""), hyp.pp,
-                     group(instString), text("."), line()]);
+     else text("[") ++ ppImplode(text(", "), instantiation.pps) ++
+          text("]");
+  top.pp = text(if star then "*" else "") ++ hyp.pp ++
+           docGroup(instPP) ++ text(".") ++ line();
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -528,11 +527,12 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
       then []
       else case possibleThms of
            | [] -> [errorMsg("Unknown hypothesis or theorem " ++
-                             hyp.pp)]
+                             justShow(hyp.pp))]
            | [_] -> []
-           | l -> [errorMsg("Indeterminate theorem " ++ hyp.pp ++
-                            "; possibilities are " ++
-                            implode(", ", map((.pp), map(fst, l))))]
+           | l -> [errorMsg("Indeterminate theorem " ++
+                      justShow(hyp.pp) ++ "; possibilities are " ++
+                      implode(", ", map(justShow,
+                                        map((.pp), map(fst, l)))))]
            end;
 }
 
@@ -592,15 +592,16 @@ abstract production hypApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
 {
   local instPP::Document =
-     if isSpace(justShow(instantiation.pp))
+     if instantiation.len == 0
      then text("")
-     else ppConcat([text("["), instantiation.pp, text("]")]);
-  top.pp = cat(text(hyp), instString);
+     else text("[") ++ ppImplode(text(", "),  instantiation.pps) ++
+          text("]");
+  top.pp = text(hyp) ++ instPP;
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
      else "[" ++ instantiation.abella_pp ++ "]";
-  top.abella_pp = hyp ++ instString;
+  top.abella_pp = hyp ++ instString_abella;
 
   top.toAbella = hypApplyArg(hyp, instantiation.toAbella);
 }
@@ -609,10 +610,11 @@ abstract production starApplyArg
 top::ApplyArg ::= name::String instantiation::TypeList
 {
   local instPP::Document =
-     if isSpace(justShow(instantiation.pp))
+     if instantiation.len == 0
      then text("")
-     else ppConcat([text("["), instantiation.pp, text("]")]);
-  top.pp = ppConcat([text("*"), text(name), instPP]);
+     else text("[") ++ ppImplode(text(", "), instantiation.pps) ++
+          text("]");
+  top.pp = text("*") ++ text(name) ++ instPP;
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -728,12 +730,13 @@ top::EWitness ::= name::String t::Term
 
 
 nonterminal HHint with
-   pp;
+   pp, abella_pp;
 
 abstract production nameHint
 top::HHint ::= name::String
 {
   top.pp = text(name ++ ": ");
+  top.abella_pp = name ++ ": ";
 }
 
 
@@ -741,5 +744,6 @@ abstract production noHint
 top::HHint ::=
 {
   top.pp = text("");
+  top.abella_pp = "";
 }
 

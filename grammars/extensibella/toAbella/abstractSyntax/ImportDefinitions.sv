@@ -30,7 +30,7 @@ synthesized attribute declaredThms::[(QName, Metaterm)];
 abstract production emptyListOfCommands
 top::ListOfCommands ::=
 {
-  top.pp = "";
+  top.pp = text("");
   top.abella_pp = "";
 
   top.commandList = [];

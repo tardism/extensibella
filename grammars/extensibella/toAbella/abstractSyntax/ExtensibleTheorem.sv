@@ -4,7 +4,9 @@ grammar extensibella:toAbella:abstractSyntax;
 abstract production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms
 {
-  top.pp = "Extensible_Theorem " ++ thms.pp ++ ".\n";
+  top.pp = text("Extensible_Theorem") ++ realLine() ++
+           ppImplode(realLine(), map(nest(3, _), thms.pps)) ++
+           text(".") ++ realLine();
   --need this for compilation
   top.abella_pp = "Extensible_Theorem " ++ thms.abella_pp ++ ".\n";
 
@@ -52,7 +54,8 @@ top::TopCommand ::= thms::ExtThms
       else if !extIndGroup.isJust
       then [errorMsg("Did not find Ext_Ind required for induction " ++
                      "on relations " ++
-                     implode(", ", map((.pp), importedIndRels)))]
+                     implode(", ",
+                        map(justShow, map((.pp), importedIndRels))))]
       else let missing::[QName] =
                removeAll(map(fst, extIndGroup.fromJust),
                          thms.inductionRels)
@@ -61,7 +64,8 @@ top::TopCommand ::= thms::ExtThms
              then []
              else [errorMsg("Ext_Ind group does not include " ++
                             "induction relations " ++
-                            implode(", ", map((.pp), missing)))]
+                            implode(", ",
+                               map(justShow, map((.pp), missing))))]
            end;
 
   thms.useExtInd = if null(importedIndRels) || !extIndGroup.isJust
@@ -73,7 +77,8 @@ top::TopCommand ::= thms::ExtThms
 abstract production proveObligations
 top::TopCommand ::= names::[QName]
 {
-  top.pp = "Prove " ++ implode(", ", map((.pp), names)) ++ ".\n";
+  top.pp = text("Prove ") ++ ppImplode(text(", "), map((.pp), names)) ++
+           text(".") ++ realLine();
   top.abella_pp =
       error("proveObligations.abella_pp should not be accessed");
 
@@ -83,10 +88,10 @@ top::TopCommand ::= names::[QName]
       | [] -> [errorMsg("No obligations left to prove")]
       | translationConstraintTheorem(q, x, b)::_ ->
         [errorMsg("Expected translation constraint obligation " ++
-            q.pp)]
+            justShow(q.pp))]
       | extIndElement(relInfo)::_ ->
         [errorMsg("Expected Ext_Ind obligation for " ++
-            implode(", ", map((.pp), map(fst, relInfo))))]
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | extensibleMutualTheoremGroup(thms)::_ ->
         let expectedNames::[QName] = map(fst, thms)
         in
@@ -97,17 +102,18 @@ top::TopCommand ::= names::[QName]
                in
                  [errorMsg("Missing mutually-inductive obligation" ++
                     (if length(missing) == 1 then " " else "s ") ++
-                    implode(", ",
-                       map((.pp), removeAll(names, expectedNames))))]
+                    implode(", ", map(justShow,
+                       map((.pp), removeAll(names, expectedNames)))))]
                end
           else if subset(expectedNames, names)
           then [errorMsg("Too many mutually-inductive obligations;" ++
                    " should not have " ++
-                   implode(", ",
-                      map((.pp), removeAll(expectedNames, names))))]
+                   implode(", ", map(justShow,
+                      map((.pp), removeAll(expectedNames, names)))))]
           else [errorMsg("Expected inductive obligation" ++
                    (if length(expectedNames) == 1 then "" else "s") ++
-                   " " ++ implode(", ", map((.pp), expectedNames)))]
+                   " " ++ implode(", ", map(justShow,
+                                         map((.pp), expectedNames))))]
         end
       | _ ->
         error("Should be impossible (proveObligations.toAbellaMsgs)")
@@ -170,7 +176,7 @@ top::TopCommand ::= names::[QName]
 
 
 nonterminal ExtThms with
-   pp, abella_pp, len,
+   pps, abella_pp, len,
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
    inductionNums, inductionRels,
@@ -193,7 +199,7 @@ inherited attribute useExtInd::[(QName, [String], [Term],
 abstract production endExtThms
 top::ExtThms ::=
 {
-  top.pp = "";
+  top.pps = [];
   top.abella_pp = "";
 
   top.len = 0;
@@ -213,9 +219,9 @@ abstract production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                  onLabel::String rest::ExtThms
 {
-  top.pp = name.pp ++ " : forall " ++ bindings.pp ++ ", " ++
-           body.pp ++ " on " ++ onLabel ++
-           if rest.pp == "" then "" else ", " ++ rest.pp;
+  top.pps = (name.pp ++ text(" : forall ") ++
+             ppImplode(text(" "), bindings.pps) ++ text(",") ++
+             realLine() ++ nest(3, body.pp))::rest.pps;
   top.abella_pp =
       name.abella_pp ++ " : forall " ++ bindings.abella_pp ++ ", " ++
       body.abella_pp ++ " on " ++ onLabel ++
@@ -281,7 +287,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       case foundLabeledPremise of
       | nothing() ->
         [errorMsg("Unknown label " ++ onLabel ++ " in extensible " ++
-                  "theorem " ++ name.pp)]
+                  "theorem " ++ justShow(name.pp))]
       | just(relationMetaterm(rel, args, r)) ->
         --need to check the metaterm is built by an extensible relation
         let decRel::Decorated QName with {relationEnv} =
@@ -292,7 +298,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
           else if !decRel.fullRel.isExtensible
           then [errorMsg("Can only induct on extensible relations " ++
                    "for extensible theorems; " ++
-                   decRel.fullRel.name.pp ++ " is not extensible")]
+                   justShow(decRel.fullRel.name.pp) ++
+                   " is not extensible")]
           else case head(drop(decRel.fullRel.pcIndex, args.toList)) of
                | nameTerm(q, _) when !q.isQualified -> [] --var
                | _ -> --anything else is structured
@@ -302,7 +309,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         end
       | just(m) ->
         [errorMsg("Can only induct on extensible relations for " ++
-            "extensible theorems, not " ++ m.pp)]
+            "extensible theorems, not " ++ justShow(m.pp))]
       end;
 
   --check name is qualified with appropriate module
@@ -310,15 +317,15 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       if name.isQualified
       then if name.moduleName == top.currentModule
            then []
-           else [errorMsg("Declared theorem name " ++ name.pp ++
+           else [errorMsg("Declared theorem name " ++ justShow(name.pp) ++
                     " does not have correct module (expected " ++
-                    top.currentModule.pp ++ ")")]
+                    justShow(top.currentModule.pp) ++ ")")]
       else [];
   --check there are no existing theorems with this full name
   top.toAbellaMsgs <-
       if null(findTheorem(fullName, top.proverState))
       then []
-      else [errorMsg("Theorem named " ++ fullName.pp ++
+      else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
 
   --check the body is well-typed
@@ -327,7 +334,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | right(_) -> []
       | left(_) ->
         --given the messages are not terribly useful:
-        [errorMsg("Type error in " ++ name.pp)]
+        [errorMsg("Type error in " ++ justShow(name.pp))]
       end;
   body.downVarTys =
       map(\ p::(String, MaybeType) ->
@@ -542,7 +549,9 @@ top::ExtBody ::= conc::Metaterm
 abstract production addLabelExtBody
 top::ExtBody ::= label::String m::Metaterm rest::ExtBody
 {
-  top.pp = label ++ " : (" ++ m.pp ++ ") -> " ++ rest.pp;
+  top.pp = text(label ++ " : ") ++
+           (if m.isAtomic then m.pp else parens(m.pp))++
+           text(" ->") ++ realLine() ++ rest.pp;
   top.abella_pp =
       label ++ " : (" ++ m.abella_pp ++ ") -> " ++ rest.abella_pp;
 
@@ -571,8 +580,8 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
 abstract production addBasicExtBody
 top::ExtBody ::= m::Metaterm rest::ExtBody
 {
-  top.pp = (if m.isAtomic then m.pp else "(" ++ m.pp ++ ")") ++
-           " -> " ++ rest.pp;
+  top.pp = (if m.isAtomic then m.pp else parens(m.pp)) ++
+           text(" ->") ++ realLine() ++ rest.pp;
   top.abella_pp =
       (if m.isAtomic then m.abella_pp else "(" ++ m.abella_pp ++ ")") ++
       " -> " ++ rest.abella_pp;

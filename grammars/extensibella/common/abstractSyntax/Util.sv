@@ -208,13 +208,20 @@ String ::= base::String index::Integer used::[String]
 
 {-
   Sometimes you just want to show something and don't care about the
-  width, such as in error messages
+  width, such as putting QNames in error messages
 -}
 function justShow
 String ::= d::Document
 {
   --that ought to be long enough for anything we use this for
   return showDoc(99999, d);
+}
+
+--group is also a function in silver:core for lists
+function docGroup
+Document ::= d::Document
+{
+  return silver:langutil:pp:group(d);
 }
 
 

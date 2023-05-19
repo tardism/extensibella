@@ -1,12 +1,13 @@
 grammar extensibella:toAbella:abstractSyntax;
 
 
-nonterminal Kind with pp, len;
+nonterminal Kind with pp, abella_pp, len;
 
 abstract production typeKind
 top::Kind ::=
 {
-  top.pp = "type";
+  top.pp = text("type");
+  top.abella_pp = "typ";
 
   top.len = 0;
 }
@@ -15,7 +16,8 @@ top::Kind ::=
 abstract production arrowKind
 top::Kind ::= k::Kind
 {
-  top.pp = "type -> " ++ k.pp;
+  top.pp = cat(text("type -> "), k.pp);
+  top.abella_pp = "type -> " ++ k.abella_pp;
 
   top.len = 1 + k.len;
 }
@@ -106,7 +108,7 @@ top::MaybeType ::= ty::Type
 
 
 nonterminal Defs with
-   pp, abella_pp,
+   pps, abella_pp,
    toAbella<Defs>, toAbellaMsgs,
    toList<Def>, len,
    relationClauseModules,
@@ -120,7 +122,7 @@ inherited attribute beingDefined::[(QName, Type)];
 abstract production singleDefs
 top::Defs ::= d::Def
 {
-  top.pp = d.pp;
+  top.pps = [d.pp];
   top.abella_pp = d.abella_pp;
 
   top.toAbella = singleDefs(d.toAbella);
@@ -135,7 +137,7 @@ top::Defs ::= d::Def
 abstract production consDefs
 top::Defs ::= d::Def rest::Defs
 {
-  top.pp = d.pp ++ ";\n" ++ rest.pp;
+  top.pps = d.pp::rest.pps;
   top.abella_pp = d.abella_pp ++ ";\n" ++ rest.abella_pp;
 
   top.toAbella = consDefs(d.toAbella, rest.toAbella);
@@ -166,7 +168,9 @@ synthesized attribute defTuple::([Term], Maybe<Metaterm>);
 abstract production factDef
 top::Def ::= defRel::QName args::TermList
 {
-  top.pp = defRel.pp ++ " " ++ args.pp;
+  top.pp = foldr1(\ d::Document rest::Document ->
+                    docGroup(d ++ line() ++ rest),
+                  defRel.pp::args.pps);
   top.abella_pp = defRel.abella_pp ++ " " ++ args.abella_pp;
 
   args.boundNames =
@@ -176,13 +180,14 @@ top::Def ::= defRel::QName args::TermList
 
   top.toAbellaMsgs <-
       case foundDef of
-      | [] -> [errorMsg("Relation " ++ defRel.pp ++ " is not being" ++
-                  " defined")]
+      | [] -> [errorMsg("Relation " ++ justShow(defRel.pp) ++
+                  " is not being defined")]
       | [_] -> []
       | l ->
-        [errorMsg("Cannot determine which relation " ++ defRel.pp ++
+        [errorMsg("Cannot determine which relation " ++
+            justShow(defRel.pp) ++
             " is being defined; possibilities are: " ++
-            implode(", ", map((.pp), map(fst, l))))]
+            implode(", ", map(justShow, map((.pp), map(fst, l)))))]
       end;
 
   production foundDef::[(QName, Type)] =
@@ -226,7 +231,10 @@ top::Def ::= defRel::QName args::TermList
 abstract production ruleDef
 top::Def ::= defRel::QName args::TermList body::Metaterm
 {
-  top.pp = defRel.pp ++ " " ++ args.pp ++ " := " ++ body.pp;
+  top.pp = foldr1(\ d::Document rest::Document ->
+                    docGroup(d ++ line() ++ rest),
+                  defRel.pp::args.pps) ++ text(" :=") ++ line() ++
+           docGroup(body.pp);
   top.abella_pp = defRel.abella_pp ++ " " ++ args.abella_pp ++
                   " := " ++ body.abella_pp;
 
@@ -240,13 +248,14 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
 
   top.toAbellaMsgs <-
       case foundDef of
-      | [] -> [errorMsg("Relation " ++ defRel.pp ++ " is not being" ++
-                  " defined")]
+      | [] -> [errorMsg("Relation " ++ justShow(defRel.pp) ++
+                  " is not being defined")]
       | [_] -> []
       | l ->
-        [errorMsg("Cannot determine which relation " ++ defRel.pp ++
+        [errorMsg("Cannot determine which relation " ++
+            justShow(defRel.pp) ++
             " is being defined; possibilities are: " ++
-            implode(", ", map((.pp), map(fst, l))))]
+            implode(", ", map(justShow, map((.pp), map(fst, l)))))]
       end;
 
   production foundDef::[(QName, Type)] =

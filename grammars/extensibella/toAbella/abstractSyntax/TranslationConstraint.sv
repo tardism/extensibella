@@ -3,8 +3,9 @@ grammar extensibella:toAbella:abstractSyntax;
 abstract production translationConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
-  top.pp = "Translation_Constraint " ++ name.pp ++ " : " ++
-           "forall " ++ binds.pp ++ ", " ++ body.pp ++ ".\n";
+  top.pp = text("Translation_Constraint ") ++ name.pp ++ text(" :") ++
+      line() ++ text("forall ") ++ ppImplode(text(" "), binds.pps) ++
+      text(",") ++ line() ++ body.pp ++ text(".") ++ realLine();
   top.abella_pp =
       "Translation_Constraint " ++ name.abella_pp ++ " : " ++
       "forall " ++ binds.abella_pp ++ ", " ++ body.abella_pp ++ ".\n";
@@ -42,25 +43,27 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       then if name.moduleName == top.currentModule
            then []
            else [errorMsg("Declared translation constraint name " ++
-                    name.pp ++ " does not have correct module " ++
-                    "(expected " ++ top.currentModule.pp ++ ")")]
+                    justShow(name.pp) ++ " does not have correct " ++
+                    "module (expected " ++
+                    justShow(top.currentModule.pp) ++ ")")]
       else [];
   --check there are premises and the first premise is a translation
   top.toAbellaMsgs <-
       case body.premises of
-      | [] -> [errorMsg("Translation constraint " ++ name.pp ++
-                        " must have premises")]
+      | [] -> [errorMsg("Translation constraint " ++
+                  justShow(name.pp) ++ " must have premises")]
       | (_, translationMetaterm(_, _, _, _))::_ ->
         [] --any type errors are already identified
       | (_, m)::_ ->
         [errorMsg("First premise in translation constraint " ++
-            name.pp ++ " must be a translation; found " ++ m.pp)]
+            justShow(name.pp) ++ " must be a translation; found " ++
+            justShow(m.pp))]
       end;
   --check there are no existing theorems with this full name
   top.toAbellaMsgs <-
       if null(findTheorem(fullName, top.proverState))
       then []
-      else [errorMsg("Theorem named " ++ fullName.pp ++
+      else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
 
   --check the body is well-typed
@@ -69,7 +72,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       | right(_) -> []
       | left(_) ->
         --given the messages are not terribly useful:
-        [errorMsg("Type error in " ++ name.pp)]
+        [errorMsg("Type error in " ++ justShow(name.pp))]
       end;
   body.downVarTys =
       map(\ p::(String, MaybeType) ->
@@ -100,7 +103,8 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 abstract production proveConstraint
 top::TopCommand ::= name::QName
 {
-  top.pp = "Prove_Constraint " ++ name.pp ++ ".\n";
+  top.pp = text("Prove_Constraint ") ++ name.pp ++ text(".") ++
+           realLine();
   top.abella_pp =
       error("Should not access proveConstraint.abella_pp");
 
@@ -111,12 +115,13 @@ top::TopCommand ::= name::QName
       | extensibleMutualTheoremGroup(thms)::_ ->
         [errorMsg("Expected inductive obligation" ++
             (if length(thms) == 1 then "" else "s") ++
-            " " ++ implode(", ", map((.pp), map(fst, thms))))]
+            " " ++ implode(", ",
+                      map(justShow, map((.pp), map(fst, thms)))))]
       | translationConstraintTheorem(q, x, b)::_ ->
         if name == q
         then []
         else [errorMsg("Expected translation constraint obligation" ++
-                 " " ++ q.pp)]
+                 " " ++ justShow(q.pp))]
       | _ ->
         error("Should be impossible (proveConstraint.toAbellaMsgs)")
       end;
@@ -124,7 +129,8 @@ top::TopCommand ::= name::QName
   local obligation::(QName, Bindings, ExtBody) =
       case head(top.proverState.remainingObligations) of
       | translationConstraintTheorem(q, x, b) -> (q, x, b)
-      | _ -> error("Not possible (length top.toAbellaMsgs = " ++ toString(length(top.toAbellaMsgs)) ++ ")")
+      | _ -> error("Not possible (length top.toAbellaMsgs = " ++
+                   toString(length(top.toAbellaMsgs)) ++ ")")
       end;
   local binds::Bindings = obligation.2;
   local body::ExtBody = obligation.3;

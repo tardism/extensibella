@@ -83,7 +83,7 @@ top::AnyCommand ::= c::NoOpCommand
 abstract production anyParseFailure
 top::AnyCommand ::= parseErrors::String
 {
-  top.pp = parseErrors;
+  top.pp = text(parseErrors);
   top.abella_pp =
       error("anyParseFailure.abella_pp should not be accessed");
 

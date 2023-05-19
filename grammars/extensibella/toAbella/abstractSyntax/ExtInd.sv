@@ -4,7 +4,11 @@ grammar extensibella:toAbella:abstractSyntax;
 abstract production extIndDeclaration
 top::TopCommand ::= body::ExtIndBody
 {
-  top.pp = "Ext_Ind " ++ body.pp ++ ".\n";
+  top.pp = text("Ext_Ind ") ++ ppImplode(realLine(),
+                                  map(\ d::Document ->
+                                        docGroup(nest(9, d)),
+                                      body.pps)) ++
+           text(".") ++ realLine();
   top.abella_pp = "Ext_Ind " ++ body.abella_pp ++ ".\n";
 
   top.provingTheorems = [];
@@ -67,13 +71,13 @@ top::TopCommand ::= body::ExtIndBody
       in
         map(\ q::QName ->
               errorMsg("Duplicate definitions of extension " ++
-                 "induction for relation " ++ q.pp), split.1)
+                 "induction for relation " ++ justShow(q.pp)), split.1)
       end;
 }
 
 
 nonterminal ExtIndBody with
-   pp, abella_pp,
+   pps, abella_pp,
    toAbellaMsgs,
    relations, extIndInfo, relationEnvItems,
    currentModule, typeEnv, constructorEnv, relationEnv;
@@ -88,7 +92,7 @@ synthesized attribute relationEnvItems::[RelationEnvItem];
 abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 {
-  top.pp = e1.pp ++ ",\n        " ++ e2.pp;
+  top.pps = e1.pps ++ e2.pps;
   top.abella_pp = e1.abella_pp ++ ",\n        " ++ e2.abella_pp;
 
   top.relations = e1.relations ++ e2.relations;
@@ -104,13 +108,17 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
                     boundVars::MaybeBindings transArgs::TermList
                     transTy::QName original::String translated::String
 {
-  top.pp = implode(" ", rel.pp::relArgs) ++ " with " ++
-           (case boundVars of
-            | justBindings(b) -> "forall " ++ b.pp ++ ", "
-            | nothingBindings() -> ""
-            end) ++
-           transArgs.pp ++ " |{" ++ transTy.pp ++ "}- " ++
-           original ++ " ~~> " ++ translated;
+  top.pps = [ppImplode(text(" "), rel.pp::map(text, relArgs)) ++
+             text(" with") ++ line() ++
+             nest(3, case boundVars of
+                     | justBindings(b) ->
+                       text("forall ") ++ ppImplode(text(" "),
+                                             b.pps) ++ text(", ")
+                     | nothingBindings() -> text("")
+                     end ++
+                     ppImplode(text(" "), transArgs.pps) ++
+                     text(" |{") ++ transTy.pp ++ text("}- ") ++
+                       text(original ++ " ~~> " ++ translated))];
   top.abella_pp =
       implode(" ", rel.abella_pp::relArgs) ++ " with " ++
       (case boundVars of
@@ -135,11 +143,12 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
       then rel.relErrors
       else if !sameModule(top.currentModule, rel.fullRel.name)
       then [errorMsg("Cannot declare extension induction for " ++
-                     "relation " ++ rel.fullRel.name.pp ++
+                     "relation " ++ justShow(rel.fullRel.name.pp) ++
                      " not declared in this module")]
       else if !rel.fullRel.isExtensible
       then [errorMsg("Cannot declare extension induction for " ++
-               " non-extensible relation " ++ rel.fullRel.name.pp)]
+               " non-extensible relation " ++
+               justShow(rel.fullRel.name.pp))]
       else [];
   --Check ty exists and the translation translates the right type
   top.toAbellaMsgs <-
@@ -152,9 +161,9 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
              if q == transTy.fullType.name
              then []
              else [errorMsg("Translation must be for relation " ++
-                      rel.fullRel.name.pp ++ "'s primary component" ++
-                      " type " ++ q.pp ++ " but found " ++
-                      transTy.fullType.name.pp)]
+                      justShow(rel.fullRel.name.pp) ++ "'s primary " ++
+                      "component type " ++ justShow(q.pp) ++ " but " ++
+                      "found " ++ justShow(transTy.fullType.name.pp))]
            | _ -> error("PC type must be a name")
            end;
   --Check the PC is the one being translated
@@ -164,27 +173,28 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
       else if elemAtIndex(relArgs, rel.fullRel.pcIndex) == original
       then []
       else [errorMsg("Must translate primary component of relation" ++
-               rel.pp ++ " (name " ++
+               justShow(rel.pp) ++ " (name " ++
                elemAtIndex(relArgs, rel.fullRel.pcIndex) ++
                ") but found " ++ original)];
   --Check the arguments to the relation are variables (capitalized)
   top.toAbellaMsgs <-
       flatMap(\ x::String ->
                 if isCapitalized(x) then []
-                else [errorMsg("Arguments to relation " ++ rel.pp ++
+                else [errorMsg("Arguments to relation " ++
+                         justShow(rel.pp) ++
                          " must be capitalized, but found " ++ x)],
               relArgs);
   --Check the translation is a variable (capitalized)
   top.toAbellaMsgs <-
       if isCapitalized(translated) then []
       else [errorMsg("Translation " ++ translated ++
-                     " for relation " ++ rel.pp ++
+                     " for relation " ++ justShow(rel.pp) ++
                      " must be capitalized")];
   --Check the translation is not in the bound variables
   top.toAbellaMsgs <-
       if contains(translated, boundVars.usedNames)
       then [errorMsg("Translation name " ++ translated ++
-               " for relation " ++ rel.pp ++
+               " for relation " ++ justShow(rel.pp) ++
                " should not be included in bound variables")]
       else [];
 
@@ -194,7 +204,7 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
       | right(_) -> []
       | left(_) ->
         --given the messages are not terribly useful:
-        [errorMsg("Type error in Ext_Ind for " ++ rel.pp)]
+        [errorMsg("Type error in Ext_Ind for " ++ justShow(rel.pp))]
       end;
 
   --typing
@@ -249,7 +259,7 @@ propagate typeEnv on MaybeBindings;
 abstract production justBindings
 top::MaybeBindings ::= b::Bindings
 {
-  top.pp = b.pp;
+  top.pp = ppImplode(text(" "), b.pps);
   top.abella_pp = b.abella_pp;
 
   top.toList = b.toList;
@@ -261,7 +271,7 @@ top::MaybeBindings ::= b::Bindings
 abstract production nothingBindings
 top::MaybeBindings ::=
 {
-  top.pp = "";
+  top.pp = text("");
   top.abella_pp = "";
 
   top.toList = [];
@@ -274,8 +284,9 @@ top::MaybeBindings ::=
 abstract production proveExtInd
 top::TopCommand ::= rels::[QName]
 {
-  top.pp =
-      "Prove_Ext_Ind " ++ implode(", ", map((.pp), rels)) ++ ".\n";
+  top.pp = text("Prove_Ext_Ind ") ++ ppImplode(text(",") ++ line(),
+                                        map((.pp), rels)) ++
+           text(".") ++ realLine();
   top.abella_pp =
       error("proveExtInd.abella_pp should not be accessed");
 
@@ -285,10 +296,10 @@ top::TopCommand ::= rels::[QName]
       | [] -> [errorMsg("No obligations left to prove")]
       | translationConstraintTheorem(q, x, b)::_ ->
         [errorMsg("Expected translation constraint obligation " ++
-            q.pp)]
+            justShow(q.pp))]
       | extensibleMutualTheoremGroup(thms)::_ ->
         [errorMsg("Expected theorem obligations " ++
-            implode(", ", map((.pp), map(fst, thms))))]
+            implode(", ", map(justShow, map((.pp), map(fst, thms)))))]
       | extIndElement(relInfo)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -299,16 +310,17 @@ top::TopCommand ::= rels::[QName]
                in
                  [errorMsg("Missing relation" ++
                      (if length(missing) == 1 then " " else "s ") ++
-                     implode(", ",
-                        map((.pp), removeAll(rels, expectedNames))))]
+                     implode(", ", map(justShow,
+                        map((.pp), removeAll(rels, expectedNames)))))]
                end
           else if subset(expectedNames, rels)
           then [errorMsg("Too many relations; should not have " ++
-                   implode(", ",
-                      map((.pp), removeAll(expectedNames, rels))))]
+                   implode(", ", map(justShow,
+                      map((.pp), removeAll(expectedNames, rels)))))]
           else [errorMsg("Expected ExtInd obligation" ++
                    (if length(expectedNames) == 1 then "" else "s") ++
-                   " " ++ implode(", ", map((.pp), expectedNames)))]
+                   " " ++ implode(", ",
+                             map(justShow, map((.pp), expectedNames))))]
         end
       | _ ->
         error("Should be impossible (proveExtInd.toAbellaMsgs)")

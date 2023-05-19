@@ -64,15 +64,15 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
       if name.isQualified
       then if name.moduleName == top.currentModule
            then []
-           else [errorMsg("Theorem name " ++ name.pp ++ " does not" ++
-                    " have correct module (expected " ++
-                    top.currentModule.pp)]
+           else [errorMsg("Theorem name " ++ justShow(name.pp) ++
+                    " does not have correct module (expected " ++
+                    justShow(top.currentModule.pp))]
       else [];
   --check there are no existing theorems with this full name
   top.toAbellaMsgs <-
       if null(findTheorem(fullName, top.proverState))
       then []
-      else [errorMsg("Theorem named " ++ fullName.pp ++
+      else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
 
   top.provingTheorems = [(fullName, body)];
@@ -84,11 +84,12 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
   top.pp = ppConcat([text("Define"),
               nest(7,
-                 group(ppImplode(cat(text(","), line()),
-                          map(\ p::(QName, Type) ->
-                                group(ppConcat([p.1.pp, text(" : "),
+                 docGroup(ppImplode(cat(text(","), line()),
+                             map(\ p::(QName, Type) ->
+                                   docGroup(
+                                      ppConcat([p.1.pp, text(" : "),
                                                 p.2.pp])),
-                              preds)))),
+                                 preds)))),
               text("by"), realLine(),
               ppImplode(cat(text(";"), realLine()), defs.pps),
               text("."), realLine()]);
@@ -129,9 +130,9 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                 then if p.1.moduleName == top.currentModule
                      then []
                      else [errorMsg("Declared predicate name " ++
-                              p.1.pp ++ " does not have correct " ++
-                              "module (expected " ++
-                              top.currentModule.pp ++ ")")]
+                              justShow(p.1.pp) ++ " does not have " ++
+                              "correct module (expected " ++
+                              justShow(top.currentModule.pp) ++ ")")]
                 else [], preds);
 
   top.provingTheorems = [];
@@ -143,11 +144,12 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
   top.pp = ppConcat([text("Codefine"),
               nest(9,
-                 group(ppImplode(cat(text(","), line()),
-                          map(\ p::(QName, Type) ->
-                                group(ppConcat([p.1.pp, text(" : "),
+                 docGroup(ppImplode(cat(text(","), line()),
+                             map(\ p::(QName, Type) ->
+                                   docGroup(
+                                      ppConcat([p.1.pp, text(" : "),
                                                 p.2.pp])),
-                              preds)))),
+                                 preds)))),
               text("by"), realLine(),
               ppImplode(cat(text(";"), realLine()), defs.pps),
               text("."), realLine()]);
@@ -179,9 +181,9 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                 then if p.1.moduleName == top.currentModule
                      then []
                      else [errorMsg("Declared predicate name " ++
-                              p.1.pp ++ " does not have correct " ++
-                              "module (expected " ++
-                              top.currentModule.pp ++ ")")]
+                              justShow(p.1.pp) ++ " does not have " ++
+                              "correct module (expected " ++
+                              justShow(top.currentModule.pp) ++ ")")]
                 else [], preds);
 
   top.provingTheorems = [];
@@ -205,13 +207,8 @@ top::TopCommand ::= m::Metaterm
 abstract production splitTheorem
 top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
 {
-  local namesString::String =
-     if null(newTheoremNames)
-     then ""
-     else " as " ++ implode(", ", map((.pp), newTheoremNames));
-  top.pp = "Split " ++ theoremName.pp ++ namesString ++ ".\n";
   top.pp = ppConcat([text("Split"), theoremName.pp, text(" as"),
-              line(), ppImplode(cat(",", line()),
+              line(), ppImplode(cat(text(","), line()),
                          map((.pp), newTheoremNames)),
               text("."), realLine()]);
   local namesString_abella::String =
@@ -271,7 +268,7 @@ top::TopCommand ::= names::[QName] k::Kind
      then ""
      else " " ++ implode(", ", map((.abella_pp), names));
   top.abella_pp = "Kind" ++ namesString_abella ++ "   " ++
-                  k.pp ++ ".\n";
+                  k.abella_pp ++ ".\n";
 
   top.toAbella = [anyTopCommand(kindDeclaration(newNames, k))];
   production newNames::[QName] =
@@ -287,8 +284,8 @@ top::TopCommand ::= names::[QName] k::Kind
               case lookupEnv(q, top.typeEnv) of
               | [] -> rest
               | _ ->
-                errorMsg("Type " ++ q.pp ++ " already exists " ++
-                   "and cannot be defined again")::rest
+                errorMsg("Type " ++ justShow(q.pp) ++ " already " ++
+                   "exists and cannot be defined again")::rest
               end,
             [], newNames);
   --two of the same name in this declaration
@@ -303,9 +300,9 @@ top::TopCommand ::= names::[QName] k::Kind
                 then if q.moduleName == top.currentModule
                      then []
                      else [errorMsg("Declared type name " ++
-                              q.pp ++ " does not have correct " ++
-                              "module (expected " ++
-                              top.currentModule.pp ++ ")")]
+                              justShow(q.pp) ++ " does not have " ++
+                              "correct module (expected " ++
+                              justShow(top.currentModule.pp) ++ ")")]
                 else [], names);
 
   top.provingTheorems = [];
@@ -317,7 +314,7 @@ top::TopCommand ::= names::[QName] ty::Type
 {
   top.pp = ppConcat([text("Type "), ppImplode(cat(text(","), line()),
                                        map((.pp), names)),
-                     line(), k.pp, text("."), realLine()]);
+                     line(), ty.pp, text("."), realLine()]);
   local namesString_abella::String =
      if null(names)
      then ""
@@ -340,8 +337,8 @@ top::TopCommand ::= names::[QName] ty::Type
               case lookupEnv(q, top.constructorEnv) of
               | [] -> rest
               | _ ->
-                errorMsg("Constructor " ++ q.pp ++ " already" ++
-                   " exists and cannot be defined again")::rest
+                errorMsg("Constructor " ++ justShow(q.pp) ++
+                   " already exists and cannot be defined again")::rest
               end,
             [], newNames);
   --two of the same name in this declaration
@@ -356,9 +353,9 @@ top::TopCommand ::= names::[QName] ty::Type
                 then if q.moduleName == top.currentModule
                      then []
                      else [errorMsg("Declared constructor name " ++
-                              q.pp ++ " does not have correct " ++
+                              justShow(q.pp) ++ " does not have correct " ++
                               "module (expected " ++
-                              top.currentModule.pp ++ ")")]
+                              justShow(top.currentModule.pp) ++ ")")]
                 else [], names);
   --check it is defining a proof-level type
   top.toAbellaMsgs <-
@@ -372,7 +369,7 @@ top::TopCommand ::= names::[QName] ty::Type
           if fullTy.isProofType
           then [] --fine to add
           else [errorMsg("Cannot add new constructor to type " ++
-                         fullTy.name.pp)]
+                         justShow(fullTy.name.pp))]
         end
       end;
 
@@ -384,7 +381,7 @@ abstract production importCommand
 top::TopCommand ::= name::String
 {
   top.pp = cat(text("Import \"" ++ name ++ "\"."), realLine());
-  top.abella_pp = top.pp;
+  top.abella_pp = justShow(top.pp);
 
   top.toAbella = [];
   top.toAbellaMsgs <- [errorMsg("Cannot import in Extensibella")];

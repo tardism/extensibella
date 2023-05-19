@@ -11,8 +11,8 @@ nonterminal WarningMessage with
 abstract production stratificationWarning
 top::WarningMessage ::= name::QName
 {
-  top.pp = "Definition might not be stratified\n (\"" ++ name.pp ++
-           "\" occurs to the left of ->)";
+  top.pp = text("Definition might not be stratified") ++ realLine() ++
+      text("(\"") ++ name.pp ++ text("\" occurs to the left of ->)");
 
   top.fromAbella = stratificationWarning(name);
 }
@@ -21,9 +21,9 @@ top::WarningMessage ::= name::QName
 abstract production defeatStratification
 top::WarningMessage ::= name::QName
 {
-  top.pp = "Definition can be used to defeat stratification\n" ++
-           " (higher-order argument \"" ++ name.pp ++
-           "\" occurs to the left of ->)";
+  top.pp = text("Definition can be used to defeat stratification") ++
+           realLine() ++ text(" (higher-order argument \"") ++
+           name.pp ++ text("\" occurs to the left of ->)");
 
   top.fromAbella = defeatStratification(name);
 }
@@ -32,7 +32,8 @@ top::WarningMessage ::= name::QName
 abstract production overridingLemma
 top::WarningMessage ::= name::QName
 {
-  top.pp = "overriding existing lemma named \"" ++ name.pp ++ "\"";
+  top.pp = text("overriding existing lemma named \"") ++ name.pp ++
+           text("\"");
 
   top.fromAbella = overridingLemma(name);
 }
@@ -51,7 +52,7 @@ propagate typeEnv, relationEnv, constructorEnv
 abstract production undeterminedVarType
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Types of variables are not fully determined";
+  top.pp = text("Types of variables are not fully determined");
 
   top.fromAbella = undeterminedVarType();
 }
@@ -60,7 +61,7 @@ top::ProcessingErrorMessage ::=
 abstract production searchFailure
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Search failed";
+  top.pp = text("Search failed");
 
   top.fromAbella = searchFailure();
 }
@@ -69,7 +70,7 @@ top::ProcessingErrorMessage ::=
 abstract production unknownHypLemma
 top::ProcessingErrorMessage ::= name::QName
 {
-  top.pp = "Could not find hypothesis or lemma " ++ name.pp;
+  top.pp = text("Could not find hypothesis or lemma ") ++ name.pp;
 
   top.fromAbella = unknownHypLemma(name.fromAbella);
 }
@@ -78,7 +79,7 @@ top::ProcessingErrorMessage ::= name::QName
 abstract production unknownConstant
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Unknown constant: " ++ name;
+  top.pp = text("Unknown constant: " ++ name);
 
   top.fromAbella = unknownConstant(name);
 }
@@ -87,8 +88,8 @@ top::ProcessingErrorMessage ::= name::String
 abstract production importedUnknownTy
 top::ProcessingErrorMessage ::= names::[String]
 {
-  local namesString::String = implode(", ", names);
-  top.pp = "Imported file makes reference to unknown types: " ++ namesString;
+  top.pp = text("Imported file makes reference to unknown types:") ++
+           line() ++ ppImplode(text(",") ++ line(), map(text, names));
 
   top.fromAbella = importedUnknownTy(names);
 }
@@ -97,8 +98,8 @@ top::ProcessingErrorMessage ::= names::[String]
 abstract production invalidFormula
 top::ProcessingErrorMessage ::= formula::Metaterm
 {
-  top.pp = "Invalid formula: " ++ formula.pp ++
-           "\nCannot use size restrictions (*, @, #, or +)";
+  top.pp = text("Invalid formula: ") ++ formula.pp ++ realLine() ++
+           text("Cannot use size restrictions (*, @, #, or +)");
 
   top.fromAbella = invalidFormula(formula.fromAbella);
 }
@@ -107,7 +108,7 @@ top::ProcessingErrorMessage ::= formula::Metaterm
 abstract production unboundedTyVars
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Some type variables in the theorem are not bounded";
+  top.pp = text("Some type variables in the theorem are not bounded");
 
   top.fromAbella = unboundedTyVars();
 }
@@ -116,7 +117,8 @@ top::ProcessingErrorMessage ::=
 abstract production alreadyDefined
 top::ProcessingErrorMessage ::= name::QName
 {
-  top.pp = "Predicate or constant " ++ name.pp ++ " already exists";
+  top.pp = text("Predicate or constant ") ++ name.pp ++
+           text(" already exists");
 
   top.fromAbella = alreadyDefined(name);
 }
@@ -125,9 +127,9 @@ top::ProcessingErrorMessage ::= name::QName
 abstract production invalidCapDefName
 top::ProcessingErrorMessage ::= name::QName
 {
-  top.pp = "Invalid defined predicate name \"" ++ name.pp ++
-           "\".\n Defined predicates may not begin with a " ++
-           "capital letter.";
+  top.pp = text("Invalid defined predicate name \"") ++ name.pp ++
+           text("\".") ++ realLine() ++ text(" Defined predicates") ++
+           text(" may not begin with a capital letter.");
 
   top.fromAbella = invalidCapDefName(name);
 }
@@ -136,8 +138,8 @@ top::ProcessingErrorMessage ::= name::QName
 abstract production invalidCapConstName
 top::ProcessingErrorMessage ::= name::QName
 {
-  top.pp =
-      "Constants may not begin with a capital letter: " ++ name.pp;
+  top.pp = text("Constants may not begin with a capital letter: ") ++
+           name.pp;
 
   top.fromAbella = invalidCapConstName(name);
 }
@@ -146,7 +148,7 @@ top::ProcessingErrorMessage ::= name::QName
 abstract production strayClause
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Found stray clause for " ++ name;
+  top.pp = text("Found stray clause for " ++ name);
 
   top.fromAbella = strayClause(name);
 }
@@ -155,7 +157,8 @@ top::ProcessingErrorMessage ::= name::String
 abstract production invalidHead
 top::ProcessingErrorMessage ::= formula::Metaterm
 {
-  top.pp = "Invalid head in definition: " ++ formula.pp;
+  top.pp = text("Invalid head in definition:") ++ line() ++
+           formula.pp;
 
   top.fromAbella = invalidHead(formula.fromAbella);
 }
@@ -164,7 +167,8 @@ top::ProcessingErrorMessage ::= formula::Metaterm
 abstract production nonatomicHead
 top::ProcessingErrorMessage ::= formula::Metaterm
 {
-  top.pp = "Definitional clause head not atomic:\n" ++ formula.pp;
+  top.pp = text("Definitional clause head not atomic:") ++
+           realLine() ++ formula.pp;
 
   top.fromAbella = nonatomicHead(formula.fromAbella);
 }
@@ -173,7 +177,7 @@ top::ProcessingErrorMessage ::= formula::Metaterm
 abstract production caseUndefinedAtom
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Cannot perform case-analysis on undefined atom";
+  top.pp = text("Cannot perform case-analysis on undefined atom");
 
   top.fromAbella = caseUndefinedAtom();
 }
@@ -182,7 +186,7 @@ top::ProcessingErrorMessage ::=
 abstract production unknownHypVar
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Unknown hypothesis or variable " ++ name;
+  top.pp = text("Unknown hypothesis or variable " ++ name);
 
   top.fromAbella = unknownHypVar(name);
 }
@@ -191,7 +195,7 @@ top::ProcessingErrorMessage ::= name::String
 abstract production unknownTheorem
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Could not find theorem named \"" ++ name ++ "\"";
+  top.pp = text("Could not find theorem named \"" ++ name ++ "\"");
 
   top.fromAbella = unknownTheorem(name);
 }
@@ -200,7 +204,7 @@ top::ProcessingErrorMessage ::= name::String
 abstract production unknownVar
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Unknown variable " ++ name;
+  top.pp = text("Unknown variable " ++ name);
 
   top.fromAbella = unknownVar(name);
 }
@@ -209,7 +213,7 @@ top::ProcessingErrorMessage ::= name::String
 abstract production inductPredJudg
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Can only induct on predicates and judgments";
+  top.pp = text("Can only induct on predicates and judgments");
 
   top.fromAbella = inductPredJudg();
 }
@@ -218,8 +222,8 @@ top::ProcessingErrorMessage ::=
 abstract production inductUndefined
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Cannot induct on " ++ name ++
-           " since it has not been defined";
+  top.pp = text("Cannot induct on " ++ name ++
+                " since it has not been defined");
 
   top.fromAbella = inductUndefined(name);
 }
@@ -228,8 +232,8 @@ top::ProcessingErrorMessage ::= name::String
 abstract production tooManyInductions
 top::ProcessingErrorMessage ::= expected::Integer got::Integer
 {
-  top.pp = "Expecting " ++ toString(expected) ++
-           " induction arguments but got " ++ toString(got);
+  top.pp = text("Expecting " ++ toString(expected) ++
+                " induction arguments but got " ++ toString(got));
 
   top.fromAbella = tooManyInductions(expected, got);
 }
@@ -238,7 +242,7 @@ top::ProcessingErrorMessage ::= expected::Integer got::Integer
 abstract production needlessSplit
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Needless use of split";
+  top.pp = text("Needless use of split");
 
   top.fromAbella = needlessSplit();
 }
@@ -247,7 +251,7 @@ top::ProcessingErrorMessage ::=
 abstract production cannotSplit
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Cannot split this type of theorem";
+  top.pp = text("Cannot split this type of theorem");
 
   top.fromAbella = cannotSplit();
 }
@@ -256,8 +260,8 @@ top::ProcessingErrorMessage ::=
 abstract production nameExistingHyp
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp =
-      "\"" ++ name ++ "\" already refers to an existing hypothesis";
+  top.pp = text("\"" ++ name ++
+                "\" already refers to an existing hypothesis");
 
   top.fromAbella = nameExistingHyp(name);
 }
@@ -266,7 +270,7 @@ top::ProcessingErrorMessage ::= name::String
 abstract production nameExistingLemma
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "\"" ++ name ++ "\" already refers to a lemma";
+  top.pp = text("\"" ++ name ++ "\" already refers to a lemma");
 
   top.fromAbella = nameExistingLemma(name);
 }
@@ -275,7 +279,8 @@ top::ProcessingErrorMessage ::= name::String
 abstract production nameExistingVar
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "\"" ++ name ++ "\" already refers to an existing variable";
+  top.pp = text("\"" ++ name ++
+                "\" already refers to an existing variable");
 
   top.fromAbella = nameExistingVar(name);
 }
@@ -284,7 +289,8 @@ top::ProcessingErrorMessage ::= name::String
 abstract production unknownVarHypLabel
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Unknown variable or hypothesis label \"" ++ name ++ "\"";
+  top.pp = text("Unknown variable or hypothesis label \"" ++
+                name ++ "\"");
 
   top.fromAbella = unknownVarHypLabel(name);
 }
@@ -293,7 +299,7 @@ top::ProcessingErrorMessage ::= name::String
 abstract production cannotGoBack
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Cannot go that far back!";
+  top.pp = text("Cannot go that far back!");
 
   top.fromAbella = cannotGoBack();
 }
@@ -302,9 +308,10 @@ top::ProcessingErrorMessage ::=
 abstract production matchingUnificationFailureConstants
 top::ProcessingErrorMessage ::= argnum::Integer const1::QName const2::QName
 {
-  top.pp = "While matching argument #" ++ toString(argnum) ++
-           ":\nUnification failure (constant clash between " ++
-           const1.pp ++ " and " ++ const2.pp ++ ")";
+  top.pp = text("While matching argument #" ++ toString(argnum) ++
+                ":") ++ realLine() ++
+           text("Unification failure (constant clash between ") ++
+           const1.pp ++ text(" and ") ++ const2.pp ++ text(")");
 
   top.fromAbella =
       matchingUnificationFailureConstants(argnum, const1, const2);
@@ -314,8 +321,8 @@ top::ProcessingErrorMessage ::= argnum::Integer const1::QName const2::QName
 abstract production matchingUnificationFailure
 top::ProcessingErrorMessage ::= argnum::Integer
 {
-  top.pp = "While matching argument #" ++ toString(argnum) ++
-           ":\nUnification failure";
+  top.pp = text("While matching argument #" ++ toString(argnum) ++
+                ":") ++ realLine() ++ text("Unification failure");
 
   top.fromAbella = matchingUnificationFailure(argnum);
 }
@@ -324,7 +331,7 @@ top::ProcessingErrorMessage ::= argnum::Integer
 abstract production unificationFailure
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Unification failure";
+  top.pp = text("Unification failure");
 
   top.fromAbella = unificationFailure();
 }
@@ -333,8 +340,8 @@ top::ProcessingErrorMessage ::=
 abstract production tyConstrInconsistentKinds
 top::ProcessingErrorMessage ::= name::QName
 {
-  top.pp = "Type constructor " ++ name.pp ++
-           " has inconsistent kind declarations";
+  top.pp = text("Type constructor ") ++ name.pp ++
+           text(" has inconsistent kind declarations");
 
   top.fromAbella = tyConstrInconsistentKinds(name);
 }
@@ -343,7 +350,8 @@ top::ProcessingErrorMessage ::= name::QName
 abstract production tyNoCaps
 top::ProcessingErrorMessage ::= name::QName
 {
-  top.pp = "Types may not begin with a capital letter: " ++ name.pp;
+  top.pp = text("Types may not begin with a capital letter: ") ++
+           name.pp;
 
   top.fromAbella = tyNoCaps(name);
 }
@@ -352,7 +360,7 @@ top::ProcessingErrorMessage ::= name::QName
 abstract production unknownTyConstr
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Unknown type constructor: " ++ name;
+  top.pp = text("Unknown type constructor: " ++ name);
 
   top.fromAbella = unknownTyConstr(name);
 }
@@ -362,8 +370,8 @@ abstract production wrongArgNumber
 top::ProcessingErrorMessage ::= name::QName expected::Integer
                                 given::Integer
 {
-  top.pp = name.pp ++ " expects " ++ toString(expected) ++
-           " arguments but has " ++ toString(given);
+  top.pp = name.pp ++ text(" expects " ++ toString(expected) ++
+           " arguments but has " ++ toString(given));
 
   top.fromAbella = wrongArgNumber(name, expected, given);
 }
@@ -372,7 +380,7 @@ top::ProcessingErrorMessage ::= name::QName expected::Integer
 abstract production noQuantifyProp
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Cannot quantify over type prop";
+  top.pp = text("Cannot quantify over type prop");
 
   top.fromAbella = noQuantifyProp();
 }
@@ -381,7 +389,7 @@ top::ProcessingErrorMessage ::=
 abstract production unknownSettingKey
 top::ProcessingErrorMessage ::= name::String
 {
-  top.pp = "Unknown key '" ++ name ++ "'";
+  top.pp = text("Unknown key '" ++ name ++ "'");
 
   top.fromAbella = unknownSettingKey(name);
 }
@@ -390,8 +398,8 @@ top::ProcessingErrorMessage ::= name::String
 abstract production unknownSettingsValueExpectInt
 top::ProcessingErrorMessage ::= val::String key::String
 {
-  top.pp = "Unknown value '" ++ val ++ "' for key \"" ++ key ++
-           "\"; expected non-negative integer";
+  top.pp = text("Unknown value '" ++ val ++ "' for key \"" ++ key ++
+                "\"; expected non-negative integer");
 
   top.fromAbella = unknownSettingsValueExpectInt(val, key);
 }
@@ -400,8 +408,8 @@ top::ProcessingErrorMessage ::= val::String key::String
 abstract production unknownSettingsValueExpectOnOff
 top::ProcessingErrorMessage ::= val::String key::String
 {
-  top.pp = "Unknown value '" ++ val ++ "' for key \"" ++ key ++
-           "\"; expected 'on' or 'off'";
+  top.pp = text("Unknown value '" ++ val ++ "' for key \"" ++ key ++
+                "\"; expected 'on' or 'off'");
 
   top.fromAbella = unknownSettingsValueExpectOnOff(val, key);
 }
@@ -410,9 +418,9 @@ top::ProcessingErrorMessage ::= val::String key::String
 abstract production unknownSettingsValueExpectMany
 top::ProcessingErrorMessage ::= val::String key::String
 {
-  top.pp = "Unknown value '" ++ val ++ "' for key \"" ++ key ++
-           "\"; expected 'on', 'off', non-negative integer, or " ++
-           "depth specification";
+  top.pp = text("Unknown value '" ++ val ++ "' for key \"" ++ key ++
+                "\"; expected 'on', 'off', non-negative integer, or " ++
+                "depth specification");
 
   top.fromAbella = unknownSettingsValueExpectMany(val, key);
 }
@@ -421,12 +429,12 @@ top::ProcessingErrorMessage ::= val::String key::String
 abstract production applyWrongArgsNumber
 top::ProcessingErrorMessage ::= expected::Integer got::Integer
 {
-  top.pp =
+  top.pp = text(
       ( if expected > got
         then "Not enough"
         else "Too many" ) ++
       " arguments to apply\n(Expected " ++ toString(expected) ++
-      " but got " ++ toString(got) ++ ")";
+      " but got " ++ toString(got) ++ ")");
 
   top.fromAbella = applyWrongArgsNumber(expected, got);
 }
@@ -435,7 +443,7 @@ top::ProcessingErrorMessage ::= expected::Integer got::Integer
 abstract production logicVariableToplevel
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Found logic variable at toplevel";
+  top.pp = text("Found logic variable at toplevel");
 
   top.fromAbella = logicVariableToplevel();
 }
@@ -444,9 +452,9 @@ top::ProcessingErrorMessage ::=
 abstract production appliedStructure
 top::ProcessingErrorMessage ::=
 {
-  top.pp =
-      "Structure of applied term must be a substructure of the following.\n" ++
-      "forall A1 ... Ai, nabla z1 ... zj, H1 -> ... -> Hk -> C";
+  top.pp = text("Structure of applied term must be a substructure " ++
+                "of the following.") ++ realLine() ++
+      text("forall A1 ... Ai, nabla z1 ... zj, H1 -> ... -> Hk -> C");
 
   top.fromAbella = appliedStructure();
 }
@@ -455,7 +463,7 @@ top::ProcessingErrorMessage ::=
 abstract production inductiveRestrictionViolated
 top::ProcessingErrorMessage ::=
 {
-  top.pp = "Inductive restriction violated";
+  top.pp = text("Inductive restriction violated");
 
   top.fromAbella = inductiveRestrictionViolated();
 }
@@ -473,8 +481,9 @@ propagate typeEnv on TypingErrorMessage;
 abstract production badTypeUsage
 top::TypingErrorMessage ::= hasType::Type usedType::Type
 {
-  top.pp = "Expression has type " ++ hasType.pp ++
-           " but is used here with type " ++ usedType.pp ++ ".";
+  top.pp = text("Expression has type ") ++ hasType.pp ++
+           text(" but is used here with type ") ++ usedType.pp ++
+           text(".");
 
   top.fromAbella =
       badTypeUsage(hasType.fromAbella, usedType.fromAbella);
@@ -484,7 +493,7 @@ top::TypingErrorMessage ::= hasType::Type usedType::Type
 abstract production tooManyArguments
 top::TypingErrorMessage ::=
 {
-  top.pp = "Expression is applied to too many arguments";
+  top.pp = text("Expression is applied to too many arguments");
 
   top.fromAbella = tooManyArguments();
 }

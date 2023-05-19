@@ -101,8 +101,8 @@ top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
       then [] --covered by ty.typeErrors
       else if ty.fullType.isLangType
       then [] --translatable
-      else [errorMsg("Type " ++ ty.fullType.name.pp ++ " is not " ++
-               "part of the language and cannot be translated")];
+      else [errorMsg("Type " ++ justShow(ty.fullType.name.pp) ++
+               " is not part of the language and cannot be translated")];
 }
 
 
@@ -374,8 +374,8 @@ top::Term ::= ty::QName
       else if ty.fullType.isLangType
       then []
       else [errorMsg("Cannot have an unknown term for type " ++
-               ty.fullType.name.pp ++ " that is not defined as " ++
-               "part of the language")];
+               justShow(ty.fullType.name.pp) ++ " that is not " ++
+               "defined as part of the language")];
 }
 
 

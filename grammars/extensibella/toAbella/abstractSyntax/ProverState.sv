@@ -72,15 +72,15 @@ top::ProverState ::=
    --I think this is only ever one Split, but make it general in case
    afterCommands::[AnyCommand]
 {
-  top.pp = "Prover State{\n" ++
-      "  Debug Mode:  " ++ toString(debugMode) ++ "\n" ++
-      "  Type Env:  [" ++ implode(", ", map((.pp),
-                             map((.name), tyEnv))) ++ "]\n" ++
-      "  Rel Env:  [" ++ implode(", ", map((.pp),
-                            map((.name), relEnv))) ++ "]\n" ++
-      "  Con Env:  [" ++ implode(", ", map((.pp),
-                            map((.name), constrEnv))) ++ "]\n" ++
-      "}\n";
+  top.pp = ppConcat([text("Prover State{"), realLine(),
+      text("  Debug Mode:  "), text(toString(debugMode)), realLine(),
+      text("  Type Env:  ["), ppImplode(text(", "), map((.pp),
+                                 map((.name), tyEnv))), text("]"), realLine(),
+      text("  Rel Env:  ["), ppImplode(text(", "), map((.pp),
+                                 map((.name), relEnv))), text("]"), realLine(),
+      text("  Con Env:  ["), ppImplode(text(", "), map((.pp),
+                                map((.name), constrEnv))) ++ text("]"), realLine(),
+      text("}"), realLine()]);
 
   top.state = state;
   top.debug = debugMode;
