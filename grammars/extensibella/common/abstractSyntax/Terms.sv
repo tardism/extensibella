@@ -80,8 +80,8 @@ top::Metaterm ::= t1::Term t2::Term
 abstract production impliesMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
-  top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
-                     text(" ->"), line(), t2.pp]);
+  top.pp = docGroup(if t1.isAtomic then t1.pp else parens(t1.pp)) ++
+           text(" ->") ++ line() ++ docGroup(t2.pp);
   top.abella_pp =
       (if t1.isAtomic
        then t1.abella_pp
@@ -99,9 +99,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 abstract production orMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
-  top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
-                     text(" \\/"), line(),
-                     if t2.isAtomic then t2.pp else parens(t2.pp)]);
+  top.pp = docGroup(if t1.isAtomic then t1.pp else parens(t1.pp)) ++
+           text(" \\/") ++ line() ++
+           docGroup(if t2.isAtomic then t2.pp else parens(t2.pp));
   top.abella_pp =
     ( if t1.isAtomic
       then t1.abella_pp
@@ -122,9 +122,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 abstract production andMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
-  top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
-                     text(" /\\"), line(),
-                     if t2.isAtomic then t2.pp else parens(t2.pp)]);
+  top.pp = docGroup(if t1.isAtomic then t1.pp else parens(t1.pp)) ++
+           text(" /\\") ++ line() ++
+           docGroup(if t2.isAtomic then t2.pp else parens(t2.pp));
   top.abella_pp =
     ( if t1.isAtomic
       then t1.abella_pp
@@ -146,9 +146,9 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 abstract production bindingMetaterm
 top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
 {
-  top.pp = ppConcat([b.pp, text(" "),
-                     ppImplode(text(" "), nameBindings.pps),
-                     text(","), line(), body.pp]);
+  top.pp = b.pp ++ text(" ") ++
+           ppImplode(text(" "), nameBindings.pps) ++ text(",") ++
+           nest(2, line() ++ docGroup(body.pp));
   top.abella_pp = b.abella_pp ++ " " ++ nameBindings.abella_pp ++
                   ", " ++ body.abella_pp;
   top.isAtomic = false;
@@ -313,7 +313,7 @@ top::Term ::=
 abstract production applicationTerm
 top::Term ::= f::Term args::TermList
 {
-  top.pp = ppImplode(line(),
+  top.pp = ppImplode(text(" "),
               (if f.isAtomic then f.pp else parens(f.pp))::args.pps);
   top.abella_pp =
     ( if f.isAtomic

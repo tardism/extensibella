@@ -4,8 +4,8 @@ grammar extensibella:toAbella:abstractSyntax;
 abstract production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms
 {
-  top.pp = text("Extensible_Theorem") ++ realLine() ++
-           ppImplode(realLine(), map(nest(3, _), thms.pps)) ++
+  top.pp = text("Extensible_Theorem") ++
+           nest(3, realLine() ++ ppImplode(realLine(), thms.pps)) ++
            text(".") ++ realLine();
   --need this for compilation
   top.abella_pp = "Extensible_Theorem " ++ thms.abella_pp ++ ".\n";
@@ -222,7 +222,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 {
   top.pps = (name.pp ++ text(" : forall ") ++
              ppImplode(text(" "), bindings.pps) ++ text(",") ++
-             realLine() ++ nest(3, body.pp))::rest.pps;
+             nest(3, realLine() ++ body.pp) ++ realLine() ++
+             text("on " ++ onLabel))::rest.pps;
   top.abella_pp =
       name.abella_pp ++ " : forall " ++ bindings.abella_pp ++ ", " ++
       body.abella_pp ++ " on " ++ onLabel ++

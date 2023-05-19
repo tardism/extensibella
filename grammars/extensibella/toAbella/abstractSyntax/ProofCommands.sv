@@ -91,7 +91,7 @@ top::ProofCommand ::= names::[String]
      if null(names)
      then ""
      else " " ++ implode(" ", names);
-  top.pp = cat(text("intros " ++ namesString ++ "."), line());
+  top.pp = cat(text("intros" ++ namesString ++ "."), line());
   top.abella_pp = "intros" ++ namesString ++ ".  ";
 
   top.toAbella = [top];
@@ -107,15 +107,22 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
      | just(d) -> toString(d) ++ " "
      | nothing() -> ""
      end;
-  top.pp = ppConcat([h.pp, text("apply "), text(depthString),
-              theorem.pp,
-              ( if args.len == 0 then text("")
-                else ppConcat([text(" to"), line(),
-                        ppImplode(line(), args.pps)]) ),
-              ( if withs.len == 0 then text("")
-                else ppConcat([text(" with"), line(),
-                        ppImplode(line(), withs.pps)]) ),
-              text("."), line()]);
+  local nestLen::Integer = 2 + length(justShow(h.pp));
+  top.pp = h.pp ++ text("apply ") ++ text(depthString) ++
+           theorem.pp ++
+           ( if args.len == 0 then text("")
+             else text(" to ") ++
+                  nest(nestLen,
+                     foldr1(\ d::Document rest::Document ->
+                              docGroup(d ++ line() ++ rest),
+                            args.pps)) ) ++
+           ( if withs.len == 0 then text("")
+             else text(" with") ++
+                  nest(nestLen, line() ++
+                     foldr1(\ d::Document rest::Document ->
+                              docGroup(d ++ line() ++ rest),
+                            withs.pps)) ) ++
+           text(".") ++ line();
   local argsString_abella::String =
      if args.len == 0
      then ""
@@ -502,7 +509,7 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
      else text("[") ++ ppImplode(text(", "), instantiation.pps) ++
           text("]");
   top.pp = text(if star then "*" else "") ++ hyp.pp ++
-           docGroup(instPP) ++ text(".") ++ line();
+           docGroup(instPP);
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""

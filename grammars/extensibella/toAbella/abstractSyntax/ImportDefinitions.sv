@@ -46,7 +46,7 @@ top::ListOfCommands ::=
 abstract production addListOfCommands
 top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 {
-  top.pp = a.pp ++ rest.pp;
+  top.pp = docGroup(a.pp) ++ rest.pp;
   top.abella_pp = a.abella_pp ++ rest.abella_pp;
 
   top.commandList = a::rest.commandList;

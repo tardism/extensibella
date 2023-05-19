@@ -41,9 +41,10 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
      if null(params)
      then ""
      else " [" ++ buildParams(params) ++ "] ";
-  top.pp = ppConcat([text("Theorem"), name.pp, text(" "),
-                     text(paramsString), text(":"), line(), body.pp,
-                     text("."), realLine()]);
+  top.pp = text("Theorem ") ++ name.pp ++ text(" ") ++
+           text(paramsString) ++ text(":") ++
+           nest(2, line() ++ docGroup(body.pp)) ++
+           text(".") ++ realLine();
   top.abella_pp = "Theorem " ++ name.abella_pp ++ " " ++
                   paramsString ++ " : " ++ body.abella_pp ++ ".\n";
 
@@ -82,17 +83,16 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
 abstract production definitionDeclaration
 top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
-  top.pp = ppConcat([text("Define"),
-              nest(7,
-                 docGroup(ppImplode(cat(text(","), line()),
-                             map(\ p::(QName, Type) ->
-                                   docGroup(
-                                      ppConcat([p.1.pp, text(" : "),
-                                                p.2.pp])),
-                                 preds)))),
-              text("by"), realLine(),
-              ppImplode(cat(text(";"), realLine()), defs.pps),
-              text("."), realLine()]);
+  top.pp = text("Define ") ++
+           nest(7,
+              docGroup(ppImplode(cat(text(","), line()),
+                          map(\ p::(QName, Type) ->
+                                docGroup(p.1.pp ++ text(" :") ++
+                                         nest(3, line() ++ p.2.pp)),
+                              preds)))) ++
+           text(" by") ++ realLine() ++
+           ppImplode(text(";") ++ realLine(), defs.pps) ++
+           text(".") ++ realLine();
   local predsString_abella::String =
      if null(preds)
      then error("Definition should not be empty; definitionDeclaration")

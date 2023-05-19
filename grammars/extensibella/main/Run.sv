@@ -245,7 +245,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
                   "<pre class=\"code\">\n" ++
                     --add prompt and command
                     " < <b>" ++ stripExternalWhiteSpace(
-                                   showDoc(80, any_a.pp)) ++
+                                   showDoc(80, nest(3, any_a.pp))) ++
                        "</b>\n\n" ++
                     --Extensibella output
                     stripExternalWhiteSpace(output_output) ++ "\n" ++

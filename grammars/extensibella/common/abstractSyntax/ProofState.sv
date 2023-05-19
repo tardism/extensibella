@@ -98,12 +98,12 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
   local varsPP::Document =
         if null(vars)
         then text("")
-        else ppConcat([text("Variables: "),
-                ppImplode(text(" "), map(text, vars)), realLine()]);
-  top.pp = ppConcat([varsPP,
-                     ppImplode(realLine(), ctx.pps),
-                     text("============================"), realLine(),
-                     text(" "), goal.pp, realLine()]);
+        else text("Variables: ") ++
+             ppImplode(text(" "), map(text, vars)) ++ realLine();
+  top.pp = varsPP ++
+           ppImplode(realLine(), ctx.pps ++
+              [text("============================")]) ++
+           nest(1, realLine() ++ docGroup(goal.pp)) ++ realLine();
 
   top.hypList = ctx.hypList;
 
@@ -164,7 +164,7 @@ top::Hypothesis ::= name::String body::Metaterm
 {
   top.pps = [ppConcat([text(name), text(" : "),
                        --indent it so it is further over than "name : "
-                       nest(length(name) + 3, body.pp)])];
+                       nest(length(name) + 3, docGroup(body.pp))])];
 
   top.hypList = [(name, new(body))];
 }

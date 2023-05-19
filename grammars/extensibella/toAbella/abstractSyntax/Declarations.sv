@@ -233,8 +233,8 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
 {
   top.pp = foldr1(\ d::Document rest::Document ->
                     docGroup(d ++ line() ++ rest),
-                  defRel.pp::args.pps) ++ text(" :=") ++ line() ++
-           docGroup(body.pp);
+                  defRel.pp::args.pps) ++ text(" :=") ++
+           nest(2, line() ++ docGroup(body.pp));
   top.abella_pp = defRel.abella_pp ++ " " ++ args.abella_pp ++
                   " := " ++ body.abella_pp;
 
