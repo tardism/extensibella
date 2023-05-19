@@ -5,7 +5,8 @@ abstract production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms
 {
   top.pp = text("Extensible_Theorem") ++
-           nest(3, realLine() ++ ppImplode(realLine(), thms.pps)) ++
+           nest(3, realLine() ++ ppImplode(text(",") ++ realLine(),
+                                           thms.pps)) ++
            text(".") ++ realLine();
   --need this for compilation
   top.abella_pp = "Extensible_Theorem " ++ thms.abella_pp ++ ".\n";

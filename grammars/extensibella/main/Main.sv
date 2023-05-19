@@ -81,11 +81,6 @@ synthesized attribute dumpAbellaFile::String occurs on CmdArgs;
 
 synthesized attribute displayHelp::Boolean occurs on CmdArgs;
 
---whether the Extensibella commands and output should be placed in the
---given file
-synthesized attribute outputAnnotated::Boolean occurs on CmdArgs;
-synthesized attribute annotatedFile::String occurs on CmdArgs;
-
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -103,10 +98,6 @@ top::CmdArgs ::= l::[String]
       error("Shouldn't access dumpAbellaFile if dumpAbella = false");
 
   top.displayHelp = false;
-
-  top.outputAnnotated = false;
-  top.annotatedFile =
-      error("Shouldn't access annotatedFile if outputAnnotated = false");
 }
 
 
@@ -126,9 +117,6 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpAbellaFile = rest.dumpAbellaFile;
 
   top.displayHelp = true;
-
-  top.outputAnnotated = rest.outputAnnotated;
-  top.annotatedFile = rest.annotatedFile;
 
   forwards to rest;
 }
@@ -151,9 +139,6 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.displayHelp = rest.displayHelp;
 
-  top.outputAnnotated = rest.outputAnnotated;
-  top.annotatedFile = rest.annotatedFile;
-
   forwards to rest;
 }
 
@@ -175,9 +160,6 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpAbellaFile = rest.dumpAbellaFile;
 
   top.displayHelp = rest.displayHelp;
-
-  top.outputAnnotated = rest.outputAnnotated;
-  top.annotatedFile = rest.annotatedFile;
 
   forwards to rest;
 }
@@ -206,34 +188,6 @@ top::CmdArgs ::= moduleInfo::[String] rest::CmdArgs
 
   top.displayHelp = rest.displayHelp;
 
-  top.outputAnnotated = rest.outputAnnotated;
-  top.annotatedFile = rest.annotatedFile;
-
-  forwards to rest;
-}
-
-
---Output an HTML version of the commands with the Extensibella output
-abstract production annotatedOutputFlag
-top::CmdArgs ::= name::String rest::CmdArgs
-{
-  --if there are files, this requires checking
-  top.checkFile = rest.checkFile || !null(rest.filenames);
-  top.compileFile = rest.compileFile;
-  top.filenames = rest.filenames;
-  top.generateFiles = rest.generateFiles;
-
-  top.runningFile = rest.runningFile;
-  top.showUser = rest.showUser;
-
-  top.dumpAbella = rest.dumpAbella;
-  top.dumpAbellaFile = rest.dumpAbellaFile;
-
-  top.displayHelp = rest.displayHelp;
-
-  top.outputAnnotated = true;
-  top.annotatedFile = name;
-
   forwards to rest;
 }
 
@@ -254,9 +208,6 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpAbellaFile = "abella_dump.thm";
 
   top.displayHelp = rest.displayHelp;
-
-  top.outputAnnotated = rest.outputAnnotated;
-  top.annotatedFile = rest.annotatedFile;
 
   forwards to rest;
 }
@@ -280,11 +231,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
       flagSpec(name="--generate",
                paramString=just("<module> <filename>"),
                help="generate a basic theorem file for the given module",
-               flagParser=nOptions(2, generateFlag)),
-      flagSpec(name="--annotate",
-               paramString=just("<filename>"),
-               help="output an HTML version of the interaction",
-               flagParser=option(annotatedOutputFlag))];
+               flagParser=nOptions(2, generateFlag))];
 
   production attribute debugFlags::[FlagSpec] with ++;
   debugFlags := [];
@@ -330,12 +277,6 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   errors <-
      if !null(a.generateFiles) && !null(a.filenames)
      then ["Can give generate XOR filenames, not both"]
-     else [];
-
-  errors <-
-     if a.outputAnnotated && length(a.filenames) > 1
-     then ["Can only check one file with annotated HTML output; " ++
-           "multiple files would all be in the same HTML file"]
      else [];
 
   return if !null(errors)

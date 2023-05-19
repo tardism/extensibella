@@ -132,7 +132,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   top.isNull = false;
 
   local currentProverState::ProverState = head(top.stateList).snd;
-  local state::ProofState = currentProverState.state;
+  production state::ProofState = currentProverState.state;
   local debug::Boolean = currentProverState.debug;
 
   state.typeEnv = currentProverState.knownTypes;
@@ -146,7 +146,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   ----------------------------
   --we need a copy because we need to set the envs differently here
   --than for imports that also use ListOfCommands
-  local any_a::AnyCommand = a;
+  production any_a::AnyCommand = a;
   any_a.currentModule = top.currentModule;
   any_a.typeEnv = currentProverState.knownTypes;
   any_a.relationEnv = currentProverState.knownRels;
@@ -158,7 +158,8 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   local is_error::Boolean = any(map((.isError), any_a.toAbellaMsgs));
   local speak_to_abella::Boolean = !is_error && !null(any_a.toAbella);
   --an error or message based on our own checking
-  local our_own_output::String = errors_to_string(any_a.toAbellaMsgs);
+  local our_own_output::String =
+      errors_to_string(any_a.toAbellaMsgs);
   --Send to Abella and read output
   ----------------------------
   local io_action_1::IOVal<String> =
@@ -214,7 +215,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   finalDisplay.typeEnv = nonErrorProverState.knownTypes;
   finalDisplay.relationEnv = nonErrorProverState.knownRels;
   finalDisplay.constructorEnv = nonErrorProverState.knownConstrs;
-  local output_output::String =
+  production output_output::String =
       if speak_to_abella && continueProcessing
       then showDoc(80, finalDisplay.fromAbella.pp) ++ "\n"
       else our_own_output ++ showDoc(80, state.fromAbella.pp) ++ "\n";
@@ -237,25 +238,6 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   production attribute io::(IOToken ::= IOToken) with combineIO;
   io := \ i::IOToken -> i;
 
-  --Annotated HTML file with command and non-dying output
-  io <- \ i::IOToken ->
-          if top.config.outputAnnotated
-          then appendFileT(top.config.annotatedFile,
-                  --create block
-                  "<pre class=\"code extensibella\">\n" ++
-                    --add prompt and command
-                    " &lt; <b>" ++ stripExternalWhiteSpace(
-                                      makeHTMLSafe(
-                                         showDoc(80,
-                                            nest(3, any_a.pp)))) ++
-                          "</b>\n\n" ++
-                    --Extensibella output
-                    stripExternalWhiteSpace(
-                       makeHTMLSafe(output_output)) ++ "\n" ++
-                  --end block
-                  "</pre>\n",
-                  i)
-          else i;
 
   --finalIO is the IOToken for all this command's IO being done,
   --including any extra actions added apart from the basic sequence
@@ -498,18 +480,4 @@ IOToken ::= debug::Boolean config::Configuration commands::[command]
   return if debug && config.showUser
          then printT(full, ioin)
          else ioin;
-}
-
-
-
-
-{-
-  In the HTML output, the extension size and translation versions of a
-  relation are disappearing because they are treated as tags.  This
-  replaces the literal "<" and ">" with HTML-safe versions.
--}
-function makeHTMLSafe
-String ::= s::String
-{
-  return substitute("<", "&lt;", substitute(">", "&gt;", s));
 }
