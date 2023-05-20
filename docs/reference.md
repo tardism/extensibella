@@ -318,6 +318,9 @@ Command commands may be used either inside or outside of a proof.
   + Valid options:
     - `search_depth`:  How deep to search when looking for an
       automatic proof.  Value must be an integer.
+    - `display_width`:  The approximate maximum width to use for lines
+      before wrapping them in displaying the current proof context.
+      Value must be an integer.  Defaults to 80.
     - `debug`:  Whether to display the behind-the-scenes interaction
       with Abella.  This is intended only for developing and debugging
       Extensibella itself, and does not provide useful information for

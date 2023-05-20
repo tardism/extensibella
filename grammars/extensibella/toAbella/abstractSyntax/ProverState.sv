@@ -9,7 +9,8 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal ProverState with
    pp, --solely for debugging purposes
-   state, debug, knownTheorems, knownExtInds, remainingObligations,
+   state, debug, displayWidth,
+   knownTheorems, knownExtInds, remainingObligations,
    knownTypes, knownRels, knownConstrs,
    provingThms, provingExtInds, duringCommands, afterCommands;
 
@@ -17,6 +18,7 @@ nonterminal ProverState with
 synthesized attribute state::ProofState;
 synthesized attribute provingThms::[(QName, Metaterm)];
 synthesized attribute debug::Boolean;
+synthesized attribute displayWidth::Integer;
 
 --Theorems we have proven and available
 --(qualified name, statement)
@@ -43,6 +45,8 @@ top::ProverState ::=
    state::ProofState
    --whether to print out the Abella commands/returns to the user
    debugMode::Boolean
+   --approximate maximum line width for display
+   displayWidth::Integer
    --theorems we have proven or imported and can use
    --should include the standard library's theorems
    knownThms::[(QName, Metaterm)]
@@ -84,6 +88,7 @@ top::ProverState ::=
 
   top.state = state;
   top.debug = debugMode;
+  top.displayWidth = displayWidth;
 
   top.knownTheorems = knownThms;
   top.knownExtInds = knownExtInds;
@@ -117,7 +122,7 @@ ProverState ::= current::ProverState
               decorate t with {knownThms = rest;}.thms ++ rest,
             current.knownTheorems, take);
   return proverState(current.state, current.debug,
-            outThms, current.knownExtInds,
+            current.displayWidth, outThms, current.knownExtInds,
             outObligations, current.knownTypes, current.knownRels,
             current.knownConstrs, current.provingThms,
             current.provingExtInds, current.duringCommands,
@@ -163,6 +168,7 @@ function finishProof
 ProverState ::= current::ProverState
 {
   return proverState(current.state, current.debug,
+            current.displayWidth,
             current.provingThms ++ current.knownTheorems,
             --keep blanks out of the list for efficiency
             if null(current.provingExtInds) then current.knownExtInds
@@ -180,6 +186,7 @@ function abortProof
 ProverState ::= current::ProverState
 {
   return proverState(current.state, current.debug,
+            current.displayWidth,
             current.knownTheorems, current.knownExtInds,
             current.remainingObligations, current.knownTypes,
             current.knownRels, current.knownConstrs,
@@ -191,7 +198,20 @@ ProverState ::= current::ProverState
 function setProverDebug
 ProverState ::= current::ProverState debugVal::Boolean
 {
-  return proverState(current.state, debugVal,
+  return proverState(current.state, debugVal, current.displayWidth,
+            current.knownTheorems, current.knownExtInds,
+            current.remainingObligations, current.knownTypes,
+            current.knownRels, current.knownConstrs,
+            current.provingThms, current.provingExtInds,
+            current.duringCommands, current.afterCommands);
+}
+
+
+--Set displayWidth to width, leaving everything else the same
+function setProverWidth
+ProverState ::= current::ProverState width::Integer
+{
+  return proverState(current.state, current.debug, width,
             current.knownTheorems, current.knownExtInds,
             current.remainingObligations, current.knownTypes,
             current.knownRels, current.knownConstrs,
@@ -212,6 +232,7 @@ ProverState ::= current::ProverState newProofState::ProofState
    afterCmds::[AnyCommand]
 {
   return proverState(newProofState, current.debug,
+            current.displayWidth,
             newThms ++ current.knownTheorems, current.knownExtInds,
             current.remainingObligations,
             addEnv(current.knownTypes, newTys),
@@ -226,6 +247,7 @@ function setProofState
 ProverState ::= current::ProverState newProofState::ProofState
 {
   return proverState(newProofState, current.debug,
+            current.displayWidth,
             current.knownTheorems, current.knownExtInds,
             current.remainingObligations, current.knownTypes,
             current.knownRels, current.knownConstrs,
@@ -276,7 +298,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
   --currently no visible constructors from the standard library
   local knownConstrs::[ConstructorEnvItem] = buildEnv([]);
 
-  return proverState(noProof(), false, knownThms, [], obligations,
+  return proverState(noProof(), false, 80, knownThms, [], obligations,
             addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),
             addEnv(constrEnv, knownConstrs), [], [], [], []);
 }
@@ -287,7 +309,8 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
 function dropDuringCommand
 ProverState ::= p::ProverState
 {
-  return proverState(p.state, p.debug, p.knownTheorems, p.knownExtInds,
+  return proverState(p.state, p.debug, p.displayWidth,
+            p.knownTheorems, p.knownExtInds,
             p.remainingObligations, p.knownTypes, p.knownRels,
             p.knownConstrs, p.provingThms, p.provingExtInds,
             tail(p.duringCommands), p.afterCommands);

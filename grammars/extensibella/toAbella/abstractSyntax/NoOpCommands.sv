@@ -21,7 +21,7 @@ top::NoOpCommand ::= opt::String val::String
   top.pp = cat(text("Set " ++ opt ++ " " ++ val ++ "."), realLine());
   top.abella_pp = "Set " ++ opt ++ " " ++ val ++ ".\n";
 
-  local abellaSetting::Boolean = opt != "debug";
+  local abellaSetting::Boolean = opt != "debug" && opt != "display_width";
   top.toAbella =
       if abellaSetting then [setCommand(opt, val)] else [];
 
@@ -29,6 +29,8 @@ top::NoOpCommand ::= opt::String val::String
       (if abellaSetting then 1 else 0,
        if opt == "debug"
        then setProverDebug(top.proverState, val == "on")
+       else if opt == "display_width"
+       then setProverWidth(top.proverState, toInteger(val))
        else top.proverState)::top.stateListIn;
 
   top.toAbellaMsgs <-
@@ -47,6 +49,11 @@ top::NoOpCommand ::= opt::String val::String
            then []
            else [errorMsg("Argument to option 'search_depth' must " ++
                           "be integer; found '" ++ val ++ "'")]
+      else if opt == "display_width"
+      then if toIntSafe(val).isJust
+           then []
+           else [errorMsg("Argument to option 'display_width' must" ++
+                          " be integer; found '" ++ val ++ "'")]
       else [errorMsg("Unknown option '" ++ opt ++ "'")];
 
   top.isQuit = false;

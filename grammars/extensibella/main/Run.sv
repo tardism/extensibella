@@ -215,10 +215,15 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   finalDisplay.typeEnv = nonErrorProverState.knownTypes;
   finalDisplay.relationEnv = nonErrorProverState.knownRels;
   finalDisplay.constructorEnv = nonErrorProverState.knownConstrs;
+  local width::Integer =
+      if speak_to_abella || is_error
+      then currentProverState.displayWidth
+      else head(any_a.stateListOut).2.displayWidth;
   production output_output::String =
       if speak_to_abella && continueProcessing
-      then showDoc(80, finalDisplay.fromAbella.pp) ++ "\n"
-      else our_own_output ++ showDoc(80, state.fromAbella.pp) ++ "\n";
+      then showDoc(width, finalDisplay.fromAbella.pp) ++ "\n"
+      else our_own_output ++
+           showDoc(width, state.fromAbella.pp) ++ "\n";
   local io_action_6::IOToken =
       if top.config.showUser
       then printT(output_output, io_action_5.io)
@@ -261,7 +266,8 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
            else if full_a.isError
            then ioval(printT("Could not process full file " ++
                              top.filename ++ ":\n" ++
-                             showDoc(80, full_a.pp),
+                             showDoc(currentProverState.displayWidth,
+                                     full_a.pp),
                          finalIO), 1)
            else if any_a.isQuit && !rest.isNull
            then ioval(printT("Warning:  File contains Quit before " ++
