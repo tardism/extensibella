@@ -1,76 +1,27 @@
-grammar extensibella:main;
+grammar extensibella:main:compile;
 
 
 --Run through a list of files, compiling them
 function compile_files
-IOVal<Integer> ::=
-   file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
-   import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c> ioin::IOToken
-   filenames::[String] config::Decorated CmdArgs
+IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
+                   config::Configuration
 {
-  local compiled::IOVal<Integer> =
-      compile_file(file_parse, from_parse, import_parse,
-         interface_parse, outerface_parse, ioin, head(filenames));
-  return
-     case filenames of
-     | [] -> ioval(ioin, 0)
-     | hd::tl ->
-       if compiled.iovalue != 0
-       then compiled --error in compiling that file, so quit
-       else compile_files(file_parse, from_parse, import_parse,
-               interface_parse, outerface_parse, compiled.io, tl,
-               config)
-     end;
-}
-
-
---Run through a list of files, checking and compiling them
-function check_compile_files
-IOVal<Integer> ::=
-   file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
-   import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c> ioin::IOToken
-   filenames::[String] config::Decorated CmdArgs
-{
-  local ran::IOVal<Integer> =
-      run_file(file_parse, from_parse, import_parse,
-          interface_parse, outerface_parse, ioin, head(filenames),
-          config);
-  local compiled::IOVal<Integer> =
-      compile_file(file_parse, from_parse, import_parse,
-          interface_parse, outerface_parse, ran.io, head(filenames));
-  return
-      case filenames of
-      | [] -> ioval(ioin, 0)
-      | hd::tl ->
-        if ran.iovalue != 0
-        then ran --error in checking that file, so quit
-        else if compiled.iovalue != 0
-        then compiled --error in compiling that file, so quit
-        else check_compile_files(file_parse, from_parse, import_parse,
-                interface_parse, outerface_parse, compiled.io, tl,
-                config)
-      end;
+  return foldl(\ thusFar::IOVal<Integer> f::String ->
+                 if thusFar.iovalue == 0
+                 then compile_file(parsers, thusFar.io, f)
+                 else thusFar,
+               ioval(ioin, 0), config.filenames);
 }
 
 
 --Compile a file, outputting it into the generated directory
 function compile_file
-IOVal<Integer> ::=
-   file_parse::Parser<FullFile_c> from_parse::Parser<FullDisplay_c>
-   import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c>
-   ioin::IOToken filename::String
+IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
 {
   local fileInfo::
         IOVal<Either<String ((Maybe<QName>, ListOfCommands),
                      (ListOfCommands, [DefElement], [ThmElement]))>> =
-      processFile(filename, file_parse, import_parse, interface_parse,
-                  outerface_parse, ioin);
+      processFile(filename, parsers, ioin);
   local fileAST::(Maybe<QName>, ListOfCommands) =
       fileInfo.iovalue.fromRight.1;
   local processed::(ListOfCommands, [DefElement], [ThmElement]) =
@@ -84,7 +35,7 @@ IOVal<Integer> ::=
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
-      importStdLibThms(import_parse, fileInfo.io);
+      importStdLibThms(parsers, fileInfo.io);
   local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
                             [ConstructorEnvItem]) =
       defElementsDefinitions(processed.2);

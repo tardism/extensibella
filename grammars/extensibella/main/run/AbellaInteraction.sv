@@ -1,5 +1,6 @@
-grammar extensibella:main;
+grammar extensibella:main:run;
 
+imports silver:util:subprocess;
 
 --Either start Abella or fail with an error message
 function startAbella
@@ -35,74 +36,40 @@ IOVal<Either<String ProcessHandle>> ::=
 }
 
 
-function importStdLibThms
-IOVal<Either<String [(QName, Metaterm)]>> ::=
-      import_parse::Parser<ListOfCommands_c> ioin::IOToken
-{
-  local stdLibFiles::IOVal<Either<String [String]>> =
-      standardLibraryFiles(ioin);
-  local read::IOVal<Either<String [(QName, Metaterm)]>> =
-      readStdLibThms(stdLibFiles.iovalue.fromRight, import_parse,
-                     stdLibFiles.io);
-  return
-     case stdLibFiles.iovalue of
-     | left(err) -> ioval(stdLibFiles.io, left(err))
-     | right(_) -> ioval(read.io, read.iovalue)
-     end;
-}
 
-function readStdLibThms
-IOVal<Either<String [(QName, Metaterm)]>> ::=
-      filenames::[String] import_parse::Parser<ListOfCommands_c>
-      ioin::IOToken
+--Send the commands from importing module specifications and build
+--   the environments
+function set_up_abella_module
+IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
+       Env<ConstructorEnvItem>)> ::=
+     currentModule::QName comms::ListOfCommands defs::[DefElement]
+     parsers::AllParsers abella::ProcessHandle ioin::IOToken
+     config::Decorated CmdArgs
 {
-  local contents::IOVal<String> =
-      readFileT(head(filenames) ++ ".thm", ioin);
-  local parsed::ParseResult<ListOfCommands_c> =
-      import_parse(contents.iovalue, head(filenames) ++ ".thm");
-  local ast::ListOfCommands = parsed.parseTree.ast;
-  ast.currentModule = toQName("extensibella:stdLib");
-  ast.proverState = error("proverState not needed");
-  local again::IOVal<Either<String [(QName, Metaterm)]>> =
-      readStdLibThms(tail(filenames), import_parse, contents.io);
-  return
-     case filenames of
-     | [] -> ioval(ioin, right([]))
-     | f::_ when !parsed.parseSuccess ->
-       ioval(contents.io,
-             left("Could not parse file " ++ f ++ ".thm:\n" ++
-                  parsed.parseErrors))
-     | _::_ when again.iovalue.isLeft ->
-       ioval(again.io, again.iovalue)
-     | _::_ ->
-       ioval(again.io,
-             right(ast.declaredThms ++ again.iovalue.fromRight))
-     end;
-}
+  local sendToAbella::[String] =
+      map((.abella_pp), comms.commandList) ++
+      map((.abella_pp), flatMap((.encode), defs));
+  local back::IOVal<String> =
+      sendCmdsToAbella(sendToAbella, abella, ioin, config);
+  local parsedOutput::ParseResult<FullDisplay_c> =
+      parsers.from_parse(back.iovalue, "<<output>>");
 
+  --nothing is known going into this
+  comms.typeEnv = [];
+  comms.relationEnv = [];
+  comms.constructorEnv = [];
+  comms.currentModule = error("currentModule not needed?");
 
---Find all the library files, with their full path
---Does not include file extensions
-function standardLibraryFiles
-IOVal<Either<String [String]>> ::= ioin::IOToken
-{
-  --Find the library location (env variable set by startup script)
-  local library_loc::IOVal<String> =
-      envVarT("EXTENSIBELLA_LIBRARY", ioin);
-  --filenames for the standard library
-  local baseFiles::[String] =
-      ["bools", "integer_addition", "integer_multiplication",
-       "integer_division", "integer_comparison", "lists", "strings",
-       "pairs", "extSize_induction"];
-  local fullFilenames::[String] =
-      map(\ filename::String -> library_loc.iovalue ++ filename,
-          baseFiles);
   return
-     ioval(library_loc.io,
-           if library_loc.iovalue == ""
-           then left("Interface library location not set; " ++
-                     "must run through given script")
-           else right(fullFilenames));
+     if !parsedOutput.parseSuccess
+     then error("Could not parse Abella output:\n\n" ++
+                back.iovalue ++ "\n\n" ++ parsedOutput.parseErrors)
+     else if parsedOutput.parseTree.ast.isError
+     then error("Error passing module specifications to Abella:\n" ++
+                showDoc(80, parsedOutput.parseTree.ast.pp))
+     else ioval(back.io,
+                (buildEnv(comms.tys), buildEnv(comms.rels),
+                 buildEnv(comms.constrs)));
 }
 
 

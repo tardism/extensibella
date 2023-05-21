@@ -1,29 +1,23 @@
-grammar extensibella:main;
+grammar extensibella:main:run;
 
 
 --Run a REPL for the theorem prover
 --First entry must be a module declaration (Module na:me.)
 function run_interactive
-IOVal<Integer> ::=
-   module_decl_parse::Parser<ModuleDecl_c>
-   import_parse::Parser<ListOfCommands_c>
-   cmd_parse::Parser<AnyCommand_c>
-   from_parse::Parser<FullDisplay_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c>
-   ioin::IOToken config::Decorated CmdArgs
+IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
+                   config::Configuration
 {
   --get the module information
   local processed::IOVal<Maybe<(QName, ListOfCommands, [DefElement],
                                 [ThmElement])>> =
-      get_module_interactive(module_decl_parse, import_parse,
-         interface_parse, outerface_parse, config, ioin);
+      get_module_interactive(parsers, config, ioin);
 
   return
      if !processed.iovalue.isJust
      then ioval(processed.io, 0) --quit, so return
-     else run("<<user input>>", build_interactive_commands(cmd_parse),
-              import_parse, from_parse, processed.iovalue.fromJust.1,
+     else run("<<user input>>",
+              build_interactive_commands(parsers),
+              parsers, processed.iovalue.fromJust.1,
               processed.iovalue.fromJust.2,
               processed.iovalue.fromJust.3,
               processed.iovalue.fromJust.4, config, processed.io);
@@ -34,30 +28,27 @@ IOVal<Integer> ::=
 --   they actually give one
 function get_module_interactive
 IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
-   module_decl_parse::Parser<ModuleDecl_c>
-   import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c>
-   config::Configuration ioin::IOToken
+   parsers::AllParsers config::Configuration ioin::IOToken
 {
   --Get input
   local printed_prompt::IOToken = printT(" < ", ioin);
   local raw_input::IOVal<String> = read_full_input(printed_prompt);
-  local input::String = stripExternalWhiteSpace(raw_input.iovalue);
+  production input::String =
+      stripExternalWhiteSpace(raw_input.iovalue);
 
   --Process input
   local result::ParseResult<ModuleDecl_c> =
-      module_decl_parse(input, "<<input>>");
+      parsers.module_decl_parse(input, "<<input>>");
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
                                         [ThmElement])>> =
       if result.parseSuccess && result.parseTree.ast.isJust
-      then processModuleDecl(result.parseTree.ast.fromJust, import_parse,
-              interface_parse, outerface_parse, raw_input.io)
+      then processModuleDecl(result.parseTree.ast.fromJust, parsers,
+              raw_input.io)
       else ioval(raw_input.io,
               error("Should not access in the presence of errors"));
 
   --Output to be printed (put it here so annotatedModule can use it)
-  local output::String =
+  production output::String =
       if !result.parseSuccess
       then "Error:  First entry must be a module\n" ++
            result.parseErrors ++ "\n\n"
@@ -68,35 +59,25 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
            | right(_) -> ""
            end;
 
-  --Annotated output
-  local annotatedModule::IOToken =
-      if config.outputAnnotated
-      then appendFileT(config.annotatedFile,
-              --create block
-              "<pre class=\"code\">\n" ++
-                --add prompt and user input
-                " < <b>" ++ input ++ "</b>\n\n" ++
-                --add output
-                stripExternalWhiteSpace(output) ++
-              --end block
-              "</pre>\n",
-              processed.io)
-      else processed.io;
+  --Permit the addition of extra actions to be carried out after the
+  --processing above
+  production attribute io::(IOToken ::= IOToken) with combineIO;
+  io := \ i::IOToken -> i;
+
+  local finalIOToken::IOToken = io(processed.io);
 
   return
      if !result.parseSuccess
-     then get_module_interactive(module_decl_parse, import_parse,
-             interface_parse, outerface_parse, config,
-             printT(output, annotatedModule))
+     then get_module_interactive(parsers, config,
+             printT(output, finalIOToken))
      else if !result.parseTree.ast.isJust
-     then ioval(annotatedModule, nothing()) --quit
+     then ioval(finalIOToken, nothing()) --quit
      else case processed.iovalue of
           | left(err) ->
-            get_module_interactive(module_decl_parse, import_parse,
-               interface_parse, outerface_parse, config,
-               printT(output, annotatedModule))
+            get_module_interactive(parsers, config,
+               printT(output, finalIOToken))
           | right((a, b, c)) ->
-            ioval(annotatedModule,
+            ioval(finalIOToken,
                   just((result.parseTree.ast.fromJust, a, b, c)))
           end;
 }
@@ -104,21 +85,21 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
 
 --Create a list of commands by reading them from the user
 function build_interactive_commands
-ListOfCommands ::= cmd_parse::Parser<AnyCommand_c>
+ListOfCommands ::= parsers::AllParsers
 {
   local printed_prompt::IOToken = printT(" < ", unsafeIO());
   local raw_input::IOVal<String> = read_full_input(printed_prompt);
   local input::String = stripExternalWhiteSpace(raw_input.iovalue);
   local result::ParseResult<AnyCommand_c> =
-        cmd_parse(input, "<<input>>");
+        parsers.cmd_parse(input, "<<input>>");
   local any_a::AnyCommand =
         if result.parseSuccess
         then result.parseTree.ast
         else anyParseFailure(result.parseErrors);
   return if isSpace(input)
-         then build_interactive_commands(cmd_parse)
+         then build_interactive_commands(parsers)
          else addListOfCommands(any_a,
-                 build_interactive_commands(cmd_parse));
+                 build_interactive_commands(parsers));
 }
 
 

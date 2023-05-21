@@ -1,20 +1,33 @@
-grammar extensibella:main;
+grammar extensibella:main:generate;
+
+imports extensibella:interfaceFile;
+
+imports silver:langutil:pp;
+imports silver:langutil only pp;
 
 
 function generateSkeletonFiles
-IOVal<Boolean> ::= gen::[(QName, String)]
-   import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c> ioin::IOToken
+IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
+                   config::Configuration
 {
-  local module::QName = head(gen).1;
-  local filename::String = head(gen).2;
-  --
+  local r::IOVal<Boolean> =
+      foldl(\ thusFar::IOVal<Boolean> p::(QName, String) ->
+              if thusFar.iovalue
+              then generateSkeletonFile(p.1, p.2, parsers, thusFar.io)
+              else thusFar,
+            ioval(ioin, true), config.generateFiles);
+  return ioval(r.io, if r.iovalue then 0 else 1);
+}
+
+
+function generateSkeletonFile
+IOVal<Boolean> ::= module::QName filename::String parsers::AllParsers
+                   ioin::IOToken
+{
   local processModule::IOVal<Either<String
                              (ListOfCommands, [DefElement],
                               [ThmElement])>> =
-      processModuleDecl(module, import_parse, interface_parse,
-         outerface_parse, ioin);
+      processModuleDecl(module, parsers, ioin);
   local outputThms::[ThmElement] =
       filter((.inSkeleton), processModule.iovalue.fromRight.3);
   local outputString::String =
@@ -49,21 +62,13 @@ IOVal<Boolean> ::= gen::[(QName, String)]
       if doOutput
       then writeFileT(filename, outputString, message)
       else message;
-  --
-  local rest::IOVal<Boolean> =
-      generateSkeletonFiles(tail(gen), import_parse, interface_parse,
-                            outerface_parse, output);
 
   return
-      case gen of
-      | [] -> ioval(ioin, true)
-      | hd::tl ->
-        case processModule.iovalue of
-        | left(err) ->
-          ioval(printT("Error:  " ++ err ++ "\n", processModule.io),
-                false)
-        | right(_) -> rest
-        end
+      case processModule.iovalue of
+      | left(err) ->
+        ioval(printT("Error:  " ++ err ++ "\n", processModule.io),
+              false)
+      | right(_) -> ioval(output, true)
       end;
 }
 

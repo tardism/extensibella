@@ -1,288 +1,134 @@
 grammar extensibella:main;
 
-imports extensibella:fromAbella;
-imports extensibella:toAbella;
-imports extensibella:common;
-imports extensibella:interfaceFile;
-imports extensibella:outerfaceFile;
+imports extensibella:main:util;
+imports extensibella:main:run;
+imports extensibella:main:compile;
+imports extensibella:main:generate;
 
-imports silver:util:subprocess;
 imports silver:util:cmdargs;
-
-imports silver:langutil:pp;
-imports silver:langutil only pp, pps;
 
 
 function mainProcess
-IOVal<Integer> ::= 
-   module_decl_parse::Parser<ModuleDecl_c>
-   cmd_parse::Parser<AnyCommand_c>
-   from_parse::Parser<FullDisplay_c>
-   file_parse::Parser<FullFile_c>
-   import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c>
-   largs::[String] ioin::IOToken
+IOVal<Integer> ::= parsers::AllParsers largs::[String] ioin::IOToken
 {
   local parsedArgs::Either<String Decorated CmdArgs> =
         parseArgs(largs);
-  local generate::IOVal<Boolean> =
-        generateSkeletonFiles(parsedArgs.fromRight.generateFiles,
-           import_parse, interface_parse, outerface_parse, ioin);
 
-  return
-     case parsedArgs of
-     | left(errs) -> ioval(printT(errs, ioin), 1)
-     | right(args) ->
-       if !generate.iovalue
-       then ioval(generate.io, 1)
-       else if args.compileFile && args.checkFile
-       then check_compile_files(file_parse, from_parse, import_parse,
-               interface_parse, outerface_parse, generate.io,
-               args.filenames, args)
-       else if args.compileFile
-       then compile_files(file_parse, from_parse, import_parse,
-               interface_parse, outerface_parse, generate.io,
-               args.filenames, args)
-       else if args.checkFile
-       then run_files(file_parse, from_parse, import_parse,
-               interface_parse, outerface_parse, generate.io,
-               args.filenames, args)
-       else if null(args.generateFiles)
-       then run_interactive(module_decl_parse, import_parse,
-               cmd_parse, from_parse, interface_parse,
-               outerface_parse, ioin, args)
-       else --don't run interactive if generating for some module(s)
-            ioval(generate.io, 0)
-     end;
-}
+  {-
+    Actions to run, choosing whether or not to run them based on the
+    command line arguments received
+    If one fails (returns .iovalue != 0), the ones after will not run
+  -}
+  production attribute actions::[ActionSpec] with ++;
+  actions :=
+      [actionSpec(
+          runFun = check_compile_files,
+          shouldDoFun = \ c::Configuration ->
+                          c.checkFile && c.compileFile,
+          actionDesc = "Check and Compile"),
+       actionSpec(
+          runFun = run_files,
+          shouldDoFun = \ c::Configuration ->
+                          c.checkFile && !c.compileFile,
+          actionDesc = "Check"),
+       actionSpec(
+          runFun = compile_files,
+          shouldDoFun = \ c::Configuration ->
+                          !c.checkFile && c.compileFile,
+          actionDesc = "Compile"),
+       actionSpec(
+          runFun = generateSkeletonFiles,
+          shouldDoFun = \ c::Configuration ->
+                          !null(c.generateFiles),
+          actionDesc = "Generate")
+      ];
 
-
-
-type Parser<a> = (ParseResult<a> ::= String String);
-
-
-
-synthesized attribute checkFile::Boolean occurs on CmdArgs;
-synthesized attribute compileFile::Boolean occurs on CmdArgs;
-synthesized attribute filenames::[String] occurs on CmdArgs;
---module and filename to generate skeletons for and into
-synthesized attribute generateFiles::[(QName, String)] occurs on CmdArgs;
-
---whether we are running a file or interactive
-synthesized attribute runningFile::Boolean occurs on CmdArgs;
---whether the user should see output
-synthesized attribute showUser::Boolean occurs on CmdArgs;
-
---whether the Abella commands should be placed in the given file
---   Useful for debugging when the translation is wrong
-synthesized attribute dumpAbella::Boolean occurs on CmdArgs;
-synthesized attribute dumpAbellaFile::String occurs on CmdArgs;
-
-synthesized attribute displayHelp::Boolean occurs on CmdArgs;
-
-
-aspect production endCmdArgs
-top::CmdArgs ::= l::[String]
-{
-  top.checkFile = false;
-  top.compileFile = false;
-  top.filenames = l;
-  top.generateFiles = [];
-
-  top.runningFile = !null(l);
-  top.showUser = null(l);
-
-  top.dumpAbella = false;
-  top.dumpAbellaFile =
-      error("Shouldn't access dumpAbellaFile if dumpAbella = false");
-
-  top.displayHelp = false;
-}
-
-
---Display the help WITHOUT an error message
-abstract production helpFlag
-top::CmdArgs ::= rest::CmdArgs
-{
-  top.checkFile = rest.checkFile;
-  top.compileFile = rest.compileFile;
-  top.filenames = rest.filenames;
-  top.generateFiles = rest.generateFiles;
-
-  top.runningFile = rest.runningFile;
-  top.showUser = rest.showUser;
-
-  top.dumpAbella = rest.dumpAbella;
-  top.dumpAbellaFile = rest.dumpAbellaFile;
-
-  top.displayHelp = true;
-
-  forwards to rest;
-}
-
-
---Check the file for correctness
-abstract production checkFlag
-top::CmdArgs ::= rest::CmdArgs
-{
-  top.checkFile = true;
-  top.compileFile = rest.compileFile;
-  top.filenames = rest.filenames;
-  top.generateFiles = rest.generateFiles;
-
-  top.runningFile = true;
-  top.showUser = rest.showUser;
-
-  top.dumpAbella = rest.dumpAbella;
-  top.dumpAbellaFile = rest.dumpAbellaFile;
-
-  top.displayHelp = rest.displayHelp;
-
-  forwards to rest;
-}
-
-
---Compile the file to allow its theorems to be discovered for modules
---   importing it
-abstract production compileFlag
-top::CmdArgs ::= rest::CmdArgs
-{
-  top.checkFile = rest.checkFile;
-  top.compileFile = true;
-  top.filenames = rest.filenames;
-  top.generateFiles = rest.generateFiles;
-
-  top.runningFile = rest.runningFile;
-  top.showUser = rest.showUser;
-
-  top.dumpAbella = rest.dumpAbella;
-  top.dumpAbellaFile = rest.dumpAbellaFile;
-
-  top.displayHelp = rest.displayHelp;
-
-  forwards to rest;
-}
-
-
---Generate a file with the required imported theorems for proving
-abstract production generateFlag
-top::CmdArgs ::= moduleInfo::[String] rest::CmdArgs
-{
-  top.checkFile = rest.checkFile;
-  top.compileFile = rest.compileFile;
-  top.filenames = rest.filenames;
-  top.generateFiles =
-      case moduleInfo of
-      | [mod, filename] ->
-        (toQName(mod), filename)::rest.generateFiles
-      | _ -> --should be checked by silver:util:cmdargs
-        rest.generateFiles
+  {-
+    Whether to run the REPL for Extensibella
+    Should be true if no other action is given
+  -}
+  production attribute runREPL::Boolean with &&;
+  runREPL :=
+      case parsedArgs of
+      | left(_) -> false --parse failure is just print errors
+      | right(a) ->
+        !a.checkFile && !a.compileFile && null(a.generateFiles)
       end;
 
-  top.runningFile = rest.runningFile;
-  top.showUser = rest.showUser;
-
-  top.dumpAbella = rest.dumpAbella;
-  top.dumpAbellaFile = rest.dumpAbellaFile;
-
-  top.displayHelp = rest.displayHelp;
-
-  forwards to rest;
+  return
+      case parsedArgs of
+      | left(errs) -> ioval(printT(errs, ioin), 1)
+      | right(a) ->
+        let i::IOVal<Integer> = runActions(actions, parsers, a, ioin)
+        in
+          if i.iovalue != 0 || !runREPL
+          then i
+          else run_interactive(parsers, i.io, a)
+        end
+      end;
 }
 
 
---Dump translated commands to a file
-abstract production dumpAbellaFlag
-top::CmdArgs ::= rest::CmdArgs
+
+
+
+
+--run all the actions in the order in which they occur
+function runActions
+IOVal<Integer> ::= actions::[ActionSpec] parsers::AllParsers
+                   config::Configuration ioin::IOToken
 {
-  top.checkFile = rest.checkFile;
-  top.compileFile = rest.compileFile;
-  top.filenames = rest.filenames;
-  top.generateFiles = rest.generateFiles;
+  local act::ActionSpec = head(actions);
+  local runAct::IOVal<Integer> =
+      act.runFun(parsers, ioin, config);
 
-  top.runningFile = rest.runningFile;
-  top.showUser = rest.showUser;
-
-  top.dumpAbella = true;
-  top.dumpAbellaFile = "abella_dump.thm";
-
-  top.displayHelp = rest.displayHelp;
-
-  forwards to rest;
+  return
+      case actions of
+      | [] -> ioval(ioin, 0)
+      | _::tl when act.shouldDoFun(config) ->
+        if runAct.iovalue != 0 --error in this action
+        then runAct
+        else runActions(tl, parsers, config, runAct.io)
+      | _::tl -> runActions(tl, parsers, config, ioin)
+      end;
 }
 
 
+nonterminal ActionSpec with runFun, shouldDoFun, actionDesc;
+--How to run the action (return 0 for success, non-zero for fail)
+--   result ::= compiled mods  gen loc  grammars loc  args  io
+annotation runFun::(IOVal<Integer> ::= AllParsers IOToken
+                                       Configuration);
+--Whether to run the action (true => run, false => skip)
+--Should not do any IO actions
+annotation shouldDoFun::(Boolean ::= Configuration);
+--A short name/description of the action, currently for debugging
+--May be made part of the standard output in the future
+annotation actionDesc::String;
 
-function parseArgs
-Either<String  Decorated CmdArgs> ::= args::[String]
+production actionSpec
+top::ActionSpec ::=
+{ }
+
+
+
+
+
+
+--Run through a list of files, checking and compiling them
+function check_compile_files
+IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
+                   config::Decorated CmdArgs
 {
-  production attribute flags::[FlagSpec] with ++;
-  flags := [];
-  flags <-
-     [flagSpec(name="--check",
-               paramString=nothing(),
-               help="check file for correctness and completion",
-               flagParser=flag(checkFlag)),
-      flagSpec(name="--compile",
-               paramString=nothing(),
-               help="compile file for importing into other modules",
-               flagParser=flag(compileFlag)),
-      flagSpec(name="--generate",
-               paramString=just("<module> <filename>"),
-               help="generate a basic theorem file for the given module",
-               flagParser=nOptions(2, generateFlag))];
-
-  production attribute debugFlags::[FlagSpec] with ++;
-  debugFlags := [];
-  debugFlags <-
-     [flagSpec(name="--dump-Abella",
-               paramString=nothing(),
-               help="dump translated Abella commands to a file",
-               flagParser=flag(dumpAbellaFlag))];
-
-  --flags to display help without error message, but without being
-  --part of the usage
-  local helpFlags::[FlagSpec] =
-      map(\ s::String ->
-            flagSpec(name=s, paramString=nothing(),
-                     help="display usage and exit",
-                     flagParser=flag(helpFlag)),
-          ["--help", "-help", "-h"]);
-
-  local usage::String = 
-        "Usage: extensibella [options] [filenames]\n\n" ++
-        "Flag options:\n" ++ flagSpecsToHelpText(flags) ++ "\n" ++
-        "Debug flag options:\n" ++ flagSpecsToHelpText(debugFlags) ++
-        "\n";
-
-  -- Parse the command line
-  production a::CmdArgs =
-      interpretCmdArgs(flags ++ debugFlags ++ helpFlags, args);
-
-  production attribute errors::[String] with ++;
-  errors := if a.cmdError.isJust then [a.cmdError.fromJust] else [];
-
-  errors <-
-     if (a.checkFile || a.compileFile) && null(a.filenames)
-     then ["Must give filename(s) with --check and --compile flags"]
-     else [];
-
-  errors <-
-     if !null(a.filenames) && !(a.checkFile || a.compileFile)
-     then ["Must specify at least one of --check or --compile " ++
-           "when giving filename(s)"]
-     else [];
-
-  errors <-
-     if !null(a.generateFiles) && !null(a.filenames)
-     then ["Can give generate XOR filenames, not both"]
-     else [];
-
-  return if !null(errors)
-         then left(implode("\n", errors) ++ "\n\n" ++ usage)
-         else if a.displayHelp
-         then left(usage)
-         else right(a);
+  return foldl(\ thusFar::IOVal<Integer> f::String ->
+                 if thusFar.iovalue == 0
+                 then let r::IOVal<Integer> =
+                          run_file(parsers, thusFar.io, f, config)
+                      in
+                        if r.iovalue == 0
+                        then compile_file(parsers, r.io, f)
+                        else r
+                      end
+                 else thusFar,
+               ioval(ioin, 0), config.filenames);
 }
-

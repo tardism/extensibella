@@ -1,8 +1,7 @@
-grammar extensibella:main;
+grammar extensibella:main:run;
 
 
 type StateList = [(Integer, ProverState)];
-type Configuration = Decorated CmdArgs;
 
 
 {--
@@ -23,8 +22,7 @@ type Configuration = Decorated CmdArgs;
 function run
 IOVal<Integer> ::=
    filename::String cmds::ListOfCommands
-   import_parse::Parser<ListOfCommands_c>
-   from_parse::Parser<FullDisplay_c>
+   parsers::AllParsers
    currentModule::QName
    definitionCmds::ListOfCommands
    importDefs::[DefElement]
@@ -34,12 +32,12 @@ IOVal<Integer> ::=
   local started::IOVal<Either<String ProcessHandle>> =
       startAbella(ioin, config);
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
-      importStdLibThms(import_parse, started.io);
+      importStdLibThms(parsers, started.io);
   --basic context information from the definition file
   local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
                               Env<ConstructorEnvItem>)> =
       set_up_abella_module(currentModule, definitionCmds, importDefs,
-         from_parse, started.iovalue.fromRight, stdLibThms.io,
+         parsers, started.iovalue.fromRight, stdLibThms.io,
          config);
   --context information for imported definitions
   local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
@@ -62,7 +60,7 @@ IOVal<Integer> ::=
   --set inh attrs for processing file
   cmds.currentModule = currentModule;
   cmds.filename = filename;
-  cmds.from_parse = from_parse;
+  cmds.parsers = parsers;
   cmds.stateList = [(-1, handleIncoming.2)];
   cmds.config = config;
   cmds.abella = started.iovalue.fromRight;
@@ -82,7 +80,7 @@ IOVal<Integer> ::=
 
 
 inherited attribute filename::String;
-inherited attribute from_parse::Parser<FullDisplay_c>;
+inherited attribute parsers::AllParsers;
 inherited attribute stateList::StateList;
 inherited attribute config::Configuration;
 inherited attribute abella::ProcessHandle;
@@ -93,10 +91,10 @@ synthesized attribute runResult::IOVal<Integer>;
 synthesized attribute isNull::Boolean;
 
 attribute
-   filename, from_parse, stateList, config, abella, ioin, runResult,
+   filename, parsers, stateList, config, abella, ioin, runResult,
    isNull
 occurs on ListOfCommands;
-propagate filename, from_parse, config, abella on ListOfCommands;
+propagate filename, parsers, config, abella on ListOfCommands;
 
 
 aspect production emptyListOfCommands
@@ -169,7 +167,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
       else ioval(top.ioin, "");
   local back_from_abella::String = io_action_1.iovalue;
   local full_a::FullDisplay =
-      processDisplay(back_from_abella, top.from_parse);
+      processDisplay(back_from_abella, top.parsers.from_parse);
   any_a.newProofState = full_a.proof;
   --Output if in debugging mode
   ----------------------------
@@ -190,8 +188,9 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   --Run any during commands for the current subgoal
   local io_action_3::IOVal<(StateList, FullDisplay)> =
       if continueProcessing
-      then runDuringCommands(any_a.stateListOut, full_a, top.from_parse,
-              io_action_2, top.abella, debug, top.config)
+      then runDuringCommands(any_a.stateListOut, full_a,
+              top.parsers.from_parse, io_action_2, top.abella, debug,
+              top.config)
       else ioval(io_action_2, error("Should not access (3)"));
   local duringed::(StateList, FullDisplay) = io_action_3.iovalue;
   --After-proof commands

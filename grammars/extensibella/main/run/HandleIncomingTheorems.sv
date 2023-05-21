@@ -1,4 +1,4 @@
-grammar extensibella:main;
+grammar extensibella:main:run;
 
 
 function handleIncomingThms

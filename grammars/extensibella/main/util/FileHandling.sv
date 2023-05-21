@@ -1,4 +1,4 @@
-grammar extensibella:main;
+grammar extensibella:main:util;
 
 
 --look through every directory in dirs for a file named filename
@@ -26,22 +26,18 @@ function processFile
 IOVal<
    Either<String ((Maybe<QName>, ListOfCommands),
                   (ListOfCommands, [DefElement], [ThmElement]))>> ::=
-   filename::String file_parse::Parser<FullFile_c>
-   import_parse::Parser<ListOfCommands_c>
-   interface_parse::Parser<ModuleList_c>
-   outerface_parse::Parser<Outerface_c> ioin::IOToken
+   filename::String parsers::AllParsers ioin::IOToken
 {
   local fileExists::IOVal<Boolean> = isFileT(filename, ioin);
   local fileContents::IOVal<String> =
       readFileT(filename, fileExists.io);
   local fileParsed::ParseResult<FullFile_c> =
-      file_parse(fileContents.iovalue, filename);
+      parsers.file_parse(fileContents.iovalue, filename);
   local fileAST::(Maybe<QName>, ListOfCommands) =
       fileParsed.parseTree.ast;
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
                                         [ThmElement])>> =
-      processModuleDecl(fileAST.1.fromJust, import_parse,
-         interface_parse, outerface_parse, fileContents.io);
+      processModuleDecl(fileAST.1.fromJust, parsers, fileContents.io);
 
   return
      if !fileExists.iovalue

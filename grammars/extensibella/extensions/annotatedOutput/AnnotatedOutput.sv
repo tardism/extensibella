@@ -1,4 +1,15 @@
-grammar extensibella:main;
+grammar extensibella:extensions:annotatedOutput;
+
+imports extensibella:common;
+imports extensibella:toAbella;
+
+imports extensibella:main:util;
+imports extensibella:main:run;
+
+imports silver:util:cmdargs;
+
+imports silver:langutil:pp;
+imports silver:langutil only pp;
 
 {-
   Output nicely-formatted HTML of the interaction, including both
@@ -8,9 +19,7 @@ grammar extensibella:main;
 
 aspect function run
 IOVal<Integer> ::=
-   filename::String cmds::ListOfCommands
-   import_parse::Parser<ListOfCommands_c>
-   from_parse::Parser<FullDisplay_c>
+   filename::String cmds::ListOfCommands parsers::AllParsers
    currentModule::QName
    definitionCmds::ListOfCommands
    importDefs::[DefElement]
@@ -55,6 +64,50 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 }
 
 
+aspect function get_module_interactive
+IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
+   parsers::AllParsers config::Configuration ioin::IOToken
+{
+  --Annotated output
+  io <- \ i::IOToken ->
+          if config.outputAnnotated
+          then appendFileT(config.annotatedFile,
+                  --create block
+                  "<pre class=\"code\">\n" ++
+                    --add prompt and user input
+                    " &lt; <b>" ++ makeHTMLSafe(input) ++
+                          "</b>\n\n" ++
+                    --add output
+                    stripExternalWhiteSpace(makeHTMLSafe(output)) ++
+                  --end block
+                  "</pre>\n",
+                  i)
+          else i;
+}
+
+
+aspect function run_file
+IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
+                   config::Configuration
+{
+  --output the module declaration in the annotated file
+  io <- \ i::IOToken ->
+          if config.outputAnnotated
+          then appendFileT(config.annotatedFile,
+                  --create block
+                  "<pre class=\"code\">\n" ++
+                    --add prompt and module declaration (no output)
+                    --module name had best be fairly short
+                    " < <b>Module " ++
+                      makeHTMLSafe(justShow(fileAST.1.fromJust.pp)) ++
+                      ".</b>\n" ++
+                  --end block
+                  "</pre>\n",
+                  i)
+          else i;
+}
+
+
 
 
 {-
@@ -92,9 +145,7 @@ top::CmdArgs ::= name::String rest::CmdArgs
 {
   --if there are files, this requires checking
   top.checkFile = rest.checkFile || !null(rest.filenames);
-  top.compileFile = rest.compileFile;
   top.filenames = rest.filenames;
-  top.generateFiles = rest.generateFiles;
 
   top.runningFile = rest.runningFile;
   top.showUser = rest.showUser;
