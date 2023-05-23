@@ -82,7 +82,6 @@ IOVal<Integer> ::=
 inherited attribute filename::String;
 inherited attribute parsers::AllParsers;
 inherited attribute stateList::StateList;
-inherited attribute config::Configuration;
 inherited attribute abella::ProcessHandle;
 inherited attribute ioin::IOToken;
 
@@ -91,10 +90,9 @@ synthesized attribute runResult::IOVal<Integer>;
 synthesized attribute isNull::Boolean;
 
 attribute
-   filename, parsers, stateList, config, abella, ioin, runResult,
-   isNull
+   filename, parsers, stateList, abella, ioin, runResult, isNull
 occurs on ListOfCommands;
-propagate filename, parsers, config, abella on ListOfCommands;
+propagate filename, parsers, abella on ListOfCommands;
 
 
 aspect production emptyListOfCommands

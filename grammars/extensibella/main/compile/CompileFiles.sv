@@ -8,7 +8,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
 {
   return foldl(\ thusFar::IOVal<Integer> f::String ->
                  if thusFar.iovalue == 0
-                 then compile_file(parsers, thusFar.io, f)
+                 then compile_file(parsers, thusFar.io, f, config)
                  else thusFar,
                ioval(ioin, 0), config.filenames);
 }
@@ -17,6 +17,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
 --Compile a file, outputting it into the generated directory
 function compile_file
 IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
+                   config::Configuration
 {
   local fileInfo::
         IOVal<Either<String ((Maybe<QName>, ListOfCommands),
@@ -32,6 +33,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
   modComms.relationEnv = [];
   modComms.constructorEnv = [];
   modComms.currentModule = fileAST.1.fromJust;
+  modComms.config = config;
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =

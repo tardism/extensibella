@@ -2,10 +2,6 @@ grammar extensibella:main:util;
 
 imports silver:util:cmdargs;
 
---We will use the parsed command line arguments as a way to pass along
---information about how things ought to run, so we give it a name:
-type Configuration = Decorated CmdArgs;
-
 
 --Process flags:
 synthesized attribute filenames::[String] occurs on CmdArgs;

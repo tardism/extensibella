@@ -126,7 +126,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
                           run_file(parsers, thusFar.io, f, config)
                       in
                         if r.iovalue == 0
-                        then compile_file(parsers, r.io, f)
+                        then compile_file(parsers, r.io, f, config)
                         else r
                       end
                  else thusFar,
