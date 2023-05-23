@@ -1,15 +1,4 @@
-grammar extensibella:extensions:annotatedOutput;
-
-imports extensibella:common;
-imports extensibella:toAbella;
-
-imports extensibella:main:util;
-imports extensibella:main:run;
-
-imports silver:util:cmdargs;
-
-imports silver:langutil:pp;
-imports silver:langutil only pp;
+grammar extensibella:main:run;
 
 {-
   Output nicely-formatted HTML of the interaction, including both

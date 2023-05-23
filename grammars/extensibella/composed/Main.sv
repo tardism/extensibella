@@ -2,7 +2,6 @@ grammar extensibella:composed;
 
 imports extensibella:main:util;
 imports extensibella:main;
-imports extensibella:extensions:annotatedOutput;
 
 function main
 IOVal<Integer> ::= largs::[String] ioin::IOToken
