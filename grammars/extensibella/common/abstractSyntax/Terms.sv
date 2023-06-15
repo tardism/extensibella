@@ -82,10 +82,7 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
   top.pp = docGroup(if t1.isAtomic then t1.pp else parens(t1.pp)) ++
            text(" ->") ++ line() ++ docGroup(t2.pp);
-  top.abella_pp =
-      (if t1.isAtomic
-       then t1.abella_pp
-       else "(" ++ t1.abella_pp ++ ")") ++ " -> " ++ t2.abella_pp;
+  top.abella_pp = "(" ++ t1.abella_pp ++ ") -> " ++ t2.abella_pp;
   top.isAtomic = false;
 
   top.splitImplies = t1::t2.splitImplies;
@@ -103,12 +100,7 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
            text(" \\/") ++ line() ++
            docGroup(if t2.isAtomic then t2.pp else parens(t2.pp));
   top.abella_pp =
-    ( if t1.isAtomic
-      then t1.abella_pp
-      else "(" ++ t1.abella_pp ++ ")" ) ++ " \\/ " ++
-    ( if t2.isAtomic
-      then t2.abella_pp
-      else "(" ++ t2.abella_pp ++ ")" );
+      "(" ++ t1.abella_pp ++ ") \\/ (" ++ t2.abella_pp ++ ")";
   top.isAtomic = false;
 
   top.splitImplies = [top];
@@ -126,12 +118,7 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
            text(" /\\") ++ line() ++
            docGroup(if t2.isAtomic then t2.pp else parens(t2.pp));
   top.abella_pp =
-    ( if t1.isAtomic
-      then t1.abella_pp
-      else "(" ++ t1.abella_pp ++ ")" ) ++ " /\\ " ++
-    ( if t2.isAtomic
-      then t2.abella_pp
-      else "(" ++ t2.abella_pp ++ ")" );
+      "(" ++ t1.abella_pp ++ ") /\\ (" ++ t2.abella_pp ++ ")";
   top.isAtomic = false;
 
   top.splitImplies = [top];
@@ -315,10 +302,7 @@ top::Term ::= f::Term args::TermList
 {
   top.pp = ppImplode(text(" "),
               (if f.isAtomic then f.pp else parens(f.pp))::args.pps);
-  top.abella_pp =
-    ( if f.isAtomic
-      then f.abella_pp
-      else "(" ++ f.abella_pp ++ ")" ) ++ " " ++ args.abella_pp;
+  top.abella_pp = "(" ++ f.abella_pp ++ ") " ++ args.abella_pp;
   top.isAtomic = false;
 
   top.isStructured = true;
@@ -430,13 +414,7 @@ top::Term ::= t1::Term t2::Term
   top.pp = ppConcat([if t1.isAtomic then t1.pp else parens(t1.pp),
                      text("::"),
                      if t2.isAtomic then t2.pp else parens(t2.pp)]);
-  top.abella_pp =
-    ( if t1.isAtomic
-      then t1.abella_pp
-      else "(" ++ t1.abella_pp ++ ")" ) ++ "::" ++
-    ( if t2.isAtomic
-      then t2.abella_pp
-      else "(" ++ t2.abella_pp ++ ")" );
+  top.abella_pp = "(" ++ t1.abella_pp ++ ")::(" ++ t2.abella_pp ++ ")";
   top.isAtomic = false;
 
   top.isStructured = true;
@@ -559,8 +537,7 @@ abstract production singleTermList
 top::TermList ::= t::Term
 {
   top.pps = [if t.isAtomic then t.pp else parens(t.pp)];
-  top.abella_pp = if t.isAtomic then t.abella_pp
-                                else "(" ++ t.abella_pp ++ ")";
+  top.abella_pp = "(" ++ t.abella_pp ++ ")";
 
   top.toList = [t];
   top.len = 1;
@@ -591,9 +568,7 @@ abstract production consTermList
 top::TermList ::= t::Term rest::TermList
 {
   top.pps = (if t.isAtomic then t.pp else parens(t.pp))::rest.pps;
-  top.abella_pp = (if t.isAtomic then t.abella_pp
-                                 else "(" ++ t.abella_pp ++ ")") ++
-                  " " ++ rest.abella_pp;
+  top.abella_pp = "(" ++ t.abella_pp ++ ") " ++ rest.abella_pp;
 
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;

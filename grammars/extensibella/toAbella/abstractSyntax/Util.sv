@@ -19,30 +19,6 @@ String ::= s::String
 }
 
 
-
-
-function buildApplication
-Term ::= fun::Term args::[Term]
-{
-  --I'll make this handle degenerate "applications" as well
-  return if null(args)
-         then fun
-         else applicationTerm(fun, buildApplicationArgs(args));
-}
-
-function buildApplicationArgs
-TermList ::= args::[Term]
-{
-  return
-     case args of
-     | [] ->
-       error("Should not call buildApplicationArgs with an empty list")
-     | [x] -> singleTermList(x)
-     | h::t -> consTermList(h, buildApplicationArgs(t))
-     end;
-}
-
-
 --Split based on actual conjunctions
 function splitMetaterm
 [Metaterm] ::= mt::Metaterm

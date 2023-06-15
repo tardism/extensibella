@@ -55,8 +55,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp =
       ppConcat([t1.pp, text(" + "), t2.pp, text(" = "), result.pp]);
-  top.abella_pp = t1.abella_pp ++ " + " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp;
+  top.abella_pp = integerAdditionName ++ " (" ++ t1.abella_pp ++
+      ") (" ++ t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -79,8 +79,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp =
       ppConcat([t1.pp, text(" - "), t2.pp, text(" = "), result.pp]);
-  top.abella_pp = t1.abella_pp ++ " - " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp;
+  top.abella_pp = integerSubtractionName ++ " (" ++ t1.abella_pp ++
+      ") (" ++ t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -103,8 +103,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp =
       ppConcat([t1.pp, text(" * "), t2.pp, text(" = "), result.pp]);
-  top.abella_pp = t1.abella_pp ++ " * " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp;
+  top.abella_pp = integerMultiplicationName ++ " (" ++ t1.abella_pp ++
+      ") (" ++ t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -127,8 +127,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp =
       ppConcat([t1.pp, text(" / "), t2.pp, text(" = "), result.pp]);
-  top.abella_pp = t1.abella_pp ++ " / " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp;
+  top.abella_pp = integerDivisionName ++ " (" ++ t1.abella_pp ++
+      ") (" ++ t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -151,8 +151,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp =
       ppConcat([t1.pp, text(" mod "), t2.pp, text(" = "), result.pp]);
-  top.abella_pp = t1.abella_pp ++ " mod " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp;
+  top.abella_pp = integerModulusName ++ " (" ++ t1.abella_pp ++
+      ") (" ++ t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -174,7 +174,8 @@ abstract production negateMetaterm
 top::Metaterm ::= t::Term result::Term
 {
   top.pp = ppConcat([text("- "), t.pp, text(" = "), result.pp]);
-  top.abella_pp = "- " ++ t.abella_pp ++ " = " ++ result.abella_pp;
+  top.abella_pp = integerNegateName ++ " (" ++ t.abella_pp ++ ") (" ++
+                  result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -193,7 +194,8 @@ abstract production lessMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = ppConcat([t1.pp, text(" < "), t2.pp]);
-  top.abella_pp = t1.abella_pp ++ " < " ++ t2.abella_pp;
+  top.abella_pp = integerLessName ++ " (" ++ t1.abella_pp ++
+                  ") (" ++ t2.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -212,7 +214,8 @@ abstract production lessEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = ppConcat([t1.pp, text(" <= "), t2.pp]);
-  top.abella_pp = t1.abella_pp ++ " <= " ++ t2.abella_pp;
+  top.abella_pp = integerLessEqName ++ " (" ++ t1.abella_pp ++
+                  ") (" ++ t2.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -231,7 +234,8 @@ abstract production greaterMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = ppConcat([t1.pp, text(" > "), t2.pp]);
-  top.abella_pp = t1.abella_pp ++ " > " ++ t2.abella_pp;
+  top.abella_pp = integerGreaterName ++ " (" ++ t1.abella_pp ++
+                  ") (" ++ t2.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -250,7 +254,8 @@ abstract production greaterEqMetaterm
 top::Metaterm ::= t1::Term t2::Term
 {
   top.pp = ppConcat([t1.pp, text(" >= "), t2.pp]);
-  top.abella_pp = t1.abella_pp ++ " >= " ++ t2.abella_pp;
+  top.abella_pp = integerGreaterEqName ++ " (" ++ t1.abella_pp ++
+                  ") (" ++ t2.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -271,8 +276,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 {
   top.pp = ppConcat([t1.pp, text(" ++ "), t2.pp, text(" = "),
                      result.pp, r.pp]);
-  top.abella_pp = t1.abella_pp ++ " ++ " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp ++ r.abella_pp;
+  top.abella_pp = appendName ++ " (" ++ t1.abella_pp ++ ") (" ++
+                  t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -297,8 +302,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp =
       ppConcat([t1.pp, text(" || "), t2.pp, text(" = "), result.pp]);
-  top.abella_pp = t1.abella_pp ++ " || " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp;
+  top.abella_pp = orName ++ " (" ++ t1.abella_pp ++ ") (" ++
+                  t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -321,8 +326,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
 {
   top.pp =
       ppConcat([t1.pp, text(" && "), t2.pp, text(" = "), result.pp]);
-  top.abella_pp = t1.abella_pp ++ " && " ++ t2.abella_pp ++ " = " ++
-                  result.abella_pp;
+  top.abella_pp = andName ++ " (" ++ t1.abella_pp ++ ") (" ++
+                  t2.abella_pp ++ ") (" ++ result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -344,7 +349,8 @@ abstract production notBoolMetaterm
 top::Metaterm ::= t::Term result::Term
 {
   top.pp = ppConcat([text("! "), t.pp, text(" = "), result.pp]);
-  top.abella_pp = "! " ++ t.abella_pp ++ " = " ++ result.abella_pp;
+  top.abella_pp = notName ++ " (" ++ t.abella_pp ++ ") (" ++
+                  result.abella_pp ++ ")";
   top.isAtomic = true;
 
   top.splitImplies = [top];
@@ -453,7 +459,7 @@ abstract production intTerm
 top::Term ::= i::Integer
 {
   top.pp = text(toString(i));
-  top.abella_pp = toString(i);
+  top.abella_pp = integerToIntegerTerm(i).abella_pp;
   top.isAtomic = true;
 
   top.isStructured = true;
@@ -483,7 +489,9 @@ abstract production stringTerm
 top::Term ::= contents::String
 {
   top.pp = text("\"" ++ contents ++ "\"");
-  top.abella_pp = "\"" ++ contents ++ "\"";
+  top.abella_pp =
+      foldr(\ x::String rest::String -> x ++ "::" ++ rest, "nil",
+            map(ordinalToCharConstructor, stringToChars(contents)));
   top.isAtomic = true;
 
   top.isStructured = true;
@@ -513,7 +521,7 @@ abstract production trueTerm
 top::Term ::=
 {
   top.pp = text("true");
-  top.abella_pp = "true";
+  top.abella_pp = trueName;
   top.isAtomic = true;
 
   top.isStructured = true;
@@ -543,7 +551,7 @@ abstract production falseTerm
 top::Term ::=
 {
   top.pp = text("false");
-  top.abella_pp = "false";
+  top.abella_pp = falseName;
   top.isAtomic = true;
 
   top.isStructured = true;
@@ -574,7 +582,7 @@ top::Term ::= contents::ListContents
 {
   top.pp = ppConcat([text("["), ppImplode(text(", "), contents.pps),
                      text("]")]);
-  top.abella_pp = "[" ++ contents.abella_pp ++ "]";
+  top.abella_pp = contents.abella_pp;
   top.isAtomic = true;
 
   top.isStructured = true;
@@ -615,7 +623,7 @@ top::Term ::= contents::PairContents
 {
   top.pp = ppConcat([text("("), ppImplode(text(", "), contents.pps),
                      text(")")]);
-  top.abella_pp = "(" ++ contents.abella_pp ++ ")";
+  top.abella_pp = contents.abella_pp;
   top.isAtomic = true;
 
   top.isStructured = true;
@@ -694,7 +702,7 @@ abstract production emptyListContents
 top::ListContents ::=
 {
   top.pps = [];
-  top.abella_pp = "";
+  top.abella_pp = "nil";
   top.toList = [];
   top.len = 0;
   top.subst = top;
@@ -707,8 +715,7 @@ abstract production addListContents
 top::ListContents ::= t::Term rest::ListContents
 {
   top.pps = t.pp::rest.pps;
-  top.abella_pp = t.abella_pp ++ (if rest.abella_pp == "" then ""
-                                  else ", " ++ rest.abella_pp);
+  top.abella_pp = "(" ++ t.abella_pp ++ ")::" ++ rest.abella_pp;
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
   top.subst = addListContents(t.subst, rest.subst);
@@ -752,7 +759,8 @@ abstract production addPairContents
 top::PairContents ::= t::Term rest::PairContents
 {
   top.pps = t.pp::rest.pps;
-  top.abella_pp = t.abella_pp ++ ", " ++ rest.abella_pp;
+  top.abella_pp = pairConstructorName ++ " (" ++ t.abella_pp ++
+                  ") (" ++ rest.abella_pp ++ ")";
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
   top.subst = addPairContents(t.subst, rest.subst);
