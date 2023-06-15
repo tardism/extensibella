@@ -44,6 +44,15 @@ induction on 1. intros L. L: case L.
   %Subgoal 3
    search.
 
+Theorem $less_integer_posInt_both_step : forall A B,
+  $less_integer ($posInt A) ($posInt B) ->
+  $less_integer ($posInt ($succ A)) ($posInt ($succ B)).
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+
 Theorem $less_integer_drop_succ_pos_left : forall A B,
   $less_integer ($posInt ($succ A)) B ->
   $less_integer ($posInt A) B.
@@ -157,6 +166,15 @@ induction on 2. intros LAB LBC. LBC: case LBC.
    case LAB. search.
   %Subgoal 5
    LAB': case LAB. apply IH to LAB' LBC. search.
+
+
+Theorem extensibella-$-stdLib-$-less_integer_not_eq : forall A,
+  $less_integer A A -> false.
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   apply IH to L.
+  %Subgoal 2
+   apply IH to L.
 
 
 
@@ -485,8 +503,9 @@ intros IsN1 IsN2 L1 L2 M. P: case M.
 Define $greater_integer : $lib__integer -> $lib__integer -> prop by
   $greater_integer N1 N2 := $less_integer N2 N1.
 
-Theorem $greater_true_flip_less_integer : forall N1 N2,
-  $greater_integer N1 N2 -> $less_integer N1 N2 -> false.
+Theorem extensibella-$-stdLib-$-greater_less_impossible :
+  forall N1 N2,
+    $greater_integer N1 N2 -> $less_integer N1 N2 -> false.
 induction on 2. intros G L. L': case L.
   %Subgoal 1
    G': case G. case G'.
@@ -516,6 +535,64 @@ intros GAB GBC. LBA: case GAB. LCB: case GBC.
 apply extensibella-$-stdLib-$-less_integer_transitive to LCB LBA.
 search.
 
+Theorem extensibella-$-stdLib-$-less_integer_flip_greater :
+  forall N1 N2,
+    $less_integer N1 N2 -> $greater_integer N2 N1.
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+  %Subgoal 3
+   search.
+  %Subgoal 4
+   search.
+  %Subgoal 5
+   apply IH to L. search.
+
+Theorem extensibella-$-stdLib-$-greater_integer_flip_less :
+  forall N1 N2,
+    $greater_integer N1 N2 -> $less_integer N2 N1.
+intros G. case G. search.
+
+Theorem extensibella-$-stdLib-$-greater_integer_not_eq : forall N1,
+  $greater_integer N1 N1 -> false.
+intros G. L: case G.
+apply extensibella-$-stdLib-$-less_integer_not_eq to L.
+
+Theorem extensibella-$-stdLib-$-greater_plus_positive :
+  forall N1 N2 Sum,
+    is_integer N2 -> is_integer N1 -> $plus_integer N1 N2 Sum ->
+    $greater_integer N2 ($posInt $zero) ->
+    $greater_integer Sum N1.
+induction on 3. intros IsN2 IsN1 P G. P: case P.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   IsN1: case IsN1. G': apply IH to _ _ P G. L: case G'. unfold.
+   backchain $less_integer_posInt_both_step.
+  %Subgoal 3
+   L: case G. case L.
+  %Subgoal 4
+   L: case G. case L.
+  %Subgoal 5
+   L: case G. case L.
+  %Subgoal 6
+   search.
+  %Subgoal 7
+   IsN2: case IsN2. Is': case IsN2 (keep).
+     %Subgoal 7.1
+      case P. unfold. backchain $less_integer_add_1_neg_left.
+      IsN3: apply $is_integer_negSuccInt_$$$$$_to_$$$$$_is_nat to IsN1.
+      case IsN3. search.
+     %Subgoal 7.2
+      IsN3: case IsN1. G': apply IH to _ _ P _. unfold. L': case G'.
+      backchain $less_integer_negSuccInt_left_step.
+  %Subgoal 8
+   L: case G. case L.
+  %Subgoal 9
+   case IsN1. G': apply IH to _ _ P G. L': case G'. search.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -525,6 +602,12 @@ search.
 Define $greatereq_integer : $lib__integer -> $lib__integer -> prop by
   $greatereq_integer N1 N2 := $lesseq_integer N2 N1.
 
+Theorem extensibella-$-stdLib-$-is_integer_greatereq : forall A,
+  is_integer A -> $greatereq_integer A A.
+intros Is. apply extensibella-$-stdLib-$-is_integer_lesseq to Is.
+search.
+
+%N1 >= Base ->  N2 >= 0  ->  N1 + N2 = Sum  ->  Sum >= Base
 Theorem extensibella-$-stdLib-$-greatereq_integer__add_positive :
   forall N1 N2 Base Sum,
     $greatereq_integer N1 Base ->
@@ -580,6 +663,16 @@ Theorem extensibella-$-stdLib-$-greater_lesseq_integer_false :
     $greater_integer N1 N2 -> $lesseq_integer N1 N2 -> false.
 intros G LEq. L: case G.
 apply extensibella-$-stdLib-$-less_lesseq_flip_false to L LEq.
+
+
+Theorem extensibella-$-stdLib-$-greatereq_integer_greater_or_eq :
+  forall A B,
+    $greatereq_integer A B -> $greater_integer A B \/ A = B.
+intros GEq. LEq: case GEq.
+Or: apply extensibella-$-stdLib-$-lesseq_integer_less_or_eq to LEq.
+L: case Or.
+  apply extensibella-$-stdLib-$-less_integer_flip_greater to L. search.
+  search.
 
 
 %combinations of <, <=, >, >= and addition, subtraction, multiplication, division, whatever
