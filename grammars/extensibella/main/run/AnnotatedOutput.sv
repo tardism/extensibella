@@ -15,13 +15,13 @@ IOVal<Integer> ::=
    importThms::[ThmElement]
    config::Configuration ioin::IOToken
 {
-  cmds.htmlID = 1;
+  cmds.cmdID = 1;
 }
 
-inherited attribute htmlID::Integer;
+inherited attribute cmdID::Integer;
 
 attribute
-   htmlID
+   cmdID
 occurs on ListOfCommands;
 
 
@@ -34,7 +34,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
           then appendFileT(top.config.annotatedFile,
                   --create block
                   "<pre class=\"code extensibella\"" ++
-                       "id=\"" ++ toString(top.htmlID) ++ "\">\n" ++
+                       "id=\"" ++ toString(top.cmdID) ++ "\">\n" ++
                     --add prompt and command
                     " &lt; <b>" ++ stripExternalWhiteSpace(
                                       makeHTMLSafe(
@@ -49,7 +49,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
                   i)
           else i;
 
-  rest.htmlID = top.htmlID + 1;
+  rest.cmdID = top.cmdID + 1;
 }
 
 
@@ -62,7 +62,7 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
           if config.outputAnnotated
           then appendFileT(config.annotatedFile,
                   --create block
-                  "<pre class=\"code\">\n" ++
+                  "<pre class=\"code extensibella\">\n" ++
                     --add prompt and user input
                     " &lt; <b>" ++ makeHTMLSafe(input) ++
                           "</b>\n\n" ++
@@ -84,7 +84,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
           if config.outputAnnotated
           then appendFileT(config.annotatedFile,
                   --create block
-                  "<pre class=\"code\">\n" ++
+                  "<pre class=\"code extensibella\">\n" ++
                     --add prompt and module declaration (no output)
                     --module name had best be fairly short
                     " < <b>Module " ++

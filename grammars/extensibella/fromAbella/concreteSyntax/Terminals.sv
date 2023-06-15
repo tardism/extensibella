@@ -94,6 +94,12 @@ terminal LogicVarTopLev_t    'Found logic variable at toplevel'                 
 terminal StructureApp_t      'Structure of applied term must be a substructure of the following.'   lexer classes {ERROR};
 terminal ApplyType_t         'forall A1 ... Ai, nabla z1 ... zj, H1 -> ... -> Hk -> C'              lexer classes {ERROR};
 terminal IndRViolated_t      'Inductive restriction violated'                                       lexer classes {ERROR};
+terminal LongFoundLogic1_t   'Found logic variable at toplevel.'                                    lexer classes {ERROR};
+terminal LongFoundLogic2_t   'This usually means that the `search` tactic could not fully solve a goal.'
+                                                                                                    lexer classes {ERROR};
+terminal LongFoundLogic3_t   'Note: the `search` tactic may have been invoked implicitly by `apply`,'
+                                                                                                    lexer classes {ERROR};
+terminal LongFoundLogic4_t   '`backchain`, etc. with unknown arguments.'                            lexer classes {ERROR};
 
 
 terminal Type_t         'type'         lexer classes {LOGIC};
