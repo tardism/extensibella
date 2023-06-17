@@ -291,12 +291,47 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
           fixedRelationEnvItem(toQName("is_list"),
              toTypeList([arrowType(varType("A"), propType),
                          listType(varType("A")), propType])),
+          --need hidden relations due to how we handle importing from
+          --one module to another one
+          fixedRelationEnvItem(toQName(integerAdditionName),
+             toTypeList([integerType, integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerSubtractionName),
+             toTypeList([integerType, integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerMultiplicationName),
+             toTypeList([integerType, integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerDivisionName),
+             toTypeList([integerType, integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerModulusName),
+             toTypeList([integerType, integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerNegateName),
+             toTypeList([integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerLessName),
+             toTypeList([integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerLessEqName),
+             toTypeList([integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerGreaterName),
+             toTypeList([integerType, integerType])),
+          fixedRelationEnvItem(toQName(integerGreaterEqName),
+             toTypeList([integerType, integerType])),
+          fixedRelationEnvItem(toQName(appendName),
+             toTypeList([listType(varType("A")),
+                         listType(varType("A")),
+                         listType(varType("A"))])),
+          fixedRelationEnvItem(toQName(orName),
+             toTypeList([boolType, boolType, boolType])),
+          fixedRelationEnvItem(toQName(andName),
+             toTypeList([boolType, boolType, boolType])),
+          fixedRelationEnvItem(toQName(notName),
+             toTypeList([boolType, boolType])),
           --once again, not our library, but *a* library
           fixedRelationEnvItem(toQName("member"),
              toTypeList([varType("A"),
                          listType(varType("A")), propType]))]);
-  --currently no visible constructors from the standard library
-  local knownConstrs::[ConstructorEnvItem] = buildEnv([]);
+    local knownConstrs::[ConstructorEnvItem] =
+        buildEnv(
+           [constructorEnvItem(toQName(pairConstructorName),
+               pairType(varType("A"), varType("B")),
+               toTypeList([varType("A"), varType("B")]))]);
 
   return proverState(noProof(), false, 80, knownThms, [], obligations,
             addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),

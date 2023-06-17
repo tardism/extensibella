@@ -49,12 +49,16 @@ top::SubQName ::= name::String rest::SubQName
 
   --check if there are other constructors by the same short name
   top.constrFromAbella =
-      case lookupEnv(basicQName(baseName(rest.shortName)), top.constructorEnv) of
-      | [] -> error("Not possible (constr):  " ++ justShow(top.pp) ++ "  [" ++
-                 implode(", ", map(justShow, map((.pp), map((.name),
-                    top.constructorEnv)))) ++ "]")
-      | [_] -> basicQName(baseName(rest.shortName)) --no confusion
-      | l -> basicQName(top)
+      case lookupEnv(basicQName(baseName(rest.shortName)), top.constructorEnv),
+           lookupEnv(basicQName(baseName(rest.shortName)), top.relationEnv) of
+      | [], [] -> error("Not possible (constr):  " ++ justShow(top.pp) ++ "  [" ++
+                     implode(", ", map(justShow, map((.pp), map((.name),
+                        top.constructorEnv)))) ++ "] and [" ++
+                     implode(", ", map(justShow, map((.pp), map((.name),
+                        top.relationEnv)))) ++ "]")
+      | [_], [] -> basicQName(baseName(rest.shortName)) --no confusion
+      | [], [_] -> basicQName(baseName(rest.shortName)) --no confusion
+      | l1, l2 -> basicQName(top)
       end;
 }
 
