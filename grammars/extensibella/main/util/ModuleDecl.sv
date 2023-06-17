@@ -169,7 +169,7 @@ IOVal<Either<String [String]>> ::= ioin::IOToken
       envVarT("EXTENSIBELLA_LIBRARY", ioin);
   --filenames for the standard library
   local baseFiles::[String] =
-      ["bools", "integer_addition", "integer_multiplication",
+      ["bools", "integers", "integer_addition", "integer_multiplication",
        "integer_division", "integer_comparison", "lists", "strings",
        "pairs", "extSize_induction"];
   local fullFilenames::[String] =
