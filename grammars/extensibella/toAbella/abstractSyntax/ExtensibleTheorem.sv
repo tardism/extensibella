@@ -413,7 +413,10 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local translationName::String = freshName("Trans", propUsedNames);
   local transArgs::[Term] =
       safeReplace(thisExtInd.fromJust.3, thisExtInd.fromJust.2,
-         todoError("actual args in this theorem"));
+         case foundLabeledPremise of
+         | just(relationMetaterm(_, args, _)) -> args.toList
+         | _ -> [] --shouldn't access
+         end);
   local translation::Metaterm =
       relationMetaterm(transName(thisExtInd.fromJust.4),
          toTermList(transArgs ++
