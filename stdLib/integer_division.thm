@@ -792,7 +792,7 @@ induction on 3. intros AIsInt BIsInt Mult Div. case Mult (keep).
          case AIsInt.
          apply extensibella-$-stdLib-$-multiply_integer_is_integer to _ _ H1.
          apply extensibella-$-stdLib-$-plus_integer_comm to _ _ H2.
-         apply $plus_minus_same_integer to _ _ H10.
+         apply extensibella-$-stdLib-$-plus_minus_same_integer to _ _ H10.
          apply extensibella-$-stdLib-$-minus_integer_unique to H5 H11.
          apply IH to _ _ H1 H6. case H7. case H12. search.
      %Subgoal 2.2:  B < 0
@@ -814,7 +814,7 @@ induction on 3. intros AIsInt BIsInt Mult Div. case Mult (keep).
         %Subgoal 2.2.2:  neg / neg
          apply extensibella-$-stdLib-$-multiply_integer_is_integer to _ _ H1.
          apply extensibella-$-stdLib-$-plus_integer_comm to _ _ H2.
-         apply $plus_minus_same_integer to _ _ H10.
+         apply extensibella-$-stdLib-$-plus_minus_same_integer to _ _ H10.
          apply extensibella-$-stdLib-$-minus_integer_unique to H6 H11.
          apply IH to _ _ H1 H7. case H8. case H12. search.
   %Subgoal 3:
@@ -869,7 +869,7 @@ induction on 3. intros AIsInt BIsInt Mult Div. case Mult (keep).
       case AIsInt.
       apply $is_integer_posInt_$$$$$_to_$$$$$_negSuccInt to H3.
       apply extensibella-$-stdLib-$-multiply_integer_is_integer to _ _ H1.
-      apply $plus_minus_same_integer to _ _ H2. case H11 (keep).
+      apply extensibella-$-stdLib-$-plus_minus_same_integer to _ _ H2. case H11 (keep).
       apply extensibella-$-stdLib-$-plus_integer_unique to H12 H5.
       apply IH to _ _ H1 H6. case H7. search.
   %Subgoal 7:
@@ -888,7 +888,7 @@ induction on 3. intros AIsInt BIsInt Mult Div. case Mult (keep).
       apply $is_integer_negSuccInt_$$$$$_to_$$$$$_is_nat to BIsInt.
       apply $is_nat_$$$$$_to_$$$$$_is_integer_posInt to H8.
       apply extensibella-$-stdLib-$-multiply_integer_is_integer to _ _ H1.
-      apply $plus_minus_same_integer to _ _ H2. case H11.
+      apply extensibella-$-stdLib-$-plus_minus_same_integer to _ _ H2. case H11.
       apply extensibella-$-stdLib-$-plus_integer_unique to H12 H4.
       apply IH to _ _ H1 H5. case H6. search.
 

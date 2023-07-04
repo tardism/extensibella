@@ -820,7 +820,7 @@ Theorem extensibella-$-stdLib-$-minus_integer_0 : forall N,
   $minus_integer N ($posInt $zero) N.
 intros. search.
 
-Theorem $plus_minus_same_integer : forall N1 N2 N3,
+Theorem extensibella-$-stdLib-$-plus_minus_same_integer : forall N1 N2 N3,
   is_integer N1 -> is_integer N2 -> $plus_integer N1 N2 N3 ->
   $minus_integer N3 N2 N1.
 induction on 3. intros. case H3.
@@ -893,7 +893,7 @@ induction on 3. intros. case H3.
    case H1. apply IH to _ _ H4. case H6.
    apply $plus_integer_negSuccInts_succ to H7. search.
 
-Theorem $minus_plus_same_integer : forall N1 N2 N3,
+Theorem extensibella-$-stdLib-$-minus_plus_same_integer : forall N1 N2 N3,
   is_integer N1 -> is_integer N2 -> $minus_integer N1 N2 N3 ->
   $plus_integer N3 N2 N1.
 intros. case H3.

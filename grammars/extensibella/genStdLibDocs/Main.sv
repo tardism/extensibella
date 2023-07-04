@@ -6,6 +6,9 @@ grammar extensibella:genStdLibDocs;
   needing to recognize the details of the Abella encoding
 -}
 
+imports silver:langutil:pp;
+imports silver:langutil only pp, pps;
+
 imports extensibella:common:abstractSyntax;
 imports extensibella:toAbella:abstractSyntax;
 imports extensibella:fromAbella:abstractSyntax;
@@ -258,7 +261,8 @@ String ::= name::QName params::[String] body::Metaterm
       else " `[" ++ implode(", ", params) ++ "]`";
   local startString::String =
       "* `" ++ name.shortName ++ "` " ++ pString;
-  local bodyString::String = "\n  ```\n  " ++ body.pp ++ "\n  ```";
+  local bodyString::String =
+      "\n  ```\n  " ++ justShow(body.pp) ++ "\n  ```";
   return startString ++ " : " ++ bodyString ++ "\n";
 }
 
@@ -297,7 +301,7 @@ String ::= name::QName params::[String] body::Metaterm
       else " <tt>[" ++ implode(", ", params) ++ "]</tt>";
   local startString::String =
       "<li> " ++ name.shortName ++ pString;
-  local bodyString::String = "<pre>" ++ body.pp ++ "</pre>";
+  local bodyString::String = "<pre>" ++ justShow(body.pp) ++ "</pre>";
   return startString ++ " : " ++ bodyString;
 }
 
@@ -404,10 +408,10 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
       else "";
 
   local markdown::String =
-      "* `" ++ name.pp ++ 
+      "* `" ++ justShow(name.pp) ++ 
       (if null(params) then ""
                        else "[" ++ implode(", ", params) ++ "]") ++
-      "`:  `" ++ body.fromAbella.pp ++ "`\n";
+      "`:  `" ++ justShow(body.fromAbella.pp) ++ "`\n";
 }
 
 

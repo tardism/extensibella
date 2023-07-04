@@ -539,7 +539,7 @@ induction on 1. intros. case H1.
             apply extensibella-$-stdLib-$-plus_integer_comm to _ _ H9.
             assert ($minus_integer Result ($negSuccInt N4) N5).
             apply $is_integer_posInt_$$$$$_to_$$$$$_negSuccInt to H7.
-            apply $minus_plus_same_integer to _ _ H11. search.
+            apply extensibella-$-stdLib-$-minus_plus_same_integer to _ _ H11. search.
         %Subgoal 2.2.3
          exists $negSuccInt N, $posInt ($succ $zero). split.
            %Subgoal 2.2.3.1
@@ -570,7 +570,7 @@ induction on 1. intros. case H1.
             apply extensibella-$-stdLib-$-plus_integer_comm to _ _ H14.
             assert ($minus_integer Result
                                    ($posInt ($succ ($succ N4))) N5).
-            backchain $minus_plus_same_integer.
+            backchain extensibella-$-stdLib-$-minus_plus_same_integer.
             apply $is_integer_negSuccInt_$$$$$_to_$$$$$_posInt to H13. search.
      %Subgoal 2.3
       case H2. apply IH to H6 _ _ H7 H5.
@@ -681,7 +681,7 @@ induction on 1. intros. case H1.
             apply extensibella-$-stdLib-$-plus_integer_is_integer to _ _ H11.
             apply $is_integer_posInt_$$$$$_to_$$$$$_negSuccInt to H6.
             backchain extensibella-$-stdLib-$-plus_integer_comm.
-            backchain $minus_plus_same_integer.
+            backchain extensibella-$-stdLib-$-minus_plus_same_integer.
         %Subgoal 3.2.3
          exists $posInt ($succ $zero), $negSuccInt N4. split.
            %Subgoal 3.2.3.1
@@ -697,7 +697,7 @@ induction on 1. intros. case H1.
             assert ($minus_integer N' ($posInt ($succ $zero))
                                    ($negSuccInt N4)).
             backchain extensibella-$-stdLib-$-plus_integer_comm.
-            backchain $minus_plus_same_integer.
+            backchain extensibella-$-stdLib-$-minus_plus_same_integer.
         %Subgoal 3.2.4
          apply $is_integer_posInt_$$$$$_to_$$$$$_negSuccInt to H2. case H2.
          apply extensibella-$-stdLib-$-multiply_integer_is_integer to _ _ H5.
@@ -715,7 +715,7 @@ induction on 1. intros. case H1.
             assert ($minus_integer Result
                                    ($posInt ($succ ($succ N))) N5).
             backchain extensibella-$-stdLib-$-plus_integer_comm.
-            backchain $minus_plus_same_integer.
+            backchain extensibella-$-stdLib-$-minus_plus_same_integer.
      %Subgoal 3.3
       case H5.
         %Subgoal 3.3.1
