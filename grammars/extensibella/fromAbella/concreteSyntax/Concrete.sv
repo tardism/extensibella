@@ -222,6 +222,8 @@ concrete productions top::ProcessingErrorMessage_c
   { top.ast = nonatomicHead(hd.ast.fromRight); }
 | 'Cannot perform case-analysis on undefined atom'
   { top.ast = caseUndefinedAtom(); }
+| 'Cannot perform case-analysis on this kind of formula'
+  { top.ast = caseUndefinedAtom(); }
 | 'Unknown hypothesis or variable' hyp::ErrorId_t
   { top.ast = unknownHypVar(hyp.lexeme); }
 | 'Could not find theorem named' name::QString_t

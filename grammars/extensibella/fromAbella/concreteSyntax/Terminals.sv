@@ -53,6 +53,7 @@ terminal StrayClause_t       'Found stray clause for'                           
 terminal InvalidHead_t       'Invalid head in definition:'                                          lexer classes {ERROR};
 terminal NonatomicHead_t     'Definitional clause head not atomic:'                                 lexer classes {ERROR};
 terminal CaseUndefined_t     'Cannot perform case-analysis on undefined atom'                       lexer classes {ERROR};
+terminal CaseThisKind_t      'Cannot perform case-analysis on this kind of formula'                 lexer classes {ERROR};
 terminal UnknownHypVar_t     'Unknown hypothesis or variable'                                       lexer classes {ERROR};
 terminal OverrideName_t      'overriding existing lemma named'                                      lexer classes {ERROR};
 terminal UnknownTheorem_t    'Could not find theorem named'                                         lexer classes {ERROR};

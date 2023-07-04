@@ -183,6 +183,15 @@ top::ProcessingErrorMessage ::=
 }
 
 
+abstract production caseThisKind
+top::ProcessingErrorMessage ::=
+{
+  top.pp = text("Cannot perform case-analysis on this kind of formula");
+
+  top.fromAbella = caseThisKind();
+}
+
+
 abstract production unknownHypVar
 top::ProcessingErrorMessage ::= name::String
 {
