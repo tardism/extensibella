@@ -323,15 +323,33 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
              toTypeList([boolType, boolType, boolType])),
           fixedRelationEnvItem(toQName(notName),
              toTypeList([boolType, boolType])),
+          fixedRelationEnvItem(toQName("acc"),
+             toTypeList([integerType, integerType])),
           --once again, not our library, but *a* library
           fixedRelationEnvItem(toQName("member"),
              toTypeList([varType("A"),
-                         listType(varType("A")), propType]))]);
+                         listType(varType("A")), propType]))
+         ]);
     local knownConstrs::[ConstructorEnvItem] =
         buildEnv(
+            --hidden pair constructor
            [constructorEnvItem(toQName(pairConstructorName),
                pairType(varType("A"), varType("B")),
-               toTypeList([varType("A"), varType("B")]))]);
+               toTypeList([varType("A"), varType("B")])),
+            --hidden integer constructors
+            constructorEnvItem(toQName(posIntegerName),
+               integerType,
+               toTypeList([nameType(toQName("$lib__nat"))])),
+            constructorEnvItem(toQName(negIntegerName),
+               integerType,
+               toTypeList([nameType(toQName("$lib__nat"))])),
+            --hidden nat constructors
+            constructorEnvItem(toQName(natSuccName),
+               nameType(toQName("$lib__nat")),
+               toTypeList([nameType(toQName("$lib__nat"))])),
+            constructorEnvItem(toQName(natZeroName),
+               nameType(toQName("$lib__nat")), toTypeList([]))
+           ]);
 
   return proverState(noProof(), false, 80, knownThms, [], obligations,
             addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),

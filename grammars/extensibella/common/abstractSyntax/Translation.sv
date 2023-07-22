@@ -22,6 +22,8 @@ global natZeroName::String = "$zero";
 
 global integerType::Type =
        nameType(toQName("$lib__integer"));
+global posIntegerName::String = "$posInt";
+global negIntegerName::String = "$negSUccInt";
 global integerAdditionName::String = "$plus_integer";
 global integerSubtractionName::String = "$minus_integer";
 global integerMultiplicationName::String = "$multiply_integer";
@@ -76,9 +78,9 @@ Term ::= i::Integer
 {
   return
      if i >= 0
-     then buildApplication(basicNameTerm("$posInt"),
+     then buildApplication(basicNameTerm(posIntegerName),
                            [integerToNatTerm(i)])
-     else buildApplication(basicNameTerm("$negSuccInt"),
+     else buildApplication(basicNameTerm(negIntegerName),
                            [integerToNatTerm((i * -1) - 1)]);
 }
 

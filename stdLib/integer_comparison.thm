@@ -142,6 +142,26 @@ induction on 1. intros Plus IsA. Plus: case Plus.
    case IsA. apply IH to Plus _. search.
 
 
+Theorem $less_integer_neg_pos : forall A B,
+  $less_integer ($negSuccInt A) ($negSuccInt B) ->
+  $less_integer ($posInt B) ($posInt A).
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+
+
+Theorem $less_integer_pos_neg : forall A B,
+  $less_integer ($posInt A) ($posInt B) ->
+  $less_integer ($negSuccInt B) ($negSuccInt A).
+induction on 1. intros L. L: case L.
+  %Subgoal 1
+   search.
+  %Subgoal 2
+   apply IH to L. search.
+
+
 Theorem extensibella-$-stdLib-$-less_integer_transitive :
   forall A B C,
     $less_integer A B -> $less_integer B C -> $less_integer A C.
@@ -416,6 +436,7 @@ apply $lesseq_integer_posInt to L2. case L1 (keep).
            case H2. search. search. search.
    apply IH to H1 LEq H2. backchain $less_integer_negSuccInt_left_step.
 
+
 Theorem extensibella-$-stdLib-$-lesseq_integer__add_positive :
   forall N1 N2 Base Sum,
     $lesseq_integer Base N1 ->
@@ -453,6 +474,7 @@ apply $lesseq_integer_posInt to L2. case L1 (keep).
       L': assert $lesseq_integer ($posInt $zero) ($posInt N6).
              case L2 (keep). case H2. search. search. search.
       apply IH to H1 L' H2. backchain $lesseq_negSuccInt_left_step.
+
 
 Theorem extensibella-$-stdLib-$-less_integer__subtract_positive :
   forall N1 N2 Base Res,
@@ -494,6 +516,258 @@ intros IsN1 IsN2 L1 L2 M. P: case M.
    apply Sub to _ _ P'. search.
   %3:  N1 - ($negSuccInt N4) = Res
    case L2.
+
+
+Theorem $minus_pos_diff_neg : forall A N2 Diff,
+  $less_integer Diff ($posInt $zero) ->
+  $plus_integer A ($negSuccInt N2) Diff ->
+  $less_integer A ($posInt ($succ N2)).
+induction on 2. intros L P. P: case P.
+  %1:  0 + -(N2 + 1)
+   search.
+  %2:  (N1 + 1) + -1
+   search.
+  %3:  (N1 + 1) + -(N3 + 2)
+   apply IH to L P. search.
+  %4:  -1 + -(N2 + 1)
+   search.
+  %5:  -(N1 + 2) + -(N2 + 1)
+   search.
+
+
+Theorem $minus_neg_diff_neg : forall A N2 Diff,
+  $less_integer Diff ($posInt $zero) ->
+  $plus_integer A ($posInt ($succ N2)) Diff ->
+  $less_integer A ($negSuccInt N2).
+induction on 2. intros L P. P: case P.
+  %1:  0 + (N2 + 1)
+   case L.
+  %2:  (N1 + 1) + (N2 + 1)
+   case L.
+  %3:  -1 + (N2 + 1)
+   case L.
+  %4:  -(N1 + 2) + (N2 + 1)
+   P': case P (keep).
+     %4.1:  -(N1 + 1) + 0
+      search.
+     %4.2:  -1 + (N3 + 1)
+      apply IH to L P. search.
+     %4.3:  -(N3 + 1) + N4
+      apply IH to L P. search.
+
+
+Theorem extensibella-$-stdLib-$-minus_integer_diff_neg :
+  forall A B Diff,
+    $less_integer Diff ($posInt $zero) -> $minus_integer A B Diff ->
+    $less_integer A B.
+intros LDiff Minus. Minus: case Minus.
+  %1:  Diff - 0 = Diff
+   search.
+  %2:  A - ($succ N2) = Diff
+   apply $minus_pos_diff_neg to LDiff Minus. search.
+  %3:  A - -N2 = Diff
+   apply $minus_neg_diff_neg to LDiff Minus. search.
+
+
+Theorem $minus_larger_negs : forall A N2 N3 Diff Diff',
+  is_integer A ->
+  $less_integer ($posInt ($succ N2)) ($posInt ($succ N3)) ->
+  $plus_integer A ($negSuccInt N2) Diff ->
+  $plus_integer A ($negSuccInt N3) Diff' -> $less_integer Diff' Diff.
+induction on 3. intros IsA L P P'. P: case P.
+  %1:  0 + -(N2 + 1) = -(N2 + 1)
+   case P'. L': apply $less_integer_pos_neg to L. case L'. search.
+  %2:  (N1 + 1) + -1 = N1
+   P': case P'.
+     %2.1:  (N1 + 1) + -1 = N1
+      L: case L. case L.
+     %2.2:  N1 + -(N5 + 1) = Diff'
+      case IsA. apply $less_integer_sum_pos_neg to P' _. search.
+  %3:  (N1 + 1) + -(N4 + 2) = Diff
+   P': case P'.
+     %3.1:  (N1 + 1) + -1 = N1
+      L: case L. case L.
+     %3.2:  (N1 + 1) + -(N6 + 2) = Diff'
+      case L. case IsA. apply IH to _ _ P P'. search.
+  %4:  -1 + -(N2 + 1) = -(N2 + 2)
+   P': case P'. L': apply $less_integer_pos_neg to L. search.
+  %5:  -(N1 + 2) + -(N2 + 1) = -(N5 + 2)
+   P': case P'. L': case L. case IsA. apply IH to _ _ P P'. search.
+
+
+Theorem $minus_larger_pos : forall A N2 N3 Diff Diff',
+  is_integer A ->
+  $less_integer ($negSuccInt N2) ($negSuccInt N3) ->
+  $plus_integer A ($posInt N2) Diff ->
+  $plus_integer A ($posInt N3) Diff' -> $less_integer Diff' Diff.
+induction on 3. intros IsA L P P'. P: case P.
+  %1:  0 + N2 = N2
+   case P'. apply $less_integer_neg_pos to L. search.
+  %2:  (N1 + 1) + N2 = N5 + 1
+   P': case P'. case IsA. apply IH to _ _ P P'. search.
+  %3:  -(N + 1) + 0 = -(N + 1)
+   case L.
+  %4:  -1 + (N1 + 1) = N1
+   P': case P'.
+     %4.1:  -1 + 0 = -1
+      search.
+     %4.2:  -1 + (N4 + 1) = N4
+      L': apply $less_integer_neg_pos to L. case L'. search.
+  %5:  -(N1 + 2) + (N4 + 1) = Diff
+   P': case P'.
+     %5.1:  -(N1 + 2) + 0 = -(N1 + 2)
+      P2: case P (keep).
+        %5.1.1:  -(N1 + 1) + 0 = -(N1 + 1)
+         backchain $less_integer_add_1_neg_left. case IsA.
+         backchain $is_integer_negSuccInt_$$$$$_to_$$$$$_is_nat.
+        %5.1.2:  -1 + (N5 + 1) = N5
+         search.
+        %5.1.3:  -(N5 + 2) + (N6 + 1) = Diff
+         case IsA. apply $less_integer_sum_neg_pos to P _.
+         backchain $less_integer_negSuccInt_left_step.
+     %5.2:  -(N1 + 2) + (N6 + 1) = Diff'
+      Is: case IsA. L: case L. apply IH to _ _ P P'. search.
+
+
+Theorem extensibella-$-stdLib-$-minus_larger :
+  forall A B Diff B' Diff',
+    is_integer A ->
+    $minus_integer A B Diff -> $minus_integer A B' Diff' ->
+    $less_integer B B' -> $less_integer Diff' Diff.
+intros IsA Minus Minus' L. Minus: case Minus.
+  %1:  Diff - 0 = Diff
+   Minus': case Minus'.
+     %1.1:  Diff - 0 = Diff
+      case L.
+     %1.2:  Diff - (N2 + 1) = Diff'
+      Or: apply $is_integer_posInt_or_negSuccInt to IsA. E: case Or.
+        %1.2.1:  Diff = $posInt A1
+         apply $less_integer_sum_pos_neg to Minus' _. search.
+        %1.2.2:  Diff = $negSuccInt A1
+         apply $less_integer_sum_neg_neg to Minus' _. search.
+     %1.3:  Diff - -(N2 + 1) = Diff'
+      case L.
+  %2:  A - (N2 + 1) = Diff
+   Minus': case Minus'.
+     %1.1:  Diff' - 0 = Diff'
+      case L.
+     %1.2:  A - (N3 + 1) = Diff'
+      apply $minus_larger_negs to IsA L Minus Minus'. search.
+     %1.3:  A - (N3 + 1) = Diff'
+      case L.
+  %3:  A - -(N2 + 1) = Diff
+   Minus': case Minus'.
+     %3.1:  Diff' - 0 = Diff'
+      Or: apply $is_integer_posInt_or_negSuccInt to IsA. E: case Or.
+        %3.1.1:  Diff' = $posInt A1
+         Is: case IsA.
+           %3.1.1.1:  A1 = 0
+            case Minus. search.
+           %3.1.1.2:  A2 = $succ N
+            P: apply $plus_integer_succ_right_to_left to Minus.
+            apply $less_integer_sum_pos_pos to P _. search.
+        %3.1.2:  Diff' = $negSuccInt A1
+         apply $less_integer_sum_neg_pos to Minus IsA. search.
+     %3.2:  A - (N3 + 1) = Diff'
+      Or: apply $is_integer_posInt_or_negSuccInt to IsA. E: case Or.
+        %3.2.1:  A = $posInt A1
+         Is: case IsA.
+           %3.2.1.1:  A = 0
+            case Minus. case Minus'. search.
+           %3.2.1.2:  A = $succ N
+            L1: apply $less_integer_sum_pos_pos to Minus _.
+            M: case Minus' (keep).
+              %3.2.1.2.1
+               search.
+              %3.2.1.2.2
+               Is: case Is.
+                 %3.2.1.2.2.1
+                  case M. case L1. search.
+                 %3.2.1.2.2.2
+                  L2: apply $less_integer_sum_pos_neg to M _.
+                  apply extensibella-$-stdLib-$-less_integer_transitive
+                     to L2 L1. search.
+        %3.2.2:  A = $negSuccInt A1
+         L1: apply $less_integer_sum_neg_pos to Minus _.
+         L2: apply $less_integer_sum_neg_neg to Minus' _.
+         apply extensibella-$-stdLib-$-less_integer_transitive to
+            L2 L1. search.
+     %3.3:  A - -(N3 + 1) = Diff'
+      apply $minus_larger_pos to IsA _ Minus Minus'. search.
+
+
+Theorem $minus_smaller_positive : forall A B Diff,
+  $plus_integer A ($negSuccInt B) Diff ->
+  $less_integer ($posInt ($succ B)) A ->
+  $less_integer ($posInt $zero) Diff.
+induction on 1. intros P L. P: case P.
+  %1:  0 + -(B + 1) = -(B + 1)
+   case L.
+  %2:  (N1 + 1) + -1 = N1
+   case L. search.
+  %3:  (N1 + 1) + -(N2 + 2) = Diff
+   case L. apply IH to P _. search.
+  %4:  -1 + -(B + 1) = -(B + 2)
+   case L.
+  %5:  -(N1 + 2) + -(B + 1) = -(N3 + 2)
+   case L.
+
+
+Theorem $minus_smaller_negative : forall A B Diff,
+  $plus_integer A ($posInt ($succ B)) Diff ->
+  $less_integer ($negSuccInt B) A ->
+  $less_integer ($posInt $zero) Diff.
+induction on 1. intros P L. P: case P.
+  %1:  0 + (B + 1) = B + 1
+   search.
+  %2:  (N1 + 1) + (B + 1) = N3 + 1
+   case L. apply IH to P _. search.
+  %3:  -1 + (B + 1) = B
+   case L. search.
+  %4:  -(N1 + 2) + (B + 1) = Diff
+   case L. apply IH to P _. search.
+
+
+Theorem extensibella-$-stdLib-$-minus_smaller_positive :
+  forall A B Diff,
+    $minus_integer A B Diff -> $less_integer B A ->
+    $less_integer ($posInt $zero) Diff.
+intros M L. M: case M.
+  %1:  Diff - 0 = Diff
+   search.
+  %2:  A - (N2 + 1) = Diff
+   apply $minus_smaller_positive to M L. search.
+  %3:  A - -(N2 + 1) = Diff
+   apply $minus_smaller_negative to M L. search.
+
+
+Theorem extensibella-$-stdLib-$-less_lesseq_plus_one : forall A B Sum,
+  is_integer A -> is_integer B -> $less_integer A B ->
+  $plus_integer A ($posInt ($succ $zero)) Sum ->
+  $lesseq_integer Sum B.
+induction on 3. intros IsA IsB L P. L: case L.
+  %Subgoal 1
+   case P. Is: case IsB. case Is. search. search.
+  %Subgoal 2
+   Is: case IsB. P: case P. Is': case IsA. apply IH to Is' Is L P.
+   search.
+  %Subgoal 3
+   P: case P.
+     %3.1
+      case IsB. search. search.
+     %3.2
+      case P. search.
+  %Subgoal 4
+   Is: apply extensibella-$-stdLib-$-plus_integer_is_integer to _ _ P.
+   P: case P. P: case P. case Is. search. search.
+  %Subgoal 5
+   IsA: case IsA. IsA: case IsA.
+     %5.1
+      case L.
+     %5.2
+      IsSum: apply extensibella-$-stdLib-$-plus_integer_is_integer to
+         _ _ P. P: case P. P: case P. IsB: case IsB.
+      apply IH to _ _ L _. search.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -593,6 +867,114 @@ induction on 3. intros IsN2 IsN1 P G. P: case P.
   %Subgoal 9
    case IsN1. G': apply IH to _ _ P G. L': case G'. search.
 
+Theorem extensibella-$-stdLib-$-lesseq_integer_or_greater :
+  forall A B,
+    is_integer A -> is_integer B ->
+    $lesseq_integer A B \/ $greater_integer A B.
+induction on 1. intros IsA IsB. IsA: case IsA.
+  %A = 0
+   IsB: case IsB.
+     %B = 0
+      search.
+     %B = $succ N
+      search.
+     %B = -1
+      search.
+     %B = $negSuccInt N
+      search.
+  %A = $succ N
+   IsB: case IsB.
+     %B = 0
+      search.
+     %B = $succ N1
+      Or: apply IH to IsA IsB. L: case Or.
+        %N <= N1
+         search.
+        %N > N1
+         right. case L. search.
+     %B = -1
+      search.
+     %B = $negSuccInt N
+      search.
+  %A = -1
+   IsB: case IsB.
+     %B = 0
+      search.
+     %B = $succ N
+      search.
+     %B = -1
+      search.
+     %B = $negSuccInt N
+      search.
+  %A = $negSuccInt N
+   IsB: case IsB.
+     %B = 0
+      search.
+     %B = $succ N
+      search.
+     %B = -1
+      search.
+     %B = $negSuccInt N
+      Or: apply IH to IsA IsB. L: case Or.
+        %-(N + 1) <= -(N1 + 1)
+         search.
+        %-(N + 1) > -(N1 + 1)
+         case L. search.
+
+
+Theorem extensibella-$-stdLib-$-integer_compare_total : forall A B,
+  is_integer A -> is_integer B ->
+  $lesseq_integer A B \/ $greater_integer A B.
+induction on 1. intros IsA IsB. IsA: case IsA.
+  %1:  A = 0
+   IsB: case IsB.
+     %1.1:  B = 0
+      search.
+     %1.2:  B = $succ N
+      search.
+     %1.3:  B = -1
+      search.
+     %1.4:  B = -($succ N + 1)
+      search.
+  %2:  A = $succ N
+   IsB: case IsB.
+     %2.1:  B = 0
+      search.
+     %2.2:  B = $succ N1
+      Or: apply IH to IsA IsB. C: case Or.
+        %2.2.1:  N <= N1
+         search.
+        %2.2.2:  N > N1
+         case C. search.
+     %2.3:  B = -1
+      search.
+     %2.4:  B = -($succ N1 + 1)
+      search.
+  %3:  A = -1
+   IsB: case IsB.
+     %3.1:  B = 0
+      search.
+     %3.2:  B = $succ N
+      search.
+     %3.3:  B = -1
+      search.
+     %3.4:  B = -($succ N + 1)
+      search.
+  %4:  A = -($succ N + 1)
+   IsB: case IsB.
+     %4.1:  B = 0
+      search.
+     %4.2:  B = $succ N1
+      search.
+     %4.3:  B = -1
+      search.
+     %4.4:  B = -($succ N1 + 1)
+      Or: apply IH to IsA IsB. C: case Or.
+        %4.4.1:  -(N + 1) <= -(N1 + 1)
+         search.
+        %4.4.2:  -(N + 1) > -(N1 + 1)
+         case C. search.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -673,6 +1055,52 @@ Or: apply extensibella-$-stdLib-$-lesseq_integer_less_or_eq to LEq.
 L: case Or.
   apply extensibella-$-stdLib-$-less_integer_flip_greater to L. search.
   search.
+
+
+Theorem $lesseq_integer_is_posInt : forall X High,
+  is_integer High -> $lesseq_integer ($posInt X) High ->
+  is_integer ($posInt X).
+induction on 2. intros IsHigh LEq. LEq: case LEq.
+  %1:  0 <= 0
+   search.
+  %2:  0 <= $succ N2
+   search.
+  %3:  $succ N1 <= $succ N2
+   case IsHigh. apply IH to _ LEq. search.
+
+
+Theorem $lesseq_integer_is_negSuccInt : forall Low X,
+  is_integer Low -> $lesseq_integer Low ($negSuccInt X) ->
+  is_integer ($negSuccInt X).
+induction on 2. intros IsLow LEq. LEq: case LEq.
+  %1:  -1 <= -1
+   search.
+  %2:  -($succ N1 + 1) <= -1
+   search.
+  %3:  -($succ N1 + 1) <= -($succ N2 + 1)
+   case IsLow. apply IH to _ LEq. search.
+
+
+Theorem extensibella-$-stdLib-$-between_integers_is_integer :
+  forall Low High X,
+    is_integer Low -> is_integer High -> $lesseq_integer Low X ->
+    $lesseq_integer X High -> is_integer X.
+intros IsLow IsHigh LowX XHigh. LowX: case LowX (keep).
+  %1:  0 <= 0
+   search.
+  %2:  0 <= $succ N2
+   apply $lesseq_integer_is_posInt to _ XHigh. search.
+  %3:  $succ N1 <= $succ N2
+   apply $lesseq_integer_is_posInt to _ XHigh. search.
+  %4:  -(N1 + 1) <= N2
+   apply $lesseq_integer_is_posInt to _ XHigh. search.
+  %5:  -1 <= -1
+   search.
+  %6:  -(N1 + 2) <= -1
+   search.
+  %7:  -(N1 + 2) <= -(N2 + 2)
+   case IsLow. apply $lesseq_integer_is_negSuccInt to _ LowX1. search.
+
 
 
 %combinations of <, <=, >, >= and addition, subtraction, multiplication, division, whatever

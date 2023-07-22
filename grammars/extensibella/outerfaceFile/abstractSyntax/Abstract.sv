@@ -47,8 +47,21 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
   return
      case modThms, thusFar of
      | [], x -> x
-     --if both extensible, combine them if they contain shared
-     --theorems, otherwise take the earlier one
+     --if we find something that cannot be expanded, take it, with a
+     --preference for thusFar as being from a module earlier
+     --alphabetically (our tie-breaker)
+     | _::_, nonextensibleTheorem(n, p, b) ->
+       nonextensibleTheorem(n, p, b)
+     | _::_, splitElement(t, n) -> splitElement(t, n)
+     | _::_, translationConstraintTheorem(n, b, e) ->
+       translationConstraintTheorem(n, b, e)
+     | nonextensibleTheorem(n, p, b)::_, _ ->
+       nonextensibleTheorem(n, p, b)
+     | splitElement(t, n)::_, _ -> splitElement(t, n)
+     | translationConstraintTheorem(n, b, e)::_, _ ->
+       translationConstraintTheorem(n, b, e)
+     --if both extensible groups, combine them if they contain shared
+     --theorems; otherwise, take the earlier one (thusFar)
      | extensibleMutualTheoremGroup(thms1)::rest,
        extensibleMutualTheoremGroup(thms2) ->
        if null(intersect(map(fst, thms1), map(fst, thms2)))
@@ -59,9 +72,22 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
                             p2::(QName, Bindings, ExtBody, String) ->
                             p1.1 == p2.1,
                           thms1, thms2)))
-     --if one is not extensible, just take it
-     | x::rest, extensibleMutualTheoremGroup(_) -> x
-     | _::rest, x -> x
+     --if both ext ind, combine them if they contain shared relations;
+     --otherwise, take the earlier one (thusFar)
+     | extIndElement(rels1)::rest, extIndElement(rels2) ->
+       if null(intersect(map(fst, rels1), map(fst, rels2)))
+       then getFirst(rest, thusFar)
+       else getFirst(rest,
+               extIndElement(
+                  unionBy(\ p1::(QName, [String], [Term], QName,
+                                 String, String)
+                            p2::(QName, [String], [Term], QName,
+                                 String, String) ->
+                            p1.1 == p2.1,
+                          rels1, rels2)))
+     --if both are extensible, take the earlier one and continue
+     --searching through the rest
+     | _::rest, x -> getFirst(rest, x)
      end;
 }
 

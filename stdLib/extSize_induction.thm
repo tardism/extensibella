@@ -37,7 +37,7 @@ induction on 2. intros IsB L. L: case L.
 
 
 %every int > 0 is accessible
-Theorem all_acc : forall N,
+Theorem extensibella-$-stdLib-$-all_acc : forall N,
   is_integer N -> $lesseq_integer ($posInt $zero) N -> acc N.
 induction on 1. intros IsN LEq. IsN: case IsN.
   %1:  N = 0
