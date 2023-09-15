@@ -40,21 +40,21 @@ fi
 
 
 ######################################################################
-#                Add SOS-Ext as a Generated Location                 #
+#                Add Sterling as a Generated Location                #
 ######################################################################
-SOS_SCRIPT_LOCATION="$HOME/bin/sos-ext"
+STERLING_SCRIPT_LOCATION="$HOME/bin/sterling"
 
-#Check if the SOS-Ext script exists to find where it is installed
-if [ -f $SOS_SCRIPT_LOCATION ]; then
+#Check if the Sterling script exists to find where it is installed
+if [ -f $STERLING_SCRIPT_LOCATION ]; then
     #These next lines modified from the Silver script
-    # ~/bin/sos-ext should be a link to somewhere, find out where!
-    SOS_EXECUTABLE=$(readlink -f $SOS_SCRIPT_LOCATION)
-    #Set SOS-Ext's home
-    SOS_HOME=${SOS_EXECUTABLE%"sos-ext"}
+    # ~/bin/sterling should be a link to somewhere, find out where!
+    STERLING_EXECUTABLE=$(readlink -f $STERLING_SCRIPT_LOCATION)
+    #Set Sterling's home
+    STERLING_HOME=${STERLING_EXECUTABLE%"sterling"}
     #Set the generated directory where language encodings can be found
-    SOS_GENERATED=${SOS_HOME}generated/extensibella/
+    STERLING_GENERATED=${STERLING_HOME}generated/extensibella/
     #Add it to set of locations to search
-    EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$SOS_GENERATED
+    EXTENSIBELLA_ENCODED=$EXTENSIBELLA_ENCODED:$STERLING_GENERATED
 fi
 
 

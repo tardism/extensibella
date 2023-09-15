@@ -31,7 +31,7 @@ language is found in the `exampleEncoding/` directory along with an
 Extensibella proof script proving a few properties about it.
 
 Languages written in
-[SOS-Ext](https://github.com/RandomActsOfGrammar/sos-ext) can be encoded
+[Sterling](https://github.com/RandomActsOfGrammar/sterling) can be encoded
 into Extensibella using the `--extensibella` flag.  These encoded
 languages will be found by Extensibella automatically.
 
@@ -79,9 +79,9 @@ directory](docs/).
 Additionally the [example encoding directory](exampleEncoding/)
 contains an example encoding and proofs of a few properties about it.
 
-Finally, the [SOS-Ext
-repository](https://github.com/RandomActsOfGrammar/sos-ext) contains
-several example SOS-Ext languages, some of which have Extensibella
+Finally, the [Sterling
+repository](https://github.com/RandomActsOfGrammar/sterling) contains
+several example Sterling languages, some of which have Extensibella
 proofs of their properties.  Of particular note is the
-[`sec_SOS`](https://github.com/RandomActsOfGrammar/sos-ext/tree/master/examples/sec_SOS)
+[`sec_SOS`](https://github.com/RandomActsOfGrammar/sterling/tree/master/examples/sec_SOS)
 language.

@@ -180,7 +180,7 @@ We also have commands for working with extensible languages:
   + The details of translation constraints are discussed in the
     [document about extensibility in Extensibella](extensibility.md)
 * Extension induction declaration:  `Ext_Ind <rel> <rel args> with
-  forall <bindings>, <trans args> |{ty}- <original> ~~>
+  forall <bindings>, <trans args> |{<ty>}- <original> ~~>
   <translation>.`
   + Declares a requirement for modules to show extensions can build
     arguments for new properties using the extensible relation `<rel>`
@@ -195,8 +195,8 @@ version, used for adding to its proof in modules that build on the
 module introducing it.  They are `Prove_Theorem`, `Prove_Constraint`,
 and `Prove_Ext_Ind`, respectively.  Each of these takes a list of
 qualified names (*not* short names) for the theorems, or, in the last
-case, relations, to the proofs of which it is adding, and presents the
-user with the new cases to prove in the current module.
+case, relations, for the proofs to which it is adding, and presents
+the user with the new cases to prove in the current module.
 
 
 ## Proof Tactics

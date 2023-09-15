@@ -39,7 +39,7 @@ terminal Star_t        '*'       lexer classes {TOKEN}, precedence=10, associati
 terminal StringTy_t   'string'   dominates {Id_t};
 
 
---Qname_t is a qualified name as in Silver/SOS-Ext
+--Qname_t is a qualified name as in Silver/Sterling
 terminal Qname_t  /([A-Za-z0-9_]+:)+[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
 terminal Id_t  /[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
 terminal Number_t  /[0-9]+/;

@@ -7,7 +7,7 @@ Throughout we will mention the `EXTENSIBELLA_ENCODED` set of
 directories.  This is an environment variable listing the directories
 where special Extensibella files (i.e. every file other than the
 theorem file) may be found.  It defaults to
-including the SOS-Ext and Extensibella `generated` directories, but
+including the Sterling and Extensibella `generated` directories, but
 other directories may be added by setting the variable before running
 Extensibella.
 
