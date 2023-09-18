@@ -694,7 +694,7 @@ nonterminal ListContents with
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<ListContents>,
    boundNames, usedNames,
-   type, upSubst, downSubst, downVarTys; --type is type of contents
+   type, upSubst, downSubst, downVarTys, tyVars; --type is type of contents
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on ListContents;
 
@@ -737,7 +737,7 @@ nonterminal PairContents with
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<PairContents>,
    boundNames, usedNames,
-   type, upSubst, downSubst, downVarTys; --type is full pair type
+   type, upSubst, downSubst, downVarTys, tyVars; --type is full pair type
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on PairContents;
 

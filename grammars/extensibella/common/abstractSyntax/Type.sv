@@ -6,7 +6,7 @@ nonterminal Type with
    toList<Type>, --type broken into a list across arrows
    headConstructor,
    tySubst, subst<Type>,
-   unifyWith<Type>, downSubst, upSubst,
+   unifyWith<Type>, downSubst, upSubst, tyVars,
    freshenSubst, freshenSubst_down, freshen<Type>,
    containsVars, isError,
    type, name,
@@ -48,20 +48,21 @@ top::Type ::= ty1::Type ty2::Type
   top.subst = arrowType(ty1.subst, ty2.subst);
 
   ty1.downSubst = top.downSubst;
-  ty2.downSubst = ty1.upSubst;
+  local sty2::Type = substituteTy(ty2, ty1.upSubst);
+  sty2.downSubst = ty1.upSubst;
   ty1.unifyWith =
       case top.unifyWith of
       | arrowType(t, _) -> t
       | _ -> error("Should not access")
       end;
-  ty2.unifyWith =
+  sty2.unifyWith =
       case top.unifyWith of
-      | arrowType(_, t) -> t
+      | arrowType(_, t) -> substituteTy(t, ty1.upSubst)
       | _ -> error("Should not access")
       end;
   top.upSubst =
       case top.unifyWith of
-      | arrowType(t1, t2) -> ty2.upSubst
+      | arrowType(t1, t2) -> sty2.upSubst
       | varType(v) -> addSubst(v, top, top.downSubst)
       | _ ->
         addErrSubst("Cannot unify " ++ justShow(top.unifyWith.pp) ++
@@ -167,20 +168,21 @@ top::Type ::= functorTy::Type argTy::Type
       functorType(functorTy.subst, argTy.subst);
 
   functorTy.downSubst = top.downSubst;
-  argTy.downSubst = functorTy.upSubst;
+  local sargTy::Type = substituteTy(argTy, functorTy.upSubst);
+  sargTy.downSubst = functorTy.upSubst;
   functorTy.unifyWith =
       case top.unifyWith of
       | functorType(t, _) -> t
       | _ -> error("Should not access")
       end;
-  argTy.unifyWith =
+  sargTy.unifyWith =
       case top.unifyWith of
-      | functorType(_, t) -> t
+      | functorType(_, t) -> substituteTy(t, functorTy.upSubst)
       | _ -> error("Should not access")
       end;
   top.upSubst =
       case top.unifyWith of
-      | functorType(_, _) -> argTy.upSubst
+      | functorType(_, _) -> sargTy.upSubst
       | varType(v) -> addSubst(v, top, top.downSubst)
       | _ ->
         addErrSubst("Cannot unify " ++ justShow(top.unifyWith.pp) ++
@@ -240,6 +242,11 @@ top::Type ::= name::String
   top.upSubst =
       case top.unifyWith of
       | varType(v) when v == name -> top.downSubst
+      | varType(v) ->
+        --add binding both directions to find substitution when one is
+        --unified with a type, regardless which one
+        addSubst(name, top.unifyWith,
+                 addSubst(v, top, top.downSubst))
       | ty -> addSubst(name, ty, top.downSubst)
       end;
 
@@ -266,6 +273,7 @@ top::Type ::= name::String
   top.isError = false;
 
   top.containsVars = true;
+  top.tyVars <- [name];
 }
 
 
@@ -318,7 +326,7 @@ nonterminal TypeList with
    tySubst, subst<TypeList>,
    unifyWith<TypeList>, downSubst, upSubst,
    freshen<TypeList>, freshenSubst_down, freshenSubst,
-   containsVars,
+   containsVars, tyVars,
    types;
 propagate typeEnv on TypeList;
 
@@ -391,15 +399,16 @@ top::TypeList ::= ty::Type rest::TypeList
       | addTypeList(x, _) -> x
       | _ -> error("Should not access")
       end;
-  rest.downSubst = ty.upSubst;
-  rest.unifyWith =
+  local srest::TypeList = substituteTyList(rest, ty.upSubst);
+  srest.downSubst = ty.upSubst;
+  srest.unifyWith =
       case top.unifyWith of
-      | addTypeList(_, x) -> x
+      | addTypeList(_, x) -> substituteTyList(x, ty.upSubst)
       | _ -> error("Should not access")
       end;
   top.upSubst =
       case top.unifyWith of
-      | addTypeList(_, _) -> rest.upSubst
+      | addTypeList(_, _) -> srest.upSubst
       | emptyTypeList() ->
         addErrSubst("Cannot unify [" ++
            justShow(ppImplode(text(", "), top.pps)) ++ "] and [" ++
@@ -520,11 +529,27 @@ Substitution ::= err::String base::Substitution
 function lookupSubst
 Maybe<Type> ::= name::String subst::Substitution
 {
-  return
-     case subst of
-     | left(err) -> nothing()
-     | right(lst) -> lookup(name, lst)
-     end;
+  return lookupSubstHelp(name, subst, []);
+}
+function lookupSubstHelp
+Maybe<Type> ::= name::String subst::Substitution seen::[String]
+{
+  local lkp::Maybe<Type> =
+      case subst of
+      | left(err) -> nothing()
+      | right(lst) -> lookup(name, lst)
+      end;
+  local sub::Maybe<Type> =
+      case lkp of
+      | just(varType(v)) -> lookupSubstHelp(v, subst, name::seen)
+      | mt -> mt
+      end;
+  return if contains(name, seen)
+         then nothing()
+         else case sub of
+              | nothing() -> lkp --catch no further binding
+              | _ -> sub
+              end;
 }
 
 
@@ -552,6 +577,20 @@ String ::= s::Either<[Message] [(String, Type)]>
                    "(" ++ p.1 ++ ", " ++ justShow(p.2.pp) ++ ")",
                  lst)) ++ "]"
      end;
+}
+
+
+function substituteTy
+Type ::= ty::Type subst::Substitution
+{
+  ty.tySubst = subst;
+  return ty.subst;
+}
+function substituteTyList
+TypeList ::= tyL::TypeList subst::Substitution
+{
+  tyL.tySubst = subst;
+  return tyL.subst;
 }
 
 

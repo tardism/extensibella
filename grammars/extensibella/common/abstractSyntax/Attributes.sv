@@ -102,5 +102,11 @@ synthesized attribute upSubst::Substitution;
 --variable types
 inherited attribute downVarTys::[(String, Type)];
 
+--type variables generated as part of typing
+monoid attribute tyVars::[String] with [], ++;
+propagate tyVars on
+   Type, TypeList, Term, TermList, Metaterm,
+   PairContents, ListContents;
+
 synthesized attribute isExtensible::Boolean;
 

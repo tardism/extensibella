@@ -6,7 +6,7 @@ nonterminal Metaterm with
    splitImplies, splitConjunctions,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames,
-   upSubst, downSubst, downVarTys;
+   upSubst, downSubst, downVarTys, tyVars;
 propagate typeEnv, constructorEnv, relationEnv on Metaterm;
 propagate boundNames, downVarTys on Metaterm
    excluding bindingMetaterm;
@@ -148,17 +148,31 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
 
   body.boundNames = top.boundNames ++ nameBindings.usedNames;
 
-  body.downVarTys =
+  --save the names for var types here
+  local varTys::[(String, Either<Type String>)] =
       map(\ p::(String, MaybeType) ->
             (p.1, case p.2 of
-                  | justType(t) -> t
+                  | justType(t) -> left(t)
                   | nothingType() ->
-                    varType("__Bound" ++ toString(genInt()))
+                    right("__Bound" ++ toString(genInt()))
                   end),
-          nameBindings.toList) ++ top.downVarTys;
+          nameBindings.toList);
+  body.downVarTys =
+      map(\ p::(String, Either<Type String>) ->
+            (p.1, case p.2 of
+                  | left(t) -> t
+                  | right(s) -> varType(s)
+                  end),
+          varTys) ++ top.downVarTys;
 
   body.downSubst = top.downSubst;
   top.upSubst = body.upSubst;
+  top.tyVars <- flatMap(\ p::(String, Either<Type String>) ->
+                          case p.2 of
+                          | left(_) -> []
+                          | right(s) -> [s]
+                          end,
+                        varTys);
 }
 
 
@@ -285,7 +299,7 @@ nonterminal Term with
    substName, substTerm, subst<Term>,
    unifyWith<Term>, unifySuccess, unifyEqs, unifySubst,
    boundNames, usedNames,
-   upSubst, downSubst, downVarTys, type;
+   upSubst, downSubst, downVarTys, tyVars, type;
 --note typeErrors does not include errors for not finding definitions of QNames
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on Term;
@@ -529,7 +543,7 @@ nonterminal TermList with
    substName, substTerm, subst<TermList>,
    unifyWith<TermList>, unifyEqs, unifySuccess,
    isStructuredList,
-   types, downSubst, upSubst, downVarTys;
+   types, downSubst, upSubst, downVarTys, tyVars;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on TermList;
 

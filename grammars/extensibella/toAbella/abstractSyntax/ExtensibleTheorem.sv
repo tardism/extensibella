@@ -334,19 +334,42 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   --check the body is well-typed
   top.toAbellaMsgs <-
       case body.upSubst of
-      | right(_) -> []
-      | left(_) ->
+      | right(_) ->
+        if any(map(\ v::String ->
+                     substituteTy(varType(v), body.upSubst).containsVars,
+                     allTyVars))
+        then [errorMsg("Cannot determine types of all bound " ++
+                       "variables in " ++ justShow(name.pp))]
+        else []
+      | left(errs) ->
         --given the messages are not terribly useful:
         [errorMsg("Type error in " ++ justShow(name.pp))]
       end;
-  body.downVarTys =
+  --all type variables in the body
+  local allTyVars::[String] =
+      body.tyVars ++
+      flatMap(\ p::(String, Either<Type String>) ->
+                case p.2 of
+                | left(_) -> []
+                | right(s) -> [s]
+                end,
+              boundVarTys);
+  --save the names for var types here
+  local boundVarTys::[(String, Either<Type String>)] =
       map(\ p::(String, MaybeType) ->
-            (p.1,
-             case p.2 of
-             | justType(t) -> t
-             | nothingType() -> varType("__X" ++ toString(genInt()))
-             end),
+            (p.1, case p.2 of
+                  | justType(t) -> left(t)
+                  | nothingType() ->
+                    right("__Bound" ++ toString(genInt()))
+                  end),
           bindings.toList);
+  body.downVarTys =
+      map(\ p::(String, Either<Type String>) ->
+            (p.1, case p.2 of
+                  | left(t) -> t
+                  | right(s) -> varType(s)
+                  end),
+          boundVarTys);
   body.downSubst = emptySubst();
 
   top.provingTheorems = (fullName, body.thm)::rest.provingTheorems;
@@ -520,10 +543,10 @@ nonterminal ExtBody with
    premises, thm,
    boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState,
-   upSubst, downSubst, downVarTys;
+   upSubst, downSubst, downVarTys, tyVars;
 propagate typeEnv, constructorEnv, relationEnv,
           currentModule, proverState, toAbellaMsgs,
-          downVarTys on ExtBody;
+          downVarTys, tyVars on ExtBody;
 
 --premises should have full version of premise
 synthesized attribute premises::[(Maybe<String>, Metaterm)];
