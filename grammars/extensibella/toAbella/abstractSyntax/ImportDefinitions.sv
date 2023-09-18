@@ -13,10 +13,11 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal ListOfCommands with
    pp, abella_pp,
+   ignoreDefErrors,
    typeEnv, relationEnv, constructorEnv, proverState, currentModule,
    commandList, tys, rels, constrs,
    declaredThms;
-propagate proverState, currentModule on ListOfCommands;
+propagate proverState, currentModule, ignoreDefErrors on ListOfCommands;
 
 synthesized attribute commandList::[AnyCommand];
 
@@ -71,9 +72,11 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 
 
 attribute
+   ignoreDefErrors,
    tys, rels, constrs,
    declaredThms
 occurs on AnyCommand;
+propagate ignoreDefErrors on AnyCommand;
 
 aspect production anyTopCommand
 top::AnyCommand ::= c::TopCommand
@@ -127,6 +130,7 @@ top::AnyCommand ::= parseErrors::String
 
 
 attribute
+   ignoreDefErrors,
    tys, rels, constrs
 occurs on TopCommand;
 
@@ -158,27 +162,31 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                 end,
               preds);
   top.rels =
-      flatMap(\ p::(QName, Type) ->
-                case p.1 of
-                | extQName(pc, s) ->
-                  [extRelationEnvItem(p.1,
-                      foldr(addTypeList, emptyTypeList(), p.2.toList),
-                      pc, map(snd,
-                              filter(\ inner::(QName, QName) ->
-                                       p.1 == inner.1,
-                                     defs.relationClauseModules)),
-                      flatMap(\ d::Def ->
-                                if decorate d with {
-                                      currentModule=top.currentModule;
-                                   }.defRel == p.1
-                                then [d.defTuple] else [],
-                              defs.toList))]
-                | transQName(_) -> []
-                | _ ->
-                  [fixedRelationEnvItem(p.1,
-                      foldr(addTypeList, emptyTypeList(), p.2.toList))]
-                end,
-              fullNames);
+      --only output rels if no errors or this is a module
+      --specification, so we can avoid error checking
+      if top.ignoreDefErrors || !any(map((.isError), top.toAbellaMsgs))
+      then flatMap(\ p::(QName, Type) ->
+                     case p.1 of
+                     | extQName(pc, s) ->
+                       [extRelationEnvItem(p.1,
+                           foldr(addTypeList, emptyTypeList(), p.2.toList),
+                           pc, map(snd,
+                                   filter(\ inner::(QName, QName) ->
+                                            p.1 == inner.1,
+                                          defs.relationClauseModules)),
+                           flatMap(\ d::Def ->
+                                     if decorate d with {
+                                           currentModule=top.currentModule;
+                                        }.defRel == p.1
+                                     then [d.defTuple] else [],
+                                   defs.toList))]
+                     | transQName(_) -> []
+                     | _ ->
+                       [fixedRelationEnvItem(p.1,
+                           foldr(addTypeList, emptyTypeList(), p.2.toList))]
+                     end,
+                   fullNames)
+      else [];
   top.constrs = [];
 }
 
@@ -188,19 +196,23 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
   top.tys = []; --no tys from codefinitions
   top.rels =
-      flatMap(\ p::(QName, Type) ->
-                case p.1 of
-                | extQName(pc, s) ->
-                  [extRelationEnvItem(p.1,
-                      foldr(addTypeList, emptyTypeList(), p.2.toList),
-                      pc, error("codefinitionDeclarationClauseModules"),
-                      error("codefinitionDeclarationDefs"))]
-                | transQName(_) -> []
-                | _ ->
-                  [fixedRelationEnvItem(p.1,
-                      foldr(addTypeList, emptyTypeList(), p.2.toList))]
-                end,
-              preds);
+      --only output rels if no errors or this is a module
+      --specification, so we can avoid error checking
+      if top.ignoreDefErrors || !any(map((.isError), top.toAbellaMsgs))
+      then flatMap(\ p::(QName, Type) ->
+                     case p.1 of
+                     | extQName(pc, s) ->
+                       [extRelationEnvItem(p.1,
+                           foldr(addTypeList, emptyTypeList(), p.2.toList),
+                           pc, error("codefinitionDeclarationClauseModules"),
+                           error("codefinitionDeclarationDefs"))]
+                     | transQName(_) -> []
+                     | _ ->
+                       [fixedRelationEnvItem(p.1,
+                           foldr(addTypeList, emptyTypeList(), p.2.toList))]
+                     end,
+                   preds)
+      else [];
   top.constrs = [];
 }
 
@@ -236,13 +248,17 @@ aspect production kindDeclaration
 top::TopCommand ::= names::[QName] k::Kind
 {
   top.tys =
-      flatMap(\ q::QName ->
-                case q of
-                --get these from translation definitions
-                | tyQName(s) -> []
-                | _ -> [proofTypeEnvItem(q, k.len)]
-                end,
-              names);
+      --only output tys if no errors or this is a module
+      --specification, so we can avoid error checking
+      if top.ignoreDefErrors || !any(map((.isError), top.toAbellaMsgs))
+      then flatMap(\ q::QName ->
+                     case q of
+                     --get these from translation definitions
+                     | tyQName(s) -> []
+                     | _ -> [proofTypeEnvItem(q, k.len)]
+                     end,
+                   names)
+      else [];
   top.rels = [];
   top.constrs = [];
 }
@@ -254,11 +270,15 @@ top::TopCommand ::= names::[QName] ty::Type
   top.tys = [];
   top.rels = [];
   top.constrs =
-      map(constructorEnvItem(_,
-             last(ty.toList),
-             foldr(addTypeList, emptyTypeList(),
-                   take(length(ty.toList) - 1, ty.toList))),
-          names);
+      --only output constrs if no errors or this is a module
+      --specification, so we can avoid error checking
+      if top.ignoreDefErrors || !any(map((.isError), top.toAbellaMsgs))
+      then map(constructorEnvItem(_,
+                  last(ty.toList),
+                  foldr(addTypeList, emptyTypeList(),
+                        take(length(ty.toList) - 1, ty.toList))),
+               names)
+      else [];
 }
 
 

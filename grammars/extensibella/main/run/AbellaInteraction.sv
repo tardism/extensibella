@@ -59,6 +59,7 @@ IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
   comms.relationEnv = [];
   comms.constructorEnv = [];
   comms.currentModule = error("currentModule not needed?");
+  comms.ignoreDefErrors = true;
 
   return
      if !parsedOutput.parseSuccess

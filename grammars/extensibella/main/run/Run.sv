@@ -65,6 +65,7 @@ IOVal<Integer> ::=
   cmds.config = config;
   cmds.abella = started.iovalue.fromRight;
   cmds.ioin = sendIncoming.io;
+  cmds.ignoreDefErrors = false;
 
   return
      if !started.iovalue.isRight
@@ -150,6 +151,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   any_a.proverState = currentProverState;
   any_a.boundNames = state.usedNames;
   any_a.stateListIn = top.stateList;
+  any_a.ignoreDefErrors = top.ignoreDefErrors;
   --whether we have an error
   local is_error::Boolean = any(map((.isError), any_a.toAbellaMsgs));
   local speak_to_abella::Boolean = !is_error && !null(any_a.toAbella);

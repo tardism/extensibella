@@ -34,6 +34,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
   modComms.constructorEnv = [];
   modComms.currentModule = fileAST.1.fromJust;
   modComms.config = config;
+  modComms.ignoreDefErrors = true;
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
@@ -85,6 +86,7 @@ String ::= currentModule::QName comms::ListOfCommands
   comms.constructorEnv = proverState.knownConstrs;
   comms.proverState = proverState;
   comms.currentModule = currentModule;
+  comms.ignoreDefErrors = true;
   --use abella_pp to get correct prefixes for relations, types, etc.
   return comms.compiled.abella_pp;
 }

@@ -46,5 +46,9 @@ inherited attribute stateListIn::[(Integer, ProverState)];
 --modified state list produced by command
 synthesized attribute stateListOut::[(Integer, ProverState)];
 
+--whether the tree being processed should ignore errors in determining
+--whether definitions succeed
+inherited attribute ignoreDefErrors::Boolean;
+
 --proof state produced after a command
 inherited attribute newProofState::ProofState;

@@ -137,6 +137,7 @@ function defElementsDefinitions
   defs.relationEnv = buildEnv([]);
   defs.constructorEnv = buildEnv([]);
   defs.currentModule = error("defElementsDefinitions.currentModule");
+  defs.ignoreDefErrors = true;
   return (defs.tys, defs.rels, defs.constrs);
 }
 
