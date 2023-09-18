@@ -98,8 +98,10 @@ ListOfCommands ::= parsers::AllParsers
         else anyParseFailure(result.parseErrors);
   return if isSpace(input)
          then build_interactive_commands(parsers)
-         else addListOfCommands(any_a,
-                 build_interactive_commands(parsers));
+         else if any_a.isQuit
+              then addListOfCommands(any_a, emptyListOfCommands())
+              else addListOfCommands(any_a,
+                      build_interactive_commands(parsers));
 }
 
 
