@@ -262,7 +262,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
               [], body.premises);
 
   top.inductionNums =
-      case lookup(onLabel, zipWith(pair, introsNames,
+      case lookup(onLabel, zip(introsNames,
                               range(1, length(introsNames) + 1))) of
       | just(x) -> x::rest.inductionNums
       | nothing() ->
@@ -270,7 +270,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            "intros names [" ++ implode(", ", introsNames) ++ "]")
       end;
   top.inductionRels =
-      case lookup(onLabel, zipWith(pair, introsNames,
+      case lookup(onLabel, zip(introsNames,
                                    map(snd, body.premises))) of
       --premises already has full relations
       | just(relationMetaterm(r, _, _)) -> r::rest.inductionRels
@@ -567,7 +567,7 @@ top::ExtBody ::= conc::Metaterm
 
   --take everything from before the final implication
   top.premises =
-      map(pair(nothing(), _),
+      map(\ a -> (nothing(), a),
          take(length(conc.splitImplies) - 1, conc.splitImplies));
 
   conc.downSubst = top.downSubst;

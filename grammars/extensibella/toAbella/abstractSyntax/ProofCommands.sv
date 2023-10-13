@@ -70,7 +70,7 @@ top::ProofCommand ::= h::HHint nl::[Integer]
                  | _ -> [errorMsg("Cannot induct on non-relation")]
                  end
                end,
-           zipWith(pair, nl, splits));
+           zip(nl, splits));
 }
 
 

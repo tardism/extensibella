@@ -601,7 +601,7 @@ top::Term ::= contents::ListContents
       end;
   top.unifyEqs =
       case top.unifyWith of
-      | listTerm(c) -> zipWith(pair, contents.toList, c.toList)
+      | listTerm(c) -> zip(contents.toList, c.toList)
       | consTerm(a, b) ->
         [(head(contents.toList), a),
          (foldr(consTerm, nilTerm(), tail(contents.toList)), b)]
@@ -641,7 +641,7 @@ top::Term ::= contents::PairContents
   top.unifyEqs =
       case top.unifyWith of
       | pairTerm(c) ->
-        zipWith(pair, contents.toList, c.toList)
+        zip(contents.toList, c.toList)
       | _ -> []
       end;
   top.unifySubst =

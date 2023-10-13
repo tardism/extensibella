@@ -68,7 +68,7 @@ function safeReplace
                     decorate rest with {
                       substName=p.1; substTerm=basicNameTerm(p.2);
                     }.subst,
-                  t, zipWith(pair, replaceVars, newVars)),
+                  t, zip(replaceVars, newVars)),
           replaceIn);
 
   --replace newVars with the corresponding terms from replaceTerms,
@@ -79,7 +79,7 @@ function safeReplace
                     decorate rest with {
                       substName=p.1; substTerm=p.2;
                     }.subst,
-                  t, zipWith(pair, newVars, replaceTerms)),
+                  t, zip(newVars, replaceTerms)),
           step1);
 
   return step2;

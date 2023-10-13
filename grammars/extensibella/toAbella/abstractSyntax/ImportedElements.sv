@@ -69,7 +69,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
   --theorem must already exist, so don't need to consider Maybe
   local foundSplittee::Metaterm =
       lookup(toSplit, top.knownThms).fromJust;
-  top.thms = zipWith(pair, newNames, splitMetaterm(foundSplittee));
+  top.thms = zip(newNames, splitMetaterm(foundSplittee));
 }
 
 

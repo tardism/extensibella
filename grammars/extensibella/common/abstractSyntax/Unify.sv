@@ -27,7 +27,7 @@ Boolean ::= t1::[Term] t2::[Term]
                   t, zipped),
           t2);
   --unify all the terms in the lists
-  return unifyTermsStep(zipWith(pair, t1, substed));
+  return unifyTermsStep(zip(t1, substed));
 }
 
 

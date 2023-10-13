@@ -17,10 +17,10 @@ function splitList
 Pair<[a] [b]> ::= l::[Pair<a b>]
 {
   return case l of
-         | [] -> pair([], [])
-         | pair(a, b)::rest ->
+         | [] -> ([], [])
+         | (a, b)::rest ->
            case splitList(rest) of
-           | pair(la, lb) -> pair(a::la, b::lb)
+           | (la, lb) -> (a::la, b::lb)
            end
          end;
 }
@@ -80,9 +80,9 @@ Maybe<a> ::= key::String container::[Pair<String a>]
 {
   return case container of
          | [] -> nothing()
-         | pair(a, b)::tl -> if key == a
-                             then just(b)
-                             else findAssociated(key, tl)
+         | (a, b)::tl -> if key == a
+                         then just(b)
+                         else findAssociated(key, tl)
          end;
 }
 
