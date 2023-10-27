@@ -85,6 +85,7 @@ synthesized attribute skeletonText::String;
 
 aspect production extensibleMutualTheoremGroup
 top::ThmElement ::= thms::[(QName, Bindings, ExtBody, String)]
+                    alsos::[(QName, Bindings, ExtBody, String)]
 {
   top.inSkeleton = true;
   top.skeletonText =

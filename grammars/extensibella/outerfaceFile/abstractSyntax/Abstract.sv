@@ -62,8 +62,10 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
        translationConstraintTheorem(n, b, e)
      --if both extensible groups, combine them if they contain shared
      --theorems; otherwise, take the earlier one (thusFar)
-     | extensibleMutualTheoremGroup(thms1)::rest,
-       extensibleMutualTheoremGroup(thms2) ->
+     | extensibleMutualTheoremGroup(thms1, alsos1)::rest,
+       extensibleMutualTheoremGroup(thms2, alsos2) ->
+         --need to check only thms and not alsos because alsos can
+         --be present only when there are thms to start
        if null(intersect(map(fst, thms1), map(fst, thms2)))
        then getFirst(rest, thusFar)
        else getFirst(rest,
@@ -71,7 +73,11 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
                   unionBy(\ p1::(QName, Bindings, ExtBody, String)
                             p2::(QName, Bindings, ExtBody, String) ->
                             p1.1 == p2.1,
-                          thms1, thms2)))
+                          thms1, thms2),
+                  unionBy(\ p1::(QName, Bindings, ExtBody, String)
+                            p2::(QName, Bindings, ExtBody, String) ->
+                            p1.1 == p2.1,
+                          alsos1, alsos2)))
      --if both ext ind, combine them if they contain shared relations;
      --otherwise, take the earlier one (thusFar)
      | extIndElement(rels1)::rest, extIndElement(rels2) ->
@@ -103,8 +109,10 @@ function cleanModThms
       | nonextensibleTheorem(aname, aparams, astmt),
         nonextensibleTheorem(bname, bparams, bstmt) ->
         aname == bname
-      | extensibleMutualTheoremGroup(athms),
-        extensibleMutualTheoremGroup(bthms) ->
+      | extensibleMutualTheoremGroup(athms, _),
+        extensibleMutualTheoremGroup(bthms, _) ->
+        --need to check thms only, not alsos, because thms must be
+        --present to add alsos
         !null(intersect(map(fst, athms), map(fst, bthms)))
       | translationConstraintTheorem(aname, abinds, abody),
         translationConstraintTheorem(bname, bbinds, bbody) ->
@@ -251,10 +259,11 @@ top::TopCommand ::= name::String
 
 
 aspect production extensibleTheoremDeclaration
-top::TopCommand ::= thms::ExtThms
+top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
   top.defElements = [];
-  top.thmElements = [extensibleMutualTheoremGroup(thms.thmInfo)];
+  top.thmElements = [extensibleMutualTheoremGroup(thms.thmInfo,
+                                                  alsos.thmInfo)];
 }
 
 

@@ -236,9 +236,9 @@ top::TopCommand ::= name::String
 
 
 aspect production extensibleTheoremDeclaration
-top::TopCommand ::= thms::ExtThms
+top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
-  top.compiled = just(extensibleTheoremDeclaration(thms.full));
+  top.compiled = just(extensibleTheoremDeclaration(thms.full, alsos.full));
 }
 
 
@@ -248,20 +248,24 @@ top::TopCommand ::= names::[QName]
   local foundThm::[ThmElement] =
       filter(\ t::ThmElement ->
                case t of
-               | extensibleMutualTheoremGroup(thms) ->
-                 map(fst, thms) == names
+               | extensibleMutualTheoremGroup(thms, alsos) ->
+                 setEq(map(fst, thms), names)
                | _ -> false
                end,
              top.proverState.remainingObligations);
   top.compiled =
       case foundThm of
-      | [extensibleMutualTheoremGroup(thms)] ->
+      | [extensibleMutualTheoremGroup(thms, alsos)] ->
         just(
            extensibleTheoremDeclaration(
               foldr(\ p::(QName, Bindings, ExtBody, String)
                       rest::ExtThms ->
                       addExtThms(p.1, p.2, p.3, p.4, rest),
-                    endExtThms(), thms)))
+                    endExtThms(), thms),
+              foldr(\ p::(QName, Bindings, ExtBody, String)
+                      rest::ExtThms ->
+                      addExtThms(p.1, p.2, p.3, p.4, rest),
+                    endExtThms(), alsos)))
       | _ ->
         error("Could not identify theorems when compiling prove; " ++
               "file must be checkable before compilation")

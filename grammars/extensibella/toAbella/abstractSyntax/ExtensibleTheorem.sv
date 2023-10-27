@@ -2,14 +2,20 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 abstract production extensibleTheoremDeclaration
-top::TopCommand ::= thms::ExtThms
+top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
   top.pp = text("Extensible_Theorem") ++
            nest(3, realLine() ++ ppImplode(text(",") ++ realLine(),
                                            thms.pps)) ++
+           (if alsos.len == 0 then text("")
+            else text("also") ++ realLine() ++
+                 nest(3, realLine() ++
+                         ppImplode(text(",") ++ realLine(),
+                                   alsos.pps))) ++
            text(".") ++ realLine();
   --need this for compilation
-  top.abella_pp = "Extensible_Theorem " ++ thms.abella_pp ++ ".\n";
+  top.abella_pp = "Extensible_Theorem " ++ thms.abella_pp ++
+      (if alsos.len == 0 then "" else " also " ++ alsos.abella_pp) ++ ".\n";
 
   production extName::QName =
       if thms.len > 1
@@ -17,27 +23,30 @@ top::TopCommand ::= thms::ExtThms
       else head(thms.provingTheorems).1;
 
   top.toAbella =
-      [anyTopCommand(theoremDeclaration(extName, [],
-                                        thms.toAbella)),
+      [anyTopCommand(theoremDeclaration(extName, [], fullThms)),
        anyProofCommand(inductionTactic(noHint(),
-                                       thms.inductionNums))] ++
-      (if thms.len > 1 then [anyProofCommand(splitTactic())]
-                       else []) ++
+                          thms.inductionNums ++ alsos.inductionNums))] ++
+      (if thms.len + alsos.len > 1
+       then [anyProofCommand(splitTactic())] else []) ++
       map(anyProofCommand,
           head(thms.duringCommands).2); --intros for first thm
+  local fullThms::Metaterm =
+      if alsos.len > 1
+      then andMetaterm(thms.toAbella, alsos.toAbella)
+      else thms.toAbella;
 
-  top.provingTheorems = thms.provingTheorems;
+  top.provingTheorems = thms.provingTheorems ++ alsos.provingTheorems;
 
   top.duringCommands = tail(thms.duringCommands);
 
   top.afterCommands =
-      if thms.len > 1
+      if thms.len + alsos.len > 1
       then [anyTopCommand(splitTheorem(extName,
-                             map(fst, thms.provingTheorems)))]
+               map(fst, thms.provingTheorems ++ alsos.provingTheorems)))]
       else []; --nothing to do after if there is only one being proven
 
   thms.startingGoalNum =
-       if thms.len > 1
+       if thms.len + alsos.len > 1
        then [1]
        else []; --only one thm, so subgoals for it are 1, 2, ...
 
@@ -72,6 +81,13 @@ top::TopCommand ::= thms::ExtThms
   thms.useExtInd = if null(importedIndRels) || !extIndGroup.isJust
                    then []
                    else extIndGroup.fromJust;
+  thms.shouldBeExtensible = true;
+  thms.followingCommands = alsos.duringCommands;
+
+  alsos.shouldBeExtensible = false;
+  alsos.followingCommands = [];
+  alsos.startingGoalNum = thms.nextGoalNum;
+  alsos.useExtInd = []; --don't need anything here
 }
 
 
@@ -94,8 +110,10 @@ top::TopCommand ::= names::[QName]
       | extIndElement(relInfo)::_ ->
         [errorMsg("Expected Ext_Ind obligation for " ++
             implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | extensibleMutualTheoremGroup(thms)::_ ->
+      | extensibleMutualTheoremGroup(thms, alsos)::_ ->
         let expectedNames::[QName] = map(fst, thms)
+        in
+        let expectedAlsoNames::[QName] = map(fst, alsos)
         in
           if setEq(names, expectedNames)
           then []
@@ -108,23 +126,37 @@ top::TopCommand ::= names::[QName]
                        map((.pp), removeAll(names, expectedNames)))))]
                end
           else if subset(expectedNames, names)
-          then [errorMsg("Too many mutually-inductive obligations;" ++
-                   " should not have " ++
-                   implode(", ", map(justShow,
-                      map((.pp), removeAll(expectedNames, names)))))]
+          then let extras::[QName] = removeAll(expectedNames, names)
+               in
+                 if subset(extras, expectedAlsoNames)
+                 then [errorMsg("Should not include names for also theorems " ++
+                          implode(", ", map(justShow, map((.pp), extras))))]
+                 else [errorMsg("Too many mutually-inductive obligations;" ++
+                          " should not have " ++
+                          implode(", ", map(justShow, map((.pp), extras))))]
+               end
           else [errorMsg("Expected inductive obligation" ++
                    (if length(expectedNames) == 1 then "" else "s") ++
                    " " ++ implode(", ", map(justShow,
-                                         map((.pp), expectedNames))))]
-        end
+                                         map((.pp), expectedNames))) ++
+                   if null(alsos) then ""
+                   else " also " ++
+                        implode(", ", map(justShow,
+                                          map((.pp), map(fst, alsos)))))]
+        end end
       | _ ->
         error("Should be impossible (proveObligations.toAbellaMsgs)")
       end;
 
   local obligations::[(QName, Bindings, ExtBody, String)] =
       case head(top.proverState.remainingObligations) of
-      | extensibleMutualTheoremGroup(x) -> x
+      | extensibleMutualTheoremGroup(x, _) -> x
       | _ -> error("Not possible (proveObligations.obligations)")
+      end;
+  local alsosInfo::[(QName, Bindings, ExtBody, String)] =
+      case head(top.proverState.remainingObligations) of
+      | extensibleMutualTheoremGroup(_, x) -> x
+      | _ -> error("Not possible (proveObligations.alsos)")
       end;
 
   local thms::ExtThms =
@@ -132,7 +164,7 @@ top::TopCommand ::= names::[QName]
               addExtThms(p.1, p.2, p.3, p.4, rest),
             endExtThms(), obligations);
   thms.startingGoalNum =
-       if length(names) > 1
+       if length(obligations) + length(alsosInfo) > 1
        then [1]
        else []; --only one thm, so subgoals for it are 1, 2, ...
   thms.typeEnv = top.typeEnv;
@@ -140,34 +172,52 @@ top::TopCommand ::= names::[QName]
   thms.constructorEnv = top.constructorEnv;
   thms.currentModule = top.currentModule;
   thms.useExtInd = []; --don't need it for Prove
+  thms.shouldBeExtensible = true;
+  thms.followingCommands = alsos.duringCommands;
+  local alsos::ExtThms =
+      foldr(\ p::(QName, Bindings, ExtBody, String) rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, rest),
+            endExtThms(), alsosInfo);
+  alsos.startingGoalNum = thms.nextGoalNum;
+  alsos.typeEnv = top.typeEnv;
+  alsos.relationEnv = top.relationEnv;
+  alsos.constructorEnv = top.constructorEnv;
+  alsos.currentModule = top.currentModule;
+  alsos.useExtInd = []; --don't need it for alsos
+  alsos.shouldBeExtensible = false;
+  alsos.followingCommands = [];
 
   production extName::QName =
-      if length(names) > 1
+      if length(names) + alsos.len > 1
       then toQName("$extThm_" ++ toString(genInt()))
       else head(names);
 
   top.toAbella =
-      [anyTopCommand(theoremDeclaration(extName, [],
-                                        thms.toAbella)),
+      [anyTopCommand(theoremDeclaration(extName, [], fullThms)),
        anyProofCommand(inductionTactic(noHint(),
-                                       thms.inductionNums))] ++
-      (if length(names) > 1 then [anyProofCommand(splitTactic())]
-                            else []) ++
+                          thms.inductionNums ++ alsos.inductionNums))] ++
+      (if length(names) + alsos.len > 1
+       then [anyProofCommand(splitTactic())]
+       else []) ++
       map(anyProofCommand,
           head(thms.duringCommands).2); --intros for first thm
+  local fullThms::Metaterm =
+      if alsos.len > 1
+      then andMetaterm(thms.toAbella, alsos.toAbella)
+      else thms.toAbella;
 
   top.provingTheorems =
       map(\ p::(QName, Bindings, ExtBody, String) -> (p.1, p.3.thm),
-          obligations);
+          obligations ++ alsosInfo);
 
   top.duringCommands =
       case head(top.proverState.remainingObligations) of
-      | extensibleMutualTheoremGroup(_) -> tail(thms.duringCommands)
+      | extensibleMutualTheoremGroup(_, _) -> tail(thms.duringCommands)
       | _ -> [] --shouldn't really be accessed
       end;
 
   top.afterCommands =
-      if length(names) > 1
+      if length(names) + length(alsosInfo) > 1
       then [anyTopCommand(splitTheorem(extName,
                              map(fst, top.provingTheorems)))]
       else []; --nothing to split, so nothing to do
@@ -182,14 +232,17 @@ nonterminal ExtThms with
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
    inductionNums, inductionRels,
-   useExtInd,
-   startingGoalNum, duringCommands,
+   useExtInd, shouldBeExtensible,
+   startingGoalNum, nextGoalNum, followingCommands, duringCommands,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          proverState, toAbellaMsgs, useExtInd on ExtThms;
+          proverState, toAbellaMsgs, useExtInd, shouldBeExtensible,
+          followingCommands on ExtThms;
 
 --prefix for the subgoals arising from a theorem
 inherited attribute startingGoalNum::SubgoalNum;
+--next one afterward
+synthesized attribute nextGoalNum::SubgoalNum;
 --gather indices for induction
 synthesized attribute inductionNums::[Integer];
 --Relations on which we are doing induction
@@ -197,6 +250,10 @@ synthesized attribute inductionRels::[QName];
 --Ext_Ind definition to use for preservability if needed
 inherited attribute useExtInd::[(QName, [String], [Term],
                                  QName, String, String)];
+--commands following this set of ExtThms
+inherited attribute followingCommands::[(SubgoalNum, [ProofCommand])];
+--whether the theorem is expected to be extensible
+inherited attribute shouldBeExtensible::Boolean;
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -213,7 +270,9 @@ top::ExtThms ::=
   top.inductionNums = [];
   top.inductionRels = [];
 
-  top.duringCommands = [];
+  top.duringCommands = top.followingCommands;
+
+  top.nextGoalNum = top.startingGoalNum;
 }
 
 
@@ -298,21 +357,33 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         in
           if !decRel.relFound
           then [] --covered by other errors
-          else if !decRel.fullRel.isExtensible
-          then [errorMsg("Can only induct on extensible relations " ++
-                   "for extensible theorems; " ++
-                   justShow(decRel.fullRel.name.pp) ++
-                   " is not extensible")]
-          else case head(drop(decRel.fullRel.pcIndex, args.toList)) of
-               | nameTerm(q, _) when !q.isQualified -> [] --var
-               | _ -> --anything else is structured
-                 [errorMsg("Primary component of induction " ++
-                     "relation cannot be filled but is")]
-               end
+          else if top.shouldBeExtensible
+             --should be an extensible theorem
+          then if !decRel.fullRel.isExtensible
+               then [errorMsg("Can only induct on extensible relations " ++
+                        "for extensible theorem " ++ justShow(name.pp) ++
+                        "; " ++ justShow(decRel.fullRel.name.pp) ++
+                        " is not extensible")]
+               else case head(drop(decRel.fullRel.pcIndex, args.toList)) of
+                    | nameTerm(q, _) when !q.isQualified -> [] --var
+                    | _ -> --anything else is structured
+                      [errorMsg("Primary component of induction " ++
+                          "relation cannot be filled but is in theorem " ++
+                          justShow(name.pp))]
+                    end
+             --should NOT be an extensible theorem
+          else if decRel.fullRel.isExtensible
+               then [errorMsg("Cannot induct on extensible relations " ++
+                        "for non-extensible theorem " ++ justShow(name.pp) ++
+                        "; " ++ justShow(decRel.fullRel.name.pp) ++
+                        " is extensible")]
+               else []
         end
-      | just(m) ->
+      | just(m) when top.shouldBeExtensible ->
         [errorMsg("Can only induct on extensible relations for " ++
-            "extensible theorems, not " ++ justShow(m.pp))]
+            "extensible theorem " ++ justShow(name.pp) ++
+            ", not " ++ justShow(m.pp))]
+      | _ -> [] --not extensible, so whatever is allowable
       end;
 
   --check name is qualified with appropriate module
@@ -505,19 +576,27 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
     to the last group of commands here.
   -}
   local combinedCommands::[(SubgoalNum, [ProofCommand])] =
-      if !null(expectedSubgoals) && !last(expectedSubgoals).2 &&
-         !null(rest.duringCommands) && !null(subgoalDuringCommands)
-      then let lastSubgoal::(SubgoalNum, [ProofCommand]) =
-               last(subgoalDuringCommands)
-           in
-             take(length(subgoalDuringCommands) - 1,
-                  subgoalDuringCommands) ++
-             [(lastSubgoal.1,
-               lastSubgoal.2 ++ head(rest.duringCommands).2)] ++
-             tail(rest.duringCommands)
-           end
-      else subgoalDuringCommands ++ rest.duringCommands;
+      if top.shouldBeExtensible
+      then if !null(expectedSubgoals) && !last(expectedSubgoals).2 &&
+              !null(rest.duringCommands) && !null(subgoalDuringCommands)
+           then let lastSubgoal::(SubgoalNum, [ProofCommand]) =
+                    last(subgoalDuringCommands)
+                in
+                  take(length(subgoalDuringCommands) - 1,
+                       subgoalDuringCommands) ++
+                  [(lastSubgoal.1,
+                    lastSubgoal.2 ++ head(rest.duringCommands).2)] ++
+                  tail(rest.duringCommands)
+                end
+           else subgoalDuringCommands ++ rest.duringCommands
+      else rest.duringCommands;
   top.duringCommands =
+      if top.shouldBeExtensible
+      then extensibleDuringCommands
+      else alsoDuringCommands;
+  --during commands for an extensible theorem, where we do case and
+  --   may not have any subgoals after that
+  local extensibleDuringCommands::[(SubgoalNum, [ProofCommand])] =
       --intros and case immediately
       [(top.startingGoalNum,
         [introsTactic(introsNames),
@@ -531,6 +610,21 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
           head(subgoalDurings).1 == 1
       then tail(combinedCommands)
       else combinedCommands;
+  --during commands for a non-extensible theorem, where we do not do
+  --   case automatically and thus must have a subgoal to solve
+  local alsoDuringCommands::[(SubgoalNum, [ProofCommand])] =
+      if fullName.moduleName == top.currentModule
+         --new theorem:  solve, intros immediately
+      then [(top.startingGoalNum, [introsTactic(introsNames)])] ++
+           combinedCommands
+         --imported theorem:  skip it
+      else if !null(combinedCommands)
+           then (top.startingGoalNum,
+                 skipTactic()::head(combinedCommands).2)::tail(combinedCommands)
+           else [(top.startingGoalNum, [skipTactic()])];
+
+  --pass it up
+  top.nextGoalNum = rest.nextGoalNum;
 }
 
 

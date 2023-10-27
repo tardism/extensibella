@@ -292,7 +292,7 @@ top::TopCommand ::= name::String
 
 
 aspect production extensibleTheoremDeclaration
-top::TopCommand ::= thms::ExtThms
+top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
   top.tys = [];
   top.rels = [];

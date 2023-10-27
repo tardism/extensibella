@@ -212,7 +212,15 @@ concrete productions top::PureTopCommand_c
         case thms.ast of
         | left(msg) -> anyParseFailure(msg)
         | right(lst) ->
-          anyTopCommand(extensibleTheoremDeclaration(lst))
+          anyTopCommand(extensibleTheoremDeclaration(lst, endExtThms()))
+        end; }
+| 'Extensible_Theorem' thms::TheoremStmts_c 'also' alsos::TheoremStmts_c '.'
+  { top.ast =
+        case thms.ast, alsos.ast of
+        | left(msg), _ -> anyParseFailure(msg)
+        | _, left(msg) -> anyParseFailure(msg)
+        | right(lstT), right(lstA) ->
+          anyTopCommand(extensibleTheoremDeclaration(lstT, lstA))
         end; }
 | 'Prove' thms::QnameList_c '.'
   { top.ast = anyTopCommand(proveObligations(thms.ast)); }

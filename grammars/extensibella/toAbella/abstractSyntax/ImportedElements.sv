@@ -18,6 +18,7 @@ abstract production extensibleMutualTheoremGroup
 top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction measure)]
    thms::[(QName, Bindings, ExtBody, String)]
+   alsos::[(QName, Bindings, ExtBody, String)]
 {
   top.pp = error("extensibleMutualTheoremGroup.pp");
 
@@ -26,7 +27,7 @@ top::ThmElement ::=
 
   top.thms =
       map(\ p::(QName, Bindings, ExtBody, String) ->
-            (p.1, p.3.thm), thms);
+            (p.1, p.3.thm), thms ++ alsos);
 }
 
 

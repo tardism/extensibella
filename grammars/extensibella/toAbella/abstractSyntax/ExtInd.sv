@@ -297,9 +297,12 @@ top::TopCommand ::= rels::[QName]
       | translationConstraintTheorem(q, x, b)::_ ->
         [errorMsg("Expected translation constraint obligation " ++
             justShow(q.pp))]
-      | extensibleMutualTheoremGroup(thms)::_ ->
+      | extensibleMutualTheoremGroup(thms, alsos)::_ ->
         [errorMsg("Expected theorem obligations " ++
-            implode(", ", map(justShow, map((.pp), map(fst, thms)))))]
+            implode(", ", map(justShow, map((.pp), map(fst, thms)))) ++
+            if null(alsos) then ""
+            else " also " ++
+                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
       | extIndElement(relInfo)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -427,6 +430,8 @@ top::TopCommand ::= rels::[QName]
   computeDuringCommands.currentModule = top.currentModule;
   computeDuringCommands.constructorEnv = top.constructorEnv;
   computeDuringCommands.useExtInd = []; --none needed here
+  computeDuringCommands.shouldBeExtensible = true;
+  computeDuringCommands.followingCommands = [];
   --tail because the first one is intros/case for first thm
   top.duringCommands = tail(computeDuringCommands.duringCommands);
   --nothing to do, since we don't need the theorems until composition

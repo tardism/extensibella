@@ -112,11 +112,14 @@ top::TopCommand ::= name::QName
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
-      | extensibleMutualTheoremGroup(thms)::_ ->
+      | extensibleMutualTheoremGroup(thms, alsos)::_ ->
         [errorMsg("Expected inductive obligation" ++
             (if length(thms) == 1 then "" else "s") ++
             " " ++ implode(", ",
-                      map(justShow, map((.pp), map(fst, thms)))))]
+                      map(justShow, map((.pp), map(fst, thms)))) ++
+            if null(alsos) then ""
+            else " also " ++
+                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
       | translationConstraintTheorem(q, x, b)::_ ->
         if name == q
         then []
