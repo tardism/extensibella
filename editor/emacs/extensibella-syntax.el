@@ -10,7 +10,7 @@
      . font-lock-keyword-face)
     ;;Auxiliary words to go with them
     ;; as | by
-    ("\\<\\(\\(as\\)\\|\\(by\\)\\)\\>"
+    ("\\<\\(\\(as\\)\\|\\(by\\)\\)\\|\\(also\\)\\>"
      . font-lock-keyword-face)
     ;;Highlighting types
     ("\\<\\(type\\)\\>"
