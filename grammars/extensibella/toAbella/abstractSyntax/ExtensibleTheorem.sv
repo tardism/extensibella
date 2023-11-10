@@ -97,6 +97,20 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
               | nothing() -> ((p.2, p.3)::rest.1, rest.2)
               end, ([], []), thms.renamedIHs ++ alsos.renamedIHs).2;
 
+  --check for naming thms the same thing
+  top.toAbellaMsgs <-
+      map(\ q::QName ->
+            errorMsg("Theorem " ++ justShow(q.pp) ++ " is declared " ++
+                     "multiple times"),
+                      --(seen,    multiple)
+          foldr(\ q::QName rest::([QName], [QName]) ->
+                  if !contains(q, rest.1)
+                  then (q::rest.1, rest.2)
+                  else if contains(q, rest.2)
+                  then (rest.1, rest.2)
+                  else (rest.1, q::rest.2),
+                ([], []), thms.thmNames ++ alsos.thmNames).2);
+
   thms.useExtInd = if null(importedIndRels) || !extIndGroup.isJust
                    then []
                    else extIndGroup.fromJust;
@@ -269,7 +283,7 @@ nonterminal ExtThms with
    provingTheorems,
    inductionNums, inductionRels,
    useExtInd, shouldBeExtensible,
-   expectedIHNum, renamedIHs, specialIHNames,
+   expectedIHNum, renamedIHs, specialIHNames, thmNames,
    startingGoalNum, nextGoalNum, followingCommands, duringCommands,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
@@ -297,6 +311,8 @@ inherited attribute expectedIHNum::Integer;
 synthesized attribute renamedIHs::[(String, String, String)];
 --special names for IH to check they don't interfere with labels
 inherited attribute specialIHNames::[(String, String, String)];
+--thm names used
+synthesized attribute thmNames::[QName];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -318,6 +334,8 @@ top::ExtThms ::=
   top.renamedIHs = [];
 
   top.nextGoalNum = top.startingGoalNum;
+
+  top.thmNames = [];
 }
 
 
@@ -692,6 +710,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
   --pass it up
   top.nextGoalNum = rest.nextGoalNum;
+  top.thmNames = fullName::rest.thmNames;
 }
 
 
