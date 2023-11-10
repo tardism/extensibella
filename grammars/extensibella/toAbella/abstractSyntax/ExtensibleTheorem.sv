@@ -86,6 +86,17 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
                                map(justShow, map((.pp), missing))))]
            end;
 
+  --check for naming IH's the same thing
+  top.toAbellaMsgs <-
+      foldl(\ rest::([(String, String)], [Message])
+              p::(String, String, String) ->
+              case lookup(p.2, rest.1) of
+              | just(thm) ->
+                (rest.1, errorMsg("IH name " ++ p.2 ++
+                            " already used by " ++ thm)::rest.2)
+              | nothing() -> ((p.2, p.3)::rest.1, rest.2)
+              end, ([], []), thms.renamedIHs ++ alsos.renamedIHs).2;
+
   thms.useExtInd = if null(importedIndRels) || !extIndGroup.isJust
                    then []
                    else extIndGroup.fromJust;
