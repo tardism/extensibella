@@ -16,9 +16,9 @@ inherited attribute knownThms::[(QName, Metaterm)];
 
 abstract production extensibleMutualTheoremGroup
 top::ThmElement ::=
-   --[(thm name, var bindings, thm statement, induction measure)]
-   thms::[(QName, Bindings, ExtBody, String)]
-   alsos::[(QName, Bindings, ExtBody, String)]
+   --[(thm name, var bindings, thm statement, induction measure, IH name)]
+   thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
+   alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
 {
   top.pp = error("extensibleMutualTheoremGroup.pp");
 
@@ -26,7 +26,7 @@ top::ThmElement ::=
   top.is_nonextensible = false;
 
   top.thms =
-      map(\ p::(QName, Bindings, ExtBody, String) ->
+      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
             (p.1, p.3.thm), thms ++ alsos);
 }
 

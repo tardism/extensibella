@@ -57,10 +57,10 @@ top::ExtThms ::=
 
 aspect production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
-                 onLabel::String rest::ExtThms
+                 onLabel::String asName::Maybe<String> rest::ExtThms
 {
   top.full =
-      addExtThms(fullName, bindings, body.full, onLabel, rest.full);
+      addExtThms(fullName, bindings, body.full, onLabel, asName, rest.full);
 }
 
 

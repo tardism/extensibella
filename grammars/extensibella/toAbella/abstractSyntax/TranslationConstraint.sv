@@ -16,6 +16,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       else addQNameBase(top.currentModule, name.shortName);
 
   body.boundNames = binds.usedNames;
+  body.specialIHNames = [];
 
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem

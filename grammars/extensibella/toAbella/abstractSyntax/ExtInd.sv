@@ -420,7 +420,7 @@ top::TopCommand ::= rels::[QName]
                        emptyRestriction()),
                  addLabelExtBody("Acc", trueMetaterm(),
                     endExtBody(trueMetaterm()))),
-                 "Rel", rest),
+                 "Rel", nothing(), rest),
             endExtThms(), fullRelInfo);
   computeDuringCommands.startingGoalNum =
       --if only one thm, subgoals for it are 1, 2, ...

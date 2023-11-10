@@ -23,11 +23,19 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       else head(thms.provingTheorems).1;
 
   top.toAbella =
+      --declare theorems
       [anyTopCommand(theoremDeclaration(extName, [], fullThms)),
+      --declare inductions
        anyProofCommand(inductionTactic(noHint(),
                           thms.inductionNums ++ alsos.inductionNums))] ++
+      --rename IH's
+      map(\ p::(String, String, String) ->
+            anyProofCommand(renameTactic(p.1, p.2)),
+          thms.renamedIHs ++ alsos.renamedIHs) ++
+      --split
       (if thms.len + alsos.len > 1
        then [anyProofCommand(splitTactic())] else []) ++
+      --initial set of during commands, which is at least intros
       map(anyProofCommand,
           head(thms.duringCommands).2); --intros for first thm
   local fullThms::Metaterm =
@@ -83,11 +91,15 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
                    else extIndGroup.fromJust;
   thms.shouldBeExtensible = true;
   thms.followingCommands = alsos.duringCommands;
+  thms.expectedIHNum = 0;
+  thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
 
   alsos.shouldBeExtensible = false;
   alsos.followingCommands = [];
   alsos.startingGoalNum = thms.nextGoalNum;
   alsos.useExtInd = []; --don't need anything here
+  alsos.expectedIHNum = thms.len;
+  alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
 }
 
 
@@ -148,20 +160,20 @@ top::TopCommand ::= names::[QName]
         error("Should be impossible (proveObligations.toAbellaMsgs)")
       end;
 
-  local obligations::[(QName, Bindings, ExtBody, String)] =
+  local obligations::[(QName, Bindings, ExtBody, String, Maybe<String>)] =
       case head(top.proverState.remainingObligations) of
       | extensibleMutualTheoremGroup(x, _) -> x
       | _ -> error("Not possible (proveObligations.obligations)")
       end;
-  local alsosInfo::[(QName, Bindings, ExtBody, String)] =
+  local alsosInfo::[(QName, Bindings, ExtBody, String, Maybe<String>)] =
       case head(top.proverState.remainingObligations) of
       | extensibleMutualTheoremGroup(_, x) -> x
       | _ -> error("Not possible (proveObligations.alsos)")
       end;
 
   local thms::ExtThms =
-      foldr(\ p::(QName, Bindings, ExtBody, String) rest::ExtThms ->
-              addExtThms(p.1, p.2, p.3, p.4, rest),
+      foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
             endExtThms(), obligations);
   thms.startingGoalNum =
        if length(obligations) + length(alsosInfo) > 1
@@ -174,9 +186,11 @@ top::TopCommand ::= names::[QName]
   thms.useExtInd = []; --don't need it for Prove
   thms.shouldBeExtensible = true;
   thms.followingCommands = alsos.duringCommands;
+  thms.expectedIHNum = 0;
+  thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
   local alsos::ExtThms =
-      foldr(\ p::(QName, Bindings, ExtBody, String) rest::ExtThms ->
-              addExtThms(p.1, p.2, p.3, p.4, rest),
+      foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
             endExtThms(), alsosInfo);
   alsos.startingGoalNum = thms.nextGoalNum;
   alsos.typeEnv = top.typeEnv;
@@ -186,6 +200,8 @@ top::TopCommand ::= names::[QName]
   alsos.useExtInd = []; --don't need it for alsos
   alsos.shouldBeExtensible = false;
   alsos.followingCommands = [];
+  alsos.expectedIHNum = thms.len; --because they start with 0
+  alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
 
   production extName::QName =
       if length(names) + alsos.len > 1
@@ -193,12 +209,21 @@ top::TopCommand ::= names::[QName]
       else head(names);
 
   top.toAbella =
+      --declare theorems
       [anyTopCommand(theoremDeclaration(extName, [], fullThms)),
+      --declare inductions
        anyProofCommand(inductionTactic(noHint(),
                           thms.inductionNums ++ alsos.inductionNums))] ++
+      --rename IH's
+      map(\ p::(String, String, String) ->
+            anyProofCommand(renameTactic(p.1, p.2)),
+          thms.renamedIHs ++ alsos.renamedIHs) ++
+      --split
       (if length(names) + alsos.len > 1
        then [anyProofCommand(splitTactic())]
        else []) ++
+      --initial set of during commands, which is at least intros, but
+      --   probably also some skips here
       map(anyProofCommand,
           head(thms.duringCommands).2); --intros for first thm
   local fullThms::Metaterm =
@@ -207,8 +232,8 @@ top::TopCommand ::= names::[QName]
       else thms.toAbella;
 
   top.provingTheorems =
-      map(\ p::(QName, Bindings, ExtBody, String) -> (p.1, p.3.thm),
-          obligations ++ alsosInfo);
+      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+            (p.1, p.3.thm), obligations ++ alsosInfo);
 
   top.duringCommands =
       case head(top.proverState.remainingObligations) of
@@ -233,11 +258,12 @@ nonterminal ExtThms with
    provingTheorems,
    inductionNums, inductionRels,
    useExtInd, shouldBeExtensible,
+   expectedIHNum, renamedIHs, specialIHNames,
    startingGoalNum, nextGoalNum, followingCommands, duringCommands,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           proverState, toAbellaMsgs, useExtInd, shouldBeExtensible,
-          followingCommands on ExtThms;
+          followingCommands, specialIHNames on ExtThms;
 
 --prefix for the subgoals arising from a theorem
 inherited attribute startingGoalNum::SubgoalNum;
@@ -254,6 +280,12 @@ inherited attribute useExtInd::[(QName, [String], [Term],
 inherited attribute followingCommands::[(SubgoalNum, [ProofCommand])];
 --whether the theorem is expected to be extensible
 inherited attribute shouldBeExtensible::Boolean;
+--the number the IH should be (0 for "IH")
+inherited attribute expectedIHNum::Integer;
+--new names for IH for various theorems (old name, new name, thm name)
+synthesized attribute renamedIHs::[(String, String, String)];
+--special names for IH to check they don't interfere with labels
+inherited attribute specialIHNames::[(String, String, String)];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -272,21 +304,26 @@ top::ExtThms ::=
 
   top.duringCommands = top.followingCommands;
 
+  top.renamedIHs = [];
+
   top.nextGoalNum = top.startingGoalNum;
 }
 
 
 abstract production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
-                 onLabel::String rest::ExtThms
+                 onLabel::String asName::Maybe<String> rest::ExtThms
 {
   top.pps = (name.pp ++ text(" : forall ") ++
              ppImplode(text(" "), bindings.pps) ++ text(",") ++
              nest(3, realLine() ++ body.pp) ++ realLine() ++
-             text("on " ++ onLabel))::rest.pps;
+             text("on " ++ onLabel) ++
+             if asName.isJust then text(" as " ++ asName.fromJust)
+                              else text(""))::rest.pps;
   top.abella_pp =
       name.abella_pp ++ " : forall " ++ bindings.abella_pp ++ ", " ++
       body.abella_pp ++ " on " ++ onLabel ++
+      (if asName.isJust then " as " ++ asName.fromJust else "") ++
       if rest.abella_pp == "" then "" else ", " ++ rest.abella_pp;
 
   top.len = 1 + rest.len;
@@ -623,6 +660,25 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                  skipTactic()::head(combinedCommands).2)::tail(combinedCommands)
            else [(top.startingGoalNum, [skipTactic()])];
 
+  --can't name IH to something that might be an Abella-generated IH name
+  top.toAbellaMsgs <-
+      case asName of
+      | nothing() -> []
+      | just(n) ->
+        if matches_IH_form(n)
+        then [errorMsg("Cannot have IH name in as clause of form \"IH<num>\"")]
+        else []
+      end;
+  top.renamedIHs =
+      case asName of
+      | nothing() -> []
+      | just(n) when top.expectedIHNum == 0 -> [("IH", n, name.shortName)]
+      | just(n) -> [("IH" ++ toString(top.expectedIHNum), n, name.shortName)]
+      end ++ rest.renamedIHs;
+
+  --next number
+  rest.expectedIHNum = top.expectedIHNum + 1;
+
   --pass it up
   top.nextGoalNum = rest.nextGoalNum;
 }
@@ -637,10 +693,11 @@ nonterminal ExtBody with
    premises, thm,
    boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState,
-   upSubst, downSubst, downVarTys, tyVars;
+   upSubst, downSubst, downVarTys, tyVars,
+   specialIHNames;
 propagate typeEnv, constructorEnv, relationEnv,
           currentModule, proverState, toAbellaMsgs,
-          downVarTys, tyVars on ExtBody;
+          downVarTys, tyVars, specialIHNames on ExtBody;
 
 --premises should have full version of premise
 synthesized attribute premises::[(Maybe<String>, Metaterm)];
@@ -697,6 +754,24 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
          isDigit(substring(1, length(label), label))
       then [errorMsg("Cannot declare label of form \"H<num>\"")]
       else [];
+  --labels of the form IH<num> may interfere with inductive hypotheses
+  top.toAbellaMsgs <-
+      if matches_IH_form(label)
+      then [errorMsg("Cannot declare label of form \"IH<num>\"")]
+      else [];
+  --cannot have names of
+  top.toAbellaMsgs <-
+      let whichThm::Maybe<String> =
+          lookup(label, map(snd, top.specialIHNames))
+      in
+        case whichThm of
+        | nothing() -> []
+        | just(thm) ->
+          [errorMsg("Label " ++ label ++ " is the name of the IH " ++
+                    "for " ++ thm ++ " and cannot be used as a " ++
+                    "premise label")]
+        end
+      end;
 }
 
 
@@ -721,4 +796,14 @@ top::ExtBody ::= m::Metaterm rest::ExtBody
   m.downSubst = top.downSubst;
   rest.downSubst = m.upSubst;
   top.upSubst = rest.upSubst;
+}
+
+
+
+
+--check if it is IH[0-9]*
+function matches_IH_form
+Boolean ::= n::String
+{
+  return startsWith(n, "IH") && isDigit(substring(2, length(n), n));
 }

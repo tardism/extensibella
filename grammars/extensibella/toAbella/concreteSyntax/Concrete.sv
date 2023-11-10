@@ -278,7 +278,16 @@ concrete productions top::TheoremStmts_c
         | left(msg) -> left(msg)
         | right(b) ->
           right(addExtThms(toQName(name.lexeme), binds.ast, b,
-                           label.lexeme, endExtThms()))
+                           label.lexeme, nothing(), endExtThms()))
+        end; }
+| name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
+  'on' label::Id_t 'as' nameIH::Id_t
+  { top.ast =
+        case body.ast of
+        | left(msg) -> left(msg)
+        | right(b) ->
+          right(addExtThms(toQName(name.lexeme), binds.ast, b,
+                   label.lexeme, just(nameIH.lexeme), endExtThms()))
         end; }
 | name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
   'on' label::Id_t ',' rest::TheoremStmts_c
@@ -289,7 +298,18 @@ concrete productions top::TheoremStmts_c
         | _, left(msg) -> left(msg)
         | right(b), right(rst) ->
           right(addExtThms(toQName(name.lexeme), binds.ast, b,
-                           label.lexeme, rst))
+                           label.lexeme, nothing(), rst))
+        end; }
+| name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
+  'on' label::Id_t 'as' nameIH::Id_t ',' rest::TheoremStmts_c
+  { top.ast =
+        case body.ast, rest.ast of
+        | left(msg1), left(msg2) -> left(msg1 ++ "\n" ++ msg2)
+        | left(msg), _ -> left(msg)
+        | _, left(msg) -> left(msg)
+        | right(b), right(rst) ->
+          right(addExtThms(toQName(name.lexeme), binds.ast, b,
+                           label.lexeme, just(nameIH.lexeme), rst))
         end; }
 | name::Qname_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
   'on' label::Id_t
@@ -298,7 +318,16 @@ concrete productions top::TheoremStmts_c
         | left(msg) -> left(msg)
         | right(b) ->
           right(addExtThms(toQName(name.lexeme), binds.ast, b,
-                           label.lexeme, endExtThms()))
+                           label.lexeme, nothing(), endExtThms()))
+        end; }
+| name::Qname_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
+  'on' label::Id_t 'as' nameIH::Id_t
+  { top.ast =
+        case body.ast of
+        | left(msg) -> left(msg)
+        | right(b) ->
+          right(addExtThms(toQName(name.lexeme), binds.ast, b,
+                   label.lexeme, just(nameIH.lexeme), endExtThms()))
         end; }
 | name::Qname_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
   'on' label::Id_t ',' rest::TheoremStmts_c
@@ -309,10 +338,23 @@ concrete productions top::TheoremStmts_c
         | _, left(msg) -> left(msg)
         | right(b), right(rst) ->
           right(addExtThms(toQName(name.lexeme), binds.ast, b,
-                           label.lexeme, rst))
+                           label.lexeme, nothing(), rst))
+        end; }
+| name::Qname_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
+  'on' label::Id_t 'as' nameIH::Id_t ',' rest::TheoremStmts_c
+  { top.ast =
+        case body.ast, rest.ast of
+        | left(msg1), left(msg2) -> left(msg1 ++ "\n" ++ msg2)
+        | left(msg), _ -> left(msg)
+        | _, left(msg) -> left(msg)
+        | right(b), right(rst) ->
+          right(addExtThms(toQName(name.lexeme), binds.ast, b,
+                           label.lexeme, just(nameIH.lexeme), rst))
         end; }
   --These are to get errors which are more helpful, because I forget
   --   the labels a lot and can't figure out why it doesn't work.
+  --I'm assuming, at least for now, that we don't need these with 'as'
+  --   clauses.
 | name::Id_t ':' 'forall' binds::BindingList_c ',' body::ExtBody_c
   { top.ast =
         left("Must include relation on which to do induction for theorem " ++

@@ -70,12 +70,12 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
        then getFirst(rest, thusFar)
        else getFirst(rest,
                extensibleMutualTheoremGroup(
-                  unionBy(\ p1::(QName, Bindings, ExtBody, String)
-                            p2::(QName, Bindings, ExtBody, String) ->
+                  unionBy(\ p1::(QName, Bindings, ExtBody, String, Maybe<String>)
+                            p2::(QName, Bindings, ExtBody, String, Maybe<String>) ->
                             p1.1 == p2.1,
                           thms1, thms2),
-                  unionBy(\ p1::(QName, Bindings, ExtBody, String)
-                            p2::(QName, Bindings, ExtBody, String) ->
+                  unionBy(\ p1::(QName, Bindings, ExtBody, String, Maybe<String>)
+                            p2::(QName, Bindings, ExtBody, String, Maybe<String>) ->
                             p1.1 == p2.1,
                           alsos1, alsos2)))
      --if both ext ind, combine them if they contain shared relations;
@@ -320,7 +320,7 @@ attribute
    thmInfo
 occurs on ExtThms;
 
-synthesized attribute thmInfo::[(QName, Bindings, ExtBody, String)];
+synthesized attribute thmInfo::[(QName, Bindings, ExtBody, String, Maybe<String>)];
 
 aspect production endExtThms
 top::ExtThms ::=
@@ -331,9 +331,9 @@ top::ExtThms ::=
 
 aspect production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
-                 onLabel::String rest::ExtThms
+                 onLabel::String asName::Maybe<String> rest::ExtThms
 {
-  top.thmInfo = (name, bindings, body, onLabel)::rest.thmInfo;
+  top.thmInfo = (name, bindings, body, onLabel, asName)::rest.thmInfo;
 }
 
 
