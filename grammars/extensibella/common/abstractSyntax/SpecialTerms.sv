@@ -435,6 +435,8 @@ top::Term ::= ty::QName
 
   top.subst = top;
 
+  top.isConstant = true;
+
   top.unifySuccess =
       case top.unifyWith of
       | unknownTerm(ty2) -> ty == ty2
@@ -468,6 +470,8 @@ top::Term ::= i::Integer
 
   top.subst = top;
 
+  top.isConstant = true;
+
   top.unifySuccess =
       case top.unifyWith of
       | intTerm(j) -> i == j
@@ -500,6 +504,8 @@ top::Term ::= contents::String
 
   top.subst = top;
 
+  top.isConstant = true;
+
   top.unifySuccess =
       case top.unifyWith of
       | stringTerm(s) -> contents == s
@@ -529,6 +535,8 @@ top::Term ::=
   top.headConstructor = error("trueTerm.headConstructor not valid");
 
   top.subst = top;
+
+  top.isConstant = true;
 
   top.unifySuccess =
       case top.unifyWith of
@@ -560,6 +568,8 @@ top::Term ::=
 
   top.subst = top;
 
+  top.isConstant = true;
+
   top.unifySuccess =
       case top.unifyWith of
       | falseTerm() -> true
@@ -590,6 +600,8 @@ top::Term ::= contents::ListContents
   top.headConstructor = error("listTerm.headConstructor not valid");
 
   top.subst = listTerm(contents.subst);
+
+  top.isConstant = contents.isConstant;
 
   top.unifySuccess =
       case top.unifyWith of
@@ -632,6 +644,8 @@ top::Term ::= contents::PairContents
 
   top.subst = pairTerm(contents.subst);
 
+  top.isConstant = contents.isConstant;
+
   top.unifySuccess =
       case top.unifyWith of
       | pairTerm(c) -> contents.len == c.len
@@ -668,6 +682,8 @@ top::Term ::= char::String
 
   top.subst = top;
 
+  top.isConstant = true;
+
   top.unifySuccess =
       case top.unifyWith of
       | charTerm(c) -> char == c
@@ -694,6 +710,7 @@ nonterminal ListContents with
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<ListContents>,
    boundNames, usedNames,
+   isConstant,
    type, upSubst, downSubst, downVarTys, tyVars; --type is type of contents
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on ListContents;
@@ -707,6 +724,8 @@ top::ListContents ::=
   top.len = 0;
   top.subst = top;
 
+  top.isConstant = true;
+
   top.type = varType("__EmptyListContents" ++ toString(genInt()));
   top.upSubst = top.downSubst;
 }
@@ -719,6 +738,8 @@ top::ListContents ::= t::Term rest::ListContents
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
   top.subst = addListContents(t.subst, rest.subst);
+
+  top.isConstant = t.isConstant && rest.isConstant;
 
   top.type = t.type;
 
@@ -737,6 +758,7 @@ nonterminal PairContents with
    typeEnv, constructorEnv, relationEnv,
    substName, substTerm, subst<PairContents>,
    boundNames, usedNames,
+   isConstant,
    type, upSubst, downSubst, downVarTys, tyVars; --type is full pair type
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on PairContents;
@@ -749,6 +771,8 @@ top::PairContents ::= t::Term
   top.toList = [t];
   top.len = 1;
   top.subst = singlePairContents(t.subst);
+
+  top.isConstant = true;
 
   top.type = t.type;
   t.downSubst = top.downSubst;
@@ -764,6 +788,8 @@ top::PairContents ::= t::Term rest::PairContents
   top.toList = t::rest.toList;
   top.len = 1 + rest.len;
   top.subst = addPairContents(t.subst, rest.subst);
+
+  top.isConstant = true;
 
   top.type = functorType(functorType(nameType(toQName("pair")),
                             t.type), rest.type);

@@ -64,6 +64,9 @@ terminal Unfold_t       'unfold'       lexer classes {TACTIC};
 terminal With_t         'with'         lexer classes {TACTIC};
 terminal Witness_t      'witness'      lexer classes {TACTIC};
 
+--New for convenience
+terminal Compute_t      'compute'      lexer classes {TACTIC};
+
 --To show the current state for PG
 terminal ShowCurrent_t  'Show $$current.'  lexer classes {COMMAND};
 

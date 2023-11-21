@@ -295,7 +295,7 @@ top::Binder::=
 nonterminal Term with
    pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
-   isStructured, headConstructor, isUnknownTerm,
+   isStructured, headConstructor, isUnknownTerm, isConstant,
    substName, substTerm, subst<Term>,
    unifyWith<Term>, unifySuccess, unifyEqs, unifySubst,
    boundNames, usedNames,
@@ -322,6 +322,8 @@ top::Term ::= f::Term args::TermList
   top.isStructured = true;
 
   top.headConstructor = f.headConstructor;
+
+  top.isConstant = f.isConstant && args.isConstant;
 
   top.subst = applicationTerm(f.subst, args.subst);
 
@@ -383,6 +385,11 @@ top::Term ::= name::QName mty::MaybeType
 
   top.headConstructor = name;
 
+  top.isConstant =
+      if contains(name.shortName, top.boundNames)
+      then false --bound var
+      else name.constrFound;
+
   top.subst =
       if name == toQName(top.substName)
       then top.substTerm
@@ -437,6 +444,8 @@ top::Term ::= t1::Term t2::Term
 
   top.subst = consTerm(t1.subst, t2.subst);
 
+  top.isConstant = t1.isConstant && t2.isConstant;
+
   top.unifySuccess =
       case top.unifyWith of
       | consTerm(_, _) -> true
@@ -481,6 +490,8 @@ top::Term ::=
 
   top.subst = top;
 
+  top.isConstant = true;
+
   top.unifySuccess =
       case top.unifyWith of
       | nilTerm() -> true
@@ -520,6 +531,9 @@ top::Term ::= mty::MaybeType
 
   top.subst = top;
 
+  --shouldn't access isConstant on input
+  top.isConstant = false;
+
   top.unifySuccess = true;
   top.unifyEqs = [];
   top.unifySubst = [];
@@ -542,7 +556,7 @@ nonterminal TermList with
    boundNames, usedNames,
    substName, substTerm, subst<TermList>,
    unifyWith<TermList>, unifyEqs, unifySuccess,
-   isStructuredList,
+   isStructuredList, isConstant,
    types, downSubst, upSubst, downVarTys, tyVars;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on TermList;
@@ -559,6 +573,8 @@ top::TermList ::= t::Term
   top.isStructuredList = [t.isStructured];
 
   top.subst = singleTermList(t.subst);
+
+  top.isConstant = t.isConstant;
 
   top.unifySuccess =
       case top.unifyWith of
@@ -590,6 +606,8 @@ top::TermList ::= t::Term rest::TermList
   top.isStructuredList = t.isStructured::rest.isStructuredList;
 
   top.subst = consTermList(t.subst, rest.subst);
+
+  top.isConstant = t.isConstant && rest.isConstant;
 
   rest.unifyWith =
       case top.unifyWith of
@@ -627,6 +645,8 @@ top::TermList ::=
   top.isStructuredList = [];
 
   top.subst = top;
+
+  top.isConstant = true;
 
   top.unifySuccess =
       case top.unifyWith of

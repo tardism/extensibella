@@ -58,6 +58,9 @@ synthesized attribute headConstructor::QName;
 --constructors from other extensions
 synthesized attribute isUnknownTerm::Boolean;
 
+--Whether a term is built by constructors all the way down
+synthesized attribute isConstant::Boolean;
+
 
 --Split into a list along the given production
 synthesized attribute splitConjunctions::[Metaterm];
