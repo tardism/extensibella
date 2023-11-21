@@ -94,7 +94,7 @@ IOVal<Integer> ::= actions::[ActionSpec] parsers::AllParsers
 }
 
 
-nonterminal ActionSpec with runFun, shouldDoFun, actionDesc;
+data nonterminal ActionSpec with runFun, shouldDoFun, actionDesc;
 --How to run the action (return 0 for success, non-zero for fail)
 --   result ::= compiled mods  gen loc  grammars loc  args  io
 annotation runFun::(IOVal<Integer> ::= AllParsers IOToken

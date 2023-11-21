@@ -7,7 +7,7 @@ grammar extensibella:toAbella:abstractSyntax;
   a nonterminal than if we were to use a tuple.
 -}
 
-nonterminal ProverState with
+data nonterminal ProverState with
    pp, --solely for debugging purposes
    state, debug, displayWidth,
    knownTheorems, knownExtInds, remainingObligations,
@@ -15,52 +15,37 @@ nonterminal ProverState with
    provingThms, provingExtInds, duringCommands, afterCommands;
 
 
-synthesized attribute state::ProofState;
-synthesized attribute provingThms::[(QName, Metaterm)];
-synthesized attribute debug::Boolean;
-synthesized attribute displayWidth::Integer;
+--current state of Abella
+annotation state::ProofState;
+--theorems we are currently in the process of proving
+--should be added to knownThms when we finish the proof
+annotation provingThms::[(QName, Metaterm)];
+--whether to print out the Abella commands/returns to the user
+annotation debug::Boolean;
+--approximate maximum line width for display
+annotation displayWidth::Integer;
 
 --Theorems we have proven and available
 --(qualified name, statement)
-synthesized attribute knownTheorems::[(QName, Metaterm)];
+annotation knownTheorems::[(QName, Metaterm)];
 
 --ExtInds we have proven and available
 --Each sublist is a group of mutually-ext-inded relations
 --[[(rel, rel arg names, trans args, trans ty, original, translated)]]
-synthesized attribute knownExtInds::[[(QName, [String], [Term], QName, String, String)]];
+annotation knownExtInds::[[(QName, [String], [Term], QName, String, String)]];
 
 --Things we will need to do in the proof based on imports that we
 --haven't done yet
-synthesized attribute remainingObligations::[ThmElement];
+annotation remainingObligations::[ThmElement];
 
 --Environments of various entities we know
-synthesized attribute knownTypes::Env<TypeEnvItem>;
-synthesized attribute knownRels::Env<RelationEnvItem>;
-synthesized attribute knownConstrs::Env<ConstructorEnvItem>;
+annotation knownTypes::Env<TypeEnvItem>;
+annotation knownRels::Env<RelationEnvItem>;
+annotation knownConstrs::Env<ConstructorEnvItem>;
 
 
 abstract production proverState
 top::ProverState ::=
-   --current state of Abella
-   state::ProofState
-   --whether to print out the Abella commands/returns to the user
-   debugMode::Boolean
-   --approximate maximum line width for display
-   displayWidth::Integer
-   --theorems we have proven or imported and can use
-   --should include the standard library's theorems
-   knownThms::[(QName, Metaterm)]
-   --extInds we have proven and can use
-   knownExtInds::[[(QName, [String], [Term], QName, String, String)]]
-   --things we will need to do in the proof based on imports
-   obligations::[ThmElement]
-   --current environments
-   tyEnv::Env<TypeEnvItem>
-   relEnv::Env<RelationEnvItem>
-   constrEnv::Env<ConstructorEnvItem>
-   --theorems we are currently in the process of proving
-   --should be added to knownThms when we finish the proof
-   provingThms::[(QName, Metaterm)]
    --extInds we are currently in the process of proving
    --should be added to knownExtInds when we finish the proof
    provingExtInds::[(QName, [String], [Term], QName, String, String)]
@@ -77,29 +62,15 @@ top::ProverState ::=
    afterCommands::[AnyCommand]
 {
   top.pp = ppConcat([text("Prover State{"), realLine(),
-      text("  Debug Mode:  "), text(toString(debugMode)), realLine(),
+      text("  Debug Mode:  "), text(toString(top.debug)), realLine(),
       text("  Type Env:  ["), ppImplode(text(", "), map((.pp),
-                                 map((.name), tyEnv))), text("]"), realLine(),
+                                 map((.name), top.knownTypes))), text("]"), realLine(),
       text("  Rel Env:  ["), ppImplode(text(", "), map((.pp),
-                                 map((.name), relEnv))), text("]"), realLine(),
+                                 map((.name), top.knownRels))), text("]"), realLine(),
       text("  Con Env:  ["), ppImplode(text(", "), map((.pp),
-                                map((.name), constrEnv))) ++ text("]"), realLine(),
+                                map((.name), top.knownConstrs))) ++ text("]"), realLine(),
       text("}"), realLine()]);
 
-  top.state = state;
-  top.debug = debugMode;
-  top.displayWidth = displayWidth;
-
-  top.knownTheorems = knownThms;
-  top.knownExtInds = knownExtInds;
-
-  top.remainingObligations = obligations;
-
-  top.knownTypes = tyEnv;
-  top.knownRels = relEnv;
-  top.knownConstrs = constrEnv;
-
-  top.provingThms = provingThms;
   top.provingExtInds = provingExtInds;
   top.duringCommands = duringCommands;
   top.afterCommands = afterCommands;
@@ -121,12 +92,17 @@ ProverState ::= current::ProverState
       foldl(\ rest::[(QName, Metaterm)] t::ThmElement ->
               decorate t with {knownThms = rest;}.thms ++ rest,
             current.knownTheorems, take);
-  return proverState(current.state, current.debug,
-            current.displayWidth, outThms, current.knownExtInds,
-            outObligations, current.knownTypes, current.knownRels,
-            current.knownConstrs, current.provingThms,
-            current.provingExtInds, current.duringCommands,
-            current.afterCommands);
+  return proverState(current.provingExtInds, current.duringCommands,
+            current.afterCommands,
+            --
+            state = current.state, debug = current.debug,
+            displayWidth = current.displayWidth, knownTheorems = outThms,
+            knownExtInds = current.knownExtInds,
+            remainingObligations = outObligations,
+            knownTypes = current.knownTypes,
+            knownRels = current.knownRels,
+            knownConstrs =current.knownConstrs,
+            provingThms = current.provingThms);
 }
 
 
@@ -167,16 +143,20 @@ function removeFinishedObligation
 function finishProof
 ProverState ::= current::ProverState
 {
-  return proverState(current.state, current.debug,
-            current.displayWidth,
-            current.provingThms ++ current.knownTheorems,
+  return proverState([], [], [],
+            --
+            state = current.state, debug = current.debug,
+            displayWidth = current.displayWidth,
+            knownTheorems = current.provingThms ++ current.knownTheorems,
             --keep blanks out of the list for efficiency
-            if null(current.provingExtInds) then current.knownExtInds
+            knownExtInds =
+                if null(current.provingExtInds) then current.knownExtInds
                 else current.provingExtInds::current.knownExtInds,
-            removeFinishedObligation(current.remainingObligations,
-               current.provingThms),
-            current.knownTypes, current.knownRels,
-            current.knownConstrs, [], [], [], []);
+            remainingObligations =
+               removeFinishedObligation(current.remainingObligations,
+                  current.provingThms),
+            knownTypes = current.knownTypes, knownRels = current.knownRels,
+            knownConstrs = current.knownConstrs, provingThms = []);
 }
 
 
@@ -185,12 +165,17 @@ ProverState ::= current::ProverState
 function abortProof
 ProverState ::= current::ProverState
 {
-  return proverState(current.state, current.debug,
-            current.displayWidth,
-            current.knownTheorems, current.knownExtInds,
-            current.remainingObligations, current.knownTypes,
-            current.knownRels, current.knownConstrs,
-            [], [], [], []);
+  return proverState([], [], [],
+            --
+            state = current.state, debug = current.debug,
+            displayWidth = current.displayWidth,
+            knownTheorems = current.knownTheorems,
+            knownExtInds = current.knownExtInds,
+            remainingObligations = current.remainingObligations,
+            knownTypes = current.knownTypes,
+            knownRels = current.knownRels,
+            knownConstrs = current.knownConstrs,
+            provingThms = []);
 }
 
 
@@ -198,12 +183,18 @@ ProverState ::= current::ProverState
 function setProverDebug
 ProverState ::= current::ProverState debugVal::Boolean
 {
-  return proverState(current.state, debugVal, current.displayWidth,
-            current.knownTheorems, current.knownExtInds,
-            current.remainingObligations, current.knownTypes,
-            current.knownRels, current.knownConstrs,
-            current.provingThms, current.provingExtInds,
-            current.duringCommands, current.afterCommands);
+  return proverState(current.provingExtInds,
+            current.duringCommands, current.afterCommands,
+            --
+            state = current.state, debug = debugVal,
+            displayWidth = current.displayWidth,
+            knownTheorems = current.knownTheorems,
+            knownExtInds = current.knownExtInds,
+            remainingObligations = current.remainingObligations,
+            knownTypes = current.knownTypes,
+            knownRels = current.knownRels,
+            knownConstrs = current.knownConstrs,
+            provingThms = current.provingThms);
 }
 
 
@@ -211,12 +202,18 @@ ProverState ::= current::ProverState debugVal::Boolean
 function setProverWidth
 ProverState ::= current::ProverState width::Integer
 {
-  return proverState(current.state, current.debug, width,
-            current.knownTheorems, current.knownExtInds,
-            current.remainingObligations, current.knownTypes,
-            current.knownRels, current.knownConstrs,
-            current.provingThms, current.provingExtInds,
-            current.duringCommands, current.afterCommands);
+  return proverState(current.provingExtInds,
+            current.duringCommands, current.afterCommands,
+            --
+            state = current.state, debug = current.debug,
+            displayWidth = width,
+            knownTheorems = current.knownTheorems,
+            knownExtInds = current.knownExtInds,
+            remainingObligations = current.remainingObligations,
+            knownTypes = current.knownTypes,
+            knownRels = current.knownRels,
+            knownConstrs = current.knownConstrs,
+            provingThms = current.provingThms);
 }
 
 
@@ -231,14 +228,17 @@ ProverState ::= current::ProverState newProofState::ProofState
    duringCmds::[(SubgoalNum, [ProofCommand])]
    afterCmds::[AnyCommand]
 {
-  return proverState(newProofState, current.debug,
-            current.displayWidth,
-            newThms ++ current.knownTheorems, current.knownExtInds,
-            current.remainingObligations,
-            addEnv(current.knownTypes, newTys),
-            addEnv(current.knownRels, newRels),
-            addEnv(current.knownConstrs, newConstrs),
-            provingThms, provingExtInds, duringCmds, afterCmds);
+  return proverState(provingExtInds, duringCmds, afterCmds,
+            --
+            state = newProofState, debug = current.debug,
+            displayWidth = current.displayWidth,
+            knownTheorems = newThms ++ current.knownTheorems,
+            knownExtInds = current.knownExtInds,
+            remainingObligations = current.remainingObligations,
+            knownTypes = addEnv(current.knownTypes, newTys),
+            knownRels = addEnv(current.knownRels, newRels),
+            knownConstrs = addEnv(current.knownConstrs, newConstrs),
+            provingThms = provingThms);
 }
 
 
@@ -246,13 +246,17 @@ ProverState ::= current::ProverState newProofState::ProofState
 function setProofState
 ProverState ::= current::ProverState newProofState::ProofState
 {
-  return proverState(newProofState, current.debug,
-            current.displayWidth,
-            current.knownTheorems, current.knownExtInds,
-            current.remainingObligations, current.knownTypes,
-            current.knownRels, current.knownConstrs,
-            current.provingThms, current.provingExtInds,
-            current.duringCommands, current.afterCommands);
+  return proverState(current.provingExtInds, current.duringCommands,
+            current.afterCommands,
+            --
+            state = newProofState, debug = current.debug,
+            displayWidth = current.displayWidth,
+            knownTheorems = current.knownTheorems,
+            knownExtInds = current.knownExtInds,
+            remainingObligations = current.remainingObligations,
+            knownTypes = current.knownTypes,
+            knownRels =current.knownRels, knownConstrs = current.knownConstrs,
+            provingThms = current.provingThms);
 }
 
 
@@ -351,9 +355,15 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
                nameType(toQName("$lib__nat")), toTypeList([]))
            ]);
 
-  return proverState(noProof(), false, 80, knownThms, [], obligations,
-            addEnv(tyEnv, knownTys), addEnv(relEnv, knownRels),
-            addEnv(constrEnv, knownConstrs), [], [], [], []);
+  return proverState([], [], [],
+            --
+            state = noProof(), debug = false,
+            displayWidth = 80, knownTheorems = knownThms,
+            knownExtInds = [], remainingObligations = obligations,
+            knownTypes = addEnv(tyEnv, knownTys),
+            knownRels = addEnv(relEnv, knownRels),
+            knownConstrs = addEnv(constrEnv, knownConstrs),
+            provingThms = []);
 }
 
 
@@ -362,11 +372,16 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
 function dropDuringCommand
 ProverState ::= p::ProverState
 {
-  return proverState(p.state, p.debug, p.displayWidth,
-            p.knownTheorems, p.knownExtInds,
-            p.remainingObligations, p.knownTypes, p.knownRels,
-            p.knownConstrs, p.provingThms, p.provingExtInds,
-            tail(p.duringCommands), p.afterCommands);
+  return proverState(p.provingExtInds, tail(p.duringCommands),
+            p.afterCommands,
+            --
+            state = p.state, debug = p.debug,
+            displayWidth = p.displayWidth,
+            knownTheorems = p.knownTheorems,
+            knownExtInds = p.knownExtInds,
+            remainingObligations = p.remainingObligations,
+            knownTypes = p.knownTypes, knownRels = p.knownRels,
+            knownConstrs = p.knownConstrs, provingThms = p.provingThms);
 }
 
 

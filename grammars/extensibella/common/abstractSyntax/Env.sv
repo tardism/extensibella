@@ -50,7 +50,7 @@ attribute name {} occurs on a => String ::= e::Env<a>
 
 
 
-nonterminal TypeEnvItem with
+data nonterminal TypeEnvItem with
    name, type, transTypes, isLangType, isProofType, isLibType, kind,
    unknownConstr, clauseModules;
 
@@ -162,7 +162,7 @@ top::TypeEnvItem ::= name::String
 
 -- .type is built type
 -- .types is arguments
-nonterminal ConstructorEnvItem with name, type, types;
+data nonterminal ConstructorEnvItem with name, type, types;
 
 abstract production constructorEnvItem
 top::ConstructorEnvItem ::= name::QName builtType::Type args::TypeList
@@ -177,7 +177,7 @@ top::ConstructorEnvItem ::= name::QName builtType::Type args::TypeList
 
 
 
-nonterminal RelationEnvItem with
+data nonterminal RelationEnvItem with
    name, types, isExtensible, pcIndex, pcType, clauseModules, defsList;
 
 synthesized attribute pcIndex::Integer;
