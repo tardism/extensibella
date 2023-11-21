@@ -2,7 +2,7 @@ grammar extensibella:genStdLibDocs;
 
 {-
   Process the standard library definitions into a documentation file
-  that n be read by a person familiar with Extensibella, without
+  that can be read by a person familiar with Extensibella, without
   needing to recognize the details of the Abella encoding
 -}
 
@@ -21,30 +21,61 @@ imports silver:util:cmdargs;
 function main
 IOVal<Integer> ::= largs::[String] ioin::IOToken
 {
-  local parsedArgs::Decorated CmdArgs = parseArgs(largs);
+  local parseResult::Either<String Decorated CmdArgs> = parseArgs(largs);
+  local parsedArgs::Decorated CmdArgs = parseResult.fromRight;
 
-  --Markdown output
-  local markdownDocString::IOVal<String> =
-      processAllFiles(formatMarkdownFull, formatMarkdownFile,
-                      formatMarkdownThm, "Markdown", ioin);
-  local markdownOut::IOToken =
-      if parsedArgs.doMarkdown
-      then writeFileT(parsedArgs.markdownFilename,
-              markdownDocString.iovalue, markdownDocString.io)
-      else ioin;
+  production attribute outputTypes::[DocOutputType] with ++;
+  outputTypes := [
+      docOutputType(docFormatFull = formatMarkdownFull,
+                    docFormatFile = formatMarkdownFile,
+                    docFormatThm = formatMarkdownThm,
+                    tag = "Markdown",
+                    outputDoc = \ a::Decorated CmdArgs -> a.doMarkdown,
+                    docFilename = \ a::Decorated CmdArgs -> a.markdownFilename),
+      docOutputType(docFormatFull = formatHtmlFull,
+                    docFormatFile = formatHtmlFile,
+                    docFormatThm = formatHtmlThm,
+                    tag = "HTML",
+                    outputDoc = \ a::Decorated CmdArgs -> a.doHTML,
+                    docFilename = \ a::Decorated CmdArgs -> a.htmlFilename)
+     ];
 
-  --HTML output
-  local htmlDocString::IOVal<String> =
-      processAllFiles(formatHtmlFull, formatHtmlFile, formatHtmlThm,
-                      "HTML", markdownOut);
-  local htmlOut::IOToken =
-      if parsedArgs.doHTML
-      then writeFileT(parsedArgs.htmlFilename, htmlDocString.iovalue,
-                      htmlDocString.io)
-      else markdownOut;
+  local out::IOToken =
+      foldr(\ d::DocOutputType rest::IOToken ->
+              if d.outputDoc(parsedArgs)
+              then let str::IOVal<String> =
+                       processAllFiles(d.docFormatFull, d.docFormatFile,
+                          d.docFormatThm, d.tag, rest)
+                   in
+                     writeFileT(d.docFilename(parsedArgs),
+                                str.iovalue, str.io)
+                   end
+              else rest,
+            ioin, outputTypes);
 
-  return ioval(htmlOut, 0);
+  return case parseResult of
+         | left(msg) -> ioval(printT(msg, ioin), 0)
+         | right(_) -> ioval(out, 0)
+         end;
 }
+
+
+data nonterminal DocOutputType with
+   docFormatFull, docFormatFile, docFormatThm,
+   tag, outputDoc, docFilename;
+--how to format a full set of files (list of files)
+annotation docFormatFull::(String ::= [String]);
+--how to format a single file (filename, thms all concatenated)
+annotation docFormatFile::(String ::= String String);
+--how to format a theorem (name, type params, body)
+annotation docFormatThm::(String ::= QName [String] Metaterm);
+--a name for the output type
+annotation tag::String;
+--whether to do this output type
+annotation outputDoc::(Boolean ::= Decorated CmdArgs);
+--get the output filename for this output type
+annotation docFilename::(String ::= Decorated CmdArgs);
+abstract production docOutputType top::DocOutputType ::= { }
 
 
 
@@ -59,9 +90,12 @@ synthesized attribute doHTML::Boolean;
 synthesized attribute markdownFilename::String;
 synthesized attribute htmlFilename::String;
 
+synthesized attribute doHelp::Boolean;
+
 attribute
    doMarkdown, doHTML,
-   markdownFilename, htmlFilename
+   markdownFilename, htmlFilename,
+   doHelp
 occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -72,6 +106,8 @@ top::CmdArgs ::= l::[String]
 
   top.markdownFilename = "stdLibDoc.md";
   top.htmlFilename = "stdLibDoc.html";
+
+  top.doHelp = false;
 }
 
 
@@ -83,6 +119,8 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.markdownFilename = rest.markdownFilename;
   top.htmlFilename = rest.htmlFilename;
+
+  top.doHelp = rest.doHelp;
 
   forwards to rest;
 }
@@ -97,6 +135,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.markdownFilename = rest.markdownFilename;
   top.htmlFilename = rest.htmlFilename;
 
+  top.doHelp = rest.doHelp;
+
   forwards to rest;
 }
 
@@ -109,6 +149,8 @@ top::CmdArgs ::= name::String rest::CmdArgs
 
   top.markdownFilename = name;
   top.htmlFilename = rest.htmlFilename;
+
+  top.doHelp = rest.doHelp;
 
   forwards to rest;
 }
@@ -123,13 +165,30 @@ top::CmdArgs ::= name::String rest::CmdArgs
   top.markdownFilename = rest.markdownFilename;
   top.htmlFilename = name;
 
+  top.doHelp = rest.doHelp;
+
+  forwards to rest;
+}
+
+
+abstract production helpFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.doMarkdown = rest.doMarkdown;
+  top.doHTML = rest.doHTML;
+
+  top.markdownFilename = rest.markdownFilename;
+  top.htmlFilename = rest.htmlFilename;
+
+  top.doHelp = true;
+
   forwards to rest;
 }
 
 
 
 function parseArgs
-Decorated CmdArgs ::= args::[String]
+Either<String Decorated CmdArgs> ::= args::[String]
 {
   --Processing flags
   production attribute flags::[FlagSpec] with ++;
@@ -149,11 +208,24 @@ Decorated CmdArgs ::= args::[String]
       flagSpec(name="--htmlFile",
                paramString=just("<filename>"),
                help="name for HTML documentation file",
-               flagParser=option(htmlFilenameFlag))
+               flagParser=option(htmlFilenameFlag)),
+      flagSpec(name="--help",
+               paramString=nothing(),
+               help="output commandline help message",
+               flagParser=flag(helpFlag))
      ];
+
+  local usage::String = "Flag options:\n" ++ flagSpecsToHelpText(flags);
+
   --Parse the command line
-  production a::CmdArgs = interpretCmdArgs(flags, args);
-  return a;
+  production a::CmdArgs = --add "-h" for help
+      interpretCmdArgs(flagSpec(name="-h", paramString=nothing(),
+                                help="", flagParser=flag(helpFlag))::flags, args);
+  return if a.cmdError.isJust
+         then left(a.cmdError.fromJust ++ "\n")
+         else if a.doHelp
+         then left(usage)
+         else right(a);
 }
 
 
@@ -229,6 +301,7 @@ IOVal<String> ::= filename::String
   ast.proverState =
       defaultProverState([], ast.typeEnv, ast.relationEnv,
          ast.constructorEnv, []);
+  ast.ignoreDefErrors = true;
   --
   ast.formatThm = formatThm;
 
@@ -300,7 +373,7 @@ String ::= name::QName params::[String] body::Metaterm
       then ""
       else " <tt>[" ++ implode(", ", params) ++ "]</tt>";
   local startString::String =
-      "<li> " ++ name.shortName ++ pString;
+      "\n<li> " ++ name.shortName ++ pString;
   local bodyString::String = "<pre>" ++ justShow(body.pp) ++ "</pre>";
   return startString ++ " : " ++ bodyString;
 }
@@ -311,7 +384,7 @@ String ::= filename::String thmDocs::String
   return if isSpace(thmDocs)
          then ""
          else "<h2>" ++ filename ++ "</h2>\n" ++
-              "<ul>\n" ++ thmDocs ++ "</ul>\n";
+              "<ul>" ++ thmDocs ++ "\n</ul>\n";
 }
 
 function formatHtmlFull
@@ -448,7 +521,7 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
 
   local zipped::[(QName, Metaterm)] =
       case thm of
-      | [_] -> zipWith(pair, newTheoremNames, splitThm)
+      | [_] -> zip(newTheoremNames, splitThm)
       | _ -> []
       end;
 }
@@ -483,7 +556,7 @@ top::TopCommand ::= name::String
 
 
 aspect production extensibleTheoremDeclaration
-top::TopCommand ::= thms::ExtThms
+top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
   top.docString = error("Should not occur");
 }

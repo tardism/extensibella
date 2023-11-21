@@ -986,6 +986,23 @@ intros IsN3 M. P: case M.
    IsN5: apply $is_integer_posInt_$$$$$_to_$$$$$_negSuccInt to Is1.
    case IsN5. search.
 
+%This belongs in the plus section, but we can't prove it, or it isn't obvious
+%how to prove it, without the minus theorems here.
+Theorem extensibella-$-stdLib-$-plus_integer_unique_addend : forall N A B Sum,
+  is_integer N -> is_integer A -> is_integer B ->
+  $plus_integer N A Sum -> $plus_integer N B Sum -> A = B.
+intros IsN IsA IsB PA PB.
+IsSum: apply extensibella-$-stdLib-$-plus_integer_is_integer to _ _ PA.
+PA': apply extensibella-$-stdLib-$-plus_integer_comm to _ _ PA.
+MA: apply extensibella-$-stdLib-$-minus_integer_total to IsSum _
+      with N2 = $posInt ($succ $zero).
+MA': apply extensibella-$-stdLib-$-plus_minus_same_integer to _ _ PA'.
+PB': apply extensibella-$-stdLib-$-plus_integer_comm to _ _ PB.
+MB: apply extensibella-$-stdLib-$-minus_integer_total to IsSum _
+      with N2 = $posInt ($succ $zero).
+MB': apply extensibella-$-stdLib-$-plus_minus_same_integer to _ _ PB'.
+apply extensibella-$-stdLib-$-minus_integer_unique to MA' MB'. search.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
