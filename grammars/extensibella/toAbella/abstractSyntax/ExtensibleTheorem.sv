@@ -64,7 +64,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       findExtIndGroup(head(thms.inductionRels), top.proverState);
   --need extInd for all if any relations are imported
   local importedIndRels::[QName] =
-      filter(\ r::QName -> !sameModule(top.currentModule, r),
+      filter(\ r::QName -> false, --!sameModule(top.currentModule, r),
              thms.inductionRels);
   top.toAbellaMsgs <-
       if null(importedIndRels)
@@ -397,8 +397,10 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   top.inductionRels =
       case lookup(onLabel, zip(introsNames,
                                    map(snd, body.premises))) of
-      --premises already has full relations
-      | just(relationMetaterm(r, _, _)) -> r::rest.inductionRels
+      | just(relationMetaterm(r, _, _)) ->
+        if inductionRelFound
+        then inductionRel.name::rest.inductionRels
+        else rest.inductionRels --bad rel, so just check rest
       --bad form, so no relation and just check rest
       | just(_) -> rest.inductionRels
       --no such premise, so just check rest
@@ -410,27 +412,27 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       lookupBy(\ a::Maybe<String> b::Maybe<String> ->
                  a.isJust && b.isJust && a.fromJust == b.fromJust,
                just(onLabel), body.premises);
-
-  top.toAbellaMsgs <-
+  top.toAbellaMsgs <- m1 ++ m2 ++ m3 ++ m4;
+  local m1::[Message] = --top.toAbellaMsgs <-
       case foundLabeledPremise of
       | nothing() ->
         [errorMsg("Unknown label " ++ onLabel ++ " in extensible " ++
                   "theorem " ++ justShow(name.pp))]
-      | just(relationMetaterm(rel, args, r)) ->
+      | just(relationMetaterm(rel, args, r)) -> let x::Integer = unsafeTracePrint(1, justShow(rel.pp) ++ "\n") in
         --need to check the metaterm is built by an extensible relation
         let decRel::Decorated QName with {relationEnv} =
             decorate rel with {relationEnv = top.relationEnv;}
         in
-          if !decRel.relFound
+          if x == 1 && !decRel.relFound
           then [] --covered by other errors
           else if top.shouldBeExtensible
              --should be an extensible theorem
-          then if !decRel.fullRel.isExtensible
+          then if !inductionRel.isExtensible
                then [errorMsg("Can only induct on extensible relations " ++
                         "for extensible theorem " ++ justShow(name.pp) ++
-                        "; " ++ justShow(decRel.fullRel.name.pp) ++
+                        "; " ++ justShow(inductionRel.name.pp) ++
                         " is not extensible")]
-               else case head(drop(decRel.fullRel.pcIndex, args.toList)) of
+               else case head(drop(inductionRel.pcIndex, args.toList)) of
                     | nameTerm(q, _) when !q.isQualified -> [] --var
                     | _ -> --anything else is structured
                       [errorMsg("Primary component of induction " ++
@@ -438,13 +440,13 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                           justShow(name.pp))]
                     end
              --should NOT be an extensible theorem
-          else if decRel.fullRel.isExtensible
+          else if inductionRel.isExtensible
                then [errorMsg("Cannot induct on extensible relations " ++
                         "for non-extensible theorem " ++ justShow(name.pp) ++
-                        "; " ++ justShow(decRel.fullRel.name.pp) ++
+                        "; " ++ justShow(inductionRel.name.pp) ++
                         " is extensible")]
                else []
-        end
+        end end
       | just(m) when top.shouldBeExtensible ->
         [errorMsg("Can only induct on extensible relations for " ++
             "extensible theorem " ++ justShow(name.pp) ++
@@ -453,7 +455,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       end;
 
   --check name is qualified with appropriate module
-  top.toAbellaMsgs <-
+  local m2::[Message] = --top.toAbellaMsgs <-
       if name.isQualified
       then if name.moduleName == top.currentModule
            then []
@@ -462,14 +464,14 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                     justShow(top.currentModule.pp) ++ ")")]
       else [];
   --check there are no existing theorems with this full name
-  top.toAbellaMsgs <-
+  local m3::[Message] = --top.toAbellaMsgs <-
       if null(findTheorem(fullName, top.proverState))
       then []
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
 
   --check the body is well-typed
-  top.toAbellaMsgs <-
+  local m4::[Message] = --top.toAbellaMsgs <-
       case body.upSubst of
       | right(_) ->
         if any(map(\ v::String ->
@@ -513,6 +515,12 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
   rest.startingGoalNum = [head(top.startingGoalNum) + 1];
 
+  local inductionRelFound::Boolean =
+      case foundLabeledPremise of
+      | just(relationMetaterm(rel, _, _)) ->
+        decorate rel with {relationEnv = top.relationEnv;}.relFound
+      | _ -> false
+      end;
   local inductionRel::RelationEnvItem =
       case foundLabeledPremise of
       | just(relationMetaterm(rel, _, _)) ->
@@ -529,7 +537,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   -}
   local preservabilityAssert::[(Integer, [ProofCommand])] =
       if sameModule(top.currentModule, fullName) && --new prop
-         foundLabeledPremise.isJust && --not a relation error
+         inductionRelFound && --not a relation error
          !sameModule(top.currentModule, inductionRel.name) --old rel 
       then let subgoalNum::Integer =
                last(expectedSubgoals).1 --last number is preservability
@@ -560,7 +568,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   --
   local thisExtInd::Maybe<(QName, [String], [Term],
                            QName, String, String)> =
-      if foundLabeledPremise.isJust --guard against out-of-order access
+      if inductionRelFound --guard against out-of-order access
       then case lookup(inductionRel.name, top.useExtInd) of
            | just(p) -> just((inductionRel.name, p))
            | nothing() -> nothing()
@@ -594,6 +602,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   --for the subgoals that should arise, the last digit of the subgoal
   --number and whether we need to prove it
   local expectedSubgoals::[(Integer, Boolean)] =
+      if !inductionRelFound then [] --guard against out-of-order access
+      else
       foldl(
          \ thusFar::(Integer, [(Integer, Boolean)])
            now::([Term], Maybe<Metaterm>) ->
@@ -772,7 +782,7 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
   m.boundNames = top.boundNames;
   rest.boundNames = top.boundNames;
 
-  top.premises = (just(label), m.full)::rest.premises;
+  top.premises = (just(label), m)::rest.premises;
 
   m.downSubst = top.downSubst;
   rest.downSubst = m.upSubst;
