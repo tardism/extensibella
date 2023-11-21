@@ -132,10 +132,6 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   production state::ProofState = currentProverState.state;
   local debug::Boolean = currentProverState.debug;
 
-  state.typeEnv = currentProverState.knownTypes;
-  state.relationEnv = currentProverState.knownRels;
-  state.constructorEnv = currentProverState.knownConstrs;
-
   {-
     PROCESS COMMAND
   -}
@@ -211,18 +207,20 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   --Show to user
   ----------------------------
   local finalDisplay::FullDisplay = duringed.2;
-  finalDisplay.typeEnv = nonErrorProverState.knownTypes;
-  finalDisplay.relationEnv = nonErrorProverState.knownRels;
-  finalDisplay.constructorEnv = nonErrorProverState.knownConstrs;
   local width::Integer =
       if speak_to_abella || is_error
       then currentProverState.displayWidth
       else head(any_a.stateListOut).2.displayWidth;
   production output_output::String =
       if speak_to_abella && continueProcessing
-      then showDoc(width, finalDisplay.fromAbella.pp) ++ "\n"
+      then decorateAndShow(finalDisplay,
+              nonErrorProverState.knownTypes,
+              nonErrorProverState.knownRels,
+              nonErrorProverState.knownConstrs, width) ++ "\n"
       else our_own_output ++
-           showDoc(width, state.fromAbella.pp) ++ "\n";
+           decorateAndShow(state, currentProverState.knownTypes,
+              currentProverState.knownRels,
+              currentProverState.knownConstrs, width) ++ "\n";
   local io_action_6::IOToken =
       if top.config.showUser
       then printT(output_output, io_action_5.io)
@@ -485,4 +483,22 @@ IOToken ::= debug::Boolean config::Configuration commands::[command]
   return if debug && config.showUser
          then printT(full, ioin)
          else ioin;
+}
+
+
+--Decorate here for efficiency, so it can throw away the decorated
+--version after getting the show
+function decorateAndShow
+attribute typeEnv occurs on a,
+attribute relationEnv occurs on a,
+attribute constructorEnv occurs on a,
+attribute fromAbella<a> {typeEnv, relationEnv, constructorEnv} occurs on a,
+attribute pp {} occurs on a =>
+String ::= a::a ty::Env<TypeEnvItem> rel::Env<RelationEnvItem>
+           cons::Env<ConstructorEnvItem> width::Integer
+{
+  a.typeEnv = ty;
+  a.relationEnv = rel;
+  a.constructorEnv = cons;
+  return showDoc(width, a.fromAbella.pp);
 }
