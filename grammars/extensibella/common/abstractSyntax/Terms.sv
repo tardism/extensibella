@@ -81,7 +81,7 @@ abstract production impliesMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
   top.pp = docGroup(if t1.isAtomic then t1.pp else parens(t1.pp)) ++
-           text(" ->") ++ line() ++ docGroup(t2.pp);
+           text(" ->") ++ softbreak() ++ docGroup(t2.pp);
   top.abella_pp = "(" ++ t1.abella_pp ++ ") -> " ++ t2.abella_pp;
   top.isAtomic = false;
 
