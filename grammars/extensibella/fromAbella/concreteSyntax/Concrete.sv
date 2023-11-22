@@ -55,21 +55,27 @@ closed nonterminal ProofState_c with ast<ProofState>;
 
 concrete productions top::ProofState_c
 |
-  { top.ast = noProof(); }
+  { top.ast = noProof(isAbellaForm=true); }
 | cs::CurrentSubgoal_c cg::CurrentGoal_c rest::MoreSubgoals_c
-  { top.ast = proofInProgress(cs.ast, cg.ast, rest.ast); }
+  { top.ast = proofInProgress(cs.ast, cg.ast, rest.ast,
+                              --assume it is Abella, not Extensibella
+                              isAbellaForm=true); }
 | cs::CurrentSubgoal_c cg::CurrentGoal_c num::Number_t 'other subgoals.'
-  { top.ast = proofInProgress(cs.ast, cg.ast, [hiddenSubgoals(toInteger(num.lexeme))]); }
+  { top.ast = proofInProgress(cs.ast, cg.ast, [hiddenSubgoals(toInteger(num.lexeme))],
+                              --assume it is Abella, not Extensibella
+                              isAbellaForm=true); }
 | cs::CurrentSubgoal_c cg::CurrentGoal_c num::Number_t 'other subgoal.'
-  { top.ast = proofInProgress(cs.ast, cg.ast, [hiddenSubgoals(toInteger(num.lexeme))]); }
+  { top.ast = proofInProgress(cs.ast, cg.ast, [hiddenSubgoals(toInteger(num.lexeme))],
+                              --assume it is Abella, not Extensibella
+                              isAbellaForm=true); }
 | 'Proof completed.'
-  { top.ast = proofCompleted(); }
+  { top.ast = proofCompleted(isAbellaForm=true); }
 | 'Proof completed'
-  { top.ast = proofCompleted(); }
+  { top.ast = proofCompleted(isAbellaForm=true); }
 | 'Proof completed' '*** USING skip ***'
-  { top.ast = proofCompleted(); }
+  { top.ast = proofCompleted(isAbellaForm=true); }
 | 'Proof ABORTED.'
-  { top.ast = proofAborted(); }
+  { top.ast = proofAborted(isAbellaForm=true); }
 
 
 

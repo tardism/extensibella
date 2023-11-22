@@ -63,12 +63,23 @@ top::ProverState ::=
 {
   top.pp = ppConcat([text("Prover State{"), realLine(),
       text("  Debug Mode:  "), text(toString(top.debug)), realLine(),
+      --types
       text("  Type Env:  ["), ppImplode(text(", "), map((.pp),
                                  map((.name), top.knownTypes))), text("]"), realLine(),
+      --relations
       text("  Rel Env:  ["), ppImplode(text(", "), map((.pp),
                                  map((.name), top.knownRels))), text("]"), realLine(),
+      --constructors
       text("  Con Env:  ["), ppImplode(text(", "), map((.pp),
                                 map((.name), top.knownConstrs))) ++ text("]"), realLine(),
+      --ext inds
+      text("  Ext Inds:  ["), ppImplode(text(",  "),
+                                 map(\ l::[(QName, [String], [Term], QName, String, String)] ->
+                                       ppConcat([text("["),
+                                          ppImplode(text(", "), map((.pp), map(fst, l))),
+                                          text("]")]), top.knownExtInds)),
+                      text("]"), realLine(),
+      --end
       text("}"), realLine()]);
 
   top.provingExtInds = provingExtInds;
@@ -357,7 +368,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
 
   return proverState([], [], [],
             --
-            state = noProof(), debug = false,
+            state = noProof(isAbellaForm=false), debug = false,
             displayWidth = 80, knownTheorems = knownThms,
             knownExtInds = [], remainingObligations = obligations,
             knownTypes = addEnv(tyEnv, knownTys),

@@ -145,7 +145,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   any_a.relationEnv = currentProverState.knownRels;
   any_a.constructorEnv = currentProverState.knownConstrs;
   any_a.proverState = currentProverState;
-  any_a.boundNames = state.usedNames;
+  any_a.boundNames = state.boundNames_out;
   any_a.stateListIn = top.stateList;
   any_a.ignoreDefErrors = top.ignoreDefErrors;
   --whether we have an error
@@ -333,10 +333,21 @@ IOVal<(StateList, FullDisplay)> ::=
        dropDuringCommand(setProofState(initProverState,
                             cleaned_display.proof))
       )::tail(stateListIn);
+  --get the Extensibella version of the proof state
+  local penultimateStateList::StateList =
+      if shouldClean then cleanedStateList else stateListIn;
+  local proofState::ProofState = head(penultimateStateList).2.state;
+  proofState.typeEnv = initProverState.knownTypes;
+  proofState.relationEnv = initProverState.knownRels;
+  proofState.constructorEnv = initProverState.knownConstrs;
   return ioval(outputCleanCommands,
-               if shouldClean
-               then (cleanedStateList, cleaned_display)
-               else (stateListIn, displayIn));
+               ((head(penultimateStateList).1,
+                 setProofState(head(penultimateStateList).2,
+                               proofState.fromAbella)
+                )::tail(penultimateStateList),
+                if shouldClean
+                then cleaned_display
+                else displayIn));
 }
 
 

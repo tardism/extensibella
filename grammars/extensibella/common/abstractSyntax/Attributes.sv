@@ -21,6 +21,10 @@ synthesized attribute isAtomic::Boolean;
 flowtype isAtomic {} on Metaterm, Term;
 
 
+--true if it is still in Abella form, false if it is in Extensibella form
+annotation isAbellaForm::Boolean;
+
+
 inherited attribute currentModule::QName;
 
 

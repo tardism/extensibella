@@ -12,7 +12,10 @@ top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal
                     futureGoals::[Subgoal]
 {
   top.fromAbella =
-      proofInProgress(subgoalNum, currGoal.fromAbella, []);
+      if top.isAbellaForm
+      then proofInProgress(subgoalNum, currGoal.fromAbella, [],
+                           isAbellaForm=false) --now translated
+      else top; --already translated
 
   top.hypList = currGoal.hypList;
 }
@@ -21,7 +24,7 @@ top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal
 aspect production noProof
 top::ProofState ::=
 {
-  top.fromAbella = noProof();
+  top.fromAbella = noProof(isAbellaForm=false);
 
   top.hypList = [];
 }
@@ -30,7 +33,7 @@ top::ProofState ::=
 aspect production proofCompleted
 top::ProofState ::=
 {
-  top.fromAbella = proofCompleted();
+  top.fromAbella = proofCompleted(isAbellaForm=false);
 
   top.hypList = [];
 }
@@ -39,7 +42,7 @@ top::ProofState ::=
 aspect production proofAborted
 top::ProofState ::=
 {
-  top.fromAbella = proofAborted();
+  top.fromAbella = proofAborted(isAbellaForm=false);
 
   top.hypList = [];
 }

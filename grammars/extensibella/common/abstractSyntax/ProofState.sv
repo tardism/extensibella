@@ -8,10 +8,12 @@ nonterminal ProofState with
    hypList, currentSubgoal, goal,
    inProof,
    typeEnv, constructorEnv, relationEnv,
-   usedNames;
+   usedNames, boundNames_out,
+   isAbellaForm;
 propagate typeEnv, constructorEnv, relationEnv on ProofState;
 
 synthesized attribute inProof::Boolean;
+synthesized attribute boundNames_out::[String];
 
 abstract production proofInProgress
 top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
@@ -31,6 +33,8 @@ top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
   top.currentSubgoal = subgoalNum;
   top.goal = currGoal.goal;
 
+  top.boundNames_out = currGoal.boundNames_out;
+
   top.inProof = true;
 }
 
@@ -45,6 +49,8 @@ top::ProofState ::=
   top.currentSubgoal = [];
 
   top.goal = nothing();
+
+  top.boundNames_out = [];
 
   top.inProof = false;
 }
@@ -61,9 +67,11 @@ top::ProofState ::=
 
   top.goal = nothing();
 
+  top.boundNames_out = [];
+
   top.inProof = false;
 
-  forwards to noProof();
+  forwards to noProof(isAbellaForm=top.isAbellaForm);
 }
 
 
@@ -78,9 +86,11 @@ top::ProofState ::=
 
   top.goal = nothing();
 
+  top.boundNames_out = [];
+
   top.inProof = false;
 
-  forwards to noProof();
+  forwards to noProof(isAbellaForm=top.isAbellaForm);
 }
 
 
@@ -89,7 +99,7 @@ nonterminal CurrentGoal with
    pp,
    hypList, goal,
    typeEnv, constructorEnv, relationEnv,
-   usedNames;
+   usedNames, boundNames_out;
 propagate typeEnv, constructorEnv, relationEnv on CurrentGoal;
 
 abstract production currentGoal
@@ -108,6 +118,8 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
   top.hypList = ctx.hypList;
 
   top.goal = just(new(goal));
+
+  top.boundNames_out = vars;
 
   ctx.boundNames = vars;
   goal.boundNames = vars;

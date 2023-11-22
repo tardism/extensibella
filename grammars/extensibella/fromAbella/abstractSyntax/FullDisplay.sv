@@ -37,7 +37,7 @@ top::FullDisplay ::= tl::TheoremList
   top.fromAbella = showDisplay(tl.fromAbella);
 
   --We don't know what the current state is
-  top.proof = noProof();
+  top.proof = noProof(isAbellaForm=true);
   top.isError = false;
   top.isWarning = false;
   top.proofEnded = false;

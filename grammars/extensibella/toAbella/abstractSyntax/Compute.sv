@@ -21,8 +21,19 @@ top::ProofCommand ::= hyp::String
       | just(_) ->
         if hypBody.isComputable
         then []
-        else [errorMsg("Cannot compute " ++ hyp)]
+        else [errorMsg("Cannot compute " ++ hyp ++ " (" ++ justShow(hypBody.pp) ++ ")")]
       end;
+  {-
+
+    The problem here is that we are getting the Abella version of the
+    state, and therefore the hypothesis, rather than the Extensibella
+    version.  This is less than useful in this case, and I am
+    wondering if it is also a bad thing overall.  How much would it
+    break if I changed it to be the Extensibella version of the state
+    and hypothesis instead?  That seems more useful in general for
+    computation within Extensibella.
+
+  -}
 
   top.toAbella = hypBody.computeCmds;
 }
@@ -101,60 +112,45 @@ aspect production appendMetaterm
 top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
 {
   top.isComputable =
-      (t1.isConstant && t2.isConstant && !result.isConstant) ||
-      (t1.isConstant && !t2.isConstant && result.isConstant) ||
-      (!t1.isConstant && t2.isConstant && result.isConstant) ||
-      --can always compute with nil first
       case t1, t2, result of
-      | nilTerm(), _, nameTerm(_, _) -> true
-      | nilTerm(), nameTerm(_, _), _ -> true
-      | listTerm(emptyListContents()), _, nameTerm(_, _) -> true
-      | listTerm(emptyListContents()), nameTerm(_, _), _ -> true
+      --can always compute with full list first and a name to set
+      | _, _, nameTerm(_, _) -> fullList(t1)
+      | _, nameTerm(_, _), _ -> fullList(t1)
+      --only completely-known strings
       | stringTerm(""), _, nameTerm(_, _) -> true
       | stringTerm(""), nameTerm(_, _), _ -> true
-      | _, _, _ -> false
+      | stringTerm(_), stringTerm(_), nameTerm(_, _) -> true
+      | stringTerm(_), nameTerm(_, _), stringTerm(_) -> true
+      --nothing else
+      | _, _, _ -> unsafeTracePrint(false, "Cannot do " ++ justShow(t1.pp) ++ " (1)\n")
       end;
+  local fullList::(Boolean ::= Term) =
+      \ t::Term -> case t of
+                   | nilTerm() -> true
+                   | consTerm(_, r) -> fullList(r)
+                   | listTerm(_) -> true
+                   | _ -> unsafeTracePrint(false, "Cannot do " ++ justShow(t1.pp) ++ " (2)\n")
+                   end;
 
   --number of elements in the list we need to go through
-  local num::Integer =
-      case t1, t2, result of
-      --first term known
-      | nilTerm(), _, _ -> 0
-      | listTerm(c), _, _ -> c.len
-      | consTerm(a, b), _, _ -> consLen(t1)
-      | stringTerm(s), _, _ -> length(s)
-      --result known
-      | _, _, nilTerm() -> 0
-          --listTerm
-      | _, listTerm(ca), listTerm(cr) -> cr.len - ca.len
-      | _, consTerm(a, b), listTerm(cr) -> cr.len - consLen(t2)
-      | _, nilTerm(), listTerm(cr) -> cr.len
-          --consTerm
-      | _, listTerm(ca), consTerm(a, b) -> consLen(result) - ca.len
-      | _, consTerm(aa, ab), consTerm(ra, rb) ->
-        consLen(result) - consLen(t2)
-      | _, nilTerm(), consTerm(a, b) -> consLen(result)
-          --stringTerm
-      | _, stringTerm(sa), stringTerm(sr) -> length(sr) - length(sa)
-      --other
-      | _, _, _ -> error("Should not access")
-      end;
-  local consLen::(Integer ::= Term) =
+  local num::Integer = listLen(t1);
+  local listLen::(Integer ::= Term) =
       \ t::Term -> case t of
                    | nilTerm() -> 0
-                   | consTerm(_, r) -> 1 + consLen(r)
+                   | consTerm(_, r) -> 1 + listLen(r)
                    | listTerm(c) -> c.len
                    | _ -> 0
                    end;
 
   --num + 1 cases
   top.computeCmds =
-      foldr(\ i::Integer rest::[ProofCommand] ->
-              caseTactic(nameHint("$" ++ toString(i + 1)),
-                         "$" ++ toString(i), false)::rest,
+      foldl(\ rest::[ProofCommand] i::Integer ->
+              rest ++
+              [caseTactic(nameHint("$" ++ toString(i + 1)),
+                          "$" ++ toString(i), false)],
             --solved immediately, as this is a hyp
             [assertTactic(nameHint("$0"), nothing(), top)],
-            range(0, num));
+            range(0, num + 1));
 }
 
 

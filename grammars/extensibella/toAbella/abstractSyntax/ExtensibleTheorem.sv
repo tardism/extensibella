@@ -64,7 +64,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       findExtIndGroup(head(thms.inductionRels), top.proverState);
   --need extInd for all if any relations are imported
   local importedIndRels::[QName] =
-      filter(\ r::QName -> false, --!sameModule(top.currentModule, r),
+      filter(\ r::QName -> !sameModule(top.currentModule, r),
              thms.inductionRels);
   top.toAbellaMsgs <-
       if null(importedIndRels)
@@ -412,18 +412,17 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       lookupBy(\ a::Maybe<String> b::Maybe<String> ->
                  a.isJust && b.isJust && a.fromJust == b.fromJust,
                just(onLabel), body.premises);
-  top.toAbellaMsgs <- m1 ++ m2 ++ m3 ++ m4;
-  local m1::[Message] = --top.toAbellaMsgs <-
+  top.toAbellaMsgs <-
       case foundLabeledPremise of
       | nothing() ->
         [errorMsg("Unknown label " ++ onLabel ++ " in extensible " ++
                   "theorem " ++ justShow(name.pp))]
-      | just(relationMetaterm(rel, args, r)) -> let x::Integer = unsafeTracePrint(1, justShow(rel.pp) ++ "\n") in
+      | just(relationMetaterm(rel, args, r)) ->
         --need to check the metaterm is built by an extensible relation
         let decRel::Decorated QName with {relationEnv} =
             decorate rel with {relationEnv = top.relationEnv;}
         in
-          if x == 1 && !decRel.relFound
+          if !decRel.relFound
           then [] --covered by other errors
           else if top.shouldBeExtensible
              --should be an extensible theorem
@@ -438,7 +437,18 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                       [errorMsg("Primary component of induction " ++
                           "relation cannot be filled but is in theorem " ++
                           justShow(name.pp))]
-                    end
+                    end ++
+                    --check for ExtInd
+                    if sameModule(top.currentModule, inductionRel.name)
+                    then [] --don't need one
+                    else case thisExtInd of
+                         | just(_) -> [] --found
+                         | nothing() ->
+                           [errorMsg("Cannot find ExtInd for relation " ++
+                               justShow(inductionRel.name.pp) ++
+                               " for extensible theorem " ++ justShow(name.pp) ++ "\n" ++
+  justShow(top.proverState.pp) ++ " [" ++ implode(", ", map((.abella_pp), top.inductionRels)) ++ "]")]
+                         end
              --should NOT be an extensible theorem
           else if inductionRel.isExtensible
                then [errorMsg("Cannot induct on extensible relations " ++
@@ -446,7 +456,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                         "; " ++ justShow(inductionRel.name.pp) ++
                         " is extensible")]
                else []
-        end end
+        end
       | just(m) when top.shouldBeExtensible ->
         [errorMsg("Can only induct on extensible relations for " ++
             "extensible theorem " ++ justShow(name.pp) ++
@@ -455,7 +465,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       end;
 
   --check name is qualified with appropriate module
-  local m2::[Message] = --top.toAbellaMsgs <-
+  top.toAbellaMsgs <-
       if name.isQualified
       then if name.moduleName == top.currentModule
            then []
@@ -464,14 +474,14 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                     justShow(top.currentModule.pp) ++ ")")]
       else [];
   --check there are no existing theorems with this full name
-  local m3::[Message] = --top.toAbellaMsgs <-
+  top.toAbellaMsgs <-
       if null(findTheorem(fullName, top.proverState))
       then []
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
 
   --check the body is well-typed
-  local m4::[Message] = --top.toAbellaMsgs <-
+  top.toAbellaMsgs <-
       case body.upSubst of
       | right(_) ->
         if any(map(\ v::String ->
