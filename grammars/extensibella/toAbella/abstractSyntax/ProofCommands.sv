@@ -63,6 +63,7 @@ top::ProofCommand ::= h::HHint nl::[Integer]
                      relationEnv = top.relationEnv;}.relFound -> []
                  | extSizeMetaterm(rel, args, r) -> []
                  | transRelMetaterm(rel, args, r) -> []
+                 | appendMetaterm(t1, t2, res, r) -> []
                  --Disallowed induction
                  | relationMetaterm(rel, args, r) ->
                    --should be a special relation or unknown

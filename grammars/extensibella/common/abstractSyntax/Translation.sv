@@ -23,7 +23,7 @@ global natZeroName::String = "$zero";
 global integerType::Type =
        nameType(toQName("$lib__integer"));
 global posIntegerName::String = "$posInt";
-global negIntegerName::String = "$negSUccInt";
+global negIntegerName::String = "$negSuccInt";
 global integerAdditionName::String = "$plus_integer";
 global integerSubtractionName::String = "$minus_integer";
 global integerMultiplicationName::String = "$multiply_integer";
