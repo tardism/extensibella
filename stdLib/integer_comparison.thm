@@ -984,6 +984,11 @@ induction on 1. intros IsA IsB. IsA: case IsA.
 Define $greatereq_integer : $lib__integer -> $lib__integer -> prop by
   $greatereq_integer N1 N2 := $lesseq_integer N2 N1.
 
+Theorem extensibella-$-stdLib-$-greater_integer_greatereq : forall A B,
+  $greater_integer A B -> $greatereq_integer A B.
+intros G. L: case G.
+apply extensibella-$-stdLib-$-less_integer_lesseq to L. search.
+
 Theorem extensibella-$-stdLib-$-is_integer_greatereq : forall A,
   is_integer A -> $greatereq_integer A A.
 intros Is. apply extensibella-$-stdLib-$-is_integer_lesseq to Is.
@@ -1100,6 +1105,65 @@ intros IsLow IsHigh LowX XHigh. LowX: case LowX (keep).
    search.
   %7:  -(N1 + 2) <= -(N2 + 2)
    case IsLow. apply $lesseq_integer_is_negSuccInt to _ LowX1. search.
+
+
+Theorem extensibella-$-stdLib-$-is_integer_related :
+  forall A B,
+    is_integer A -> is_integer B ->
+    A = B \/ $less_integer A B \/ $greater_integer A B.
+induction on 1. intros IsA IsB. IsA: case IsA.
+  %1: A = 0
+   IsB: case IsB.
+     %1.1:  B = 0
+      search.
+     %1.2:  B = $succ N
+      search.
+     %1.3:  B = -1
+      search.
+     %1.4:  B = -($succ ($succ N))
+      search.
+  %2:  A = $succ N
+   IsB: case IsB.
+     %1.1:  B = 0
+      search.
+     %1.2:  B = $succ N1
+      Or: apply IH to IsA IsB. C: case Or.
+        %1.2.1:  N = N1
+         search.
+        %1.2.2:  N < N1
+         search.
+        %1.2.3:  N > N1
+         case C. search.
+     %1.3:  B = -1
+      search.
+     %1.4:  B = -($succ ($succ N1))
+      search.
+  %3:  A = -1
+   IsB: case IsB.
+     %1.1:  B = 0
+      search.
+     %1.2:  B = $succ N
+      search.
+     %1.3:  B = -1
+      search.
+     %1.4:  B = -($succ ($succ N))
+      search.
+  %4:  A = -($succ ($succ N))
+   IsB: case IsB.
+     %1.1:  B = 0
+      search.
+     %1.2:  B = $succ N1
+      search.
+     %1.3:  B = -1
+      search.
+     %1.4:  B = -($succ ($succ N1))
+      Or: apply IH to IsA IsB. C: case Or.
+        %4.4.1:  -($succ N) = -($succ N1)
+         search.
+        %4.4.2:  -($succ N) < -($succ N1)
+         search.
+        %4.4.3:  -($succ N) > -($succ N1)
+         case C. search.
 
 
 

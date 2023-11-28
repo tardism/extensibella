@@ -80,4 +80,4 @@ if [ ! -f "$EXTENSIBELLA_JAR" ]; then
     exit 1
 fi
 #Run it
-java -Xmx4G -Xss16M -jar "$EXTENSIBELLA_JAR" $@
+java -Xmx6G -Xss32M -jar "$EXTENSIBELLA_JAR" $@

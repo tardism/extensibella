@@ -446,8 +446,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                          | nothing() ->
                            [errorMsg("Cannot find ExtInd for relation " ++
                                justShow(inductionRel.name.pp) ++
-                               " for extensible theorem " ++ justShow(name.pp) ++ "\n" ++
-  justShow(top.proverState.pp) ++ " [" ++ implode(", ", map((.abella_pp), top.inductionRels)) ++ "]")]
+                               " for extensible theorem " ++ justShow(name.pp))]
                          end
              --should NOT be an extensible theorem
           else if inductionRel.isExtensible
@@ -491,8 +490,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                        "variables in " ++ justShow(name.pp))]
         else []
       | left(errs) ->
-        --given the messages are not terribly useful:
-        [errorMsg("Type error in " ++ justShow(name.pp))]
+        map(add_message_tag(_, "Type error in " ++ justShow(name.pp)), errs)
       end;
   --all type variables in the body
   local allTyVars::[String] =

@@ -484,6 +484,39 @@ top::ProofCommand ::= all::Boolean
           else [errorMsg("Cannot unfold conclusion of extensible " ++
                    "relation with unfilled primary component")]
         end
+      | just(transRelMetaterm(r, a, _)) ->
+        let rel::RelationEnvItem = --r must be qualified, so only one
+            head(lookupEnv(r, top.proverState.knownRels))
+        in
+          if !rel.isExtensible
+          then [] --always fine, since no other rules can be added
+          else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
+                     relationEnv=top.relationEnv;
+                     constructorEnv=top.constructorEnv;
+                  }.isStructured
+          then [] --no new rules can be added, so fine
+          else [errorMsg("Cannot unfold conclusion of extensible " ++
+                   "relation with unfilled primary component")]
+        end
+      | just(extSizeMetaterm(r, a, _)) ->
+        let rel::RelationEnvItem = --r must be qualified, so only one
+            head(lookupEnv(r, top.proverState.knownRels))
+        in
+          if !rel.isExtensible
+          then [] --always fine, since no other rules can be added
+          else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
+                     relationEnv=top.relationEnv;
+                     constructorEnv=top.constructorEnv;
+                  }.isStructured
+          then [] --no new rules can be added, so fine
+          else [errorMsg("Cannot unfold conclusion of extensible " ++
+                   "relation with unfilled primary component")]
+        end
+      | just(translationMetaterm(a, ty, orig, trans)) ->
+        if orig.isStructured
+        then [] --no new rules can be added, so fine
+        else [errorMsg("Cannot unfold conclusion of translation " ++
+                 "with unfilled primary component")]
       | just(_) -> [errorMsg("Cannot unfold conclusion of this form")]
       | nothing() -> error("Impossible (unfoldTactic)")
       end;
