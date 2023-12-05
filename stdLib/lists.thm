@@ -1,3 +1,5 @@
+Kind $lib__nat   type.
+Import "integer_comparison".
 
 /*
   Lists are one of the few things actually built into Abella, so we
@@ -56,9 +58,64 @@ induction on 1. intros. case H1.
   case H2. apply IH to H3 H4. search.
 
 % L1 ++ (L2 ++ L3)  =>  (L1 ++ L2) ++ L3 is equal
-Theorem extensibella-$-stdLib-$-append_associative_back[A] : forall (L1 L2 L3 L23 L123 : list A),
-  $append L2 L3 L23 -> $append L1 L23 L123 ->
-  exists L12, $append L1 L2 L12 /\ $append L12 L3 L123.
+Theorem extensibella-$-stdLib-$-append_associative_back[A] :
+  forall (L1 L2 L3 L23 L123 : list A),
+    $append L2 L3 L23 -> $append L1 L23 L123 ->
+    exists L12, $append L1 L2 L12 /\ $append L12 L3 L123.
 induction on 2. intros. case H2.
   search.
   apply IH to H1 H3. search.
+
+
+
+
+Define extensibella-$-stdLib-$-length : list A -> $lib__integer -> prop by
+  extensibella-$-stdLib-$-length nil ($posInt $zero);
+  extensibella-$-stdLib-$-length (A::Rest) N :=
+    exists N', extensibella-$-stdLib-$-length Rest N' /\
+               $plus_integer ($posInt ($succ $zero)) N' N.
+
+Theorem extensibella-$-stdLib-$-length_is[A] : forall (L : list A) N,
+  extensibella-$-stdLib-$-length L N -> is_integer N.
+induction on 1. intros L. L: case L.
+  %nil
+   search.
+  %cons
+   apply IH to L.
+   apply extensibella-$-stdLib-$-plus_integer_is_integer to _ _ L1. search.
+
+%lemma
+Theorem $greater+1 : forall N N',
+  is_integer N -> $greater_integer N ($posInt $zero) ->
+  $plus_integer ($posInt ($succ $zero)) N N' ->
+  $greater_integer N' ($posInt $zero).
+intros IsN G P. P': apply extensibella-$-stdLib-$-plus_integer_comm to _ _ P.
+apply extensibella-$-stdLib-$-greater_integer__add_positive to G _ P'. search.
+
+Theorem extensibella-$-stdLib-$-cons_length[A] : forall H (T : list A) N,
+  extensibella-$-stdLib-$-length (H::T) N -> $greater_integer N ($posInt $zero).
+induction on 1. intros L. L: case L. L': case L (keep).
+  %T = nil
+   case L1. case H1. search.
+  %T = cons
+   G: apply IH to L. IsN': apply extensibella-$-stdLib-$-length_is to L.
+   backchain $greater+1.
+
+Theorem extensibella-$-stdLib-$-length_cons[A] : forall (L : list A) N,
+  extensibella-$-stdLib-$-length L N -> $greater_integer N ($posInt $zero) ->
+  exists H T, L = H::T.
+induction on 1. intros L G. L: case L.
+  %nil
+   G: case G. case G.
+  %cons
+   search.
+
+Theorem extensibella-$-stdLib-$-length_geq_0[A] : forall (L : list A) N,
+  extensibella-$-stdLib-$-length L N -> $greatereq_integer N ($posInt $zero).
+induction on 1. intros L. L: case L.
+  %nil
+   search.
+  %cons
+   G: apply IH to L.
+   apply extensibella-$-stdLib-$-greatereq_integer__add_positive to _ G L1.
+   search.

@@ -306,6 +306,10 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
           fixedRelationEnvItem(toQName("is_list"),
              toTypeList([arrowType(varType("A"), propType),
                          listType(varType("A")), propType])),
+              --this doesn't seem special enough to merit an unqualified name
+          fixedRelationEnvItem(toQName("extensibella:stdLib:length"),
+             toTypeList([listType(varType("A")),
+                         integerType, propType])),
           --need hidden relations due to how we handle importing from
           --one module to another one
           fixedRelationEnvItem(toQName(integerAdditionName),
