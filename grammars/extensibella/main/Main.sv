@@ -4,6 +4,7 @@ imports extensibella:main:util;
 imports extensibella:main:run;
 imports extensibella:main:compile;
 imports extensibella:main:generate;
+imports extensibella:main:compose;
 
 imports silver:util:cmdargs;
 
@@ -40,7 +41,11 @@ IOVal<Integer> ::= parsers::AllParsers largs::[String] ioin::IOToken
           runFun = generateSkeletonFiles,
           shouldDoFun = \ c::Configuration ->
                           !null(c.generateFiles),
-          actionDesc = "Generate")
+          actionDesc = "Generate"),
+       actionSpec(
+          runFun = compose_files,
+          shouldDoFun = \ c::Configuration -> c.composeFile,
+          actionDesc = "Compose")
       ];
 
   {-

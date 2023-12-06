@@ -29,6 +29,32 @@ IOVal<Integer> ::=
    importThms::[ThmElement]
    config::Configuration ioin::IOToken
 {
+  local decCmds::Either<IOVal<String>  Decorated ListOfCommands> =
+     buildDecRunCommands(filename, cmds, parsers, currentModule,
+        definitionCmds, importDefs, importThms, config, ioin);
+
+  return
+     case decCmds of
+     | left(errIO) ->
+       ioval(printT("Error:  " ++ errIO.iovalue ++ "\n", errIO.io), 1)
+     | right(c) -> c.runResult
+     end;
+}
+
+
+--pull this out into a separate function so we can get the list of
+--   commands that has run, with all the states in which they ran,
+--   instead of the result alone
+function buildDecRunCommands
+Either<IOVal<String>  Decorated ListOfCommands> ::=
+   filename::String cmds::ListOfCommands
+   parsers::AllParsers
+   currentModule::QName
+   definitionCmds::ListOfCommands
+   importDefs::[DefElement]
+   importThms::[ThmElement]
+   config::Configuration ioin::IOToken
+{
   local started::IOVal<Either<String ProcessHandle>> =
       startAbella(ioin, config);
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
@@ -69,12 +95,10 @@ IOVal<Integer> ::=
 
   return
      if !started.iovalue.isRight
-     then ioval(printT("Error:  " ++ started.iovalue.fromLeft ++
-                       "\n", started.io), 1)
+     then left(ioval(started.io, started.iovalue.fromLeft))
      else if !stdLibThms.iovalue.isRight
-     then ioval(printT("Error:  " ++ stdLibThms.iovalue.fromLeft ++
-                       "\n", stdLibThms.io), 1)
-     else cmds.runResult;
+     then left(ioval(stdLibThms.io, stdLibThms.iovalue.fromLeft))
+     else right(cmds);
 }
 
 
