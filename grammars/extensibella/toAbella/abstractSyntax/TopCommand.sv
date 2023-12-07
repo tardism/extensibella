@@ -6,12 +6,14 @@ nonterminal TopCommand with
    --pp should always end with a newline
    pp, abella_pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
+   interactive,
    newProofState,
    newTheorems,
    provingTheorems, provingExtInds, duringCommands, afterCommands,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate constructorEnv, relationEnv, currentModule, proverState,
-          toAbellaMsgs on TopCommand excluding definitionDeclaration;
+          toAbellaMsgs, interactive on TopCommand
+   excluding definitionDeclaration;
 propagate typeEnv on TopCommand excluding definitionDeclaration,
                                           theoremDeclaration;
 

@@ -8,6 +8,8 @@ synthesized attribute filenames::[String] occurs on CmdArgs;
 
 synthesized attribute displayHelp::Boolean occurs on CmdArgs;
 
+synthesized attribute runsInteractive::Boolean occurs on CmdArgs;
+
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -15,6 +17,8 @@ top::CmdArgs ::= l::[String]
   top.filenames = l;
 
   top.displayHelp = false;
+
+  top.runsInteractive = true;
 }
 
 

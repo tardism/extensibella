@@ -9,10 +9,11 @@ nonterminal ProofCommand with
    boundNames,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<[ProofCommand]>, toAbellaMsgs,
-   isUndo,
+   isUndo, interactive,
    stateListIn, stateListOut;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          proverState, boundNames, toAbellaMsgs on ProofCommand;
+          proverState, boundNames, toAbellaMsgs, interactive
+   on ProofCommand;
 
 aspect default production
 top::ProofCommand ::=
@@ -364,6 +365,12 @@ top::ProofCommand ::=
   top.abella_pp = "undo.  ";
 
   top.toAbella = repeat(undoCommand(), head(top.stateListIn).1);
+
+  top.toAbellaMsgs <-
+      if top.interactive
+      then []
+      else [errorMsg("Undo command should not be used in " ++
+                     "non-interactive settings")];
 
   top.isUndo = true;
   top.stateListOut = tail(top.stateListIn);

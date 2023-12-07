@@ -6,11 +6,12 @@ nonterminal AnyCommand with
    toAbella<[AnyCommand]>, toAbellaMsgs,
    stateListIn, stateListOut,
    newProofState,
-   isQuit,
+   isQuit, interactive,
    boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          proverState, boundNames, toAbellaMsgs on AnyCommand;
+          proverState, boundNames, toAbellaMsgs, interactive
+   on AnyCommand;
 
 
 abstract production anyTopCommand

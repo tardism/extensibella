@@ -16,8 +16,10 @@ nonterminal ListOfCommands with
    ignoreDefErrors,
    typeEnv, relationEnv, constructorEnv, proverState, currentModule,
    commandList, tys, rels, constrs,
-   declaredThms;
-propagate proverState, currentModule, ignoreDefErrors on ListOfCommands;
+   declaredThms,
+   interactive;
+propagate proverState, currentModule, ignoreDefErrors,
+          interactive on ListOfCommands;
 
 synthesized attribute commandList::[AnyCommand];
 

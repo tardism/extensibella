@@ -1,7 +1,5 @@
 grammar extensibella:main:compose;
 
-type DecCmds = Decorated ListOfCommands;
-
 function compose_files
 IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
                    config::Configuration
@@ -37,10 +35,16 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
   local checkMods::Either<String [(QName, DecCmds)]> =
       checkModulesMatch(expectedMods, gathered.iovalue.fromRight);
 
+  --get the proof definitions and obligations
+  local outerface::IOVal<Either<String ([DefElement], [ThmElement])>> =
+      readOuterfaces(parsedMods.parseTree.ast.mods, --don't need outerface for composeMod
+                     parsers, genDirs.iovalue, gathered.io);
+
   --build and write the file, now that everything has checked out
   local createComposedFile::IOVal<Integer> =
       build_composed_file(config.composeFilename, defFileContents.iovalue,
-                          checkMods.fromRight, gathered.io);
+         checkMods.fromRight, outerface.iovalue.fromRight.1,
+         outerface.iovalue.fromRight.2, outerface.io);
 
   return
       --interface errors
@@ -65,6 +69,8 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
       then ioval(printT(gathered.iovalue.fromLeft, gathered.io), 1)
       else if !checkMods.isRight
       then ioval(printT(checkMods.fromLeft, gathered.io), 1)
+      else if !outerface.iovalue.isRight
+      then ioval(printT(outerface.iovalue.fromLeft, outerface.io), 1)
       else createComposedFile;
 }
 
@@ -173,10 +179,11 @@ Either<String [(QName, DecCmds)]> ::= expectedMods::[QName]
 }
 
 
---
+--make the string for the composed file and write it out to the file
 function build_composed_file
 IOVal<Integer> ::= outFilename::String defFileContents::String
-                   mods::[(QName, DecCmds)] ioin::IOToken
+                   mods::[(QName, DecCmds)] proofDefs::[DefElement]
+                   thms::[ThmElement] ioin::IOToken
 {
   --Extensibella standard library
   local stdLib::IOVal<[String]> = extensibellaStdLibAbellaCmds(ioin);
@@ -193,6 +200,14 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
       " ********************************************************************/\n" ++
       defFileContents ++ "\n\n\n";
 
+  --proof definitions
+  local proofDefsString::String =
+      if null(proofDefs) then ""
+      else "/********************************************************************\n" ++
+           " Proof-Level Definitions\n" ++
+           " ********************************************************************/\n" ++
+           implode("\n", map((.abella_pp), flatMap((.encode), proofDefs))) ++ "\n\n\n";
+
   --properties and proofs
   local propertyString::String =
       "/********************************************************************\n" ++
@@ -200,7 +215,8 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
       " ********************************************************************/\n";
 
   --put it all together
-  local fullString::String = stdLibString ++ langDefString ++ propertyString;
+  local fullString::String =
+      stdLibString ++ langDefString ++ proofDefsString ++ propertyString;
   local output::IOToken =
       printT("Done\n",
              writeFileT(outFilename, fullString,

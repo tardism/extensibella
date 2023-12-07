@@ -9,8 +9,8 @@ nonterminal NoOpCommand with
    toAbella<[NoOpCommand]>, toAbellaMsgs,
    stateListIn, stateListOut,
    isQuit,
-   proverState;
-propagate proverState, toAbellaMsgs on NoOpCommand;
+   proverState, interactive;
+propagate proverState, toAbellaMsgs, interactive on NoOpCommand;
 
 --because we only intend to pass these through to Abella, we don't
 --   need to actually know anything about the option or its value
@@ -55,6 +55,16 @@ top::NoOpCommand ::= opt::String val::String
            else [errorMsg("Argument to option 'display_width' must" ++
                           " be integer; found '" ++ val ++ "'")]
       else [errorMsg("Unknown option '" ++ opt ++ "'")];
+  top.toAbellaMsgs <-
+      if top.interactive
+      then []
+      else if opt == "debug"
+      then [errorMsg("Option 'debug' of 'Set' should not be used" ++
+                     "in non-interactive settings")]
+      else if opt == "witnesses"
+      then [errorMsg("Option 'witnesses' of 'Set' should not be " ++
+                     "used in non-interactive settings")]
+      else [];
 
   top.isQuit = false;
 }
@@ -82,6 +92,11 @@ top::NoOpCommand ::= theoremName::QName
                   implode(", ", map(justShow, map((.pp),
                                   map(fst, possibleThms)))))]
       end;
+  top.toAbellaMsgs <-
+      if !top.interactive
+      then [errorMsg("Show command should not be used in " ++
+                     "non-interactive settings")]
+      else [];
 
   top.stateListOut = (1, top.proverState)::top.stateListIn;
 
@@ -96,6 +111,12 @@ top::NoOpCommand ::=
   top.abella_pp = "Quit.\n";
 
   top.toAbella = [top];
+
+  top.toAbellaMsgs <-
+      if !top.interactive
+      then [errorMsg("Quit command should not be used in " ++
+                     "non-interactive settings")]
+      else [];
 
   --this probably isn't needed
   top.stateListOut = top.stateListIn;
@@ -122,6 +143,11 @@ top::NoOpCommand ::= n::Integer
   top.toAbellaMsgs <-
       if length(top.stateListIn) < n
       then [errorMsg("Cannot go back that far")]
+      else [];
+  top.toAbellaMsgs <-
+      if !top.interactive
+      then [errorMsg("#back command should not be used in " ++
+                     "non-interactive settings")]
       else [];
 
   top.stateListOut = drop(n, top.stateListIn);
@@ -155,6 +181,12 @@ top::NoOpCommand ::=
       error("showCurrentCommand.abella_pp should not be accessed");
 
   top.toAbella = [];
+
+  top.toAbellaMsgs <-
+      if !top.interactive
+      then [errorMsg("'Show $$current.' command should not be " ++
+                     "used in non-interactive settings")]
+      else [];
 
   --this doesn't really count as a command since it shouldn't be used
   --other than by Proof General

@@ -26,17 +26,72 @@ IOVal<Either<String
       parsed_interface.parseTree.ast;
 
   --Read imported outerface files
+  local outerface::IOVal<Either<String ([DefElement], [ThmElement])>> =
+      readOuterfaces(interface.mods, parsers, gen_dirs.iovalue,
+                     interface_file_contents.io);
+
+  --Read definition file
+  local definition_file::IOVal<Maybe<String>> =
+      findFile(moduleName.definitionFileName, gen_dirs.iovalue,
+               outerface.io);
+  local definition_file_contents::IOVal<String> =
+      readFileT(definition_file.iovalue.fromJust,
+                definition_file.io);
+  local parsed_definition::ParseResult<ListOfCommands_c> =
+      parsers.import_parse(definition_file_contents.iovalue,
+                   definition_file.iovalue.fromJust);
+  local definition::ListOfCommands = parsed_definition.parseTree.ast;
+
+  --put it together
+  return
+     --interface errors
+     if !interface_file.iovalue.isJust
+     then ioval(interface_file.io,
+                left("Could not find interface file for module " ++
+                     justShow(moduleName.pp) ++
+                     "; must compile module first"))
+     else if !parsed_interface.parseSuccess
+     then ioval(interface_file_contents.io,
+                left("Could not parse interface file for module " ++
+                     justShow(moduleName.pp) ++ ":\n" ++
+                     parsed_interface.parseErrors ++ "\n"))
+     --outerface errors
+     else if !outerface.iovalue.isRight
+     then ioval(outerface.io, left(outerface.iovalue.fromLeft))
+     --definition errors
+     else if !definition_file.iovalue.isJust
+     then ioval(definition_file.io,
+                left("Could not find definition file for module " ++
+                     justShow(moduleName.pp) ++
+                     "; must compile module first"))
+     else if !parsed_definition.parseSuccess
+     then ioval(definition_file_contents.io,
+                left("Could not parse definition file for module " ++
+                     justShow(moduleName.pp) ++ ":\n" ++
+                     parsed_definition.parseErrors ++ "\n"))
+     --success
+     else ioval(definition_file_contents.io,
+                right((definition, outerface.iovalue.fromRight.1,
+                       outerface.iovalue.fromRight.2)));
+}
+
+
+--read in and process all the outerface files
+function readOuterfaces
+IOVal<Either<String ([DefElement], [ThmElement])>> ::=
+   mods::[QName] parsers::AllParsers gen_dirs::[String] ioin::IOToken
+{
   local outerfaceFiles::IOVal<[Either<QName (QName, String)>]> =
       foldr(\ q::QName rest::IOVal<[Either<QName (QName, String)>]> ->
               let mf::IOVal<Maybe<String>> =
-                  findFile(q.outerfaceFileName, gen_dirs.iovalue, rest.io)
+                  findFile(q.outerfaceFileName, gen_dirs, rest.io)
               in
                 ioval(mf.io, case mf.iovalue of
                              | just(f) -> right((q, f))::rest.iovalue
                              | nothing() -> left(q)::rest.iovalue
                              end)
               end,
-            ioval(interface_file_contents.io, []), interface.mods);
+            ioval(ioin, []), mods);
   local findOuterfaceFileErrors::[QName] =
       flatMap(\ e::Either<QName (QName, String)> ->
                 case e of
@@ -67,56 +122,17 @@ IOVal<Either<String
   local outerface::([DefElement], [ThmElement]) =
       processModuleOuterfaces(outerfaces.iovalue);
 
-  --Read definition file
-  local definition_file::IOVal<Maybe<String>> =
-      findFile(moduleName.definitionFileName, gen_dirs.iovalue,
-               outerfaces.io);
-  local definition_file_contents::IOVal<String> =
-      readFileT(definition_file.iovalue.fromJust,
-                definition_file.io);
-  local parsed_definition::ParseResult<ListOfCommands_c> =
-      parsers.import_parse(definition_file_contents.iovalue,
-                   definition_file.iovalue.fromJust);
-  local definition::ListOfCommands = parsed_definition.parseTree.ast;
-
-  --put it together
-  return
-     --interface errors
-     if !interface_file.iovalue.isJust
-     then ioval(interface_file.io,
-                left("Could not find interface file for module " ++
-                     justShow(moduleName.pp) ++
-                     "; must compile module first"))
-     else if !parsed_interface.parseSuccess
-     then ioval(interface_file_contents.io,
-                left("Could not parse interface file for module " ++
-                     justShow(moduleName.pp) ++ ":\n" ++
-                     parsed_interface.parseErrors ++ "\n"))
-     --outerface errors
-     else if !null(findOuterfaceFileErrors)
-     then ioval(outerfaceFiles.io,
-             left("Could not find outerface " ++
-                (if length(findOuterfaceFileErrors) == 1
-                 then "file for module " ++
-                      justShow(head(findOuterfaceFileErrors).pp)
-                 else "files for modules " ++
-                      implode(", ", map(justShow,
-                         map((.pp), findOuterfaceFileErrors)))) ++
-                "; must compile first"))
-     --definition errors
-     else if !definition_file.iovalue.isJust
-     then ioval(definition_file.io,
-                left("Could not find definition file for module " ++
-                     justShow(moduleName.pp) ++
-                     "; must compile module first"))
-     else if !parsed_definition.parseSuccess
-     then ioval(definition_file_contents.io,
-                left("Could not parse definition file for module " ++
-                     justShow(moduleName.pp) ++ ":\n" ++
-                     parsed_definition.parseErrors ++ "\n"))
-     --success
-     else ioval(definition_file_contents.io,
-                right((definition, outerface.1, outerface.2)));
+  return if !null(findOuterfaceFileErrors)
+         then ioval(outerfaceFiles.io,
+                 left("Could not find outerface " ++
+                    (if length(findOuterfaceFileErrors) == 1
+                     then "file for module " ++
+                          justShow(head(findOuterfaceFileErrors).pp)
+                     else "files for modules " ++
+                          implode(", ", map(justShow,
+                             map((.pp), findOuterfaceFileErrors)))) ++
+                    "; must compile first"))
+         else ioval(outerfaces.io, right(outerface));
 }
 
 

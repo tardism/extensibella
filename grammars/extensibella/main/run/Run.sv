@@ -2,6 +2,11 @@ grammar extensibella:main:run;
 
 
 type StateList = [(Integer, ProverState)];
+type DecCmds = Decorated ListOfCommands with {
+                  currentModule, filename, parsers, stateList, config,
+                  abella, ioin, interactive, proverState, typeEnv,
+                  relationEnv, constructorEnv, cmdID, ignoreDefErrors
+               };
 
 
 {--
@@ -29,7 +34,7 @@ IOVal<Integer> ::=
    importThms::[ThmElement]
    config::Configuration ioin::IOToken
 {
-  local decCmds::Either<IOVal<String>  Decorated ListOfCommands> =
+  local decCmds::Either<IOVal<String>  DecCmds> =
      buildDecRunCommands(filename, cmds, parsers, currentModule,
         definitionCmds, importDefs, importThms, config, ioin);
 
@@ -46,7 +51,7 @@ IOVal<Integer> ::=
 --   commands that has run, with all the states in which they ran,
 --   instead of the result alone
 function buildDecRunCommands
-Either<IOVal<String>  Decorated ListOfCommands> ::=
+Either<IOVal<String>  DecCmds> ::=
    filename::String cmds::ListOfCommands
    parsers::AllParsers
    currentModule::QName
@@ -92,6 +97,12 @@ Either<IOVal<String>  Decorated ListOfCommands> ::=
   cmds.abella = started.iovalue.fromRight;
   cmds.ioin = sendIncoming.io;
   cmds.ignoreDefErrors = false;
+  cmds.interactive = config.runsInteractive;
+  cmds.proverState = error("cmds.proverState not needed");
+  cmds.typeEnv = error("cmds.typeEnv not needed");
+  cmds.relationEnv = error("cmds.relationEnv not needed");
+  cmds.constructorEnv = error("cmds.constructorEnv not needed");
+  cmds.cmdID = 1;
 
   return
      if !started.iovalue.isRight
@@ -172,6 +183,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   any_a.boundNames = state.boundNames_out;
   any_a.stateListIn = top.stateList;
   any_a.ignoreDefErrors = top.ignoreDefErrors;
+  any_a.interactive = top.interactive;
   --whether we have an error
   local is_error::Boolean = any(map((.isError), any_a.toAbellaMsgs));
   local speak_to_abella::Boolean = !is_error && !null(any_a.toAbella);

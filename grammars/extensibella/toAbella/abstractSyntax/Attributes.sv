@@ -17,6 +17,10 @@ synthesized attribute isUndo::Boolean;
 synthesized attribute isQuit::Boolean;
 
 
+--whether this is running interactively or in a finished state
+inherited attribute interactive::Boolean;
+
+
 --theorems proven by a command as part of what it does
 --different from provingTheorems because they are done, not being proven
 synthesized attribute newTheorems::[(QName, Metaterm)];

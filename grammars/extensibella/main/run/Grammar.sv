@@ -70,6 +70,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = rest.dumpAbellaFile;
 
+  top.runsInteractive = false;
+
   top.displayHelp = rest.displayHelp;
 
   forwards to rest;

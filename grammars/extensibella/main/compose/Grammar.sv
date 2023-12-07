@@ -39,6 +39,8 @@ top::CmdArgs ::= args::[String] rest::CmdArgs
   top.composeFilename = head(args);
   top.composeModuleName = head(tail(args));
 
+  top.runsInteractive = false;
+
   forwards to rest;
 }
 
