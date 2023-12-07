@@ -7,6 +7,27 @@ function startAbella
 IOVal<Either<String ProcessHandle>> ::=
       ioin::IOToken config::Decorated CmdArgs
 {
+  local library_cmds::IOVal<[String]> =
+      extensibellaStdLibAbellaCmds(ioin);
+
+  local abella::IOVal<ProcessHandle> =
+      spawnProcess("abella", [], library_cmds.io);
+  --Read Abella's welcome message
+  local abella_initial_string::IOVal<String> =
+      read_abella_output(abella.iovalue, abella.io);
+  --Send the library imports to Abella
+  local send_imports::IOVal<String> =
+      sendCmdsToAbella(library_cmds.iovalue, abella.iovalue,
+                       abella_initial_string.io, config);
+
+  return ioval(send_imports.io, right(abella.iovalue));
+}
+
+
+--Get the commands for importing the Extensibella stdLib
+function extensibellaStdLibAbellaCmds
+IOVal<[String]> ::= ioin::IOToken
+{
   local stdLibFiles::IOVal<Either<String [String]>> =
       standardLibraryFiles(ioin);
   local importStrings::[String] =
@@ -17,24 +38,10 @@ IOVal<Either<String ProcessHandle>> ::=
        "Kind $lib__nat    type.",
        "Kind $lib__pair   type -> type -> type."] ++
       importStrings;
-
-  local abella::IOVal<ProcessHandle> =
-      spawnProcess("abella", [], stdLibFiles.io);
-  --Read Abella's welcome message
-  local abella_initial_string::IOVal<String> =
-      read_abella_output(abella.iovalue, abella.io);
-  --Send the library imports to Abella
-  local send_imports::IOVal<String> =
-      sendCmdsToAbella(library_cmds, abella.iovalue,
-                       abella_initial_string.io, config);
-
-  return
-     case stdLibFiles.iovalue of
-     | left(err) -> ioval(stdLibFiles.io, left(err))
-     | right(_) -> ioval(send_imports.io, right(abella.iovalue))
-     end;
+  return if !stdLibFiles.iovalue.isRight
+         then error(stdLibFiles.iovalue.fromLeft)
+         else ioval(stdLibFiles.io, library_cmds);
 }
-
 
 
 --Send the commands from importing module specifications and build

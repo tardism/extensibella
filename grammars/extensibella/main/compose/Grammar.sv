@@ -12,10 +12,14 @@ imports extensibella:main;
 
 imports silver:util:cmdargs;
 
+imports silver:langutil:pp;
+imports silver:langutil only pp, pps;
+
 
 --New command line flag
 synthesized attribute composeFile::Boolean occurs on CmdArgs;
 synthesized attribute composeFilename::String occurs on CmdArgs;
+synthesized attribute composeModuleName::String occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -23,14 +27,17 @@ top::CmdArgs ::= l::[String]
   top.composeFile = false;
   top.composeFilename =
       error("Should not access composeFilename when composeFile is false");
+  top.composeModuleName =
+      error("Should not access composeModuleName when composeFile is false");
 }
 
 
 abstract production composeFlag
-top::CmdArgs ::= outputName::String rest::CmdArgs
+top::CmdArgs ::= args::[String] rest::CmdArgs
 {
   top.composeFile = true;
-  top.composeFilename = outputName;
+  top.composeFilename = head(args);
+  top.composeModuleName = head(tail(args));
 
   forwards to rest;
 }
@@ -42,9 +49,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <-
      [flagSpec(name="--compose",
-               paramString=just("<filename>"),
+               paramString=just("<output filename> <module name>"),
                help="compose listed files into a single Abella proof",
-               flagParser=option(composeFlag))];
+               flagParser=nOptions(2, composeFlag))];
 
   errors <-
      if a.composeFile && null(a.filenames)

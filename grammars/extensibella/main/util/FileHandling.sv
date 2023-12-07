@@ -1,5 +1,18 @@
 grammar extensibella:main:util;
 
+--get the directories where compiled files are placed
+function getGenDirs
+IOVal<[String]> ::= ioin::IOToken
+{
+  local extensibella_gen::IOVal<String> =
+      envVarT("EXTENSIBELLA_ENCODED", ioin);
+  return if extensibella_gen.iovalue == ""
+         then error("Generated location not set; " ++
+                    "must run Extensibella through given script")
+         else ioval(extensibella_gen.io,
+                    explode(":", extensibella_gen.iovalue));
+}
+
 
 --look through every directory in dirs for a file named filename
 --return full name of first one found (e.g. dir/ect/ory/filename)
@@ -63,6 +76,7 @@ IOVal<
 synthesized attribute interfaceFileName::String occurs on SubQName, QName;
 synthesized attribute outerfaceFileName::String occurs on SubQName, QName;
 synthesized attribute definitionFileName::String occurs on SubQName, QName;
+synthesized attribute composedFileName::String occurs on SubQName, QName;
 
 aspect production baseName
 top::SubQName ::= name::String
@@ -70,6 +84,7 @@ top::SubQName ::= name::String
   top.interfaceFileName = name ++ "___interface.xthmi";
   top.outerfaceFileName = name ++ "___outerface.xthmo";
   top.definitionFileName = name ++ "___definition.thm";
+  top.composedFileName = name ++ "___full.thm";
 }
 
 
@@ -79,6 +94,7 @@ top::SubQName ::= name::String rest::SubQName
   top.interfaceFileName = name ++ ":" ++ rest.interfaceFileName;
   top.outerfaceFileName = name ++ ":" ++ rest.outerfaceFileName;
   top.definitionFileName = name ++ ":" ++ rest.definitionFileName;
+  top.composedFileName = name ++ ":" ++ rest.composedFileName;
 }
 
 
@@ -89,6 +105,7 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -98,6 +115,7 @@ top::QName ::= pc::Integer rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -107,6 +125,7 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -116,6 +135,7 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -125,6 +145,7 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -134,6 +155,7 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -143,6 +165,7 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -152,6 +175,7 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }
 
 
@@ -161,4 +185,5 @@ top::QName ::= rest::SubQName
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
   top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
 }

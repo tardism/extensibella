@@ -10,14 +10,12 @@ IOVal<Either<String
              (ListOfCommands, [DefElement], [ThmElement])>> ::=
    moduleName::QName parsers::AllParsers ioin::IOToken
 {
-  local extensibella_gen::IOVal<String> =
-      envVarT("EXTENSIBELLA_ENCODED", ioin);
-  local gen_dirs::[String] = explode(":", extensibella_gen.iovalue);
+  local gen_dirs::IOVal<[String]> = getGenDirs(ioin);
 
   --Read interface file
   local interface_file::IOVal<Maybe<String>> =
-      findFile(moduleName.interfaceFileName, gen_dirs,
-               extensibella_gen.io);
+      findFile(moduleName.interfaceFileName, gen_dirs.iovalue,
+               gen_dirs.io);
   local interface_file_contents::IOVal<String> =
       readFileT(interface_file.iovalue.fromJust,
                 interface_file.io);
@@ -31,7 +29,7 @@ IOVal<Either<String
   local outerfaceFiles::IOVal<[Either<QName (QName, String)>]> =
       foldr(\ q::QName rest::IOVal<[Either<QName (QName, String)>]> ->
               let mf::IOVal<Maybe<String>> =
-                  findFile(q.outerfaceFileName, gen_dirs, rest.io)
+                  findFile(q.outerfaceFileName, gen_dirs.iovalue, rest.io)
               in
                 ioval(mf.io, case mf.iovalue of
                              | just(f) -> right((q, f))::rest.iovalue
@@ -71,7 +69,7 @@ IOVal<Either<String
 
   --Read definition file
   local definition_file::IOVal<Maybe<String>> =
-      findFile(moduleName.definitionFileName, gen_dirs,
+      findFile(moduleName.definitionFileName, gen_dirs.iovalue,
                outerfaces.io);
   local definition_file_contents::IOVal<String> =
       readFileT(definition_file.iovalue.fromJust,
@@ -84,10 +82,7 @@ IOVal<Either<String
   --put it together
   return
      --interface errors
-     if extensibella_gen.iovalue == ""
-     then ioval(extensibella_gen.io,
-                left("Generated location not set"))
-     else if !interface_file.iovalue.isJust
+     if !interface_file.iovalue.isJust
      then ioval(interface_file.io,
                 left("Could not find interface file for module " ++
                      justShow(moduleName.pp) ++
