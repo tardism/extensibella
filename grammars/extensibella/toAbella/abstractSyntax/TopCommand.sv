@@ -202,6 +202,12 @@ top::TopCommand ::= m::Metaterm
 
   top.toAbella = [anyTopCommand(queryCommand(m.toAbella))];
 
+  top.toAbellaMsgs <-
+      if !interactive
+      then [errorMsg("Query command should not be used in " ++
+                     "non-interactive settings")]
+      else [];
+
   top.provingTheorems = [];
 }
 
