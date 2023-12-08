@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#Create a tar for distribution
+
+set -eu
+
+./build
+
+cd ..
+
+tar -zcvf extensibella/extensibella.tar.gz \
+    "--exclude=*~" \
+    extensibella/build \
+    extensibella/deep-clean \
+    extensibella/docs \
+    extensibella/editor \
+    extensibella/exampleEncoding \
+    extensibella/extensibella \
+    extensibella/extensibella.jar \
+    extensibella/generated/README.md \
+    extensibella/grammars \
+    extensibella/install \
+    extensibella/LICENSE \
+    extensibella/README.md \
+    extensibella/stdLib

@@ -5,6 +5,9 @@ build.xml
 *.copperdump.html
 Parser_*_parse.html
 
+# Other generated
+*.tar.gz
+
 # Compiled Abella files
 *.thc
 
