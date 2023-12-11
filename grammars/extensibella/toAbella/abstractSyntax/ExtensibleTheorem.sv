@@ -18,7 +18,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       (if alsos.len == 0 then "" else " also " ++ alsos.abella_pp) ++ ".\n";
 
   production extName::QName =
-      if thms.len > 1
+      if thms.len + alsos.len > 1
       then toQName("$extThm_" ++ toString(genInt()))
       else head(thms.provingTheorems).1;
 
@@ -38,7 +38,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       --initial set of during commands, which is at least intros
       map(anyProofCommand,
           head(thms.duringCommands).2); --intros for first thm
-  local fullThms::Metaterm =
+  production fullThms::Metaterm =
       if alsos.len > 1
       then andMetaterm(thms.toAbella, alsos.toAbella)
       else thms.toAbella;

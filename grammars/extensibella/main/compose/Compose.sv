@@ -212,7 +212,8 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
   local propertyString::String =
       "/********************************************************************\n" ++
       " Properties and Proofs\n" ++
-      " ********************************************************************/\n";
+      " ********************************************************************/\n" ++
+      compose_proofs(thms, mods);
 
   --put it all together
   local fullString::String =
@@ -223,4 +224,19 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
                         printT("Writing " ++ outFilename ++ "...", stdLib.io)));
 
   return ioval(output, 1);
+}
+
+
+--pull the modular proofs apart and build the full text proof
+function compose_proofs
+String ::= thms::[ThmElement] mods::[(QName, DecCmds)]
+{
+  local fstThm::ThmElement = head(thms);
+  fstThm.incomingMods = mods;
+  return
+      case thms of
+      | [] -> ""
+      | _::rest ->
+        fstThm.composedCmds ++ compose_proofs(rest, fstThm.outgoingMods)
+      end;
 }

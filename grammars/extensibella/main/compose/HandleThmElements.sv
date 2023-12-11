@@ -1,16 +1,11 @@
 grammar extensibella:main:compose;
 
-{-
-  Why an attribute pointing to a function instead of a set of
-  attributes?  We're accessing this on decorated trees.  We cannot
-  redecorate them to give them inherited attributes with the original
-  map, so we use the functions to pass in the appropriate arguments,
-  then let the functions handle the actual work.
--}
-synthesized attribute
-                  --updated map        proof text   original map
-   handleElement::(([(QName, DecCmds)], String) ::= [(QName, DecCmds)])
-   occurs on ThmElement;
+--modules and their remaining commands before handling this element
+inherited attribute incomingMods::[(QName, DecCmds)] occurs on ThmElement;
+--modules and their remaining commands after handling this element
+synthesized attribute outgoingMods::[(QName, DecCmds)] occurs on ThmElement;
+--commands to handle this element
+synthesized attribute composedCmds::String occurs on ThmElement;
 
 aspect production extensibleMutualTheoremGroup
 top::ThmElement ::=
@@ -18,34 +13,80 @@ top::ThmElement ::=
    thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
    alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
 {
-  top.handleElement = handleExtensibleMutualTheoremGroup(_, thms, alsos);
+  local multiple::Boolean = length(thms) + length(alsos) > 1;
+  local extName::QName =
+      if multiple
+      then toQName("$extThm_" ++ toString(genInt()))
+      else fst(head(thms));
+  local extThms::ExtThms =
+      foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>)
+              rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
+            endExtThms(), thms ++ alsos);
+  local declare::String =
+      "Theorem " ++ extName.abella_pp ++ " : " ++
+      extThms.toAbella.abella_pp ++ ".\n";
+  local inductions::String =
+      "induction on " ++
+      implode(". induction on ",
+         map(toString, extThms.inductionNums)) ++ ".\n";
+  local renames::String =
+      implode(" ",
+         map(\ p::(String, String, String) ->
+               "rename " ++ p.1 ++ " to " ++ p.2 ++ ".",
+             extThms.renamedIHs));
+
+  local after::String =
+      if multiple
+      then "Split " ++ extName.abella_pp ++ " as " ++
+           implode(", ",
+                   map((.abella_pp),
+                       map(fst, thms) ++ map(fst, alsos))) ++ ".\n"
+      else "";
+
+  top.composedCmds =
+      declare ++ inductions ++ renames ++ " skip.\n" ++ after ++ "\n\n";
+
+
+  top.outgoingMods =
+      dropAllOccurrences(top.incomingMods, map(fst, thms));
 }
 
 
 aspect production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 {
-  top.handleElement = handleTranslationConstraint(_, name, binds, body);
+  local declare::String =
+      "Theorem " ++ name.abella_pp ++ " : " ++
+      "forall " ++ binds.abella_pp ++ ",\n" ++
+      body.abella_pp ++ ".\n";
+  local startPrf::String =
+      "induction on 1. skip.\n\n"; --fill in for real later
+  top.composedCmds = declare ++ startPrf;
 
-  top.matchesNames = \ l::[QName] -> head(l) == name;
+  top.outgoingMods = dropAllOccurrences(top.incomingMods, [name]);
 }
 
 
 aspect production nonextensibleTheorem
 top::ThmElement ::= name::QName params::[String] stmt::Metaterm
 {
-  top.handleElement = handleNonextensibleTheorem(_, name, params, stmt);
-
-  top.matchesNames = \ l::[QName] -> head(l) == name;
+  local updatePair::([(QName, DecCmds)], String) =
+      updateMod(top.incomingMods, name.moduleName, getProof);
+  top.outgoingMods = updatePair.1;
+  top.composedCmds = updatePair.2;
 }
 
 
 aspect production splitElement
 top::ThmElement ::= toSplit::QName newNames::[QName]
 {
-  top.handleElement = handleSplit(_, toSplit, newNames);
-
-  top.matchesNames = \ l::[QName] -> false;
+  top.composedCmds =
+      "Split " ++ toSplit.abella_pp ++ " as " ++
+      implode(", ", map((.abella_pp), newNames)) ++ ".\n\n";
+  top.outgoingMods =
+      updateMod(top.incomingMods, head(newNames).moduleName,
+                \ c::DecCmds -> (dropFirstTopCommand(c), "")).1;
 }
 
 
@@ -55,77 +96,10 @@ top::ThmElement ::=
    --    original, translated name)]
    rels::[(QName, [String], [Term], QName, String, String)]
 {
-  top.handleElement = handleExtInd(_, rels);
-
-  top.matchesNames =
-      \ l::[QName] -> !null(intersect(l, map(fst, rels)));
-}
-
-
-
-
-
-----------------------------------------------------------------------
--- Functions to handle different types of theorem elements
-----------------------------------------------------------------------
-
-function handleExtensibleMutualTheoremGroup
-([(QName, DecCmds)], String) ::=
-   mods::[(QName, DecCmds)]
-   --[(thm name, var bindings, thm statement, induction measure, IH name)]
-   thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
-   alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
-{
-  return error("");
-}
-
-
-function handleTranslationConstraint
-([(QName, DecCmds)], String) ::=
-   mods::[(QName, DecCmds)] name::QName binds::Bindings body::ExtBody
-{
-  local declare::String =
-      "Theorem " ++ name.abella_pp ++ " : " ++
-      "forall " ++ binds.abella_pp ++ ",\n" ++
-      body.abella_pp ++ ".\n";
-  local startPrf::String =
-      "induction on 1. skip.\n\n"; --fill in for real later
-  local removed::[(QName, DecCmds)] = dropAllOccurrences(name);
-  return (removed, declare ++ startPrf);
-}
-
-
-function handleNonextensibleTheorem
-([(QName, DecCmds)], String) ::=
-   mods::[(QName, DecCmds)] name::QName params::[String] stmt::Metaterm
-{
-  return updateMod(mods, name.moduleName, getProof);
-}
-
-
-function handleSplit
-([(QName, DecCmds)], String) ::=
-   mods::[(QName, DecCmds)] toSplit::QName allNames::[QName]
-{
-  local cmd::String =
-      "Split " ++ toSplit.abella_pp ++ " as " ++
-      implode(", ", map((.abella_pp), allNames)) ++ ".\n\n";
-  local outMods::[(QName, DecCmds)] =
-      updateMod(mods, head(allNames).moduleName,
-                \ c::DecCmds -> (dropFirstTopCommand(c), "")).1;
-  return (outMods, cmd);
-}
-
-
-function handleExtInd
-([(QName, DecCmds)], String) ::=
-   mods::[(QName, DecCmds)]
-   --[(rel name, rel arg names, trans args, trans ty,
-   --    original, translated name)]
-   rels::[(QName, [String], [Term], QName, String, String)]
-{
-  --remember this also needs to generate R_P, R_{ES}, and dropP(R)
-  return error("");
+  top.composedCmds = "%% Ext_Ind for " ++
+      implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n";
+  top.outgoingMods =
+      dropAllOccurrences(top.incomingMods, map(fst, rels));
 }
 
 
@@ -235,9 +209,30 @@ function dropAllOccurrences
            | addListOfCommands(anyTopCommand(t), _)
              when t.matchesNames(thms) ->
              (q, dropFirstTopCommand(c))::dropAllOccurrences(r, thms)
-           | addListOfCommands(_) ->
+           | addListOfCommands(_, _) ->
              (q, c)::dropAllOccurrences(r, thms)
            end
+         end;
+}
+
+
+--clear out all the non-proof things at the front of files in the last
+function dropNonProof
+[(QName, DecCmds)] ::= mods::[(QName, DecCmds)]
+{
+  return case mods of
+         | [] -> []
+         | (q, c)::r -> (q, dropNonProof_help(c))::dropNonProof(r)
+         end;
+}
+function dropNonProof_help
+DecCmds ::= c::DecCmds
+{
+  return case c of
+         | emptyListOfCommands() -> c
+         | addListOfCommands(anyTopCommand(t), r) when t.isNotProof ->
+           dropNonProof_help(dropFirstTopCommand(c))
+         | _ -> c
          end;
 }
 
@@ -245,111 +240,152 @@ function dropAllOccurrences
 
 
 
+{-
+  Why an attribute pointing to a function instead of a set of
+  attributes?  We're accessing this on decorated trees.  We cannot
+  redecorate them to give them inherited attributes with the original
+  map, so we use the functions to handle the actual work.
+-}
 --checks whether the given names are part of this one
 synthesized attribute matchesNames::(Boolean ::= [QName])
    occurs on TopCommand;
 
-aspect production extensibleTheorem
+--false if a proof element, true otherwise
+synthesized attribute isNotProof::Boolean occurs on TopCommand;
+
+aspect production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
   top.matchesNames =
-      \ l::[QName] -> !null(intersect(l, map(fst, thms)));
+      \ l::[QName] -> !null(intersect(l, map(fst, thms.provingTheorems)));
+
+  top.isNotProof = false;
 }
 
 
 aspect production proveObligations
 top::TopCommand ::= names::[QName]
 {
+  top.matchesNames = \ l::[QName] -> !null(intersect(l, names));
 
+  top.isNotProof = false;
 }
 
 
 aspect production translationConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
+  top.matchesNames = \ l::[QName] -> head(l) == fullName;
 
+  top.isNotProof = false;
 }
 
 
 aspect production proveConstraint
 top::TopCommand ::= name::QName
 {
+  top.matchesNames = \ l::[QName] -> head(l) == name;
 
+  top.isNotProof = false;
 }
 
 
 aspect production extIndDeclaration
 top::TopCommand ::= body::ExtIndBody
 {
+  top.matchesNames =
+      \ l::[QName] -> !null(intersect(l, map(fst, body.extIndInfo)));
 
+  top.isNotProof = false;
 }
 
 
 aspect production proveExtInd
 top::TopCommand ::= rels::[QName]
 {
+  top.matchesNames = \ l::[QName] -> !null(intersect(rels, l));
 
+  top.isNotProof = false;
 }
 
 
 aspect production theoremDeclaration
 top::TopCommand ::= name::QName params::[String] body::Metaterm
 {
+  top.matchesNames = \ l::[QName] -> head(l) == fullName;
 
+  top.isNotProof = false;
 }
 
 
 aspect production definitionDeclaration
 top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = true;
 }
 
 
 aspect production codefinitionDeclaration
 top::TopCommand ::= preds::[(QName, Type)] defs::Defs
 {
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = true;
 }
 
 
 aspect production queryCommand
 top::TopCommand ::= m::Metaterm
 {
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = true;
 }
 
 
 aspect production splitTheorem
 top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
 {
+  --won't use this for split, since that isn't distributed
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = false;
 }
 
 
 aspect production closeCommand
 top::TopCommand ::= tys::TypeList
 {
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = true;
 }
 
 
 aspect production kindDeclaration
 top::TopCommand ::= names::[QName] k::Kind
 {
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = true;
 }
 
 
 aspect production typeDeclaration
 top::TopCommand ::= names::[QName] ty::Type
 {
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = true;
 }
 
 
 aspect production importCommand
 top::TopCommand ::= name::String
 {
+  top.matchesNames = \ l::[QName] -> false;
 
+  top.isNotProof = true;
 }
