@@ -40,26 +40,17 @@ IOVal<Either<String ProcessHandle>> ::=
 --Send the commands from importing module specifications and build
 --   the environments
 function set_up_abella_module
-IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
-       Env<ConstructorEnvItem>)> ::=
-     currentModule::QName comms::ListOfCommands defs::[DefElement]
+IOToken ::=
+     currentModule::QName comms::ListOfCommands defs::[AnyCommand]
      parsers::AllParsers abella::ProcessHandle ioin::IOToken
      config::Decorated CmdArgs
 {
   local sendToAbella::[String] =
-      map((.abella_pp), comms.commandList) ++
-      map((.abella_pp), flatMap((.encode), defs));
+      map((.abella_pp), comms.commandList ++ defs);
   local back::IOVal<String> =
       sendCmdsToAbella(sendToAbella, abella, ioin, config);
   local parsedOutput::ParseResult<FullDisplay_c> =
       parsers.from_parse(back.iovalue, "<<output>>");
-
-  --nothing is known going into this
-  comms.typeEnv = [];
-  comms.relationEnv = [];
-  comms.constructorEnv = [];
-  comms.currentModule = error("currentModule not needed?");
-  comms.ignoreDefErrors = true;
 
   return
      if !parsedOutput.parseSuccess
@@ -68,9 +59,7 @@ IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
      else if parsedOutput.parseTree.ast.isError
      then error("Error passing module specifications to Abella:\n" ++
                 showDoc(80, parsedOutput.parseTree.ast.pp))
-     else ioval(back.io,
-                (buildEnv(comms.tys), buildEnv(comms.rels),
-                 buildEnv(comms.constrs)));
+     else back.io;
 }
 
 
