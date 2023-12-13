@@ -22,12 +22,17 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
       [composeModule];
 
   --definition file
-  --we only need to read its contents; we will assume it is correct without parsing
   local composedDefFileLoc::IOVal<Maybe<String>> =
       findFile(composeModule.composedFileName, genDirs.iovalue,
                interfaceFileContents.io);
   local defFileContents::IOVal<String> =
       readFileT(composedDefFileLoc.iovalue.fromJust, composedDefFileLoc.io);
+  local parsedDefFile::ParseResult<ListOfCommands_c> =
+      parsers.import_parse(defFileContents.iovalue,
+                           composedDefFileLoc.iovalue.fromJust);
+  local defEnvs::(Env<TypeEnvItem>, Env<RelationEnvItem>,
+                  Env<ConstructorEnvItem>) =
+      module_elements(parsedDefFile.parseTree.ast);
 
   --gather modules and check the right ones are there
   local gathered::IOVal<Either<String [(QName, String, DecCmds)]>> =
@@ -44,6 +49,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
   local createComposedFile::IOVal<Integer> =
       build_composed_file(config.composeFilename, defFileContents.iovalue,
          checkMods.fromRight, outerface.iovalue.fromRight.1,
+         defEnvs.2, defEnvs.3, defEnvs.1,
          outerface.iovalue.fromRight.2, outerface.io);
 
   return
@@ -54,7 +60,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
                         "; must compile module first",
                         interfaceFileLoc.io), 1)
       else if !parsedMods.parseSuccess
-      then ioval(printT("Could not parse interface file for module" ++
+      then ioval(printT("Could not parse interface file for module " ++
                         justShow(composeModule.pp) ++ ":\n" ++
                         parsedMods.parseErrors ++ "\n",
                         interfaceFileContents.io), 1)
@@ -64,6 +70,11 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
                         justShow(composeModule.pp) ++
                         "; must compile module for composition first",
                         composedDefFileLoc.io), 1)
+      else if !parsedDefFile.parseSuccess
+      then ioval(printT("Could not parse definition file for module " ++
+                        justShow(composeModule.pp) ++ ":\n" ++
+                        parsedDefFile.parseErrors ++ "\n",
+                        defFileContents.io), 1)
       --module gathering and checking errors
       else if !gathered.iovalue.isRight
       then ioval(printT(gathered.iovalue.fromLeft, gathered.io), 1)
@@ -183,7 +194,10 @@ Either<String [(QName, DecCmds)]> ::= expectedMods::[QName]
 function build_composed_file
 IOVal<Integer> ::= outFilename::String defFileContents::String
                    mods::[(QName, DecCmds)] proofDefs::[DefElement]
-                   thms::[ThmElement] ioin::IOToken
+                   defRelEnv::Env<RelationEnvItem>
+                   defConstrEnv::Env<ConstructorEnvItem>
+                   defTyEnv::Env<TypeEnvItem> thms::[ThmElement]
+                   ioin::IOToken
 {
   --Extensibella standard library
   local stdLib::IOVal<[String]> = extensibellaStdLibAbellaCmds(ioin);
@@ -209,11 +223,20 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
            implode("\n", map((.abella_pp), flatMap((.encode), proofDefs))) ++ "\n\n\n";
 
   --properties and proofs
+  local proofDefItems::([TypeEnvItem], [RelationEnvItem],
+                        [ConstructorEnvItem]) =
+      defElementsDefinitions(proofDefs);
+  local proverState::ProverState =
+      defaultProverState([],
+         addEnv(defTyEnv, proofDefItems.1),
+         addEnv(defRelEnv, proofDefItems.2),
+         addEnv(defConstrEnv, proofDefItems.3),
+         []);
   local propertyString::String =
       "/********************************************************************\n" ++
       " Properties and Proofs\n" ++
       " ********************************************************************/\n" ++
-      compose_proofs(thms, mods);
+      compose_proofs(thms, mods, proverState);
 
   --put it all together
   local fullString::String =
@@ -230,13 +253,18 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
 --pull the modular proofs apart and build the full text proof
 function compose_proofs
 String ::= thms::[ThmElement] mods::[(QName, DecCmds)]
+           proverState::ProverState
 {
   local fstThm::ThmElement = head(thms);
   fstThm.incomingMods = mods;
+  fstThm.relEnv = proverState.knownRels;
+  fstThm.constrEnv = proverState.knownConstrs;
+  fstThm.tyEnv = proverState.knownTypes;
   return
       case thms of
       | [] -> ""
       | _::rest ->
-        fstThm.composedCmds ++ compose_proofs(rest, fstThm.outgoingMods)
+        fstThm.composedCmds ++ compose_proofs(rest, fstThm.outgoingMods,
+                                              proverState)
       end;
 }

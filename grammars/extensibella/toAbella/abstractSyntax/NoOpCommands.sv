@@ -76,8 +76,8 @@ top::NoOpCommand ::= theoremName::QName
   top.pp = text("Show ") ++ theoremName.pp ++ text(".") ++ realLine();
   top.abella_pp = "Show " ++ theoremName.abella_pp ++ ".\n";
 
-  local possibleThms::[(QName, Metaterm)] =
-     findTheorem(theoremName, top.proverState);
+  production possibleThms::[(QName, Metaterm)] =
+      findTheorem(theoremName, top.proverState);
   top.toAbella = [showCommand(head(possibleThms).1)];
 
   top.toAbellaMsgs <-

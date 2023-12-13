@@ -7,6 +7,11 @@ synthesized attribute outgoingMods::[(QName, DecCmds)] occurs on ThmElement;
 --commands to handle this element
 synthesized attribute composedCmds::String occurs on ThmElement;
 
+--pass in environments in MWDA-approved ways
+inherited attribute relEnv::Env<RelationEnvItem> occurs on ThmElement;
+inherited attribute constrEnv::Env<ConstructorEnvItem> occurs on ThmElement;
+inherited attribute tyEnv::Env<TypeEnvItem> occurs on ThmElement;
+
 aspect production extensibleMutualTheoremGroup
 top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction measure, IH name)]
@@ -23,6 +28,11 @@ top::ThmElement ::=
               rest::ExtThms ->
               addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
             endExtThms(), thms ++ alsos);
+  extThms.relationEnv = top.relEnv;
+  extThms.constructorEnv = top.constrEnv;
+  extThms.typeEnv = top.tyEnv;
+  extThms.expectedIHNum = 0;
+
   local declare::String =
       "Theorem " ++ extName.abella_pp ++ " : " ++
       extThms.toAbella.abella_pp ++ ".\n";
@@ -71,10 +81,17 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 aspect production nonextensibleTheorem
 top::ThmElement ::= name::QName params::[String] stmt::Metaterm
 {
+  local declaration::String =
+      "Theorem " ++ name.abella_pp ++
+      (if null(params) then ""
+                       else "[" ++ implode(", ", params) ++ "]") ++
+      " : " ++ stmt.abella_pp ++ ".\n";
+
   local updatePair::([(QName, DecCmds)], String) =
       updateMod(top.incomingMods, name.moduleName, getProof);
+
   top.outgoingMods = updatePair.1;
-  top.composedCmds = updatePair.2;
+  top.composedCmds = declaration ++ updatePair.2 ++ "\n\n";
 }
 
 
@@ -182,12 +199,14 @@ function getProof_help
          | addListOfCommands(anyProofCommand(p), r) ->
            let rest::(DecCmds, String) = getProof_help(r)
            in
-             (rest.1, p.abella_pp ++ rest.2)
-           end
+           let f::ProofCommand = p.full
+           in
+             (rest.1, f.abella_pp ++ rest.2)
+           end end
          | addListOfCommands(anyNoOpCommand(n), r) ->
            let rest::(DecCmds, String) = getProof_help(r)
            in
-             (rest.1, n.abella_pp ++ rest.2)
+             (rest.1, n.full.abella_pp ++ rest.2)
            end
          | addListOfCommands(anyParseFailure(e), r) ->
            error("How did this get here?")

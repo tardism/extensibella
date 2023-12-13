@@ -590,3 +590,458 @@ top::MaybeType ::= ty::Type
 {
   top.full = justType(ty.full);
 }
+
+
+
+
+
+attribute
+   full<ProofCommand>
+occurs on ProofCommand;
+
+aspect production inductionTactic
+top::ProofCommand ::= h::HHint nl::[Integer]
+{
+  top.full = top;
+}
+
+
+aspect production coinductionTactic
+top::ProofCommand ::= h::HHint
+{
+  top.full = top;
+}
+
+
+aspect production introsTactic
+top::ProofCommand ::= names::[String]
+{
+  top.full = top;
+}
+
+
+aspect production applyTactic
+top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
+                      args::ApplyArgs withs::Withs
+{
+  top.full = applyTactic(h, depth, theorem.full, args.full, withs.full);
+}
+
+
+aspect production backchainTactic
+top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
+                      withs::Withs
+{
+  top.full = backchainTactic(depth, theorem.full, withs.full);
+}
+
+
+aspect production caseTactic
+top::ProofCommand ::= h::HHint hyp::String keep::Boolean
+{
+  top.full = top;
+}
+
+
+aspect production assertTactic
+top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
+{
+  top.full = assertTactic(h, depth, m.full);
+}
+
+
+aspect production existsTactic
+top::ProofCommand ::= ew::EWitnesses
+{
+  top.full = existsTactic(ew.full);
+}
+
+
+aspect production witnessTactic
+top::ProofCommand ::= ew::EWitnesses
+{
+  top.full = witnessTactic(ew.full);
+}
+
+
+aspect production searchTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production searchDepthTactic
+top::ProofCommand ::= n::Integer
+{
+  top.full = top;
+}
+
+
+aspect production searchWitnessTactic
+top::ProofCommand ::= sw::SearchWitness
+{
+  top.full = searchWitnessTactic(sw.full);
+}
+
+
+aspect production asyncTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production splitTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production splitStarTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production leftTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production rightTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production skipTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production abortCommand
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production undoCommand
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production clearCommand
+top::ProofCommand ::= removes::[String] hasArrow::Boolean
+{
+  top.full = top;
+}
+
+
+aspect production renameTactic
+top::ProofCommand ::= original::String renamed::String
+{
+  top.full = top;
+}
+
+
+aspect production abbrevCommand
+top::ProofCommand ::= hyps::[String] newText::String
+{
+  top.full = top;
+}
+
+
+aspect production unabbrevCommand
+top::ProofCommand ::= hyps::[String]
+{
+  top.full = top;
+}
+
+
+aspect production permuteTactic
+top::ProofCommand ::= names::[String] hyp::Maybe<String>
+{
+  top.full = top;
+}
+
+
+aspect production unfoldStepsTactic
+top::ProofCommand ::= steps::Integer all::Boolean
+{
+  top.full = top;
+}
+
+
+aspect production unfoldIdentifierTactic
+top::ProofCommand ::= id::QName all::Boolean
+{
+  top.full = unfoldIdentifierTactic(id.fullRel.name, all);
+}
+
+
+aspect production unfoldTactic
+top::ProofCommand ::= all::Boolean
+{
+  top.full = top;
+}
+
+
+aspect production computeTactic
+top::ProofCommand ::= hyp::String
+{
+  top.full = top;
+}
+
+
+attribute
+   full<Clearable>
+occurs on Clearable;
+
+aspect production clearable
+top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
+{
+  top.full =
+      clearable(star,
+                if hyp.isQualified || hypFound || null(possibleThms)
+                then hyp
+                else head(possibleThms).1, instantiation.full);
+}
+
+
+attribute
+   full<ApplyArgs>
+occurs on ApplyArgs;
+
+aspect production endApplyArgs
+top::ApplyArgs ::=
+{
+  top.full = top;
+}
+
+
+aspect production addApplyArgs
+top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
+{
+  top.full = addApplyArgs(a.full, rest.full);
+}
+
+
+attribute
+   full<ApplyArg>
+occurs on ApplyArg;
+
+aspect production hypApplyArg
+top::ApplyArg ::= hyp::String instantiation::TypeList
+{
+  top.full = hypApplyArg(hyp, instantiation.full);
+}
+
+
+aspect production starApplyArg
+top::ApplyArg ::= name::String instantiation::TypeList
+{
+  top.full = starApplyArg(name, instantiation.full);
+}
+
+
+attribute
+   full<Withs>
+occurs on Withs;
+
+aspect production endWiths
+top::Withs ::=
+{
+  top.full = top;
+}
+
+
+aspect production addWiths
+top::Withs ::= name::String term::Term rest::Withs
+{
+  top.full = addWiths(name, term.full, rest.full);
+}
+
+
+attribute
+   full<EWitnesses>
+occurs on EWitnesses;
+
+aspect production oneEWitnesses
+top::EWitnesses ::= e::EWitness
+{
+  top.full = oneEWitnesses(e.full);
+}
+
+
+aspect production addEWitnesses
+top::EWitnesses ::= e::EWitness rest::EWitnesses
+{
+  top.full = addEWitnesses(e.full, rest.full);
+}
+
+
+attribute
+   full<EWitness>
+occurs on EWitness;
+
+aspect production termEWitness
+top::EWitness ::= t::Term
+{
+  top.full = termEWitness(t.full);
+}
+
+
+aspect production nameEWitness
+top::EWitness ::= name::String t::Term
+{
+  top.full = nameEWitness(name, t.full);
+}
+
+
+attribute
+   full<SearchWitness>
+occurs on SearchWitness;
+
+aspect production trueSearchWitness
+top::SearchWitness ::=
+{
+  top.full = top;
+}
+
+
+aspect production applySearchWitness
+top::SearchWitness ::= name::String
+{
+  top.full = top;
+}
+
+
+aspect production leftSearchWitness
+top::SearchWitness ::= sub::SearchWitness
+{
+  top.full = leftSearchWitness(sub.full);
+}
+
+
+aspect production rightSearchWitness
+top::SearchWitness ::= sub::SearchWitness
+{
+  top.full = rightSearchWitness(sub.full);
+}
+
+
+aspect production splitSearchWitness
+top::SearchWitness ::= l::SearchWitness r::SearchWitness
+{
+  top.full = splitSearchWitness(l.full, r.full);
+}
+
+
+aspect production introsSearchWitness
+top::SearchWitness ::= names::[String] sub::SearchWitness
+{
+  top.full = introsSearchWitness(names, sub.full);
+}
+
+
+aspect production forallSearchWitness
+top::SearchWitness ::= names::[String] sub::SearchWitness
+{
+  top.full = forallSearchWitness(names, sub.full);
+}
+
+
+aspect production existsSearchWitness
+top::SearchWitness ::= withs::Withs sub::SearchWitness
+{
+  top.full = existsSearchWitness(withs.full, sub.full);
+}
+
+
+aspect production unfoldSearchWitness
+top::SearchWitness ::= name::String n::Integer swl::[SearchWitness]
+{
+  top.full = unfoldSearchWitness(name, n,
+                map(\ s::SearchWitness ->
+                      decorate s with {
+                        typeEnv = top.typeEnv;
+                        relationEnv = top.relationEnv;
+                        constructorEnv = top.constructorEnv;
+                        boundNames = top.boundNames;
+                      }.full,
+                    swl));
+}
+
+
+aspect production starSearchWitness
+top::SearchWitness ::=
+{
+  top.full = top;
+}
+
+
+aspect production eqSearchWitness
+top::SearchWitness ::=
+{
+  top.full = top;
+}
+
+
+
+
+
+attribute
+   full<NoOpCommand>
+occurs on NoOpCommand;
+
+aspect production setCommand
+top::NoOpCommand ::= opt::String val::String
+{
+  top.full = top;
+}
+
+
+aspect production showCommand
+top::NoOpCommand ::= theoremName::QName
+{
+  top.full = showCommand(head(possibleThms).1);
+}
+
+
+aspect production quitCommand
+top::NoOpCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production backCommand
+top::NoOpCommand ::= n::Integer
+{
+  top.full = top;
+}
+
+
+aspect production resetCommand
+top::NoOpCommand ::=
+{
+  top.full = top;
+}
+
+
+aspect production showCurrentCommand
+top::NoOpCommand ::=
+{
+  top.full = top;
+}
