@@ -63,6 +63,7 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
   --processing above
   production attribute io::(IOToken ::= IOToken) with combineIO;
   io := \ i::IOToken -> i;
+  io <- dumpOrder(processed.iovalue.fromRight.3, config, _);
 
   local finalIOToken::IOToken = io(processed.io);
 

@@ -62,13 +62,19 @@ top::TheoremList ::=
 }
 
 abstract production theoremListAdd
-top::TheoremList ::= name::QName body::Metaterm rest::TheoremList
+top::TheoremList ::= name::QName params::[String] body::Metaterm
+                     rest::TheoremList
 {
-  top.pps = (text("Theorem ") ++ name.pp ++ text(" :") ++ line() ++
+  top.pps = (text("Theorem ") ++ name.pp ++
+            (if null(params)
+             then text("")
+             else text(" [") ++ ppImplode(text(", "), map(text, params)) ++
+                  text("]")) ++
+             text(" :") ++ line() ++
              docGroup(body.pp ++ text(".")))::rest.pps;
 
   top.fromAbella =
-      theoremListAdd(name.fromAbella, body.fromAbella, rest.fromAbella);
+      theoremListAdd(name.fromAbella, params, body.fromAbella, rest.fromAbella);
 }
 
 
@@ -112,11 +118,15 @@ top::ExtraInformation ::= moduleName::String
 
 
 abstract production syntaxErrorInformation
-top::ExtraInformation ::=
+top::ExtraInformation ::= extraText::String
 {
-  top.pp = text("Syntax error.");
+  top.pp = text("Syntax error.") ++
+           if extraText == "" then text("")
+                              else realLine() ++ text(extraText);
 
-  top.fromAbella = syntaxErrorInformation();
+  top.fromAbella =
+      syntaxErrorInformation("This is an Abella syntax error, " ++
+         "which generally means something went wrong with Extensibella.");
 
   top.isError = true;
   top.isWarning = false;

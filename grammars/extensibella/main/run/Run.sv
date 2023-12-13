@@ -65,11 +65,9 @@ Either<IOVal<String>  DecCmds> ::=
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
       importStdLibThms(parsers, started.io);
   --basic context information from the definition file
-  local build_context::IOVal<(Env<TypeEnvItem>, Env<RelationEnvItem>,
-                              Env<ConstructorEnvItem>)> =
-      set_up_abella_module(currentModule, definitionCmds, importDefs,
-         parsers, started.iovalue.fromRight, stdLibThms.io,
-         config);
+  local build_context::(Env<TypeEnvItem>, Env<RelationEnvItem>,
+                        Env<ConstructorEnvItem>) =
+      module_elements(definitionCmds);
   --context information for imported definitions
   local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
                             [ConstructorEnvItem]) =
@@ -77,16 +75,36 @@ Either<IOVal<String>  DecCmds> ::=
   --combine definition file and imported proof definitions
   local startProverState::ProverState =
       defaultProverState(importThms,
-         addEnv(build_context.iovalue.1, importedProofDefs.1),
-         addEnv(build_context.iovalue.2, importedProofDefs.2),
-         addEnv(build_context.iovalue.3, importedProofDefs.3),
+         addEnv(build_context.1, importedProofDefs.1),
+         addEnv(build_context.2, importedProofDefs.2),
+         addEnv(build_context.3, importedProofDefs.3),
          stdLibThms.iovalue.fromRight);
+  --send definitions to Abella
+  local importDefCmds::[AnyCommand] =
+      flatMap(
+         \ d::DefElement ->
+           flatMap(
+              \ a::AnyCommand ->
+                decorate a with {
+                  currentModule = error("currentModule not needed");
+                  stateListIn = error("stateListIn not needed");
+                  proverState = startProverState;
+                  typeEnv = startProverState.knownTypes;
+                  relationEnv = startProverState.knownRels;
+                  constructorEnv = startProverState.knownConstrs;
+                  boundNames = [];
+                }.toAbella, d.encode),
+         importDefs);
+  local set_up_abella::IOToken =
+      set_up_abella_module(currentModule, definitionCmds, importDefCmds,
+         parsers, started.iovalue.fromRight, stdLibThms.io,
+         config);
   --
   local handleIncoming::([AnyCommand], ProverState) =
       handleIncomingThms(startProverState);
   local sendIncoming::IOVal<String> =
       sendCmdsToAbella(map((.abella_pp), handleIncoming.1),
-         started.iovalue.fromRight, build_context.io, config);
+         started.iovalue.fromRight, set_up_abella, config);
 
   --set inh attrs for processing file
   cmds.currentModule = currentModule;
@@ -110,6 +128,20 @@ Either<IOVal<String>  DecCmds> ::=
      else if !stdLibThms.iovalue.isRight
      then left(ioval(stdLibThms.io, stdLibThms.iovalue.fromLeft))
      else right(cmds);
+}
+
+--pull out the information for building environments
+function module_elements
+(Env<TypeEnvItem>, Env<RelationEnvItem>, Env<ConstructorEnvItem>) ::=
+   comms::ListOfCommands
+{
+  comms.typeEnv = [];
+  comms.relationEnv = [];
+  comms.constructorEnv = [];
+  comms.currentModule = error("currentModule not needed");
+  comms.ignoreDefErrors = true;
+  return (buildEnv(comms.tys), buildEnv(comms.rels),
+          buildEnv(comms.constrs));
 }
 
 

@@ -30,7 +30,9 @@ function combineAllThms
 [ThmElement] ::= modThms::[[ThmElement]]
 {
   local firsts::[ThmElement] = map(head, modThms);
-  local first::ThmElement = getFirst(tail(firsts), head(firsts));
+  local rests::[[ThmElement]] = map(tail, modThms);
+  local first::ThmElement =
+      getFirst(tail(firsts), head(firsts), rests);
   local cleaned::[[ThmElement]] = cleanModThms(first, modThms);
   return
      case modThms of
@@ -43,58 +45,61 @@ function combineAllThms
 
 function getFirst
 ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
+             --rest of ThmElements in all modules (drops first one)
+               fullRestMods::[[ThmElement]]
 {
   return
-     case modThms, thusFar of
-     | [], x -> x
-     --if we find something that cannot be expanded, take it, with a
-     --preference for thusFar as being from a module earlier
-     --alphabetically (our tie-breaker)
-     | _::_, nonextensibleTheorem(n, p, b) ->
-       nonextensibleTheorem(n, p, b)
-     | _::_, splitElement(t, n) -> splitElement(t, n)
-     | _::_, translationConstraintTheorem(n, b, e) ->
-       translationConstraintTheorem(n, b, e)
-     | nonextensibleTheorem(n, p, b)::_, _ ->
-       nonextensibleTheorem(n, p, b)
-     | splitElement(t, n)::_, _ -> splitElement(t, n)
-     | translationConstraintTheorem(n, b, e)::_, _ ->
-       translationConstraintTheorem(n, b, e)
-     --if both extensible groups, combine them if they contain shared
-     --theorems; otherwise, take the earlier one (thusFar)
-     | extensibleMutualTheoremGroup(thms1, alsos1)::rest,
-       extensibleMutualTheoremGroup(thms2, alsos2) ->
-         --need to check only thms and not alsos because alsos can
-         --be present only when there are thms to start
-       if null(intersect(map(fst, thms1), map(fst, thms2)))
-       then getFirst(rest, thusFar)
-       else getFirst(rest,
-               extensibleMutualTheoremGroup(
-                  unionBy(\ p1::(QName, Bindings, ExtBody, String, Maybe<String>)
-                            p2::(QName, Bindings, ExtBody, String, Maybe<String>) ->
-                            p1.1 == p2.1,
-                          thms1, thms2),
-                  unionBy(\ p1::(QName, Bindings, ExtBody, String, Maybe<String>)
-                            p2::(QName, Bindings, ExtBody, String, Maybe<String>) ->
-                            p1.1 == p2.1,
-                          alsos1, alsos2)))
-     --if both ext ind, combine them if they contain shared relations;
-     --otherwise, take the earlier one (thusFar)
-     | extIndElement(rels1)::rest, extIndElement(rels2) ->
-       if null(intersect(map(fst, rels1), map(fst, rels2)))
-       then getFirst(rest, thusFar)
-       else getFirst(rest,
-               extIndElement(
-                  unionBy(\ p1::(QName, [String], [Term], QName,
-                                 String, String)
-                            p2::(QName, [String], [Term], QName,
-                                 String, String) ->
-                            p1.1 == p2.1,
-                          rels1, rels2)))
-     --if both are extensible, take the earlier one and continue
-     --searching through the rest
-     | _::rest, x -> getFirst(rest, x)
-     end;
+      case modThms, thusFar of
+      | [], x -> x
+      --things without extended proofs first
+      | _::_, nonextensibleTheorem(_, _, _)
+        when !existsLater(thusFar, fullRestMods) -> thusFar
+      | nonextensibleTheorem(_, _, _)::_, _
+        when !existsLater(head(modThms), fullRestMods) ->
+        head(modThms)
+      | _::_, splitElement(_, _)
+        when !existsLater(thusFar, fullRestMods) -> thusFar
+      | splitElement(_, _)::_, _
+        when !existsLater(head(modThms), fullRestMods) ->
+        head(modThms)
+      --anything at this point is extensible
+      | t::r, _ when existsLater(thusFar, fullRestMods) ->
+        --can't take thusFar yet, so try again
+        getFirst(r, t, fullRestMods)
+      | t::r, _ ->
+        --thusFar is still valid, but keep going in case there is
+        --   something non-extensible later
+        getFirst(r, thusFar, fullRestMods)
+      end;
+}
+
+--check if t is anywhere in rest
+function existsLater
+Boolean ::= t::ThmElement rest::[[ThmElement]]
+{
+  return any(map(containsBy(equalish, t, _), rest));
+}
+
+--test if two ThmElements are for the same thing
+function equalish
+Boolean ::= a::ThmElement b::ThmElement
+{
+  return
+      case a, b of
+      | nonextensibleTheorem(na, _, _),
+        nonextensibleTheorem(nb, _, _) -> na == nb
+      | splitElement(an, alst), splitElement(bn, blst) ->
+        an == bn && alst == blst
+      | extensibleMutualTheoremGroup(athms, _),
+        extensibleMutualTheoremGroup(bthms, _) ->
+        --thms intersect; can ignore alsos because thms must exist first
+        !null(intersect(map(fst, athms), map(fst, bthms)))
+      | translationConstraintTheorem(an, _, _),
+        translationConstraintTheorem(bn, _, _) -> an == bn
+      | extIndElement(ar), extIndElement(br) ->
+        !null(intersect(map(fst, ar), map(fst, br)))
+      | _, _ -> false
+      end;
 }
 
 

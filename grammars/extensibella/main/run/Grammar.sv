@@ -28,6 +28,10 @@ synthesized attribute showUser::Boolean occurs on CmdArgs;
 synthesized attribute dumpAbella::Boolean occurs on CmdArgs;
 synthesized attribute dumpAbellaFile::String occurs on CmdArgs;
 
+--whether to dump out the order of imported theorems
+--   Useful for debugging imported order issues
+synthesized attribute dumpOrder::Boolean occurs on CmdArgs;
+
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -40,6 +44,8 @@ top::CmdArgs ::= l::[String]
   top.dumpAbella = false;
   top.dumpAbellaFile =
       error("Shouldn't access dumpAbellaFile if dumpAbella = false");
+
+  top.dumpOrder = false;
 }
 
 
@@ -54,6 +60,8 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = rest.dumpAbellaFile;
+
+  top.dumpOrder = rest.dumpOrder;
 }
 
 
@@ -69,6 +77,8 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = rest.dumpAbellaFile;
+
+  top.dumpOrder = rest.dumpOrder;
 
   top.runsInteractive = false;
 
@@ -91,6 +101,29 @@ top::CmdArgs ::= rest::CmdArgs
   top.dumpAbella = true;
   top.dumpAbellaFile = "abella_dump.thm";
 
+  top.dumpOrder = rest.dumpOrder;
+
+  top.displayHelp = rest.displayHelp;
+
+  forwards to rest;
+}
+
+
+--Dump out the order of ThmElements imported
+abstract production dumpOrderFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.checkFile = rest.checkFile;
+  top.filenames = rest.filenames;
+
+  top.runningFile = rest.runningFile;
+  top.showUser = rest.showUser;
+
+  top.dumpAbella = rest.dumpAbella;
+  top.dumpAbellaFile = "abella_dump.thm";
+
+  top.dumpOrder = true;
+
   top.displayHelp = rest.displayHelp;
 
   forwards to rest;
@@ -111,7 +144,11 @@ Either<String  Decorated CmdArgs> ::= args::[String]
      [flagSpec(name="--dump-Abella",
                paramString=nothing(),
                help="dump translated Abella commands to a file",
-               flagParser=flag(dumpAbellaFlag))];
+               flagParser=flag(dumpAbellaFlag)),
+      flagSpec(name="--dump-Order",
+               paramString=nothing(),
+               help="dump order of imported proof elements on stdout",
+               flagParser=flag(dumpOrderFlag))];
 
   errors <-
      if a.checkFile && null(a.filenames)

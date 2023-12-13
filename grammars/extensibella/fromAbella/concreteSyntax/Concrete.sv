@@ -6,6 +6,7 @@ closed nonterminal FullDisplay_c
    layout {Whitespace_t}
    with ast<FullDisplay>;
 closed nonterminal TheoremList_c with ast<TheoremList>;
+closed nonterminal TyParamsList_c with ast<[String]>;
 
 concrete productions top::FullDisplay_c
 | ei::ExtraInformation_c ps::ProofState_c
@@ -15,11 +16,24 @@ concrete productions top::FullDisplay_c
 
 concrete productions top::TheoremList_c
 | 'Theorem' name::Id_t ':' body::Metaterm_c '.'
-  { top.ast = theoremListAdd(toQName(name.lexeme), body.ast.fromRight,
+  { top.ast = theoremListAdd(toQName(name.lexeme), [], body.ast.fromRight,
+                             theoremListEmpty()); }
+| 'Theorem' name::Id_t '[' params::TyParamsList_c ']' ':' body::Metaterm_c '.'
+  { top.ast = theoremListAdd(toQName(name.lexeme), params.ast, body.ast.fromRight,
                              theoremListEmpty()); }
 | 'Theorem' name::Id_t ':' body::Metaterm_c '.' rest::TheoremList_c
-  { top.ast = theoremListAdd(toQName(name.lexeme), body.ast.fromRight,
+  { top.ast = theoremListAdd(toQName(name.lexeme), [], body.ast.fromRight,
                              rest.ast); }
+| 'Theorem' name::Id_t '[' params::TyParamsList_c ']' ':' body::Metaterm_c '.'
+  rest::TheoremList_c
+  { top.ast = theoremListAdd(toQName(name.lexeme), params.ast, body.ast.fromRight,
+                             rest.ast); }
+
+concrete productions top::TyParamsList_c
+| name::Id_t
+  { top.ast = [name.lexeme]; }
+| name::Id_t ',' rest::TyParamsList_c
+  { top.ast = name.lexeme::rest.ast; }
 
 
 
@@ -33,7 +47,7 @@ concrete productions top::ExtraInformation_c
 | 'Importing from' module::QString_t '.'
   { top.ast = importInformation(stripQuotes(module.lexeme)); }
 | 'Syntax error.'
-  { top.ast = syntaxErrorInformation(); }
+  { top.ast = syntaxErrorInformation(""); }
 | 'Error:' msg::ProcessingErrorMessage_c
   { top.ast = processingError(msg.ast); }
 | 'Warning:' msg::WarningMessage_c

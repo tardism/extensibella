@@ -17,7 +17,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
 --Run through a file to check that all the proofs are done correctly
 function run_file
 IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
-                   config::Decorated CmdArgs
+                   config::Configuration
 {
   local fileInfo::
         IOVal<Either<String ((Maybe<QName>, ListOfCommands),
@@ -32,6 +32,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
   --processing above
   production attribute io::(IOToken ::= IOToken) with combineIO;
   io := \ i::IOToken -> i;
+  io <- dumpOrder(processed.3, config, _);
 
   local finalIOToken::IOToken = io(fileInfo.io);
 
@@ -43,4 +44,37 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
            processed.1, processed.2, processed.3, config,
            finalIOToken)
      end;
+}
+
+
+--Print out the order of imported elements
+function dumpOrder
+IOToken ::= order::[ThmElement] config::Configuration ioin::IOToken
+{
+  local orderString::String =
+      "\n\n\nObligation Order:\n" ++
+      implode("\n",
+         map(\ t::ThmElement ->
+               case t of
+               | nonextensibleTheorem(n, _, _) ->
+                 "Theorem " ++ justShow(n.pp)
+               | splitElement(n, ns) ->
+                 "Split " ++ justShow(n.pp) ++ " as " ++
+                 implode(", ", map(justShow, map((.pp), ns))) ++ "."
+               | extensibleMutualTheoremGroup(thms, alsos) ->
+                 "ExtTheorem " ++
+                 implode(", ", map(justShow,
+                                   map((.pp), map(fst, thms)))) ++ "."
+               | translationConstraintTheorem(n, _, _) ->
+                 "TC " ++ justShow(n.pp) ++ "."
+               | extIndElement(r) ->
+                 "ExtInd " ++
+                 implode(", ", map(justShow,
+                                   map((.pp), map(fst, r)))) ++ "."
+               end,
+             order)) ++ "\n\n\n";
+
+  return if config.dumpOrder
+         then printT(orderString, ioin)
+         else ioin;
 }
