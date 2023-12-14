@@ -136,13 +136,189 @@ top::ThmElement ::=
    --    original, translated name)]
    rels::[(QName, [String], [Term], QName, String, String)]
 {
+  {-
+    Definitions of R_{ES} and R_T relations
+  -}
   local extSizeDef::String =
       buildExtSize(map(fst, rels), top.relEnv).abella_pp;
   local transRelDef::String =
       buildTransRel(rels, top.relEnv).abella_pp;
   top.extIndDefs = [extSizeDef, transRelDef];
 
-  top.composedCmds = "%% Ext_Ind for " ++
+  {-
+    Lemmas about R_{ES}
+  -}
+  local lemmaStatements::[[(QName, Metaterm)]] =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            buildExtSizeLemmas(p.1, p.2),
+          rels);
+  local jointLemmaNames::(String, String, String) =
+      --first make a sanity/extension check
+      if length(head(lemmaStatements)) != 3
+      then error("Number of ExtSize lemmas must be 3")
+      else case lemmaStatements of
+           | [[a, b, c]] -> --only one rel, so use actual names
+             (a.1.abella_pp, b.1.abella_pp, c.1.abella_pp)
+           | _ -> --multiple rels together, so use fake then split
+             ("$extIndThm_" ++ toString(genInt()),
+              "$extIndThm_" ++ toString(genInt()),
+              "$extIndThm_" ++ toString(genInt()))
+           end;
+  --leave it as a list because Silver pairs of pairs don't really work
+  local provingLemmaStatements::[(String, Metaterm)] =
+      [
+       (jointLemmaNames.1,
+        foldr1(andMetaterm,
+               map(\ l::[(QName, Metaterm)] -> head(l).2,
+                   lemmaStatements))),
+       (jointLemmaNames.2,
+        foldr1(andMetaterm,
+               map(\ l::[(QName, Metaterm)] -> head(tail(l)).2,
+                   lemmaStatements))),
+       (jointLemmaNames.3,
+        foldr1(andMetaterm,
+               map(\ l::[(QName, Metaterm)] -> head(tail(tail(l))).2,
+                   lemmaStatements)))
+      ];
+  local lemmaInduction::String =
+      "induction on " ++
+      implode(" ", repeat("1",
+                      length(lemmaStatements))) ++ "." ++
+      if length(lemmaStatements) == 1
+      then "\n" else " split.\n";
+  --get the information we need about the relation clauses to build
+  --   the individual proofs
+  --[[(number of adds, [1-based indices for R_{ES} premises])]]
+  --inner list is grouped by relation
+  --   (e.g. [[rel 1 clauses], [rel 2 clauses], ...])
+  local lemmaClauseInfo::[[(Integer, [Integer])]] =
+      map(\ q::QName ->
+            let rel::RelationEnvItem =
+                decorate q with {relationEnv=top.relEnv;}.fullRel
+            in --[(extension clause or not, split-up body)]
+            let splits::[(Boolean, [Metaterm])] =
+                map(\ d::([Term], Maybe<Metaterm>) ->
+                      (!sameModule(q.moduleName,
+                           elemAtIndex(d.1, rel.pcIndex
+                                      ).headConstructor),
+                       case d.2 of
+                       | nothing() -> []
+                       | just(bindingMetaterm(_, _, m)) ->
+                         m.splitConjunctions
+                       | just(m) -> m.splitConjunctions
+                       end),
+                    rel.defsList)
+            in --premises that are part of this group
+            let hereRels::[(Boolean, [Boolean])] =
+                map(\ l::(Boolean, [Metaterm]) ->
+                      (l.1,
+                       map(\ m::Metaterm ->
+                             case m of
+                             | relationMetaterm(q, _, _) ->
+                               contains(q, map(fst, rels))
+                             | _ -> false
+                             end,
+                          l.2)),
+                    splits)
+            in
+              map(\ l::(Boolean, [Boolean]) ->
+                    let plusCount::Integer =
+                        length(filter(\ x -> x, l.2)
+                              ) - if !l.1 then 1 else 0
+                    in
+                      (plusCount,
+                       filterMap(\ p::(Integer, Boolean) ->
+                                   if p.2 then just(p.1)
+                                          else nothing(),
+                          zip(range(plusCount + 1,
+                                    plusCount + length(l.2) + 1),
+                              l.2)))
+                    end,
+                  hereRels)
+            end end end,
+          map(fst, rels));
+  local lemmaPrfParts::[[(String, String, String)]] =
+      map(
+        \ l::[(Integer, [Integer])] ->
+          map(
+            \ p::(Integer, [Integer]) ->
+              let basicPrf::String =
+                  implode("",
+                     map(\ i::Integer ->
+                           " apply IH to ES" ++ toString(i) ++ ".",
+                         p.2))
+              in
+              let r::[Integer] = range(1, p.1 + 1)
+              in
+                 --non-negative
+                (basicPrf ++
+                 foldr(\ i::Integer rest::String ->
+                         rest ++ " apply extensibella-$-stdLib-$-" ++
+                         "lesseq_integer__add_positive to _ _ ES" ++
+                         toString(i) ++ ".", "",
+                       r) ++ " search.\n",
+                 --is_integer
+                 basicPrf ++
+                 foldr(\ i::Integer rest::String ->
+                         rest ++ " apply extensibella-$-stdLib-$-" ++
+                         "plus_integer_is_integer to _ _ ES" ++
+                         toString(i) ++ ".", "",
+                       r) ++ " search.\n",
+                 --dropT
+                 basicPrf ++ " search.\n")
+                end end,
+            l),
+          lemmaClauseInfo);
+  local lemmaPrfs::(String, String, String) =
+      foldr(\ l::[(String, String, String)]
+              rest::(String, String, String) ->
+              let sub::(String, String, String) =
+                foldr(\ here::(String, String, String)
+                        rest::(String, String, String) ->
+                        (here.1 ++ rest.1, here.2 ++ rest.2,
+                         here.3 ++ rest.3),
+                      rest, l)
+              in
+                ("intros ES. ES1: case ES.\n" ++ sub.1,
+                 "intros ES. ES1: case ES.\n" ++ sub.2,
+                 "intros ES. ES1: case ES.\n" ++ sub.3)
+              end,
+            ("", "", ""), lemmaPrfParts);
+  local endLemmaCommands::String =
+      if length(lemmaStatements) == 1
+      then "" --nothing to split
+      else "\n" ++
+           "Split " ++ jointLemmaNames.1 ++ " as " ++
+              implode(", ",
+                 map((.abella_pp),
+                     map(\ l::[(QName, Metaterm)] -> head(l).1,
+                         lemmaStatements))) ++ ".\n" ++
+           "Split " ++ jointLemmaNames.2 ++ " as " ++
+              implode(", ",
+                 map((.abella_pp),
+                     map(\ l::[(QName, Metaterm)] -> head(tail(l)).1,
+                         lemmaStatements))) ++ ".\n" ++
+           "Split " ++ jointLemmaNames.3 ++ " as " ++
+              implode(", ",
+                 map((.abella_pp),
+                     map(\ l::[(QName, Metaterm)] ->
+                           head(tail(tail(l))).1,
+                         lemmaStatements))) ++ ".\n";
+  local fullLemmas::String =
+      "Theorem " ++ head(provingLemmaStatements).1 ++ " : " ++
+         head(provingLemmaStatements).2.abella_pp ++ ".\n" ++
+         lemmaInduction ++ lemmaPrfs.1 ++ "\n" ++
+      "Theorem " ++ head(tail(provingLemmaStatements)).1 ++ " : " ++
+         head(tail(provingLemmaStatements)).2.abella_pp ++ ".\n" ++
+         lemmaInduction ++ lemmaPrfs.2 ++ "\n" ++
+      "Theorem " ++ head(tail(tail(provingLemmaStatements))).1 ++
+         " : " ++ head(tail(tail(provingLemmaStatements))
+                                ).2.abella_pp ++
+         ".\n" ++ lemmaInduction ++ lemmaPrfs.3 ++
+       endLemmaCommands;
+
+
+  top.composedCmds = fullLemmas ++ "%% Ext_Ind for " ++
       implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n\n";
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
