@@ -15,7 +15,11 @@ top::TopCommand ::= body::ExtIndBody
   top.provingExtInds = body.extIndInfo;
 
   top.toAbella =
-      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)];
+      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              extSizeLemmas);
 
   local fullRelInfo::[(QName, [String], [Term], QName,
                        String, String, RelationEnvItem)] =
@@ -31,6 +35,15 @@ top::TopCommand ::= body::ExtIndBody
   --definition of R_T
   local transRelDef::TopCommand =
       buildTransRel(body.extIndInfo, top.relationEnv);
+
+  --lemmas about R_{ES}
+  local extSizeLemmas::[(QName, Metaterm)] =
+      flatMap(\ p::(QName, [String], [Term], QName, String, String,
+                    RelationEnvItem) ->
+                buildExtSizeLemmas(p.1, p.2), fullRelInfo);
+
+  --Add these to the known theorems, as they are now proven
+  top.newTheorems = extSizeLemmas;
 
   --Check each relation occurs at most once
   top.toAbellaMsgs <- --([duplicated], [seen])

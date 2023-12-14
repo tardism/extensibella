@@ -224,9 +224,9 @@ function getProof_help
          | addRunCommands(anyProofCommand(p), r) ->
            let rest::(DecCmds, String) = getProof_help(r)
            in
-           let f::ProofCommand = p.full
+           let f::[ProofCommand] = p.toAbella
            in
-             (rest.1, f.abella_pp ++ rest.2)
+             (rest.1, implode("", map((.abella_pp), f)) ++ rest.2)
            end end
          | addRunCommands(anyNoOpCommand(n), r) ->
            let rest::(DecCmds, String) = getProof_help(r)
