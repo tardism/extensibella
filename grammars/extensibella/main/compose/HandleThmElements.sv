@@ -65,21 +65,30 @@ top::ThmElement ::=
 aspect production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 {
-  --MWDA copy
+  --MWDA copy of body
   local bodyC::ExtBody = body;
   bodyC.relationEnv = top.relEnv;
   bodyC.constructorEnv = top.constrEnv;
   bodyC.typeEnv = top.tyEnv;
   bodyC.boundNames = binds.usedNames;
 
-  local declare::String =
-      "Theorem " ++ name.abella_pp ++ " : " ++
-      "forall " ++ binds.abella_pp ++ ",\n" ++
-      bodyC.toAbella.abella_pp ++ ".\n";
+  local tcMods::[(QName, DecCmds)] =
+      getAllOccurrences(top.incomingMods, [name]);
+  --first contains declaration and set-up
   local startPrf::String =
-      "induction on 1. skip.\n\n"; --fill in for real later
-  top.composedCmds = declare ++ startPrf;
+      case head(tcMods).2 of
+      | addRunCommands(c, _) ->
+        --set-up for translation constraint, including declaration
+        implode("", map((.abella_pp), c.toAbella))
+      | _ -> error("Must be translationConstraint first")
+      end;
+  --rest of list provides the rest of the proof
+  local restPrf::String =
+      implode("", map(\ p::(QName, DecCmds) -> getProof(p.2).2,
+                      tail(tcMods)));
+  top.composedCmds = startPrf ++ " " ++ restPrf ++ "\n\n";
 
+  --took these proofs, so drop them
   top.outgoingMods = dropAllOccurrences(top.incomingMods, [name]);
 }
 
@@ -119,6 +128,8 @@ top::ThmElement ::=
    --    original, translated name)]
    rels::[(QName, [String], [Term], QName, String, String)]
 {
+  --need the definitions of R_ES and R_T;
+  --maybe pull those out to the top for proof-level definitions?
   top.composedCmds = "%% Ext_Ind for " ++
       implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n\n";
   top.outgoingMods =
@@ -216,8 +227,24 @@ function getProof_help
 }
 
 
---drop the whole thing every time proving it comes up
---this is only to get to testing basics faster
+--get all the modules where thms is the first thing
+function getAllOccurrences
+[(QName, DecCmds)] ::= mods::[(QName, DecCmds)] thms::[QName]
+{
+  return case mods of
+         | [] -> []
+         | (q, c)::r ->
+           case c of
+           | addRunCommands(anyTopCommand(t), _)
+             when t.matchesNames(thms) ->
+             (q, c)::getAllOccurrences(r, thms)
+           | _ -> getAllOccurrences(r, thms)
+           end
+         end;
+}
+
+
+--drop the declaration and proof of thms in every module starting with them
 function dropAllOccurrences
 [(QName, DecCmds)] ::= mods::[(QName, DecCmds)] thms::[QName]
 {
@@ -235,6 +262,7 @@ function dropAllOccurrences
            end
          end;
 }
+--same, but for Ext_Ind and Prove_Ext_Ind
 function dropExtInd
 [(QName, DecCmds)] ::= mods::[(QName, DecCmds)] rels::[QName]
 {
@@ -254,7 +282,7 @@ function dropExtInd
 }
 
 
---clear out all the non-proof things at the front of files in the last
+--clear out all the non-proof things at the front of files
 function dropNonProof
 [(QName, DecCmds)] ::= mods::[(QName, DecCmds)]
 {
@@ -305,7 +333,8 @@ aspect production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
   top.matchesNames =
-      \ l::[QName] -> !null(intersect(l, map(fst, thms.provingTheorems)));
+      \ l::[QName] ->
+        !null(intersect(l, map(fst, thms.provingTheorems)));
 
   top.isNotProof = false;
 }
