@@ -26,39 +26,11 @@ top::TopCommand ::= body::ExtIndBody
 
   --definition of R_{ES}
   local extSizeDef::TopCommand =
-      let preds::[(QName, Type)] =
-          map(\ p::(QName, [String], [Term], QName, String, String,
-                    RelationEnvItem) ->
-                (extSizeQName(p.7.name.sub),
-                 foldr1(arrowType,
-                        init(p.7.types.toList) ++ --drop prop at end
-                        [integerType, propType])),
-              fullRelInfo)
-      in
-      let defs::[Def] =
-          buildExtSizeDef(
-             map(\ e::RelationEnvItem -> (e.name, e),
-                 body.relationEnvItems), body.relations)
-      in
-        definitionDeclaration(preds,
-           foldrLastElem(consDefs, singleDefs, defs))
-      end end;
+      buildExtSize(map(fst, fullRelInfo), top.relationEnv);
 
   --definition of R_T
   local transRelDef::TopCommand =
-      let preds::[(QName, Type)] =
-          map(\ p::(QName, [String], [Term], QName, String, String,
-                    RelationEnvItem) ->
-                (transRelQName(p.7.name.sub),
-                 foldr1(arrowType, p.7.types.toList)),
-              fullRelInfo)
-      in
-      let defs::[Def] =
-          buildTransRelDef(fullRelInfo, body.relations)
-      in
-        definitionDeclaration(preds,
-           foldrLastElem(consDefs, singleDefs, defs))
-      end end;
+      buildTransRel(body.extIndInfo, top.relationEnv);
 
   --Check each relation occurs at most once
   top.toAbellaMsgs <- --([duplicated], [seen])
@@ -353,40 +325,11 @@ top::TopCommand ::= rels::[QName]
 
   --definition of R_{ES}
   local extSizeDef::TopCommand =
-      let preds::[(QName, Type)] =
-          map(\ p::(QName, [String], [Term], QName, String, String,
-                    RelationEnvItem) ->
-                (extSizeQName(p.1.sub),
-                 foldr1(arrowType,
-                        init(p.7.types.toList) ++ --drop prop at end
-                        [integerType, propType])),
-              fullRelInfo)
-      in
-      let defs::[Def] =
-          buildExtSizeDef(
-             map(\ p::(QName, [String], [Term], QName, String, String,
-                       RelationEnvItem) -> (p.1, p.7), fullRelInfo),
-             map(fst, obligations))
-      in
-        definitionDeclaration(preds,
-           foldrLastElem(consDefs, singleDefs, defs))
-      end end;
+      buildExtSize(map(fst, obligations), top.relationEnv);
 
   --definition of R_T
   local transRelDef::TopCommand =
-      let preds::[(QName, Type)] =
-          map(\ p::(QName, [String], [Term], QName, String, String,
-                    RelationEnvItem) ->
-                (transRelQName(p.1.sub),
-                 foldr1(arrowType, p.7.types.toList)),
-              fullRelInfo)
-      in
-      let defs::[Def] =
-          buildTransRelDef(fullRelInfo, map(fst, obligations))
-      in
-        definitionDeclaration(preds,
-           foldrLastElem(consDefs, singleDefs, defs))
-      end end;
+      buildTransRel(obligations, top.relationEnv);
 
   local extSizeLemmas::[(QName, Metaterm)] =
       flatMap(\ p::(QName, [String], [Term], QName, String, String,
@@ -477,6 +420,28 @@ top::TopCommand ::= rels::[QName]
 {--------------------------------------------------------------------
   Extension Size Definition
  --------------------------------------------------------------------}
+{-
+  Build the full R_ES definition for the relations in fullRels
+-}
+function buildExtSize
+TopCommand ::= fullRels::[QName] relEnv::Env<RelationEnvItem>
+{
+  local fullRelInfo::[(QName, RelationEnvItem)] =
+      map(\ q::QName ->
+            (q, decorate q with {relationEnv=relEnv;}.fullRel),
+          fullRels);
+  local preds::[(QName, Type)] =
+      map(\ p::(QName, RelationEnvItem) ->
+            (extSizeQName(p.1.sub),
+             foldr1(arrowType,
+                    init(p.2.types.toList) ++ --drop prop at end
+                    [integerType, propType])),
+          fullRelInfo);
+  local defs::[Def] = buildExtSizeDef(fullRelInfo, fullRels);
+  return definitionDeclaration(preds,
+            foldrLastElem(consDefs, singleDefs, defs));
+}
+
 {-
   Build all the definitional clauses for the extSize version of the
   relations in relInfo
@@ -657,6 +622,34 @@ function buildExtSizeDefBody
 {--------------------------------------------------------------------
   Translation Version of a Relation Definition
  --------------------------------------------------------------------}
+{-
+  Build the full R_T relation
+-}
+function buildTransRel
+TopCommand ::= relInfo::[(QName, [String], [Term], QName, String,
+                          String)] relEnv::Env<RelationEnvItem>
+{
+  local fullRelInfo::[(QName, [String], [Term], QName, String, String,
+                       RelationEnvItem)] =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            let rel::RelationEnvItem =
+                decorate p.1 with {relationEnv=relEnv;}.fullRel
+            in
+              (rel.name, p.2, p.3, p.4, p.5, p.6, rel)
+            end,
+          relInfo);
+  local preds::[(QName, Type)] =
+      map(\ p::(QName, [String], [Term], QName, String, String,
+                RelationEnvItem) ->
+            (transRelQName(p.7.name.sub),
+             foldr1(arrowType, p.7.types.toList)),
+            fullRelInfo);
+  local defs::[Def] =
+      buildTransRelDef(fullRelInfo, map(fst, preds));
+  return definitionDeclaration(preds,
+             foldrLastElem(consDefs, singleDefs, defs));
+}
+
 {-
   Build all the definitional clauses for the translation version of
   the relations in relInfo

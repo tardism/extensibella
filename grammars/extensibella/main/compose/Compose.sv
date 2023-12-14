@@ -215,15 +215,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
       " ********************************************************************/\n" ++
       defFileContents ++ "\n\n\n";
 
-  --proof definitions
-  local proofDefsString::String =
-      if null(proofDefs) then ""
-      else "/********************************************************************\n" ++
-           " Proof-Level Definitions\n" ++
-           " ********************************************************************/\n" ++
-           implode("\n", map((.abella_pp), flatMap((.encode), proofDefs))) ++ "\n\n\n";
-
-  --properties and proofs
+  --things we'll need for proof processing
   local proofDefItems::([TypeEnvItem], [RelationEnvItem],
                         [ConstructorEnvItem]) =
       defElementsDefinitions(proofDefs);
@@ -233,6 +225,17 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
          addEnv(defRelEnv, proofDefItems.2),
          addEnv(defConstrEnv, proofDefItems.3),
          []);
+
+  --proof definitions
+  local proofDefsString::String =
+      if null(proofDefs) then ""
+      else "/********************************************************************\n" ++
+           " Proof-Level Definitions\n" ++
+           " ********************************************************************/\n" ++
+           implode("\n", map((.abella_pp), flatMap((.encode), proofDefs)) ++
+                         flatMap(buildExtIndDefs(_, proverState), thms)) ++ "\n\n\n";
+
+  --properties and proofs
   local propertyString::String =
       "/********************************************************************\n" ++
       " Properties and Proofs\n" ++
@@ -248,6 +251,17 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
                         printT("Writing " ++ outFilename ++ "...", stdLib.io)));
 
   return ioval(output, 1);
+}
+
+
+--
+function buildExtIndDefs
+[String] ::= thm::ThmElement proverState::ProverState
+{
+  thm.relEnv = proverState.knownRels;
+  thm.constrEnv = proverState.knownConstrs;
+  thm.tyEnv = proverState.knownTypes;
+  return thm.extIndDefs;
 }
 
 

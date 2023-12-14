@@ -12,6 +12,14 @@ inherited attribute relEnv::Env<RelationEnvItem> occurs on ThmElement;
 inherited attribute constrEnv::Env<ConstructorEnvItem> occurs on ThmElement;
 inherited attribute tyEnv::Env<TypeEnvItem> occurs on ThmElement;
 
+--build the definitions for R_ES and R_T
+synthesized attribute extIndDefs::[String] occurs on ThmElement;
+aspect default production
+top::ThmElement ::=
+{
+  top.extIndDefs = [];
+}
+
 aspect production extensibleMutualTheoremGroup
 top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction measure, IH name)]
@@ -128,8 +136,12 @@ top::ThmElement ::=
    --    original, translated name)]
    rels::[(QName, [String], [Term], QName, String, String)]
 {
-  --need the definitions of R_ES and R_T;
-  --maybe pull those out to the top for proof-level definitions?
+  local extSizeDef::String =
+      buildExtSize(map(fst, rels), top.relEnv).abella_pp;
+  local transRelDef::String =
+      buildTransRel(rels, top.relEnv).abella_pp;
+  top.extIndDefs = [extSizeDef, transRelDef];
+
   top.composedCmds = "%% Ext_Ind for " ++
       implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n\n";
   top.outgoingMods =
