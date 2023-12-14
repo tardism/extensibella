@@ -6,9 +6,10 @@ grammar extensibella:main:run;
   ID number (in order from the start)
 -}
 
-aspect function run
-IOVal<Integer> ::=
-   filename::String cmds::ListOfCommands parsers::AllParsers
+aspect function buildDecRunCommands
+Either<IOVal<String>  DecCmds> ::=
+   filename::String cmds::RunCommands
+   parsers::AllParsers
    currentModule::QName
    definitionCmds::ListOfCommands
    importDefs::[DefElement]
@@ -22,11 +23,11 @@ inherited attribute cmdID::Integer;
 
 attribute
    cmdID
-occurs on ListOfCommands;
+occurs on RunCommands;
 
 
-aspect production addListOfCommands
-top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
+aspect production addRunCommands
+top::RunCommands ::= a::AnyCommand rest::RunCommands
 {
   --Annotated HTML file with command and non-dying output
   io <- \ i::IOToken ->
@@ -39,7 +40,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
                     " &lt; <b>" ++ stripExternalWhiteSpace(
                                       makeHTMLSafe(
                                          showDoc(80,
-                                            nest(3, any_a.pp)))) ++
+                                            nest(3, a.pp)))) ++
                           "</b>\n\n" ++
                     --Extensibella output
                     stripExternalWhiteSpace(

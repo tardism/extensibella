@@ -159,21 +159,21 @@ DecCmds ::= c::DecCmds
 {
   return
       case c of
-      | emptyListOfCommands() -> error("dropFirstTopCommand(empty)")
-      | addListOfCommands(_, r) -> dropFirstTopCommand_help(r)
+      | emptyRunCommands() -> error("dropFirstTopCommand(empty)")
+      | addRunCommands(_, r) -> dropFirstTopCommand_help(r)
       end;
 }
 function dropFirstTopCommand_help
 DecCmds ::= c::DecCmds
 {
   return case c of
-         | emptyListOfCommands() -> c
-         | addListOfCommands(anyTopCommand(t), r) -> c
-         | addListOfCommands(anyProofCommand(p), r) ->
+         | emptyRunCommands() -> c
+         | addRunCommands(anyTopCommand(t), r) -> c
+         | addRunCommands(anyProofCommand(p), r) ->
            dropFirstTopCommand_help(r)
-         | addListOfCommands(anyNoOpCommand(n), r) ->
+         | addRunCommands(anyNoOpCommand(n), r) ->
            dropFirstTopCommand_help(r)
-         | addListOfCommands(anyParseFailure(e), r) ->
+         | addRunCommands(anyParseFailure(e), r) ->
            error("How did this get here?")
          end;
 }
@@ -186,29 +186,29 @@ function getProof
 {
   return
       case c of
-      | emptyListOfCommands() -> error("getProof(empty)")
-      | addListOfCommands(_, r) -> getProof_help(r)
+      | emptyRunCommands() -> error("getProof(empty)")
+      | addRunCommands(_, r) -> getProof_help(r)
       end;
 }
 function getProof_help
 (DecCmds, String) ::= c::DecCmds
 {
   return case c of
-         | emptyListOfCommands() -> (c, "")
-         | addListOfCommands(anyTopCommand(t), r) -> (c, "")
-         | addListOfCommands(anyProofCommand(p), r) ->
+         | emptyRunCommands() -> (c, "")
+         | addRunCommands(anyTopCommand(t), r) -> (c, "")
+         | addRunCommands(anyProofCommand(p), r) ->
            let rest::(DecCmds, String) = getProof_help(r)
            in
            let f::ProofCommand = p.full
            in
              (rest.1, f.abella_pp ++ rest.2)
            end end
-         | addListOfCommands(anyNoOpCommand(n), r) ->
+         | addRunCommands(anyNoOpCommand(n), r) ->
            let rest::(DecCmds, String) = getProof_help(r)
            in
              (rest.1, n.full.abella_pp ++ rest.2)
            end
-         | addListOfCommands(anyParseFailure(e), r) ->
+         | addRunCommands(anyParseFailure(e), r) ->
            error("How did this get here?")
          end;
 }
@@ -223,12 +223,12 @@ function dropAllOccurrences
          | [] -> []
          | (q, c)::r ->
            case c of
-           | emptyListOfCommands() ->
+           | emptyRunCommands() ->
              (q, c)::dropAllOccurrences(r, thms)
-           | addListOfCommands(anyTopCommand(t), _)
+           | addRunCommands(anyTopCommand(t), _)
              when t.matchesNames(thms) ->
              (q, dropFirstTopCommand(c))::dropAllOccurrences(r, thms)
-           | addListOfCommands(_, _) ->
+           | addRunCommands(_, _) ->
              (q, c)::dropAllOccurrences(r, thms)
            end
          end;
@@ -248,8 +248,8 @@ function dropNonProof_help
 DecCmds ::= c::DecCmds
 {
   return case c of
-         | emptyListOfCommands() -> c
-         | addListOfCommands(anyTopCommand(t), r) when t.isNotProof ->
+         | emptyRunCommands() -> c
+         | addRunCommands(anyTopCommand(t), r) when t.isNotProof ->
            dropNonProof_help(dropFirstTopCommand(c))
          | _ -> c
          end;

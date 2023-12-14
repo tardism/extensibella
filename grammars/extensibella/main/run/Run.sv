@@ -2,10 +2,9 @@ grammar extensibella:main:run;
 
 
 type StateList = [(Integer, ProverState)];
-type DecCmds = Decorated ListOfCommands with {
+type DecCmds = Decorated RunCommands with {
                   currentModule, filename, parsers, stateList, config,
-                  abella, ioin, interactive, proverState, typeEnv,
-                  relationEnv, constructorEnv, cmdID, ignoreDefErrors
+                  abella, ioin, interactive, cmdID
                };
 
 
@@ -35,8 +34,9 @@ IOVal<Integer> ::=
    config::Configuration ioin::IOToken
 {
   local decCmds::Either<IOVal<String>  DecCmds> =
-     buildDecRunCommands(filename, cmds, parsers, currentModule,
-        definitionCmds, importDefs, importThms, config, ioin);
+      buildDecRunCommands(filename, cmds.toRunCommands, parsers,
+         currentModule, definitionCmds, importDefs, importThms,
+         config, ioin);
 
   return
      case decCmds of
@@ -52,7 +52,7 @@ IOVal<Integer> ::=
 --   instead of the result alone
 function buildDecRunCommands
 Either<IOVal<String>  DecCmds> ::=
-   filename::String cmds::ListOfCommands
+   filename::String cmds::RunCommands
    parsers::AllParsers
    currentModule::QName
    definitionCmds::ListOfCommands
@@ -114,13 +114,7 @@ Either<IOVal<String>  DecCmds> ::=
   cmds.config = config;
   cmds.abella = started.iovalue.fromRight;
   cmds.ioin = sendIncoming.io;
-  cmds.ignoreDefErrors = false;
   cmds.interactive = config.runsInteractive;
-  cmds.proverState = handleIncoming.2;
-  cmds.typeEnv = error("cmds.typeEnv not needed");
-  cmds.relationEnv = error("cmds.relationEnv not needed");
-  cmds.constructorEnv = error("cmds.constructorEnv not needed");
-  cmds.cmdID = 1;
 
   return
      if !started.iovalue.isRight
@@ -147,6 +141,35 @@ function module_elements
 
 
 
+
+----------------------------------------------------------------------
+-- Translate from ListOfCommands to RunCommands
+-- Need them separate because they set envs differently
+-- Get it this way to avoid needing a special parser
+----------------------------------------------------------------------
+synthesized attribute toRunCommands::RunCommands
+   occurs on ListOfCommands;
+
+aspect production emptyListOfCommands
+top::ListOfCommands ::=
+{
+  top.toRunCommands = emptyRunCommands();
+}
+
+
+aspect production addListOfCommands
+top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
+{
+  top.toRunCommands = addRunCommands(a, rest.toRunCommands);
+}
+
+
+
+
+
+----------------------------------------------------------------------
+-- Actually run the commands
+----------------------------------------------------------------------
 inherited attribute filename::String;
 inherited attribute parsers::AllParsers;
 inherited attribute stateList::StateList;
@@ -157,14 +180,15 @@ synthesized attribute runResult::IOVal<Integer>;
 
 synthesized attribute isNull::Boolean;
 
-attribute
-   filename, parsers, stateList, abella, ioin, runResult, isNull
-occurs on ListOfCommands;
-propagate filename, parsers, abella on ListOfCommands;
+nonterminal RunCommands with
+   filename, parsers, stateList, abella, ioin, runResult, isNull,
+   config, interactive, currentModule;
+propagate filename, parsers, abella, config, interactive,
+   currentModule on RunCommands;
 
 
-aspect production emptyListOfCommands
-top::ListOfCommands ::=
+abstract production emptyRunCommands
+top::RunCommands ::=
 {
   top.isNull = true;
 
@@ -190,8 +214,8 @@ top::ListOfCommands ::=
 }
 
 
-aspect production addListOfCommands
-top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
+abstract production addRunCommands
+top::RunCommands ::= a::AnyCommand rest::RunCommands
 {
   top.isNull = false;
 
@@ -204,40 +228,35 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   -}
   --Translate command
   ----------------------------
-  --we need a copy because we need to set the envs differently here
-  --than for imports that also use ListOfCommands
-  production any_a::AnyCommand = a;
-  any_a.currentModule = top.currentModule;
-  any_a.typeEnv = currentProverState.knownTypes;
-  any_a.relationEnv = currentProverState.knownRels;
-  any_a.constructorEnv = currentProverState.knownConstrs;
-  any_a.proverState = currentProverState;
-  any_a.boundNames = state.boundNames_out;
-  any_a.stateListIn = top.stateList;
-  any_a.ignoreDefErrors = top.ignoreDefErrors;
-  any_a.interactive = top.interactive;
+  a.typeEnv = currentProverState.knownTypes;
+  a.relationEnv = currentProverState.knownRels;
+  a.constructorEnv = currentProverState.knownConstrs;
+  a.proverState = currentProverState;
+  a.boundNames = state.boundNames_out;
+  a.stateListIn = top.stateList;
+  a.ignoreDefErrors = false; --running, so check defs
   --whether we have an error
-  local is_error::Boolean = any(map((.isError), any_a.toAbellaMsgs));
-  local speak_to_abella::Boolean = !is_error && !null(any_a.toAbella);
+  local is_error::Boolean = any(map((.isError), a.toAbellaMsgs));
+  local speak_to_abella::Boolean = !is_error && !null(a.toAbella);
   --an error or message based on our own checking
   local our_own_output::String =
-      errors_to_string(any_a.toAbellaMsgs);
+      errors_to_string(a.toAbellaMsgs);
   --Send to Abella and read output
   ----------------------------
   local io_action_1::IOVal<String> =
       if speak_to_abella
-      then sendCmdsToAbella(map((.abella_pp), any_a.toAbella),
+      then sendCmdsToAbella(map((.abella_pp), a.toAbella),
               top.abella, top.ioin, top.config)
       else ioval(top.ioin, "");
   local back_from_abella::String = io_action_1.iovalue;
   local full_a::FullDisplay =
       processDisplay(back_from_abella, top.parsers.from_parse);
-  any_a.newProofState = full_a.proof;
+  a.newProofState = full_a.proof;
   --Output if in debugging mode
   ----------------------------
   local io_action_2::IOToken =
       if speak_to_abella
-      then debugOutput(debug, top.config, any_a.toAbella,
+      then debugOutput(debug, top.config, a.toAbella,
               "Entered Command", back_from_abella, io_action_1.io)
                                       --Why?  Solving type constraints
       else debugOutput(debug, top.config, tail([anyParseFailure("")]),
@@ -248,11 +267,11 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   -}
   --whether to do the processing or launder the IOToken through
   local continueProcessing::Boolean =
-      speak_to_abella && !is_error && !null(any_a.stateListOut);
+      speak_to_abella && !is_error && !null(a.stateListOut);
   --Run any during commands for the current subgoal
   local io_action_3::IOVal<(StateList, FullDisplay)> =
       if continueProcessing
-      then runDuringCommands(any_a.stateListOut, full_a,
+      then runDuringCommands(a.stateListOut, full_a,
               top.parsers.from_parse, io_action_2, top.abella, debug,
               top.config)
       else ioval(io_action_2, error("Should not access (3)"));
@@ -278,7 +297,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   local width::Integer =
       if speak_to_abella || is_error
       then currentProverState.displayWidth
-      else head(any_a.stateListOut).2.displayWidth;
+      else head(a.stateListOut).2.displayWidth;
   production output_output::String =
       if speak_to_abella && continueProcessing
       then decorateAndShow(finalDisplay,
@@ -299,7 +318,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   -}
   --this is outside the io_action numbering scheme because it doesn't
   --strictly happen in sync with the rest of them
-  local exited::IOToken = exitAbella(any_a.toAbella, top.ioin,
+  local exited::IOToken = exitAbella(a.toAbella, top.ioin,
                                      top.abella, debug, top.config);
 
 
@@ -312,7 +331,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   --finalIO is the IOToken for all this command's IO being done,
   --including any extra actions added apart from the basic sequence
   local finalIO::IOToken =
-      io(if any_a.isQuit then exited else io_action_6);
+      io(if a.isQuit then exited else io_action_6);
 
   rest.ioin = finalIO;
   rest.stateList =
@@ -320,7 +339,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
        then nonErrorStateList
        else if is_error
        then top.stateList
-       else any_a.stateListOut;
+       else a.stateListOut;
 
   top.runResult =
       if top.config.runningFile
@@ -334,14 +353,14 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
                              showDoc(currentProverState.displayWidth,
                                      full_a.pp),
                          finalIO), 1)
-           else if any_a.isQuit && !rest.isNull
+           else if a.isQuit && !rest.isNull
            then ioval(printT("Warning:  File contains Quit before " ++
                              "end\n", finalIO), 1)
            else rest.runResult
-      else if any_a.isQuit
+      else if a.isQuit
            then ioval(finalIO, 0)
            else if !is_error &&
-                   null(any_a.stateListOut) --full undo in PG
+                   null(a.stateListOut) --full undo in PG
            then expect_quit("Error:  After full undo, must have a " ++
                    "Quit command to finish", finalIO)
                --use unsafeTrace to force it to print output

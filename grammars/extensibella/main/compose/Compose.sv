@@ -106,8 +106,9 @@ IOVal<Either<String [(QName, String, DecCmds)]>> ::=
 
   --run it
   local runFile::Either<IOVal<String>  DecCmds> =
-      buildDecRunCommands(filename, fileAST.2, parsers, fileAST.1.fromJust,
-         processed.1, processed.2, processed.3, config, fileInfo.io);
+      buildDecRunCommands(filename, fileAST.2.toRunCommands, parsers,
+         fileAST.1.fromJust, processed.1, processed.2, processed.3,
+         config, fileInfo.io);
   local runIO::IOToken = --pull out an IOToken
       case runFile of
       | left(errIO) -> errIO.io
