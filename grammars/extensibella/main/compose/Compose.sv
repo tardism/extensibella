@@ -256,16 +256,22 @@ function compose_proofs
 String ::= thms::[ThmElement] mods::[(QName, DecCmds)]
            proverState::ProverState
 {
+  --handle the first thing, getting its proof
   local fstThm::ThmElement = head(thms);
   fstThm.incomingMods = mods;
   fstThm.relEnv = proverState.knownRels;
   fstThm.constrEnv = proverState.knownConstrs;
   fstThm.tyEnv = proverState.knownTypes;
+
+  --drop the non-proof things, like definitions, from all modules
+  local cleanedRest::[(QName, DecCmds)] =
+      dropNonProof(fstThm.outgoingMods);
+
   return
       case thms of
       | [] -> ""
       | _::rest ->
-        fstThm.composedCmds ++ compose_proofs(rest, fstThm.outgoingMods,
-                                              proverState)
+        fstThm.composedCmds ++
+        compose_proofs(rest, cleanedRest, proverState)
       end;
 }

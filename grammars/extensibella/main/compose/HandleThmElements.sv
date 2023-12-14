@@ -38,8 +38,7 @@ top::ThmElement ::=
       extThms.toAbella.abella_pp ++ ".\n";
   local inductions::String =
       "induction on " ++
-      implode(". induction on ",
-         map(toString, extThms.inductionNums)) ++ ".\n";
+      implode(" ", map(toString, extThms.inductionNums)) ++ ".\n";
   local renames::String =
       implode(" ",
          map(\ p::(String, String, String) ->
@@ -66,10 +65,17 @@ top::ThmElement ::=
 aspect production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 {
+  --MWDA copy
+  local bodyC::ExtBody = body;
+  bodyC.relationEnv = top.relEnv;
+  bodyC.constructorEnv = top.constrEnv;
+  bodyC.typeEnv = top.tyEnv;
+  bodyC.boundNames = binds.usedNames;
+
   local declare::String =
       "Theorem " ++ name.abella_pp ++ " : " ++
       "forall " ++ binds.abella_pp ++ ",\n" ++
-      body.abella_pp ++ ".\n";
+      bodyC.toAbella.abella_pp ++ ".\n";
   local startPrf::String =
       "induction on 1. skip.\n\n"; --fill in for real later
   top.composedCmds = declare ++ startPrf;
@@ -114,9 +120,9 @@ top::ThmElement ::=
    rels::[(QName, [String], [Term], QName, String, String)]
 {
   top.composedCmds = "%% Ext_Ind for " ++
-      implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n";
+      implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n\n";
   top.outgoingMods =
-      dropAllOccurrences(top.incomingMods, map(fst, rels));
+      dropExtInd(top.incomingMods, map(fst, rels));
 }
 
 
@@ -160,7 +166,7 @@ DecCmds ::= c::DecCmds
   return
       case c of
       | emptyRunCommands() -> error("dropFirstTopCommand(empty)")
-      | addRunCommands(_, r) -> dropFirstTopCommand_help(r)
+      | addRunCommands(a, r) -> dropFirstTopCommand_help(r)
       end;
 }
 function dropFirstTopCommand_help
@@ -169,12 +175,8 @@ DecCmds ::= c::DecCmds
   return case c of
          | emptyRunCommands() -> c
          | addRunCommands(anyTopCommand(t), r) -> c
-         | addRunCommands(anyProofCommand(p), r) ->
+         | addRunCommands(_, r) ->
            dropFirstTopCommand_help(r)
-         | addRunCommands(anyNoOpCommand(n), r) ->
-           dropFirstTopCommand_help(r)
-         | addRunCommands(anyParseFailure(e), r) ->
-           error("How did this get here?")
          end;
 }
 
@@ -187,7 +189,7 @@ function getProof
   return
       case c of
       | emptyRunCommands() -> error("getProof(empty)")
-      | addRunCommands(_, r) -> getProof_help(r)
+      | addRunCommands(a, r) -> getProof_help(r)
       end;
 }
 function getProof_help
@@ -228,8 +230,25 @@ function dropAllOccurrences
            | addRunCommands(anyTopCommand(t), _)
              when t.matchesNames(thms) ->
              (q, dropFirstTopCommand(c))::dropAllOccurrences(r, thms)
-           | addRunCommands(_, _) ->
+           | addRunCommands(a, _) ->
              (q, c)::dropAllOccurrences(r, thms)
+           end
+         end;
+}
+function dropExtInd
+[(QName, DecCmds)] ::= mods::[(QName, DecCmds)] rels::[QName]
+{
+  return case mods of
+         | [] -> []
+         | (q, c)::r ->
+           case c of
+           | emptyRunCommands() ->
+             (q, c)::dropExtInd(r, rels)
+           | addRunCommands(anyTopCommand(t), _)
+             when t.matchesRels(rels) ->
+             (q, dropFirstTopCommand(c))::dropExtInd(r, rels)
+           | addRunCommands(a, _) ->
+             (q, c)::dropExtInd(r, rels)
            end
          end;
 }
@@ -268,9 +287,19 @@ DecCmds ::= c::DecCmds
 --checks whether the given names are part of this one
 synthesized attribute matchesNames::(Boolean ::= [QName])
    occurs on TopCommand;
+--checks whether the given relations are part of this ExtInd
+synthesized attribute matchesRels::(Boolean ::= [QName])
+   occurs on TopCommand;
 
 --false if a proof element, true otherwise
 synthesized attribute isNotProof::Boolean occurs on TopCommand;
+
+aspect default production
+top::TopCommand ::=
+{
+  top.matchesRels = \ _ -> false;
+}
+
 
 aspect production extensibleTheoremDeclaration
 top::TopCommand ::= thms::ExtThms alsos::ExtThms
@@ -312,8 +341,10 @@ top::TopCommand ::= name::QName
 aspect production extIndDeclaration
 top::TopCommand ::= body::ExtIndBody
 {
-  top.matchesNames =
-      \ l::[QName] -> !null(intersect(l, map(fst, body.extIndInfo)));
+  top.matchesNames = \ l::[QName] -> false;
+
+  top.matchesRels =
+      \ l::[QName] -> !null(intersect(l, body.relations));
 
   top.isNotProof = false;
 }
@@ -322,7 +353,9 @@ top::TopCommand ::= body::ExtIndBody
 aspect production proveExtInd
 top::TopCommand ::= rels::[QName]
 {
-  top.matchesNames = \ l::[QName] -> !null(intersect(rels, l));
+  top.matchesNames = \ l::[QName] -> false;
+
+  top.matchesRels = \ l::[QName] -> !null(intersect(rels, l));
 
   top.isNotProof = false;
 }
