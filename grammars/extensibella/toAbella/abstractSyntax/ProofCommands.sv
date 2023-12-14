@@ -476,57 +476,62 @@ top::ProofCommand ::= all::Boolean
   top.toAbella = [top];
 
   top.toAbellaMsgs <-
-      case top.proverState.state.goal of
-      | just(relationMetaterm(r, a, _)) ->
-        let rel::RelationEnvItem = --r must be qualified, so only one
-            head(lookupEnv(r, top.proverState.knownRels))
-        in
-          if !rel.isExtensible
-          then [] --always fine, since no other rules can be added
-          else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
-                     relationEnv=top.relationEnv;
-                     constructorEnv=top.constructorEnv;
-                  }.isStructured
+      if !top.proverState.state.goal.isJust
+      then error("Impossible (unfoldTactic)")
+      else 
+        case decorate top.proverState.state.goal.fromJust with {
+               relationEnv = top.relationEnv;
+               constructorEnv = top.constructorEnv;
+             } of
+        | relationMetaterm(r, a, _) ->
+          let rel::RelationEnvItem = --r must be qualified, so only one
+              head(lookupEnv(r, top.proverState.knownRels))
+          in
+            if !rel.isExtensible
+            then [] --always fine, since no other rules can be added
+            else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
+                       relationEnv=top.relationEnv;
+                       constructorEnv=top.constructorEnv;
+                    }.isStructured
+            then [] --no new rules can be added, so fine
+            else [errorMsg("Cannot unfold conclusion of extensible " ++
+                     "relation with unfilled primary component")]
+          end
+        | transRelMetaterm(r, a, _) ->
+          let rel::RelationEnvItem = --r must be qualified, so only one
+              head(lookupEnv(r, top.proverState.knownRels))
+          in
+            if !rel.isExtensible
+            then [] --always fine, since no other rules can be added
+            else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
+                       relationEnv=top.relationEnv;
+                       constructorEnv=top.constructorEnv;
+                    }.isStructured
+            then [] --no new rules can be added, so fine
+            else [errorMsg("Cannot unfold conclusion of extensible " ++
+                     "relation with unfilled primary component")]
+          end
+        | extSizeMetaterm(r, a, _) ->
+          let rel::RelationEnvItem = --r must be qualified, so only one
+              head(lookupEnv(r, top.proverState.knownRels))
+          in
+            if !rel.isExtensible
+            then [] --always fine, since no other rules can be added
+            else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
+                       relationEnv=top.relationEnv;
+                       constructorEnv=top.constructorEnv;
+                    }.isStructured
+            then [] --no new rules can be added, so fine
+            else [errorMsg("Cannot unfold conclusion of extensible " ++
+                     "relation with unfilled primary component")]
+          end
+        | translationMetaterm(a, ty, orig, trans) ->
+          if orig.isStructured
           then [] --no new rules can be added, so fine
-          else [errorMsg("Cannot unfold conclusion of extensible " ++
-                   "relation with unfilled primary component")]
-        end
-      | just(transRelMetaterm(r, a, _)) ->
-        let rel::RelationEnvItem = --r must be qualified, so only one
-            head(lookupEnv(r, top.proverState.knownRels))
-        in
-          if !rel.isExtensible
-          then [] --always fine, since no other rules can be added
-          else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
-                     relationEnv=top.relationEnv;
-                     constructorEnv=top.constructorEnv;
-                  }.isStructured
-          then [] --no new rules can be added, so fine
-          else [errorMsg("Cannot unfold conclusion of extensible " ++
-                   "relation with unfilled primary component")]
-        end
-      | just(extSizeMetaterm(r, a, _)) ->
-        let rel::RelationEnvItem = --r must be qualified, so only one
-            head(lookupEnv(r, top.proverState.knownRels))
-        in
-          if !rel.isExtensible
-          then [] --always fine, since no other rules can be added
-          else if decorate elemAtIndex(a.toList, rel.pcIndex) with {
-                     relationEnv=top.relationEnv;
-                     constructorEnv=top.constructorEnv;
-                  }.isStructured
-          then [] --no new rules can be added, so fine
-          else [errorMsg("Cannot unfold conclusion of extensible " ++
-                   "relation with unfilled primary component")]
-        end
-      | just(translationMetaterm(a, ty, orig, trans)) ->
-        if orig.isStructured
-        then [] --no new rules can be added, so fine
-        else [errorMsg("Cannot unfold conclusion of translation " ++
-                 "with unfilled primary component")]
-      | just(_) -> [errorMsg("Cannot unfold conclusion of this form")]
-      | nothing() -> error("Impossible (unfoldTactic)")
-      end;
+          else [errorMsg("Cannot unfold conclusion of translation " ++
+                   "with unfilled primary component")]
+        | _ -> [errorMsg("Cannot unfold conclusion of this form")]
+        end;
 }
 
 
