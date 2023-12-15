@@ -121,6 +121,39 @@ induction on 1. intros Plus IsB PosA PosB. Plus: case Plus.
    case PosA.
 
 
+Theorem extensibella-$-stdLib-$-lte_left : forall A B C,
+  $plus_integer A B C -> is_integer A ->
+  $lesseq_integer ($posInt $zero) A ->
+  $lesseq_integer ($posInt $zero) B ->
+  $lesseq_integer A C.
+intros P IsA LA LB.
+Or: apply extensibella-$-stdLib-$-lt_left to P LA LB. case Or.
+  backchain extensibella-$-stdLib-$-less_integer_lesseq.
+  backchain extensibella-$-stdLib-$-is_integer_lesseq.
+
+
+Theorem extensibella-$-stdLib-$-lte_right : forall A B C,
+  $plus_integer A B C -> is_integer B ->
+  $lesseq_integer ($posInt $zero) A ->
+  $lesseq_integer ($posInt $zero) B ->
+  $lesseq_integer B C.
+intros P IsB LA LB.
+Or: apply extensibella-$-stdLib-$-lt_right to P IsB LA LB. case Or.
+  backchain extensibella-$-stdLib-$-less_integer_lesseq.
+  backchain extensibella-$-stdLib-$-is_integer_lesseq.
+
+
+%specifying 0 directly is going to be more convenient for us
+Theorem extensibella-$-stdLib-$-lesseq_integer__add_positives :
+  forall N1 N2 Sum,
+    $lesseq_integer ($posInt $zero) N1 ->
+    $lesseq_integer ($posInt $zero) N2 ->
+    $plus_integer N1 N2 Sum -> $lesseq_integer ($posInt $zero) Sum.
+intros L1 L2 P.
+apply extensibella-$-stdLib-$-lesseq_integer__add_positive to L1 L2 P.
+search.
+
+
 Theorem extensibella-$-stdLib-$-lt_plus_one : forall X Sum,
   $plus_integer ($posInt ($succ $zero)) X Sum -> is_integer X ->
   $less_integer X Sum.

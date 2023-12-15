@@ -371,6 +371,8 @@ top::ThmElement ::=
                            in
                              (hyp,
                               hyp ++ ": apply IH" ++ toString(ip.2) ++
+                              --subtract to get back to R indices from
+                              --R_{ES} indices
                               " to R" ++ toString(ip.1 - p.1) ++ ".",
                               ip.2)
                            end, p.2)
@@ -466,7 +468,109 @@ top::ThmElement ::=
       "induction on " ++ implode(" ", repeat("2", length(rels))) ++
       ". induction on " ++ implode(" ", repeat("1", length(rels))) ++
       "." ++ if length(rels) > 1 then " split.\n" else "\n";
-
+  local toTransRelHostProofs::[String] =
+      map(\ l::[(Integer, [(Integer, Integer)], Boolean)] ->
+            " intros Rel Acc. Rel: case Rel (keep).\n  " ++
+            implode("\n  ",
+               filterMap(--(plus count, [(Rel premise, IH num)], is host)
+                 \ p::(Integer, [(Integer, Integer)], Boolean) ->
+                   --note all nums are >= 0, is_integer
+                   let appPos::[String] =
+                       map(
+                         \ ip::(Integer, Integer) ->
+                           let lemmas::[(QName, Metaterm)] =
+                               elemAtIndex(lemmaStatements, ip.2)
+                           in
+                             "apply " ++ head(lemmas).1.abella_pp ++
+                                " to Rel" ++ toString(ip.1) ++ ". " ++
+                             "apply " ++ head(tail(lemmas)).1.abella_pp ++
+                                " to Rel" ++ toString(ip.1) ++ "."
+                           end, p.2)
+                   in --note all summed numbers are >= 0, is_integer
+                   let addPos::[String] =
+                       map(\ i::Integer ->
+                             "apply extensibella-$-stdLib-$-" ++
+                                "lesseq_integer__add_positives to " ++
+                                "_ _ Rel" ++ toString(i) ++ ". " ++
+                             "apply extensibella-$-stdLib-$-" ++
+                                "plus_integer_is_integer to " ++
+                                "_ _ Rel" ++ toString(i) ++ ".",
+                           range(1, p.1 + 1))
+                   in --apply lte_left/lte_right to all additions
+                      --[(left result hyp, right result hyp, applications)]
+                   let ltes::[(String, String, String)] =
+                       reverse(
+                         map(\ i::Integer ->
+                               let leftHyp::String =
+                                   "LE_L" ++ toString(genInt())
+                               in
+                               let rightHyp::String =
+                                   "LE_R" ++ toString(genInt())
+                               in
+                                 (leftHyp, rightHyp,
+                                  rightHyp ++ ": apply extensibella-$-" ++
+                                     "stdLib-$-lte_right to Rel" ++
+                                     toString(i) ++ " _ _ _. " ++
+                                  leftHyp ++ ": apply extensibella-$-" ++
+                                     "stdLib-$-lte_left to Rel" ++
+                                     toString(i) ++ " _ _ _.")
+                               end end, range(1, p.1 + 1)))
+                   in --([relevent <= hyps for IH usage], applications)
+                   let transes::([String], String) =
+                       if p.1 == 0
+                       then --assume there is one R_{ES} premise if here
+                            --we need the 0 <= with a name for this,
+                            --   so redo it here to name it
+                            let h::String = "LE" ++ toString(genInt())
+                            in
+                              ([h],
+                               h ++ ": apply " ++
+                                 head(elemAtIndex(lemmaStatements,
+                                         head(p.2).2)).1.abella_pp ++
+                                 " to Rel" ++ toString(head(p.2).1) ++
+                                 ".")
+                            end
+                       else foldl(
+                              \ rest::([String], String)
+                                here::(String, String, String) ->
+                                let leftHyp::String =
+                                    "LE" ++ toString(genInt())
+                                in
+                                let rightHyp::String =
+                                    "LE" ++ toString(genInt())
+                                in --drop first in rest.1 because it is
+                                   --for a sum, not an R_{ES} num
+                                  (leftHyp::rightHyp::tail(rest.1),
+                                   rest.2 ++
+                                   leftHyp ++ ": apply extensibella" ++
+                                      "-$-stdLib-$-lesseq_integer_" ++
+                                      "transitive to " ++ here.1 ++
+                                      " " ++ head(rest.1) ++ ". " ++
+                                   rightHyp ++ ": apply extensibella" ++
+                                      "-$-stdLib-$-lesseq_integer_" ++
+                                      "transitive to " ++ here.2 ++
+                                      " " ++ head(rest.1) ++ ". ")
+                                end end,
+                              ([head(ltes).1, head(ltes).2], ""),
+                              tail(ltes))
+                   in
+                   let appIHs::[String] =
+                     map(\ i::(Integer, Integer) -> "", p.2)
+                   in
+                     if !p.3 --is host
+                     then nothing()
+                     else if length(p.2) == 0
+                     then just("search.")
+                     else just(
+                            implode(" ", appPos) ++ " " ++
+                            implode(" ", addPos) ++ " " ++
+                            implode(" ",
+                               map(\ p::(String, String, String) ->
+                                     p.3, ltes)) ++ " " ++
+                            transes.2 ++
+                            implode(" ", appIHs) ++ " skip.")
+                   end end end end end, l)),
+          clauseInfo);
   local afterToTransRel::String =
       if length(toTransRelNames) == 1
       then "" --nothing to split
@@ -476,6 +580,7 @@ top::ThmElement ::=
       "Theorem " ++ toTransRelProveName ++ " : " ++
       toTransRelStatement.abella_pp ++ ".\n" ++
       toTransRelProofStart ++
+      implode("\n", toTransRelHostProofs) ++ "\n" ++
       "skip.\n" ++ afterToTransRel;
 
   {-
