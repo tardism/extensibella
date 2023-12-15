@@ -188,10 +188,10 @@ top::ThmElement ::=
       then "\n" else " split.\n";
   --get the information we need about the relation clauses to build
   --   the individual proofs
-  --[[(number of adds, [1-based indices for R_{ES} premises])]]
+  --[[(number of adds, [1-based indices for R_{ES} premises], is host)]]
   --inner list is grouped by relation
   --   (e.g. [[rel 1 clauses], [rel 2 clauses], ...])
-  local lemmaClauseInfo::[[(Integer, [Integer])]] =
+  local lemmaClauseInfo::[[(Integer, [Integer], Boolean)]] =
       map(\ q::QName ->
             let rel::RelationEnvItem =
                 decorate q with {relationEnv=top.relEnv;}.fullRel
@@ -208,7 +208,7 @@ top::ThmElement ::=
                        | just(m) -> m.splitConjunctions
                        end),
                     rel.defsList)
-            in --premises that are part of this group
+            in --premises that are part of this group of rels
             let hereRels::[(Boolean, [Boolean])] =
                 map(\ l::(Boolean, [Metaterm]) ->
                       (l.1,
@@ -232,14 +232,15 @@ top::ThmElement ::=
                                           else nothing(),
                           zip(range(plusCount + 1,
                                     plusCount + length(l.2) + 1),
-                              l.2)))
+                              l.2)),
+                       !l.1)
                     end,
                   hereRels)
             end end end,
           map(fst, rels));
   local lemmaPrfParts::[[(String, String, String)]] =
       map(
-        \ l::[(Integer, [Integer])] ->
+        \ l::[(Integer, [Integer], Boolean)] ->
           map(
             \ p::(Integer, [Integer]) ->
               let basicPrf::String =
@@ -317,11 +318,47 @@ top::ThmElement ::=
          ".\n" ++ lemmaInduction ++ lemmaPrfs.3 ++
        endLemmaCommands;
 
+  {-
+    Actual Ext_Ind proof
+  -}
+  local extIndStatement::Metaterm =
+     foldr1(andMetaterm,
+        map(\ p::(QName, [String], [Term], QName, String, String) ->
+              bindingMetaterm(forallBinder(),
+                 foldrLastElem(addBindings(_, nothingType(), _),
+                    oneBinding(_, nothingType()), p.2),
+                 impliesMetaterm(
+                    relationMetaterm(p.1,
+                       foldr(\ n::String rest::TermList ->
+                               consTermList(nameTerm(n, nothingType()),
+                                            rest),
+                             emptyTermList(), p.2)),
+                    relationMetaterm(transRelQName(p.1.sub),
+                       foldr(\ n::String rest::TermList ->
+                               consTermList(nameTerm(n, nothingType()),
+                                            rest),
+                             emptyTermList(), p.2)))),
+            rels));
+  local extIndProveName::String =
+      if length(rels) == 1
+      then extIndThmName(head(rels).1)
+      else "$extIndTemp_" ++ toString(genInt());
+  --need to keep track of the correct IH, since we have a lot of them
+  --need to track correct IH for lemmas as well
+  --probably name them and add it to lemmaClauseInfo for the middle thing
 
   top.composedCmds = fullLemmas ++ "%% Ext_Ind for " ++
       implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n\n";
+
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
+}
+
+--to get consistent names
+function extIndThmName
+String ::= rel::QName
+{
+  return "$extInd_" ++ rel.abella_pp;
 }
 
 
