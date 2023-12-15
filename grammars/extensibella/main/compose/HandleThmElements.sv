@@ -145,54 +145,14 @@ top::ThmElement ::=
       buildTransRel(rels, top.relEnv).abella_pp;
   top.extIndDefs = [extSizeDef, transRelDef];
 
-  {-
-    Lemmas about R_{ES}
-  -}
-  local lemmaStatements::[[(QName, Metaterm)]] =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
-            buildExtSizeLemmas(p.1, p.2),
-          rels);
-  local jointLemmaNames::(String, String, String) =
-      --first make a sanity/extension check
-      if length(head(lemmaStatements)) != 3
-      then error("Number of ExtSize lemmas must be 3")
-      else case lemmaStatements of
-           | [[a, b, c]] -> --only one rel, so use actual names
-             (a.1.abella_pp, b.1.abella_pp, c.1.abella_pp)
-           | _ -> --multiple rels together, so use fake then split
-             ("$extIndThm_" ++ toString(genInt()),
-              "$extIndThm_" ++ toString(genInt()),
-              "$extIndThm_" ++ toString(genInt()))
-           end;
-  --leave it as a list because Silver pairs of pairs don't really work
-  local provingLemmaStatements::[(String, Metaterm)] =
-      [
-       (jointLemmaNames.1,
-        foldr1(andMetaterm,
-               map(\ l::[(QName, Metaterm)] -> head(l).2,
-                   lemmaStatements))),
-       (jointLemmaNames.2,
-        foldr1(andMetaterm,
-               map(\ l::[(QName, Metaterm)] -> head(tail(l)).2,
-                   lemmaStatements))),
-       (jointLemmaNames.3,
-        foldr1(andMetaterm,
-               map(\ l::[(QName, Metaterm)] -> head(tail(tail(l))).2,
-                   lemmaStatements)))
-      ];
-  local lemmaInduction::String =
-      "induction on " ++
-      implode(" ", repeat("1",
-                      length(lemmaStatements))) ++ "." ++
-      if length(lemmaStatements) == 1
-      then "\n" else " split.\n";
+
   --get the information we need about the relation clauses to build
   --   the individual proofs
   --[[(number of adds, [(1-based indices for R_{ES} premises,
   --                     0-based IH indices)], is host)]]
   --inner list is grouped by relation
   --   (e.g. [[rel 1 clauses], [rel 2 clauses], ...])
-  local lemmaClauseInfo::[[(Integer, [(Integer, Integer)], Boolean)]] =
+  local clauseInfo::[[(Integer, [(Integer, Integer)], Boolean)]] =
       map(\ q::QName ->
             let rel::RelationEnvItem =
                 decorate q with {relationEnv=top.relEnv;}.fullRel
@@ -239,6 +199,48 @@ top::ThmElement ::=
                   hereRels)
             end end end,
           map(fst, rels));
+
+  {-
+    Lemmas about R_{ES}
+  -}
+  local lemmaStatements::[[(QName, Metaterm)]] =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            buildExtSizeLemmas(p.1, p.2),
+          rels);
+  local jointLemmaNames::(String, String, String) =
+      --first make a sanity/extension check
+      if length(head(lemmaStatements)) != 3
+      then error("Number of ExtSize lemmas must be 3")
+      else case lemmaStatements of
+           | [[a, b, c]] -> --only one rel, so use actual names
+             (a.1.abella_pp, b.1.abella_pp, c.1.abella_pp)
+           | _ -> --multiple rels together, so use fake then split
+             ("$extIndThm_" ++ toString(genInt()),
+              "$extIndThm_" ++ toString(genInt()),
+              "$extIndThm_" ++ toString(genInt()))
+           end;
+  --leave it as a list because Silver pairs of pairs don't really work
+  local provingLemmaStatements::[(String, Metaterm)] =
+      [
+       (jointLemmaNames.1,
+        foldr1(andMetaterm,
+               map(\ l::[(QName, Metaterm)] -> head(l).2,
+                   lemmaStatements))),
+       (jointLemmaNames.2,
+        foldr1(andMetaterm,
+               map(\ l::[(QName, Metaterm)] -> head(tail(l)).2,
+                   lemmaStatements))),
+       (jointLemmaNames.3,
+        foldr1(andMetaterm,
+               map(\ l::[(QName, Metaterm)] -> head(tail(tail(l))).2,
+                   lemmaStatements)))
+      ];
+  local lemmaInduction::String =
+      "induction on " ++
+      implode(" ", repeat("1",
+                      length(lemmaStatements))) ++ "." ++
+      if length(lemmaStatements) == 1
+      then "\n" else " split.\n";
   local lemmaPrfParts::[[(String, String, String)]] =
       map(--[(plus count, [(ES premise, IH num)], is host)]
         \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
@@ -272,7 +274,7 @@ top::ThmElement ::=
                  basicPrf ++ " search.\n")
                 end end,
             l),
-          lemmaClauseInfo);
+          clauseInfo);
   local lemmaPrfs::(String, String, String) =
       foldr(\ l::[(String, String, String)]
               rest::(String, String, String) ->
@@ -322,39 +324,201 @@ top::ThmElement ::=
        endLemmaCommands;
 
   {-
-    Actual Ext_Ind proof
+    R to R_{ES} proof
   -}
-  local extIndStatement::Metaterm =
+  local toExtSizeStatement::Metaterm =
+      foldr1(andMetaterm,
+         map(\ p::(QName, [String], [Term], QName, String, String) ->
+               let num::String = freshName("N", p.2)
+               in
+                 bindingMetaterm(forallBinder(),
+                    toBindings(p.2),
+                    impliesMetaterm(
+                       relationMetaterm(p.1,
+                          toTermList(map(basicNameTerm, p.2)),
+                          emptyRestriction()),
+                       bindingMetaterm(existsBinder(),
+                          toBindings([num]),
+                          relationMetaterm(extSizeQName(p.1.sub),
+                             toTermList(map(basicNameTerm, p.2 ++ [num])),
+                             emptyRestriction()))))
+               end,
+             rels));
+  local toExtSizeNames::[String] =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            "$toExtSize__" ++ p.1.abella_pp,
+          rels);
+  local toExtSizeProveName::String =
+      if length(toExtSizeNames) == 1
+      then head(toExtSizeNames)
+      else "$toExtSize_" ++ toString(genInt());
+  local toExtSizeProofStart::String =
+      "induction on " ++ implode(" ", repeat("1", length(rels))) ++
+      ". rename IH to IH0." ++ --simplifies building the proof code
+      if length(rels) > 1 then " split." else "";
+  local toExtSizeProofs::[String] =
+      map(
+        \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
+          " intros R. R1: case R.\n  " ++
+          implode("\n  ",
+             map(--(plus count, [(R premise, IH num)], is host)
+               \ p::(Integer, [(Integer, Integer)], Boolean) ->
+                         --[(hyp name, application, IH num)]
+                 let appIHs::[(String, String, Integer)] =
+                     map(\ ip::(Integer, Integer) ->
+                           let hyp::String =
+                               "ES" ++ toString(genInt())
+                           in
+                             (hyp,
+                              hyp ++ ": apply IH" ++ toString(ip.2) ++
+                              " to R" ++ toString(ip.1 - p.1) ++ ".",
+                              ip.2)
+                           end, p.2)
+                 in       --[(hyp name, application)]
+                 let appIses::[(String, String)] =
+                     map(\ ep::(String, String, Integer) ->
+                           let hyp::String =
+                               "Is" ++ toString(genInt())
+                           in
+                             (hyp,
+                              hyp ++ ": apply " ++
+                              head(tail(elemAtIndex(lemmaStatements,
+                                           ep.3))).1.abella_pp ++
+                              " to " ++ ep.1 ++ ".")
+                           end, appIHs)
+                 in
+                 let adds::String =
+                     foldl(--(hyp name, application)
+                        \ rest::(String, String) isp::(String, String) ->
+                          let plusHyp::String =
+                              "Plus" ++ toString(genInt())
+                          in
+                          let isHyp::String =
+                              "Is" ++ toString(genInt())
+                          in
+                            (isHyp,
+                             rest.2 ++ " " ++
+                             plusHyp ++ ": apply " ++
+                                "extensibella-$-stdLib-$-" ++
+                                "plus_integer_total to " ++ rest.1 ++
+                                " " ++ isp.1 ++ ". " ++
+                             isHyp ++ ": apply " ++
+                                "extensibella-$-stdLib-$-" ++
+                                "plus_integer_is_integer to _ _ " ++
+                                plusHyp ++ ".")
+                          end end,
+                        (head(appIses).1, ""), tail(appIses)).2
+                 in
+                   if null(p.2) then "search."
+                   else
+                     implode(" ",
+                        map(\ p::(String, String, Integer) -> p.2,
+                            appIHs)) ++ " " ++
+                     implode(" ", map(\ p::(String, String) -> p.2,
+                                      appIses)) ++ " " ++
+                     adds ++ " search."
+                 end end end, l)),
+        clauseInfo);
+  local afterToExtSize::String =
+      if length(toExtSizeNames) == 1
+      then "" --nothing to split
+      else "Split " ++ toExtSizeProveName ++ " as " ++
+           implode(", ", toExtSizeNames) ++ ".\n";
+  local fullToExtSize::String =
+      "Theorem " ++ toExtSizeProveName ++ " : " ++
+      toExtSizeStatement.abella_pp ++ ".\n" ++
+      toExtSizeProofStart ++ "\n" ++
+      implode("\n", toExtSizeProofs) ++ "\n" ++
+      afterToExtSize;
+
+  {-
+    R_{ES} to R_T proof
+  -}
+  local toTransRelStatement::Metaterm =
      foldr1(andMetaterm,
         map(\ p::(QName, [String], [Term], QName, String, String) ->
-              bindingMetaterm(forallBinder(),
-                 foldrLastElem(addBindings(_, nothingType(), _),
-                    oneBinding(_, nothingType()), p.2),
-                 impliesMetaterm(
-                    relationMetaterm(p.1,
-                       foldr(\ n::String rest::TermList ->
-                               consTermList(
-                                  nameTerm(toQName(n), nothingType()),
-                                  rest),
-                             emptyTermList(), p.2), emptyRestriction()),
-                    relationMetaterm(transRelQName(p.1.sub),
-                       foldr(\ n::String rest::TermList ->
-                               consTermList(
-                                  nameTerm(toQName(n), nothingType()),
-                                  rest),
-                             emptyTermList(), p.2),
-                       emptyRestriction()))),
+              let num::String = freshName("N", p.2)
+              in
+                bindingMetaterm(forallBinder(),
+                   toBindings(num::p.2),
+                   impliesMetaterm(
+                      relationMetaterm(extSizeQName(p.1.sub),
+                         toTermList(map(basicNameTerm, p.2 ++ [num])),
+                         emptyRestriction()),
+                   impliesMetaterm(
+                      relationMetaterm(intStrongInductionRel,
+                         toTermList([basicNameTerm(num)]),
+                         emptyRestriction()),
+                      relationMetaterm(transRelQName(p.1.sub),
+                         toTermList(map(basicNameTerm, p.2)),
+                         emptyRestriction()))))
+              end,
             rels));
-  local extIndProveName::String =
-      if length(rels) == 1
-      then extIndThmName(head(rels).1)
-      else "$extIndTemp_" ++ toString(genInt());
-  --need to keep track of the correct IH, since we have a lot of them
-  --need to track correct IH for lemmas as well
-  --probably name them and add it to lemmaClauseInfo for the middle thing
+  local toTransRelNames::[String] =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            "$toTransRel__" ++ p.1.abella_pp,
+          rels);
+  local toTransRelProveName::String =
+      if length(toTransRelNames) == 1
+      then head(toTransRelNames)
+      else "$toTransRel_" ++ toString(genInt());
+  local toTransRelProofStart::String =
+      "induction on " ++ implode(" ", repeat("2", length(rels))) ++
+      ". induction on " ++ implode(" ", repeat("1", length(rels))) ++
+      "." ++ if length(rels) > 1 then " split.\n" else "\n";
 
-  top.composedCmds = fullLemmas ++ "%% Ext_Ind for " ++
-      implode(", ", map((.abella_pp), map(fst, rels))) ++ "\n\n";
+  local afterToTransRel::String =
+      if length(toTransRelNames) == 1
+      then "" --nothing to split
+      else "Split " ++ toTransRelProveName ++ " as " ++
+           implode(", ", toTransRelNames) ++ ".\n";
+  local fullToTransRel::String =
+      "Theorem " ++ toTransRelProveName ++ " : " ++
+      toTransRelStatement.abella_pp ++ ".\n" ++
+      toTransRelProofStart ++
+      "skip.\n" ++ afterToTransRel;
+
+  {-
+    R to R_T proof
+  -}
+  local extIndProofs::[String] =
+      map(\ p::(Integer, QName, [String], [Term], QName,
+                         String, String) ->
+            let stmt::Metaterm =
+                bindingMetaterm(forallBinder(),
+                   toBindings(p.3),
+                   impliesMetaterm(
+                      relationMetaterm(p.2,
+                         toTermList(map(basicNameTerm, p.3)),
+                         emptyRestriction()),
+                      relationMetaterm(transRelQName(p.2.sub),
+                         toTermList(map(basicNameTerm, p.3)),
+                         emptyRestriction())))
+            in
+              "Theorem " ++ extIndThmName(p.2) ++ " : " ++
+                 stmt.abella_pp ++ ".\n" ++
+              --make R_{ES}
+              "intros R. ES: apply " ++
+                 elemAtIndex(toExtSizeNames, p.1) ++ " to R.\n" ++
+              --make acc N
+              let lemmas::[(QName, Metaterm)] =
+                  elemAtIndex(lemmaStatements, p.1)
+              in
+                "P: apply " ++ head(lemmas).1.abella_pp ++
+                   " to ES. " ++
+                "Is: apply " ++ head(tail(lemmas)).1.abella_pp ++
+                   " to ES. " ++
+                "A: apply extensibella-$-stdLib-$-all_acc to Is P.\n"
+              end ++
+              --make R_T
+              "apply " ++ elemAtIndex(toTransRelNames, p.1) ++
+                 " to ES A. search."
+            end,
+          enumerate(rels));
+
+
+  top.composedCmds = fullLemmas ++ "\n" ++ fullToExtSize ++ "\n" ++
+      fullToTransRel ++ "\n" ++ implode("\n", extIndProofs) ++ "\n\n\n";
 
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
@@ -365,6 +529,17 @@ function extIndThmName
 String ::= rel::QName
 {
   return "$extInd_" ++ rel.abella_pp;
+}
+
+
+function indexOfName
+Integer ::= q::QName l::[(QName, a)]
+{
+  return case l of
+         | [] -> error("not in list")
+         | (x, _)::_ when x == q -> 0
+         | _::rest -> indexOfName(q, rest) + 1
+         end;
 }
 
 
@@ -530,18 +705,6 @@ DecCmds ::= c::DecCmds
          | addRunCommands(anyTopCommand(t), r) when t.isNotProof ->
            dropNonProof_oneMod(dropFirstTopCommand(c))
          | _ -> c
-         end;
-}
-
-
-
-function indexOfName
-Integer ::= q::QName l::[(QName, a)]
-{
-  return case l of
-         | [] -> error("not in list")
-         | (x, _)::_ when x == q -> 0
-         | _::rest -> indexOfName(q, rest) + 1
          end;
 }
 
