@@ -188,10 +188,11 @@ top::ThmElement ::=
       then "\n" else " split.\n";
   --get the information we need about the relation clauses to build
   --   the individual proofs
-  --[[(number of adds, [1-based indices for R_{ES} premises], is host)]]
+  --[[(number of adds, [(1-based indices for R_{ES} premises,
+  --                     0-based IH indices)], is host)]]
   --inner list is grouped by relation
   --   (e.g. [[rel 1 clauses], [rel 2 clauses], ...])
-  local lemmaClauseInfo::[[(Integer, [Integer], Boolean)]] =
+  local lemmaClauseInfo::[[(Integer, [(Integer, Integer)], Boolean)]] =
       map(\ q::QName ->
             let rel::RelationEnvItem =
                 decorate q with {relationEnv=top.relEnv;}.fullRel
@@ -209,44 +210,46 @@ top::ThmElement ::=
                        end),
                     rel.defsList)
             in --premises that are part of this group of rels
-            let hereRels::[(Boolean, [Boolean])] =
+            let hereRels::[(Boolean, [Integer])] =
                 map(\ l::(Boolean, [Metaterm]) ->
                       (l.1,
                        map(\ m::Metaterm ->
                              case m of
-                             | relationMetaterm(q, _, _) ->
-                               contains(q, map(fst, rels))
-                             | _ -> false
+                             | relationMetaterm(q, _, _)
+                               when contains(q, map(fst, rels)) ->
+                               indexOfName(q, rels) --index of IH
+                             | _ -> -1
                              end,
                           l.2)),
                     splits)
             in
-              map(\ l::(Boolean, [Boolean]) ->
+              map(\ l::(Boolean, [Integer]) ->
                     let plusCount::Integer =
-                        length(filter(\ x -> x, l.2)
+                        length(filter(\ x -> x >= 0, l.2)
                               ) - if !l.1 then 1 else 0
                     in
                       (plusCount,
-                       filterMap(\ p::(Integer, Boolean) ->
-                                   if p.2 then just(p.1)
-                                          else nothing(),
-                          zip(range(plusCount + 1,
-                                    plusCount + length(l.2) + 1),
-                              l.2)),
+                       filterMap(\ p::(Integer, Integer) ->
+                                   if p.2 >= 0
+                                   then just(p)
+                                   else nothing(),
+                          enumerateFrom(plusCount + 1, l.2)),
                        !l.1)
                     end,
                   hereRels)
             end end end,
           map(fst, rels));
   local lemmaPrfParts::[[(String, String, String)]] =
-      map(
-        \ l::[(Integer, [Integer], Boolean)] ->
+      map(--[(plus count, [(ES premise, IH num)], is host)]
+        \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
           map(
-            \ p::(Integer, [Integer]) ->
+            \ p::(Integer, [(Integer, Integer)], Boolean) ->
               let basicPrf::String =
                   implode("",
-                     map(\ i::Integer ->
-                           " apply IH to ES" ++ toString(i) ++ ".",
+                     map(\ ip::(Integer, Integer) ->
+                           " apply IH" ++ (if ip.2 == 0 then ""
+                                           else toString(ip.2)) ++
+                           " to ES" ++ toString(ip.1) ++ ".",
                          p.2))
               in
               let r::[Integer] = range(1, p.1 + 1)
@@ -330,14 +333,17 @@ top::ThmElement ::=
                  impliesMetaterm(
                     relationMetaterm(p.1,
                        foldr(\ n::String rest::TermList ->
-                               consTermList(nameTerm(n, nothingType()),
-                                            rest),
-                             emptyTermList(), p.2)),
+                               consTermList(
+                                  nameTerm(toQName(n), nothingType()),
+                                  rest),
+                             emptyTermList(), p.2), emptyRestriction()),
                     relationMetaterm(transRelQName(p.1.sub),
                        foldr(\ n::String rest::TermList ->
-                               consTermList(nameTerm(n, nothingType()),
-                                            rest),
-                             emptyTermList(), p.2)))),
+                               consTermList(
+                                  nameTerm(toQName(n), nothingType()),
+                                  rest),
+                             emptyTermList(), p.2),
+                       emptyRestriction()))),
             rels));
   local extIndProveName::String =
       if length(rels) == 1
@@ -513,17 +519,29 @@ function dropNonProof
 {
   return case mods of
          | [] -> []
-         | (q, c)::r -> (q, dropNonProof_help(c))::dropNonProof(r)
+         | (q, c)::r -> (q, dropNonProof_oneMod(c))::dropNonProof(r)
          end;
 }
-function dropNonProof_help
+function dropNonProof_oneMod
 DecCmds ::= c::DecCmds
 {
   return case c of
          | emptyRunCommands() -> c
          | addRunCommands(anyTopCommand(t), r) when t.isNotProof ->
-           dropNonProof_help(dropFirstTopCommand(c))
+           dropNonProof_oneMod(dropFirstTopCommand(c))
          | _ -> c
+         end;
+}
+
+
+
+function indexOfName
+Integer ::= q::QName l::[(QName, a)]
+{
+  return case l of
+         | [] -> error("not in list")
+         | (x, _)::_ when x == q -> 0
+         | _::rest -> indexOfName(q, rest) + 1
          end;
 }
 
