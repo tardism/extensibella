@@ -622,6 +622,29 @@ top::ThmElement ::=
                             transes.2 ++ appIHs)
                    end end end end end, l)),
           clauseInfo);
+  --proof information from all the modules where this occurs
+  --filter out the ones where there are no proofs (includes host module)
+  local toTransRelProofInfo::[(QName, [(ProofState, [AnyCommand])])] =
+      filter(\ p::(QName, [(ProofState, [AnyCommand])]) -> !null(p.2),
+             getExtIndProofSteps(top.incomingMods, map(fst, rels)));
+  local toTransRelSplitProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
+      map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
+            (p.1, splitAtTopGoals(p.2)),
+          toTransRelProofInfo);
+  --proofs for each module, in each top goal
+  local toTransRelJoinOtherProofs::[[String]] =
+      map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
+            map(\ l::[(ProofState, [AnyCommand])] ->
+                  implode(" ",
+                     map(\ pr::(ProofState, [AnyCommand]) ->
+                           implode(" ",
+                              map((.abella_pp), pr.2)),
+                         l)),
+                p.2),
+          toTransRelSplitProofInfo);
+  --joining the host and extension proofs into one
+  local toTransRelProofContents::String =
+      joinProofGroups(toTransRelHostProofs::toTransRelJoinOtherProofs);
   local afterToTransRel::String =
       if length(toTransRelNames) == 1
       then "" --nothing to split
@@ -631,8 +654,8 @@ top::ThmElement ::=
       "Theorem " ++ toTransRelProveName ++ " : " ++
       toTransRelStatement.abella_pp ++ ".\n" ++
       toTransRelProofStart ++
-      implode("\n", toTransRelHostProofs) ++ "\n" ++
-      "skip.\n" ++ afterToTransRel;
+      toTransRelProofContents ++ "\n" ++
+      afterToTransRel;
 
   {-
     R to R_T proof
@@ -843,6 +866,45 @@ function dropExtInd
          end;
 }
 
+--get the information about the commands for the proof of thms
+--[(module, [(state before command, toAbella cmds)])]
+function getThmProofSteps
+[(QName, [(ProofState, [AnyCommand])])] ::=
+   mods::[(QName, DecCmds)] thms::[QName]
+{
+  return
+      case mods of
+      | [] -> []
+      | (q, c)::r ->
+        case c of
+        | addRunCommands(anyTopCommand(t), rc)
+          when t.matchesNames(thms) ->
+          (q, getProofSteps(rc))::getThmProofSteps(r, thms)
+        | _ -> getThmProofSteps(r, thms)
+        end
+      end;
+}
+
+--get the information about the commands for the proof of Ext_Ind for
+--   the given rels
+--[(module, [(state before command, toAbella cmds)])]
+function getExtIndProofSteps
+[(QName, [(ProofState, [AnyCommand])])] ::=
+   mods::[(QName, DecCmds)] rels::[QName]
+{
+  return
+      case mods of
+      | [] -> []
+      | (q, c)::r ->
+        case c of
+        | addRunCommands(anyTopCommand(t), rc)
+          when t.matchesRels(rels) ->
+          (q, getProofSteps(rc))::getExtIndProofSteps(r, rels)
+        | _ -> getExtIndProofSteps(r, rels)
+        end
+      end;
+}
+
 
 --clear out all the non-proof things at the front of files
 function dropNonProof
@@ -861,6 +923,64 @@ DecCmds ::= c::DecCmds
          | addRunCommands(anyTopCommand(t), r) when t.isNotProof ->
            dropNonProof_oneMod(dropFirstTopCommand(c))
          | _ -> c
+         end;
+}
+
+
+--get the information about the commands for the rest of the proof
+--assumes the TopCommand has already been dropped
+--[(state before command, toAbella cmds)]
+function getProofSteps
+[(ProofState, [AnyCommand])] ::= cmds::DecCmds
+{
+  return
+      case cmds of
+      | emptyRunCommands() -> []
+      | addRunCommands(anyTopCommand(_), _) -> []
+      | addRunCommands(c, rest) ->
+        (head(cmds.stateList).2.state, c.toAbella)::getProofSteps(rest)
+      end;
+}
+
+
+--split into groups for goals 1, 2, 3, ...
+--e.g. [[1.1, 1.1, 1.2, 1], [2, 2.1, 2.2, 2.2.1, ...], ...]
+--assumes they are in order, as they really should be
+function splitAtTopGoals
+[[(ProofState, [AnyCommand])]] ::= cmds::[(ProofState, [AnyCommand])]
+{
+  return groupBy(\ p1::(ProofState, [AnyCommand])
+                   p2::(ProofState, [AnyCommand]) ->
+                   subgoalTopNum(p1.1.currentSubgoal) ==
+                   subgoalTopNum(p2.1.currentSubgoal),
+                 cmds);
+}
+
+--split into groups for all different subgoals
+--e.g. [[1.1, 1.1], [1.2], [1], [2], [2.1], [2.2], [2.2.1], ...]
+--assumes they are in order, as they really should be
+function splitAtAllGoals
+[[(ProofState, [AnyCommand])]] ::= cmds::[(ProofState, [AnyCommand])]
+{
+  return groupBy(\ p1::(ProofState, [AnyCommand])
+                   p2::(ProofState, [AnyCommand]) ->
+                   p1.1.currentSubgoal == p2.1.currentSubgoal,
+                 cmds);
+}
+
+
+--join the given proofs into one
+--outer list is grouped by module, each module has proofs for related thms
+--e.g. [ [mod 1 thm a, mod 1 thm b], [mod 2 thm a, mod 2 thm b], ... ]
+function joinProofGroups
+String ::= prfs::[[String]]
+{
+  return case prfs of
+         | [] -> ""
+         | []::_ -> "" --all are empty
+         | x::l ->
+           implode("\n", map(head, prfs)) ++ "\n" ++
+           joinProofGroups(map(tail, prfs))
          end;
 }
 

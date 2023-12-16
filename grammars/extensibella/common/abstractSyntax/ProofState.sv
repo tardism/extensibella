@@ -277,3 +277,10 @@ Boolean ::= oldSubgoal::SubgoalNum newSubgoal::SubgoalNum
      ! isSubgoal0;
 }
 
+
+--top-level subgoal number (e.g. 1 for 1.2.3)
+function subgoalTopNum
+Integer ::= sg::SubgoalNum
+{
+  return head(sg);
+}

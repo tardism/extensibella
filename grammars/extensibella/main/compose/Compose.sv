@@ -270,22 +270,28 @@ function compose_proofs
 String ::= thms::[ThmElement] mods::[(QName, DecCmds)]
            proverState::ProverState
 {
-  --handle the first thing, getting its proof
-  local fstThm::ThmElement = head(thms);
-  fstThm.incomingMods = mods;
-  fstThm.relEnv = proverState.knownRels;
-  fstThm.constrEnv = proverState.knownConstrs;
-  fstThm.tyEnv = proverState.knownTypes;
-
-  --drop the non-proof things, like definitions, from all modules
-  local cleanedRest::[(QName, DecCmds)] =
-      dropNonProof(fstThm.outgoingMods);
+  local sub::([(QName, DecCmds)], String) =
+      handleFstThm(mods, head(thms), proverState);
 
   return
       case thms of
       | [] -> ""
       | _::rest ->
-        fstThm.composedCmds ++
-        compose_proofs(rest, cleanedRest, proverState)
+        sub.2 ++ compose_proofs(rest, sub.1, proverState)
       end;
+}
+
+--decorate this here rather than in compose_proofs directly for memory
+--   efficiency so it can throw the decorated tree away
+function handleFstThm
+([(QName, DecCmds)], String) ::= mods::[(QName, DecCmds)]
+   fstThm::ThmElement proverState::ProverState
+{
+  fstThm.incomingMods = mods;
+  fstThm.relEnv = proverState.knownRels;
+  fstThm.constrEnv = proverState.knownConstrs;
+  fstThm.tyEnv = proverState.knownTypes;
+     --drop the non-proof things, like definitions, from all modules
+  return (dropNonProof(fstThm.outgoingMods),
+          fstThm.composedCmds);
 }
