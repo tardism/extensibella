@@ -519,17 +519,21 @@ top::ThmElement ::=
                    let transes::([String], String) =
                        if p.1 == 0
                        then --assume there is one R_{ES} premise if here
-                            --we need the 0 <= with a name for this,
-                            --   so redo it here to name it
+                            --we need the <= final N with a name for
+                            --   this, so redo is here to name it
                             let h::String = "LE" ++ toString(genInt())
                             in
+                            let is::String = "IS" ++ toString(genInt())
+                            in
                               ([h],
-                               h ++ ": apply " ++
-                                 head(elemAtIndex(lemmaStatements,
-                                         head(p.2).2)).1.abella_pp ++
+                               is ++ ": apply " ++
+                                 head(tail(elemAtIndex(lemmaStatements,
+                                         head(p.2).2))).1.abella_pp ++
                                  " to Rel" ++ toString(head(p.2).1) ++
-                                 ".")
-                            end
+                                 "." ++
+                               h ++ ": apply extensibella-$-stdLib" ++
+                                 "-$-is_integer_lesseq to " ++ is ++ ".")
+                            end end
                        else foldl(
                               \ rest::([String], String)
                                 here::(String, String, String) ->
@@ -554,8 +558,56 @@ top::ThmElement ::=
                               ([head(ltes).1, head(ltes).2], ""),
                               tail(ltes))
                    in
-                   let appIHs::[String] =
-                     map(\ i::(Integer, Integer) -> "", p.2)
+                   {-
+                     My initial plan was to apply the IH with "_" for
+                     the acc premise, but that doesn't work because it
+                     has an inductive restriction.  Because it needs
+                     to be filled at application time, but by what
+                     depends on cases, we either need to nest as we
+                     have done belowe (i.e. rest appears in both
+                     branches), or assert the conclusion of the IH to
+                     avoid nesting.  We can't assert the conclusion
+                     because we don't know what it is without live
+                     Abella here, so we nest it.  This isn't too
+                     inefficient in practice, as there shouldn't be
+                     more than ~3 premises, so ease of implementation
+                     wins over cutting out a handful of commands.
+                   -}
+                   let appIHs::String =
+                     let a::String = "A" ++ toString(genInt())
+                     in
+                       a ++ ": case Acc (keep). " ++
+                       foldr(--(0 <= N, Rel premise, IH num)
+                          \ t::(String, Integer, Integer) rest::String ->
+                            let or::String = "Or" ++ toString(genInt())
+                            in
+                            let l::String = "L" ++ toString(genInt())
+                            in
+                            let aa::String = "A" ++ toString(genInt())
+                            in --second IH, so len(rels) (number in first
+                               --   IH set) + t.3 (offset into second set)
+                            let ih::String =
+                                "IH" ++ toString(length(rels) + t.3)
+                            in
+                              --split <= into < \/ =
+                              or ++ ": apply extensibella-$-stdLib" ++
+                                 "-$-lesseq_integer_less_or_eq to " ++
+                                 t.1 ++ ". " ++
+                              --split into cases
+                              l ++ ": case " ++ or ++ ". " ++
+                              -- <:  create new acc
+                              aa ++ ": apply " ++ a ++ " to _ " ++
+                                 l ++ ". " ++
+                              "apply " ++ ih ++ " to Rel" ++
+                                 toString(t.2) ++ " " ++ aa ++ ". " ++
+                              rest ++
+                              -- =:  use this acc
+                              " apply " ++ ih ++ " to Rel" ++
+                                 toString(t.2) ++ " Acc. " ++
+                              rest
+                            end end end end,
+                           "search.", zip(transes.1, p.2))
+                     end
                    in
                      if !p.3 --is host
                      then nothing()
@@ -567,8 +619,7 @@ top::ThmElement ::=
                             implode(" ",
                                map(\ p::(String, String, String) ->
                                      p.3, ltes)) ++ " " ++
-                            transes.2 ++
-                            implode(" ", appIHs) ++ " skip.")
+                            transes.2 ++ appIHs)
                    end end end end end, l)),
           clauseInfo);
   local afterToTransRel::String =
