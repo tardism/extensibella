@@ -284,3 +284,21 @@ Integer ::= sg::SubgoalNum
 {
   return head(sg);
 }
+
+
+--test if num starts with prefixNum
+--e.g. 1.2 is a prefix of 1.2, 1.2.1, 1.2.3, but not 1 or 1.1
+function subgoalStartsWith
+Boolean ::= prefixNum::SubgoalNum num::SubgoalNum
+{
+  return take(length(prefixNum), num) == prefixNum;
+}
+
+
+--drop the bit for the last subgoal, keeping the rest
+--e.g. 1.2.3 becomes 1.2, 1.1 becomes 1
+function subgoalRoot
+SubgoalNum ::= num::SubgoalNum
+{
+  return init(num);
+}
