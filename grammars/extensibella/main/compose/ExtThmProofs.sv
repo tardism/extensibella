@@ -2,8 +2,10 @@ grammar extensibella:main:compose;
 
 function buildExtThmProofs
 IOVal<[String]> ::=
-  --[(thm name, key relation, is host-y, bindings, body, key relation intros name)]
-   thmsInfo::[(QName, RelationEnvItem, Boolean, Bindings, ExtBody, String)]
+   --[(thm name, key relation, property is host-y, bindings, body,
+   --  key relation intros name)]
+   thmsInfo::[(QName, RelationEnvItem, Boolean, Bindings, ExtBody,
+               String)]
        --[(mod name, proof stuff grouped by all subgoals)]
    topGoalProofInfo::[(QName, [[(ProofState, [AnyCommand])]])]
    abella::ProcessHandle config::Configuration ioin::IOToken
@@ -29,15 +31,16 @@ IOVal<[String]> ::=
   local intros_case_to_abella::IOVal<String> =
       sendBlockToAbella(intros_case, abella, ioin, config);
 
-  --Host Theorem Proof
-  --root number for subgoal for this thm
-  local hostSubgoalNum::SubgoalNum =
+  local thisMod::[[(ProofState, [AnyCommand])]] =
       --module must exist, so .fromJust is valid
-      let thisMod::[[(ProofState, [AnyCommand])]] =
-          lookup(fstThm.1.moduleName, topGoalProofInfo).fromJust
-      in --no empty lists in this, so head is valid
-        subgoalRoot(head(head(thisMod)).1.currentSubgoal)
-      end;
+      lookup(fstThm.1.moduleName, topGoalProofInfo).fromJust;
+  --root number for subgoal for this thm
+  local subgoalNum::SubgoalNum =
+      --no empty lists in this, so head is valid
+      subgoalRoot(head(head(thisMod)).1.currentSubgoal);
+
+
+  --Host Theorem Proof
   --get commands, update remaining part
   local host_gathering::([String],
                          [(QName, [[(ProofState, [AnyCommand])]])]) =
@@ -45,10 +48,10 @@ IOVal<[String]> ::=
               rest::([String],
                      [(QName, [[(ProofState, [AnyCommand])]])]) ->
               case here.2 of
-              | ((s, _)::_)::_ when subgoalStartsWith(hostSubgoalNum,
+              | ((s, _)::_)::_ when subgoalStartsWith(subgoalNum,
                                        s.currentSubgoal) ->
                 let sub::([[String]], [[(ProofState, [AnyCommand])]]) =
-                    takeAllRootedBySubgoal(here.2, hostSubgoalNum)
+                    takeAllRootedBySubgoal(here.2, subgoalNum)
                 in
                   (implode("\n  ",
                       map(\ l::[String] -> implode(" ", l),
@@ -68,13 +71,31 @@ IOVal<[String]> ::=
       buildExtThmProofs(tail(thmsInfo), host_gathering.2, abella,
                         config, host_to_abella.io);
 
+
   --Extension Theorem Proof
+  local extSplitCases::([[[(ProofState, [AnyCommand])]]],
+                        [[(ProofState, [AnyCommand])]]) =
+      getFullRootedBySubgoal(thisMod, subgoalNum);
+
+  --known cases are all but last one
+  local extKnownCases::[[[(ProofState, [AnyCommand])]]] =
+      init(extSplitCases.1);
+
+  --preservability proof is the last one done
+  local extPreservabilityCase::[[(ProofState, [AnyCommand])]] =
+      last(extSplitCases.1);
+
   local ext_to_abella::IOVal<String> =
       --needs to use intros_case_to_abella for real
       sendCmdsToAbella(["skip."], abella, ioin, config);
+  --update for use in proving the rest of the theorems
+  local extUpdatedGoalInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
+      updateAssoc(topGoalProofInfo, fstThm.1.moduleName,
+                  extSplitCases.2);
   local ext_rest::IOVal<[String]> =
-      buildExtThmProofs(tail(thmsInfo), topGoalProofInfo, abella,
+      buildExtThmProofs(tail(thmsInfo), extUpdatedGoalInfo, abella,
                         config, ext_to_abella.io);
+
 
   return
       case thmsInfo of
@@ -130,4 +151,59 @@ function takeAllRooted
          sub.2)
       | _ -> ([], cmdStates)
       end;
+}
+
+
+--get all the command states starting with a certain subgoal number,
+--   but group them by subgoals under that
+function getFullRootedBySubgoal
+([[[(ProofState, [AnyCommand])]]], [[(ProofState, [AnyCommand])]]) ::=
+   cmdStates::[[(ProofState, [AnyCommand])]]
+   root::SubgoalNum
+{
+  return
+      case cmdStates of
+      | l::rest when
+        subgoalStartsWith(root, head(l).1.currentSubgoal) ->
+        let sub::([[(ProofState, [AnyCommand])]],
+                  [[(ProofState, [AnyCommand])]]) =
+            getFullRooted(cmdStates, head(l).1.currentSubgoal)
+        in
+        let again::([[[(ProofState, [AnyCommand])]]],
+                    [[(ProofState, [AnyCommand])]]) =
+            getFullRootedBySubgoal(sub.2, root)
+        in
+          (sub.1::again.1, again.2)
+        end end
+      | _ -> ([], cmdStates)
+      end;
+}
+
+
+--get all the command states starting with a certain subgoal number,
+--   and the remnant
+function getFullRooted
+([[(ProofState, [AnyCommand])]], [[(ProofState, [AnyCommand])]]) ::=
+   cmdStates::[[(ProofState, [AnyCommand])]] root::SubgoalNum
+{
+  local sub::([[(ProofState, [AnyCommand])]],
+              [[(ProofState, [AnyCommand])]]) =
+      getFullRooted(tail(cmdStates), root);
+  return
+      case cmdStates of
+      | l::rest when
+        subgoalStartsWith(root, head(l).1.currentSubgoal) ->
+        (l::sub.1, sub.2)
+      | _ -> ([], cmdStates)
+      end;
+}
+
+
+
+
+function updateAssoc
+Eq a => [(a, b)] ::= l::[(a, b)] key::a value::b
+{
+  return if head(l).1 == key then (key, value)::tail(l)
+                             else updateAssoc(tail(l), key, value);
 }
