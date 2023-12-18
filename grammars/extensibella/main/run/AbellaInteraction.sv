@@ -50,7 +50,7 @@ function set_up_abella_module
 IOToken ::=
      currentModule::QName comms::ListOfCommands defs::[AnyCommand]
      parsers::AllParsers abella::ProcessHandle ioin::IOToken
-     config::Decorated CmdArgs
+     config::Configuration
 {
   local sendToAbella::[String] =
       map((.abella_pp), comms.commandList ++ defs);
@@ -75,7 +75,7 @@ IOToken ::=
 --Returns the output text of the last one
 function sendCmdsToAbella
 IOVal<String> ::= cmds::[String] abella::ProcessHandle ioin::IOToken
-                  config::Decorated CmdArgs
+                  config::Configuration
 {
   return
      case cmds of
@@ -88,10 +88,24 @@ IOVal<String> ::= cmds::[String] abella::ProcessHandle ioin::IOToken
      end;
 }
 
+--Send a block of commands in a single string to Abella
+--Relies on "." only occurring at the end of commands, not in comments
+function sendBlockToAbella
+IOVal<String> ::= cmds::String abella::ProcessHandle
+                  ioin::IOToken config::Configuration
+{
+  local blocked::[String] = explode(".", cmds);
+  local filtered::[String] =
+      filter(\ s::String -> !isSpace(s), blocked);
+  local dotted::[String] =
+      map(\ s::String -> s ++ ".", filtered);
+  return sendCmdsToAbella(dotted, abella, ioin, config);
+}
+
 --Send a single command to Abella and get its output text back
 function sendCmdToAbella
 IOVal<String> ::= cmd::String abella::ProcessHandle ioin::IOToken
-                  config::Decorated CmdArgs
+                  config::Configuration
 {
   local sent::IOToken = sendToProcess(abella, cmd, ioin);
   local dumped::IOToken =

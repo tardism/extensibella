@@ -50,7 +50,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
       build_composed_file(config.composeFilename, defFileContents.iovalue,
          checkMods.fromRight, outerface.iovalue.fromRight.1,
          defEnvs.2, defEnvs.3, defEnvs.1,
-         outerface.iovalue.fromRight.2, outerface.io);
+         outerface.iovalue.fromRight.2, config, parsers, outerface.io);
 
   return
       --interface errors
@@ -198,6 +198,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
                    defRelEnv::Env<RelationEnvItem>
                    defConstrEnv::Env<ConstructorEnvItem>
                    defTyEnv::Env<TypeEnvItem> thms::[ThmElement]
+                   config::Configuration parsers::AllParsers
                    ioin::IOToken
 {
   --Extensibella standard library
@@ -236,19 +237,27 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
                          flatMap(buildExtIndDefs(_, proverState), thms)) ++ "\n\n\n";
 
   --properties and proofs
+  local abella::IOVal<Either<String ProcessHandle>> =
+      startAbella(stdLib.io, config);
+  local sendAbellaDefs::IOVal<String> =
+      sendBlockToAbella(langDefString ++ proofDefsString,
+         abella.iovalue.fromRight, abella.io, config);
+  local builtProps::IOVal<String> =
+      compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
+                     parsers, config, sendAbellaDefs.io);
   local propertyString::String =
       "/********************************************************************\n" ++
       " Properties and Proofs\n" ++
       " ********************************************************************/\n" ++
-      compose_proofs(thms, mods, proverState);
+      builtProps.iovalue;
 
   --put it all together
   local fullString::String =
       stdLibString ++ langDefString ++ proofDefsString ++ propertyString;
   local output::IOToken =
       printT("Done\n",
-             writeFileT(outFilename, fullString,
-                        printT("Writing " ++ outFilename ++ "...", stdLib.io)));
+         writeFileT(outFilename, fullString,
+            printT("Writing " ++ outFilename ++ "...", builtProps.io)));
 
   return ioval(output, 1);
 }
@@ -267,31 +276,41 @@ function buildExtIndDefs
 
 --pull the modular proofs apart and build the full text proof
 function compose_proofs
-String ::= thms::[ThmElement] mods::[(QName, DecCmds)]
-           proverState::ProverState
+IOVal<String> ::= thms::[ThmElement] mods::[(QName, DecCmds)]
+   proverState::ProverState abella::ProcessHandle
+   parsers::AllParsers config::Configuration ioin::IOToken
 {
-  local sub::([(QName, DecCmds)], String) =
-      handleFstThm(mods, head(thms), proverState);
+  local sub::([(QName, DecCmds)], String, IOToken) =
+      handleFstThm(mods, head(thms), proverState, abella, parsers,
+                   config, ioin);
+  local again::IOVal<String> =
+      compose_proofs(tail(thms), sub.1, proverState, abella, parsers,
+                     config, sub.3);
 
   return
       case thms of
-      | [] -> ""
-      | _::rest ->
-        sub.2 ++ compose_proofs(rest, sub.1, proverState)
+      | [] -> ioval(ioin, "")
+      | _::rest -> ioval(again.io, sub.2 ++ again.iovalue)
       end;
 }
 
 --decorate this here rather than in compose_proofs directly for memory
 --   efficiency so it can throw the decorated tree away
 function handleFstThm
-([(QName, DecCmds)], String) ::= mods::[(QName, DecCmds)]
-   fstThm::ThmElement proverState::ProverState
+([(QName, DecCmds)], String, IOToken) ::= mods::[(QName, DecCmds)]
+   fstThm::ThmElement proverState::ProverState abella::ProcessHandle
+   parsers::AllParsers config::Configuration ioin::IOToken
 {
   fstThm.incomingMods = mods;
   fstThm.relEnv = proverState.knownRels;
   fstThm.constrEnv = proverState.knownConstrs;
   fstThm.tyEnv = proverState.knownTypes;
+  --
+  fstThm.liveAbella = abella;
+  fstThm.runAbella = ioin;
+  fstThm.configuration = config;
+  fstThm.allParsers = parsers;
      --drop the non-proof things, like definitions, from all modules
   return (dropNonProof(fstThm.outgoingMods),
-          fstThm.composedCmds);
+          fstThm.composedCmds, fstThm.runAbella_out);
 }

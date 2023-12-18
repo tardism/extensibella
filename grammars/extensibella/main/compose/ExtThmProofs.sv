@@ -1,11 +1,12 @@
 grammar extensibella:main:compose;
 
 function buildExtThmProofs
-[String] ::=
+IOVal<[String]> ::=
   --[(thm name, key relation, is host-y, bindings, body, key relation intros name)]
    thmsInfo::[(QName, RelationEnvItem, Boolean, Bindings, ExtBody, String)]
        --[(mod name, proof stuff grouped by all subgoals)]
    topGoalProofInfo::[(QName, [[(ProofState, [AnyCommand])]])]
+   abella::ProcessHandle config::Configuration ioin::IOToken
 {
   local fstThm::(QName, RelationEnvItem, Boolean, Bindings,
                  ExtBody, String) = head(thmsInfo);
@@ -25,6 +26,8 @@ function buildExtThmProofs
               prems)) ++ ". " ++
         fstThm.6 ++ ": case " ++ fstThm.6 ++ " (keep)."
       end;
+  local intros_case_to_abella::IOVal<String> =
+      sendBlockToAbella(intros_case, abella, ioin, config);
 
   --Host Theorem Proof
   --root number for subgoal for this thm
@@ -55,32 +58,31 @@ function buildExtThmProofs
               | _ -> (rest.1, here::rest.2) --no proof here
               end,
             ([], []), topGoalProofInfo);
+  local host_string::String =
+      intros_case ++ "\n  " ++
+      implode("\n  ", host_gathering.1);
+  local host_to_abella::IOVal<String> =
+      sendBlockToAbella(host_string, abella, intros_case_to_abella.io,
+                        config);
+  local host_rest::IOVal<[String]> =
+      buildExtThmProofs(tail(thmsInfo), host_gathering.2, abella,
+                        config, host_to_abella.io);
 
-{-      foldr(\ here::(QName, [[(ProofState, [AnyCommand])]])
-              rest::([String],
-                     [(QName, [[(ProofState, [AnyCommand])]])]) ->
-              case here.2 of
-              | (((s, _)::_)::_)::_
-                when subgoalStartsWith(hostSubgoalNum, s.currentSubgoal) ->
-                (implode("\n  ",
-                   map(\ l::[(ProofState, [AnyCommand])] ->
-                         implode(" ", map((.abella_pp), flatMap(snd, l))),
-                       head(here.2))
-                   )::rest.1,
-                 (here.1, tail(here.2))::rest.2)
-              | _ -> (rest.1, here::rest.2) --no proof here
-              end,
-            ([], []), topGoalProofInfo);-}
+  --Extension Theorem Proof
+  local ext_to_abella::IOVal<String> =
+      --needs to use intros_case_to_abella for real
+      sendCmdsToAbella(["skip."], abella, ioin, config);
+  local ext_rest::IOVal<[String]> =
+      buildExtThmProofs(tail(thmsInfo), topGoalProofInfo, abella,
+                        config, ext_to_abella.io);
 
   return
       case thmsInfo of
-      | [] -> []
+      | [] -> ioval(ioin, [])
       | _::rest ->
         if fstThm.3
-        then (intros_case ++ "\n  " ++
-              implode("\n  ", host_gathering.1)
-             )::buildExtThmProofs(rest, host_gathering.2)
-        else "skip."::buildExtThmProofs(rest, topGoalProofInfo)
+        then ioval(host_rest.io, host_string::host_rest.iovalue)
+        else ioval(ext_rest.io, "skip."::ext_rest.iovalue)
       end;
 }
 

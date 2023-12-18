@@ -12,12 +12,32 @@ inherited attribute relEnv::Env<RelationEnvItem> occurs on ThmElement;
 inherited attribute constrEnv::Env<ConstructorEnvItem> occurs on ThmElement;
 inherited attribute tyEnv::Env<TypeEnvItem> occurs on ThmElement;
 
+{-
+  For some properties, we need to have a live version of Abella going
+  to compare against to get names mapped correctly.  This is what will
+  permit us to do so.
+
+  Assumption:  ThmElement.runAbella_out is the IOToken after running
+  the commands contained in ThmElement.composedCmds.
+-}
+inherited attribute liveAbella::ProcessHandle occurs on ThmElement;
+inherited attribute runAbella::IOToken occurs on ThmElement;
+inherited attribute allParsers::AllParsers occurs on ThmElement;
+inherited attribute configuration::Configuration occurs on ThmElement;
+synthesized attribute runAbella_out::IOToken occurs on ThmElement;
+
 --build the definitions for R_ES and R_T
 synthesized attribute extIndDefs::[String] occurs on ThmElement;
+
+
 aspect default production
 top::ThmElement ::=
 {
   top.extIndDefs = [];
+
+  top.runAbella_out =
+      sendBlockToAbella(top.composedCmds, top.liveAbella,
+                        top.runAbella, top.configuration).io;
 }
 
 aspect production extensibleMutualTheoremGroup
@@ -56,6 +76,12 @@ top::ThmElement ::=
       if length(thms) + length(alsos) == 1
       then ""
       else " split.";
+  local proofStart::String =
+      declare ++ inductions ++ renames ++ splitter;
+  --send the first part to Abella
+  local proofStart_abella::IOVal<String> =
+      sendBlockToAbella(proofStart, top.liveAbella, top.runAbella,
+                        top.configuration);
 
   --[(thm name, key relation, is host-y or not, bindings,
   --  body, intros name for key relation)] for thms
@@ -83,9 +109,10 @@ top::ThmElement ::=
           basicProofInfo);
 
   --Commands for proving thms
-  local thmProofs::[String] =
+  local thmProofs::IOVal<[String]> =
       --doesn't matter if alsos proof information in topGoalProofInfo
-      buildExtThmProofs(thmsInfo, topGoalProofInfo);
+      buildExtThmProofs(thmsInfo, topGoalProofInfo, top.liveAbella,
+         top.configuration, proofStart_abella.io);
 
   --Commands for proving alsos
   local alsosIntros::[String] =
@@ -125,6 +152,10 @@ top::ThmElement ::=
   local fullAlsos::[String] =
       map(\ p::(String, String) -> p.1 ++ " " ++ p.2,
           zip(alsosIntros, alsosCmds));
+  --send alsos to Abella
+  local alsos_abella::IOVal<String> =
+      sendBlockToAbella(implode(" ", fullAlsos), top.liveAbella,
+         thmProofs.io, top.configuration);
 
   local after::String =
       if multiple
@@ -133,15 +164,22 @@ top::ThmElement ::=
                    map((.abella_pp),
                        map(fst, thms) ++ map(fst, alsos))) ++ ".\n"
       else "\n";
+  --send after to Abella
+  local after_abella::IOVal<String> =
+      sendBlockToAbella(after, top.liveAbella, alsos_abella.io,
+         top.configuration);
 
   top.composedCmds =
-      declare ++ inductions ++ renames ++ splitter ++ "\n " ++
-      implode("\n ", thmProofs ++ fullAlsos) ++
+      proofStart ++ "\n " ++
+      implode("\n ", thmProofs.iovalue ++ fullAlsos) ++
       after ++ "\n";
 
 
   top.outgoingMods =
       dropAllOccurrences(top.incomingMods, map(fst, thms));
+
+
+  top.runAbella_out = after_abella.io;
 }
 
 

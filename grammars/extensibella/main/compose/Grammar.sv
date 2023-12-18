@@ -12,6 +12,8 @@ imports extensibella:main;
 
 imports silver:util:cmdargs;
 
+imports silver:util:subprocess;
+
 imports silver:langutil:pp;
 imports silver:langutil only pp, pps;
 
