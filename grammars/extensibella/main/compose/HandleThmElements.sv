@@ -46,12 +46,68 @@ top::ThmElement ::=
       extThms.toAbella.abella_pp ++ ".\n";
   local inductions::String =
       "induction on " ++
-      implode(" ", map(toString, extThms.inductionNums)) ++ ".\n";
+      implode(" ", map(toString, extThms.inductionNums)) ++ ". ";
   local renames::String =
       implode(" ",
          map(\ p::(String, String, String) ->
                "rename " ++ p.1 ++ " to " ++ p.2 ++ ".",
              extThms.renamedIHs));
+  local splitter::String =
+      if length(thms) + length(alsos) == 1
+      then ""
+      else " split.";
+
+  --[(thm name, relation for PC, is host-y or not)] for thms
+  local thmsInfo::[(QName, RelationEnvItem, Boolean)] =
+      map(--(induction rel, thm name, _,  _,    _,      _)
+         \ p::(QName, QName, Bindings, ExtBody, String, Maybe<String>) ->
+           let rei::RelationEnvItem =
+               decorate p.1 with {relationEnv=top.relEnv;}.fullRel
+           in
+             (p.2, rei,
+              --host-y if thm, rel, and pc all from same mod
+              sameModule(p.2.moduleName, rei.name) &&
+                 sameModule(p.2.moduleName, rei.pcType.name))
+           end,
+         zip(extThms.inductionRels, thms)); --cuts off the alsos part
+  --proof steps for thms and alsos; introducing module is first
+  local basicProofInfo::[(QName, [(ProofState, [AnyCommand])])] =
+      getThmProofSteps(top.incomingMods, map(fst, thms));
+  --proof steps grouped by top goals, then goals inside
+  local topGoalProofInfo::[(QName, [[[(ProofState, [AnyCommand])]]])] =
+      map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
+            (p.1, groupTopGoals(splitAtAllGoals(p.2))),
+          basicProofInfo);
+
+  --commands for proving the alsos
+  local alsosIntros::[String] =
+      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+            let prems::[(Maybe<String>, Metaterm)] =
+                decorate p.3 with {
+                  typeEnv = top.tyEnv; relationEnv = top.relEnv;
+                  constructorEnv = top.constrEnv;
+                  boundNames = p.2.usedNames;
+                }.premises
+            in
+              "intros " ++
+              implode(" ",
+                 generateExtIntrosNames(catMaybes(map(fst, prems)),
+                                        prems)) ++ "."
+            end,
+          alsos);
+  local alsosCmds::[String] =
+      map(\ full::[[(ProofState, [AnyCommand])]] ->
+            implode("\n  ",
+               map(\ l::[(ProofState, [AnyCommand])] ->
+                     implode("",
+                        flatMap(\ a::[AnyCommand] ->
+                                  map((.abella_pp), a),
+                           map(snd, l))),
+                   full)),
+          drop(length(thms), head(topGoalProofInfo).2));
+  local fullAlsos::[String] =
+      map(\ p::(String, String) -> p.1 ++ " " ++ p.2,
+          zip(alsosIntros, alsosCmds));
 
   local after::String =
       if multiple
@@ -62,7 +118,9 @@ top::ThmElement ::=
       else "";
 
   top.composedCmds =
-      declare ++ inductions ++ renames ++ " skip.\n" ++ after ++ "\n\n";
+      declare ++ inductions ++ renames ++ splitter ++ "\n" ++
+      implode("\n", map(\ _ -> "skip.", thms) ++ fullAlsos) ++ "\n" ++
+      after ++ "\n\n";
 
 
   top.outgoingMods =
@@ -966,6 +1024,19 @@ function splitAtAllGoals
                    p2::(ProofState, [AnyCommand]) ->
                    p1.1.currentSubgoal == p2.1.currentSubgoal,
                  cmds);
+}
+
+--take the output of grouping by all subgoals and group those by top goal
+--e.g. [ [[1.1, 1.1], [1.2], [1]], [[2], [2.1], [2.2], [2.2.1], ...], ...]
+--assumes they are in order, as they really should be
+function groupTopGoals
+[[[(ProofState, [AnyCommand])]]] ::= allGoals::[[(ProofState, [AnyCommand])]]
+{
+  return groupBy(\ l1::[(ProofState, [AnyCommand])]
+                   l2::[(ProofState, [AnyCommand])] ->
+                   subgoalTopNum(head(l1).1.currentSubgoal) ==
+                   subgoalTopNum(head(l2).1.currentSubgoal),
+                 allGoals);
 }
 
 

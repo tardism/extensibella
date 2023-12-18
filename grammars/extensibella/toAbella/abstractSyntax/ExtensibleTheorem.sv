@@ -377,14 +377,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   production labels::[String] = catMaybes(map(fst, body.premises));
   --names we're going to use for the intros command for this theorem
   local introsNames::[String] =
-        foldl(\ rest::[String] p::(Maybe<String>, Metaterm) ->
-                case p.1 of
-                | just(x) -> rest ++ [x]
-                | nothing() -> rest ++
-                  --using "H" as base triggers an Abella error
-                  [freshName("Hyp", rest ++ labels)]
-                end,
-              [], body.premises);
+      generateExtIntrosNames(labels, body.premises);
 
   top.inductionNums =
       case lookup(onLabel, zip(introsNames,
@@ -729,6 +722,23 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   --pass it up
   top.nextGoalNum = rest.nextGoalNum;
   top.thmNames = fullName::rest.thmNames;
+}
+
+--generate names for intros
+--must be determined entirely by arguments (no using genInt())
+function generateExtIntrosNames
+[String] ::= knownLabels::[String]
+             premiseInfo::[(Maybe<String>, Metaterm)]
+{
+  return
+      foldl(\ rest::[String] p::(Maybe<String>, Metaterm) ->
+              case p.1 of
+              | just(x) -> rest ++ [x]
+              | nothing() -> rest ++
+                --using "H" as base triggers an Abella error
+                [freshName("Hyp", rest ++ knownLabels)]
+              end,
+            [], premiseInfo);
 }
 
 
