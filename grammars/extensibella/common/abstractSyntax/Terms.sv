@@ -226,7 +226,9 @@ top::Bindings ::= name::String mty::MaybeType rest::Bindings
 
 
 
-nonterminal Restriction with pp, abella_pp;
+nonterminal Restriction with pp, abella_pp,
+   compareTo, isEqual;
+propagate compareTo, isEqual on Restriction;
 
 abstract production emptyRestriction
 top::Restriction ::=
@@ -266,7 +268,9 @@ top::Restriction ::= n::Integer
 
 
 
-nonterminal Binder with pp, abella_pp;
+nonterminal Binder with pp, abella_pp,
+   compareTo, isEqual;
+propagate compareTo, isEqual on Binder;
 
 abstract production forallBinder
 top::Binder ::=
@@ -303,6 +307,10 @@ nonterminal Term with
 --note typeErrors does not include errors for not finding definitions of QNames
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on Term;
+
+attribute compareTo, isEqual occurs on Term;
+propagate compareTo, isEqual on Term
+   excluding nameTerm, underscoreTerm;
 
 aspect default production
 top::Term ::=
@@ -427,6 +435,17 @@ top::Term ::= name::QName mty::MaybeType
       end;
 
   top.upSubst = top.downSubst;
+
+  name.compareTo =
+      case top.compareTo of
+      | nameTerm(q, _) -> q
+      | _ -> error("Should not access compareTo (nameTerm)")
+      end;
+  top.isEqual =
+      case top.compareTo of
+      | nameTerm(_, _) -> name.isEqual
+      | _ -> false
+      end;
 }
 
 abstract production consTerm
@@ -545,6 +564,12 @@ top::Term ::= mty::MaybeType
         varType("__Underscore" ++ toString(genInt()))
       end;
   top.upSubst = top.downSubst;
+
+  top.isEqual =
+      case top.compareTo of
+      | underscoreTerm(_) -> true
+      | _ -> false
+      end;
 }
 
 
@@ -560,6 +585,9 @@ nonterminal TermList with
    types, downSubst, upSubst, downVarTys, tyVars;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on TermList;
+
+attribute compareTo, isEqual occurs on TermList;
+propagate compareTo, isEqual on TermList;
 
 abstract production singleTermList
 top::TermList ::= t::Term

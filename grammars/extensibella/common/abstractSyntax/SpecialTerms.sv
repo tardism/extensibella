@@ -715,6 +715,9 @@ nonterminal ListContents with
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on ListContents;
 
+attribute compareTo, isEqual occurs on ListContents;
+propagate compareTo, isEqual on ListContents;
+
 abstract production emptyListContents
 top::ListContents ::=
 {
@@ -762,6 +765,9 @@ nonterminal PairContents with
    type, upSubst, downSubst, downVarTys, tyVars; --type is full pair type
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys on PairContents;
+
+attribute compareTo, isEqual occurs on PairContents;
+propagate compareTo, isEqual on PairContents;
 
 abstract production singlePairContents
 top::PairContents ::= t::Term
