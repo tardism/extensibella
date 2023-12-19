@@ -886,8 +886,7 @@ function buildExtSizeLemmas
          emptyRestriction());
 
   --non-neg:  forall \bar{x} n.  extSize \bar{x} n  ->  0 <= n
-  local nonNegThmName::QName =
-      addQNameBase(rel.moduleName, "ext_ind_pos_" ++ rel.shortName);
+  local nonNegThmName::QName = ext_ind_pos_name(rel);
   local nonNegThmBody::Metaterm =
       bindingMetaterm(forallBinder(), binds,
          impliesMetaterm(extSize,
@@ -897,8 +896,7 @@ function buildExtSizeLemmas
                emptyRestriction())));
 
   --is int:  forall \bar{x} n.  extSize \bar{x} n  ->  is_integer n
-  local isIntThmName::QName =
-      addQNameBase(rel.moduleName, "ext_ind_is_int_" ++ rel.shortName);
+  local isIntThmName::QName = ext_ind_is_int_name(rel);
   local isIntThmBody::Metaterm =
       bindingMetaterm(forallBinder(), binds,
          impliesMetaterm(extSize,
@@ -907,8 +905,7 @@ function buildExtSizeLemmas
                emptyRestriction())));
 
   --drop:  forall \bar{x} n.  extSize \bar{x} n  ->  R \bar{x}
-  local dropExtSizeName::QName =
-      addQNameBase(rel.moduleName, "drop_ext_ind_" ++ rel.shortName);
+  local dropExtSizeName::QName = drop_ext_ind_name(rel);
   local dropExtSizeBody::Metaterm =
       bindingMetaterm(forallBinder(), binds,
          impliesMetaterm(extSize,
@@ -919,4 +916,24 @@ function buildExtSizeLemmas
   return [(nonNegThmName, nonNegThmBody),
           (isIntThmName, isIntThmBody),
           (dropExtSizeName, dropExtSizeBody)];
+}
+
+
+function ext_ind_pos_name
+QName ::= rel::QName
+{
+  return
+      addQNameBase(rel.moduleName, "ext_ind_pos_" ++ rel.shortName);
+}
+function ext_ind_is_int_name
+QName ::= rel::QName
+{
+  return
+      addQNameBase(rel.moduleName, "ext_ind_is_int_" ++ rel.shortName);
+}
+function drop_ext_ind_name
+QName ::= rel::QName
+{
+  return
+      addQNameBase(rel.moduleName, "drop_ext_ind_" ++ rel.shortName);
 }

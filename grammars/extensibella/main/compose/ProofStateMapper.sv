@@ -29,7 +29,7 @@ monoid attribute unknownMap::Maybe<Term> with
 global unknownMap_combine::(Maybe<Term> ::= Maybe<Term> Maybe<Term>) =
    \ a::Maybe<Term> b::Maybe<Term> ->
      case a, b of
-     | just(ta), just(tb) -> --look for bugs
+     | just(ta), just(tb) -> --look for bugs (otherwise could ignore)
        if ta == tb then a else error("impossible mismatch")
      | just(ta), _ -> a
      | _, _ -> b
