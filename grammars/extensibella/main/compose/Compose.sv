@@ -248,24 +248,24 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
   local sendAbellaDefs::IOVal<String> =
       sendBlockToAbella(langDefString ++ proofDefsString,
          abella.iovalue.fromRight, abella.io, config);
-  local builtProps::IOVal<String> =
-      compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
-                     parsers, config, allThms, sendAbellaDefs.io);
   local propertyString::String =
       "/********************************************************************\n" ++
       " Properties and Proofs\n" ++
-      " ********************************************************************/\n" ++
-      builtProps.iovalue;
+      " ********************************************************************/\n";
 
-  --put it all together
+  --put it all together to print before building proofs
   local fullString::String =
       stdLibString ++ langDefString ++ proofDefsString ++ propertyString;
   local output::IOToken =
-      printT("Done\n",
-         writeFileT(outFilename, fullString,
-            printT("Writing " ++ outFilename ++ "...", builtProps.io)));
+      writeFileT(outFilename, fullString,
+         printT("Writing " ++ outFilename ++ "...",
+                sendAbellaDefs.io));
 
-  return ioval(output, 1);
+  local builtProps::IOToken =
+      compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
+                     parsers, config, outFilename, allThms, output);
+
+  return ioval(printT("Done\n", builtProps), 0);
 }
 
 
@@ -282,31 +282,33 @@ function buildExtIndDefs
 
 --pull the modular proofs apart and build the full text proof
 function compose_proofs
-IOVal<String> ::= thms::[ThmElement] mods::[(QName, DecCmds)]
+IOToken ::= thms::[ThmElement] mods::[(QName, DecCmds)]
    proverState::ProverState abella::ProcessHandle
-   parsers::AllParsers config::Configuration
+   parsers::AllParsers config::Configuration outfilename::String
    allThms::[(QName, Metaterm)] ioin::IOToken
 {
-  local sub::([(QName, DecCmds)], String, [(QName, Metaterm)],
-              IOToken) =
-      handleFstThm(mods, head(thms), proverState, abella, parsers,
-                   config, allThms, ioin);
-  local again::IOVal<String> =
+  local sub::([(QName, DecCmds)], [(QName, Metaterm)], IOToken) =
+      handleFstThm(outfilename, mods, head(thms), proverState, abella,
+                   parsers, config, allThms, ioin);
+  local again::IOToken =
       compose_proofs(tail(thms), sub.1, proverState, abella, parsers,
-                     config, sub.3 ++ allThms, sub.4);
+                     config, outfilename, sub.2 ++ allThms, sub.3);
 
   return
       case thms of
-      | [] -> ioval(ioin, "")
-      | _::rest -> ioval(again.io, sub.2 ++ again.iovalue)
+      | [] -> ioin
+      | _::rest -> again
       end;
 }
 
---decorate this here rather than in compose_proofs directly for memory
+--Decorate this here rather than in compose_proofs directly for memory
 --   efficiency so it can throw the decorated tree away
+--Printing here saves on memory, as opposed to building up the string
+--   and passing it up to build_composed_file, since we force the
+--   string thunk earlier
 function handleFstThm
-([(QName, DecCmds)], String, [(QName, Metaterm)], IOToken) ::=
-   mods::[(QName, DecCmds)]
+([(QName, DecCmds)], [(QName, Metaterm)], IOToken) ::=
+   outfilename::String mods::[(QName, DecCmds)]
    fstThm::ThmElement proverState::ProverState abella::ProcessHandle
    parsers::AllParsers config::Configuration
    allThms::[(QName, Metaterm)] ioin::IOToken
@@ -322,7 +324,11 @@ function handleFstThm
   fstThm.runAbella = ioin;
   fstThm.configuration = config;
   fstThm.allParsers = parsers;
+
+  local output::IOToken =
+      appendFileT(outfilename, fstThm.composedCmds,
+                  fstThm.runAbella_out);
+
      --drop the non-proof things, like definitions, from all modules
-  return (dropNonProof(fstThm.outgoingMods),
-          fstThm.composedCmds, fstThm.newThms, fstThm.runAbella_out);
+  return (dropNonProof(fstThm.outgoingMods), fstThm.newThms, output);
 }
