@@ -12,6 +12,11 @@ inherited attribute relEnv::Env<RelationEnvItem> occurs on ThmElement;
 inherited attribute constrEnv::Env<ConstructorEnvItem> occurs on ThmElement;
 inherited attribute tyEnv::Env<TypeEnvItem> occurs on ThmElement;
 
+--pass in all thms known at this point:  theorem names and statements
+inherited attribute allThms::[(QName, Metaterm)] occurs on ThmElement;
+--gather new ones, but only ones that might be used in modular prfs
+synthesized attribute newThms::[(QName, Metaterm)] occurs on ThmElement;
+
 {-
   For some properties, we need to have a live version of Abella going
   to compare against to get names mapped correctly.  This is what will
@@ -111,8 +116,9 @@ top::ThmElement ::=
   --Commands for proving thms
   local thmProofs::IOVal<[String]> =
       --doesn't matter if alsos proof information in topGoalProofInfo
-      buildExtThmProofs(thmsInfo, topGoalProofInfo, top.liveAbella,
-         top.configuration, proofStart_abella.io);
+      buildExtThmProofs(thmsInfo, topGoalProofInfo, top.allThms,
+         top.tyEnv, top.relEnv, top.constrEnv, top.liveAbella,
+         top.configuration, top.allParsers, proofStart_abella.io);
 
   --Commands for proving alsos
   local alsosIntros::[String] =
@@ -180,6 +186,11 @@ top::ThmElement ::=
 
 
   top.runAbella_out = after_abella.io;
+
+  top.newThms =
+      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+            (p.1, bindingMetaterm(forallBinder(), p.2, p.3.thm)),
+          thms ++ alsos);
 }
 
 
@@ -211,6 +222,9 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 
   --took these proofs, so drop them
   top.outgoingMods = dropAllOccurrences(top.incomingMods, [name]);
+
+  top.newThms =
+      [(name, bindingMetaterm(forallBinder(), binds, body.thm))];
 }
 
 
@@ -228,6 +242,8 @@ top::ThmElement ::= name::QName params::[String] stmt::Metaterm
 
   top.outgoingMods = updatePair.1;
   top.composedCmds = declaration ++ updatePair.2 ++ "\n\n";
+
+  top.newThms = [(name, stmt)];
 }
 
 
@@ -240,6 +256,10 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
   top.outgoingMods =
       updateMod(top.incomingMods, head(newNames).moduleName,
                 \ c::DecCmds -> (dropFirstTopCommand(c), "")).1;
+
+  top.newThms =
+      zip(newNames,
+          lookup(toSplit, top.allThms).fromJust.splitConjunctions);
 }
 
 
@@ -814,6 +834,9 @@ top::ThmElement ::=
 
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
+
+  --these are the only relevant new things
+  top.newThms = flatMap(\ l -> l, lemmaStatements);
 }
 
 --to get consistent names

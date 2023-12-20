@@ -1045,3 +1045,96 @@ top::NoOpCommand ::=
 {
   top.full = top;
 }
+
+
+
+
+
+attribute
+   full<ProofState>
+occurs on ProofState;
+
+aspect production proofInProgress
+top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
+                    futureGoals::[Subgoal]
+{
+  top.full = proofInProgress(subgoalNum, currGoal.full, futureGoals,
+                             isAbellaForm = top.isAbellaForm);
+}
+
+
+aspect production noProof
+top::ProofState ::=
+{
+  top.full = top;
+}
+
+
+aspect production proofCompleted
+top::ProofState ::=
+{
+  top.full = top;
+}
+
+
+aspect production proofAborted
+top::ProofState ::=
+{
+  top.full = top;
+}
+
+
+
+
+
+attribute
+   full<CurrentGoal>
+occurs on CurrentGoal;
+
+aspect production currentGoal
+top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
+{
+  top.full = currentGoal(vars, ctx.full, goal.full);
+}
+
+
+
+
+
+attribute
+   full<Context>
+occurs on Context;
+
+aspect production emptyContext
+top::Context ::=
+{
+  top.full = emptyContext();
+}
+
+
+aspect production singleContext
+top::Context ::= h::Hypothesis
+{
+  top.full = singleContext(h.full);
+}
+
+
+aspect production branchContext
+top::Context ::= c1::Context c2::Context
+{
+  top.full = branchContext(c1.full, c2.full);
+}
+
+
+
+
+
+attribute
+   full<Hypothesis>
+occurs on Hypothesis;
+
+aspect production metatermHyp
+top::Hypothesis ::= name::String body::Metaterm
+{
+  top.full = metatermHyp(name, body.full);
+}

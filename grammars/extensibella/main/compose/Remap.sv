@@ -8,8 +8,6 @@ inherited attribute mapVars::[(String, Term)];
 functor attribute mapped;
 synthesized attribute mappedCmds::[ProofCommand];
 
---theorem names and statements
-inherited attribute allThms::[(QName, Metaterm)];
 --original hypotheses and new ones
 inherited attribute oldHyps::[(String, Metaterm)];
 inherited attribute newHyps::[(String, Metaterm)];
@@ -75,6 +73,27 @@ top::AnyCommand ::= msg::String
 
 
 
+--if a search might depend on something being found by using R
+--   premises, need to use dropT(R) on all R_T premises
+function dropT_for_all
+[ProofCommand] ::= hyps::[(String, Metaterm)]
+{
+  return
+      case hyps of
+      | [] -> []
+      | (h, transRelMetaterm(q, _, _))::rest ->
+        applyTactic(noHint(), nothing(),
+           clearable(false, drop_ext_ind_name(q), emptyTypeList()),
+           addApplyArgs(hypApplyArg(h, emptyTypeList()),
+              endApplyArgs()), endWiths())::dropT_for_all(rest)
+      | _::rest -> dropT_for_all(rest)
+      end;
+}
+
+
+
+
+
 aspect production inductionTactic
 top::ProofCommand ::= h::HHint nl::[Integer]
 {
@@ -102,8 +121,10 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
 {
   withs.mapBindingNames = theorem.hypNameMap;
 
-  --currently ignoring R to R_T change
-  top.mappedCmds = [applyTactic(h, depth, theorem.mapped,
+  args.basicKeyRelExpectations = theorem.expectBasicKeyRel;
+
+  top.mappedCmds = args.mappedCmds ++
+                   [applyTactic(h, depth, theorem.mapped,
                                 args.mapped, withs.mapped)];
 }
 
@@ -114,8 +135,7 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
 {
   withs.mapBindingNames = theorem.hypNameMap;
 
-  --currently ignoring R to R_T change
-  top.mappedCmds =
+  top.mappedCmds = dropT_for_all(top.newHyps) ++
       [backchainTactic(depth, theorem.mapped, withs.mapped)];
 }
 
@@ -131,7 +151,8 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
 aspect production assertTactic
 top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
 {
-  top.mappedCmds = [assertTactic(h, depth, m.mapped)];
+  top.mappedCmds = dropT_for_all(top.newHyps) ++
+                   [assertTactic(h, depth, m.mapped)];
 }
 
 
@@ -152,14 +173,14 @@ top::ProofCommand ::= ew::EWitnesses
 aspect production searchTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = dropT_for_all(top.newHyps) ++ [top];
 }
 
 
 aspect production searchDepthTactic
 top::ProofCommand ::= n::Integer
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = dropT_for_all(top.newHyps) ++ [top];
 }
 
 
@@ -303,8 +324,6 @@ top::ProofCommand ::= hyp::String
 --e.g. `forall a b c, ...` and `forall a d e, ...` ->
 --     [(a, a), (b, d), (c, e)]
 synthesized attribute hypNameMap::[(String, String)] occurs on Clearable;
---whether each premise expects R_T
-synthesized attribute expectTransRel::[Boolean] occurs on Clearable;
 --whether each premise expects a key relation in the non-R_T style
 synthesized attribute expectBasicKeyRel::[Boolean] occurs on Clearable;
 
@@ -328,12 +347,6 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
       | bindingMetaterm(_, _, body) -> body.splitImplies
       | _ -> m.splitImplies
       end;
-  top.expectTransRel =
-      map(\ m::Metaterm ->
-            case m of
-            | transRelMetaterm(_, _, _) -> true --R_T expected
-            | _ -> false --R_T not expected
-            end, msplits);
   top.expectBasicKeyRel =
       map(\ m::Metaterm ->
             case m of
@@ -403,12 +416,16 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       end;
   local genName::String = "$" ++ toString(genInt());
   top.mappedCmds =
-      if top.basicKeyRelExpected && newHypIsTrans
+      if !top.basicKeyRelExpected
+      then []
+      else if newHypIsTrans
       then [applyTactic(nameHint(genName), nothing(),
                clearable(false, drop_ext_ind_name(newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
+      else if hyp == "_"
+      then dropT_for_all(top.newHyps)
       else [];
 }
 
@@ -431,12 +448,16 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       end;
   local genName::String = "$" ++ toString(genInt());
   top.mappedCmds =
-      if top.basicKeyRelExpected && newHypIsTrans
+      if !top.basicKeyRelExpected
+      then []
+      else if newHypIsTrans
       then [applyTactic(nameHint(genName), nothing(),
                clearable(false, drop_ext_ind_name(newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
+      else if hyp == "_"
+      then dropT_for_all(top.newHyps)
       else [];
 }
 

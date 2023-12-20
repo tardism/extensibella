@@ -45,12 +45,18 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
       readOuterfaces(parsedMods.parseTree.ast.mods, --don't need outerface for composeMod
                      parsers, genDirs.iovalue, gathered.io);
 
+  --gather thm information for building proofs
+  local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
+      importStdLibThms(parsers, outerface.io);
+  local allThms::[(QName, Metaterm)] = stdLibThms.iovalue.fromRight;
+
   --build and write the file, now that everything has checked out
   local createComposedFile::IOVal<Integer> =
       build_composed_file(config.composeFilename, defFileContents.iovalue,
          checkMods.fromRight, outerface.iovalue.fromRight.1,
          defEnvs.2, defEnvs.3, defEnvs.1,
-         outerface.iovalue.fromRight.2, config, parsers, outerface.io);
+         outerface.iovalue.fromRight.2, config, parsers, allThms,
+         stdLibThms.io);
 
   return
       --interface errors
@@ -199,7 +205,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
                    defConstrEnv::Env<ConstructorEnvItem>
                    defTyEnv::Env<TypeEnvItem> thms::[ThmElement]
                    config::Configuration parsers::AllParsers
-                   ioin::IOToken
+                   allThms::[(QName, Metaterm)] ioin::IOToken
 {
   --Extensibella standard library
   local stdLib::IOVal<[String]> = extensibellaStdLibAbellaCmds(ioin);
@@ -244,7 +250,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
          abella.iovalue.fromRight, abella.io, config);
   local builtProps::IOVal<String> =
       compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
-                     parsers, config, sendAbellaDefs.io);
+                     parsers, config, allThms, sendAbellaDefs.io);
   local propertyString::String =
       "/********************************************************************\n" ++
       " Properties and Proofs\n" ++
@@ -263,7 +269,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
 }
 
 
---
+--defs for R_{ES} and R_T for everything needing them
 function buildExtIndDefs
 [String] ::= thm::ThmElement proverState::ProverState
 {
@@ -278,14 +284,16 @@ function buildExtIndDefs
 function compose_proofs
 IOVal<String> ::= thms::[ThmElement] mods::[(QName, DecCmds)]
    proverState::ProverState abella::ProcessHandle
-   parsers::AllParsers config::Configuration ioin::IOToken
+   parsers::AllParsers config::Configuration
+   allThms::[(QName, Metaterm)] ioin::IOToken
 {
-  local sub::([(QName, DecCmds)], String, IOToken) =
+  local sub::([(QName, DecCmds)], String, [(QName, Metaterm)],
+              IOToken) =
       handleFstThm(mods, head(thms), proverState, abella, parsers,
-                   config, ioin);
+                   config, allThms, ioin);
   local again::IOVal<String> =
       compose_proofs(tail(thms), sub.1, proverState, abella, parsers,
-                     config, sub.3);
+                     config, sub.3 ++ allThms, sub.4);
 
   return
       case thms of
@@ -297,14 +305,18 @@ IOVal<String> ::= thms::[ThmElement] mods::[(QName, DecCmds)]
 --decorate this here rather than in compose_proofs directly for memory
 --   efficiency so it can throw the decorated tree away
 function handleFstThm
-([(QName, DecCmds)], String, IOToken) ::= mods::[(QName, DecCmds)]
+([(QName, DecCmds)], String, [(QName, Metaterm)], IOToken) ::=
+   mods::[(QName, DecCmds)]
    fstThm::ThmElement proverState::ProverState abella::ProcessHandle
-   parsers::AllParsers config::Configuration ioin::IOToken
+   parsers::AllParsers config::Configuration
+   allThms::[(QName, Metaterm)] ioin::IOToken
 {
   fstThm.incomingMods = mods;
   fstThm.relEnv = proverState.knownRels;
   fstThm.constrEnv = proverState.knownConstrs;
   fstThm.tyEnv = proverState.knownTypes;
+  --
+  fstThm.allThms = allThms;
   --
   fstThm.liveAbella = abella;
   fstThm.runAbella = ioin;
@@ -312,5 +324,5 @@ function handleFstThm
   fstThm.allParsers = parsers;
      --drop the non-proof things, like definitions, from all modules
   return (dropNonProof(fstThm.outgoingMods),
-          fstThm.composedCmds, fstThm.runAbella_out);
+          fstThm.composedCmds, fstThm.newThms, fstThm.runAbella_out);
 }

@@ -40,8 +40,65 @@ synthesized attribute addT::Boolean;
 
 
 attribute
-   mapTo<CurrentGoal>, mapSuccess, hypMap, varMap_in, varMap,
-   unknownMap
+   mapTo<ProofState>, mapSuccess, hypMap, varMap, unknownMap
+occurs on ProofState;
+
+aspect production proofInProgress
+top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
+                    futureGoals::[Subgoal]
+{
+  currGoal.mapTo =
+      case top.mapTo of
+      | proofInProgress(_, c, _) -> c
+      | _ -> error("Should not access (proofInProgress)")
+      end;
+
+  top.mapSuccess =
+      case top.mapTo of
+      | proofInProgress(_, _, _) -> currGoal.mapSuccess
+      | _ -> false
+      end;
+  top.hypMap = currGoal.hypMap;
+  top.varMap = currGoal.varMap;
+  top.unknownMap := currGoal.unknownMap;
+}
+
+
+aspect production noProof
+top::ProofState ::=
+{
+  top.mapSuccess = false;
+  top.hypMap = error("Should not access (noProof)");
+  top.varMap = error("Should not access (noProof)");
+  top.unknownMap := error("Should not access (noProof)");
+}
+
+
+aspect production proofCompleted
+top::ProofState ::=
+{
+  top.mapSuccess = false;
+  top.hypMap = error("Should not access (proofCompleted)");
+  top.varMap = error("Should not access (proofCompleted)");
+  top.unknownMap := error("Should not access (proofCompleted)");
+}
+
+
+aspect production proofAborted
+top::ProofState ::=
+{
+  top.mapSuccess = false;
+  top.hypMap = error("Should not access (proofAborted)");
+  top.varMap = error("Should not access (proofAborted)");
+  top.unknownMap := error("Should not access (proofAborted)");
+}
+
+
+
+
+
+attribute
+   mapTo<CurrentGoal>, mapSuccess, hypMap, varMap, unknownMap
 occurs on CurrentGoal;
 
 aspect production currentGoal
