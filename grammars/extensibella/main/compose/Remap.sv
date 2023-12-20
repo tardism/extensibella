@@ -403,7 +403,8 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
 {
   top.mapped = hypApplyArg(newHyp, instantiation);
 
-  local newHyp::String = lookup(hyp, top.mapHyps).fromJust.1;
+  local newHyp::String =
+      if hyp == "_" then hyp else lookup(hyp, top.mapHyps).fromJust.1;
   local newHypIsTrans::Boolean =
       case lookup(newHyp, top.newHyps) of
       | just(transRelMetaterm(_, _, _)) -> true
@@ -418,14 +419,14 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
   top.mappedCmds =
       if !top.basicKeyRelExpected
       then []
+      else if hyp == "_"
+      then dropT_for_all(top.newHyps)
       else if newHypIsTrans
       then [applyTactic(nameHint(genName), nothing(),
                clearable(false, drop_ext_ind_name(newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
-      else if hyp == "_"
-      then dropT_for_all(top.newHyps)
       else [];
 }
 
@@ -435,7 +436,8 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
 {
   top.mapped = starApplyArg(newHyp, instantiation);
 
-  local newHyp::String = lookup(hyp, top.mapHyps).fromJust.1;
+  local newHyp::String =
+      if hyp == "_" then hyp else lookup(hyp, top.mapHyps).fromJust.1;
   local newHypIsTrans::Boolean =
       case lookup(newHyp, top.newHyps) of
       | just(transRelMetaterm(_, _, _)) -> true
@@ -450,14 +452,14 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
   top.mappedCmds =
       if !top.basicKeyRelExpected
       then []
+      else if hyp == "_"
+      then dropT_for_all(top.newHyps)
       else if newHypIsTrans
       then [applyTactic(nameHint(genName), nothing(),
                clearable(false, drop_ext_ind_name(newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
-      else if hyp == "_"
-      then dropT_for_all(top.newHyps)
       else [];
 }
 

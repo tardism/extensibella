@@ -47,7 +47,9 @@ aspect production proofInProgress
 top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
                     futureGoals::[Subgoal]
 {
-  currGoal.mapTo =
+  --must be full in order to compare, and our initial ones aren't
+  local fullGoal::CurrentGoal = currGoal.full;
+  fullGoal.mapTo =
       case top.mapTo of
       | proofInProgress(_, c, _) -> c
       | _ -> error("Should not access (proofInProgress)")
@@ -55,15 +57,16 @@ top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
 
   top.mapSuccess =
       case top.mapTo of
-      | proofInProgress(_, _, _) -> currGoal.mapSuccess
+      | proofInProgress(_, _, _) -> fullGoal.mapSuccess
       | _ -> false
       end;
-  top.hypMap = currGoal.hypMap;
-  top.varMap = currGoal.varMap;
-  top.unknownMap := currGoal.unknownMap;
+  top.hypMap = fullGoal.hypMap;
+  top.varMap = fullGoal.varMap;
+  top.unknownMap := fullGoal.unknownMap;
 }
 
 
+--don't actually ever need these
 aspect production noProof
 top::ProofState ::=
 {
@@ -73,7 +76,6 @@ top::ProofState ::=
   top.unknownMap := error("Should not access (noProof)");
 }
 
-
 aspect production proofCompleted
 top::ProofState ::=
 {
@@ -82,7 +84,6 @@ top::ProofState ::=
   top.varMap = error("Should not access (proofCompleted)");
   top.unknownMap := error("Should not access (proofCompleted)");
 }
-
 
 aspect production proofAborted
 top::ProofState ::=
@@ -267,7 +268,7 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
       end;
   t2.mapTo =
       case top.mapTo of
-      | impliesMetaterm(x, _) -> x
+      | impliesMetaterm(_, x) -> x
       | _ -> error("Should not access (impliesMetaterm)")
       end;
 

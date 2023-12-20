@@ -239,6 +239,9 @@ IOVal<([[String]], ProofState)> ::=
 {
   local origState::ProofState = head(head(head(knownCases))).1;
   origState.mapTo = incomingState;
+  origState.typeEnv = typeEnv;
+  origState.relationEnv = relEnv;
+  origState.constructorEnv = constrEnv;
 
   --when the current composed case is one of the known cases
   local runKnown::IOVal<([String], ProofState)> =
@@ -262,7 +265,9 @@ IOVal<([[String]], ProofState)> ::=
          constrEnv, runPres.io);
 
   return
-      if !subgoalStartsWith(rootSubgoal, incomingState.currentSubgoal)
+      if !subgoalStartsWith(rootSubgoal,
+                            incomingState.currentSubgoal) ||
+         !incomingState.inProof
       then ioval(ioin, ([], incomingState))
       else {-
              Taking known proof cases whenever they fit guarantees we
@@ -356,6 +361,9 @@ IOVal<([String], ProofState)> ::=
   --get the mapping from old to new
   local unifyMap::ProofState = head(head(preservabilityCase)).1;
   unifyMap.mapTo = incomingState;
+  unifyMap.typeEnv = typeEnv;
+  unifyMap.relationEnv = relEnv;
+  unifyMap.constructorEnv = constrEnv;
 
   --run the commands here
   local run::IOVal<([String], ProofState)> =
@@ -412,6 +420,9 @@ IOVal<([String], ProofState)> ::= cmd::(ProofState, [AnyCommand])
   --get the mapping from old to new
   local unifyMap::ProofState = cmd.1;
   unifyMap.mapTo = incomingState;
+  unifyMap.typeEnv = typeEnv;
+  unifyMap.relationEnv = relEnv;
+  unifyMap.constructorEnv = constrEnv;
 
   --get the commands
   local cmds::[ProofCommand] =
