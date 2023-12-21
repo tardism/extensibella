@@ -83,7 +83,7 @@ function dropT_for_all
       | [] -> []
       | (h, transRelMetaterm(q, _, _))::rest ->
         applyTactic(noHint(), nothing(),
-           clearable(false, drop_ext_ind_name(q), emptyTypeList()),
+           clearable(false, toQName(dropTName(q)), emptyTypeList()),
            addApplyArgs(hypApplyArg(h, emptyTypeList()),
               endApplyArgs()), endWiths())::dropT_for_all(rest)
       | _::rest -> dropT_for_all(rest)
@@ -144,7 +144,11 @@ aspect production caseTactic
 top::ProofCommand ::= h::HHint hyp::String keep::Boolean
 {
   top.mappedCmds =
-      [caseTactic(h, lookup(hyp, top.mapHyps).fromJust.1, keep)];
+      case lookup(hyp, top.mapHyps) of
+      | just((newHyp, _)) ->
+        [caseTactic(h, newHyp, keep)]
+      | nothing() -> error("Could not find " ++ hyp ++ " (case)")
+      end;
 }
 
 
@@ -252,7 +256,11 @@ top::ProofCommand ::= removes::[String] hasArrow::Boolean
 {
   top.mappedCmds =
       [clearCommand(
-          map(\ x::String -> lookup(x, top.mapHyps).fromJust.1,
+          map(\ x::String ->
+                case lookup(x, top.mapHyps) of
+                | just((h, _)) -> h
+                | nothing() -> error("Unknown " ++ x ++ " (clear)")
+                end,
               removes), hasArrow)];
 }
 
@@ -333,7 +341,11 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
   top.mapped =
       clearable(star,
          if hyp.isQualified then hyp
-         else toQName(lookup(hyp.shortName, top.mapHyps).fromJust.1),
+         else case lookup(hyp.shortName, top.mapHyps) of
+              | just((h, _)) -> toQName(h)
+              | nothing() ->
+                error("No " ++ hyp.shortName ++ " (clearable)")
+              end,
          instantiation);
 
   top.hypNameMap =
@@ -355,13 +367,26 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
             end, msplits);
 
   local thmM::Metaterm =
-      lookup(hyp, top.allThms).fromJust;
+      case lookup(hyp, top.allThms) of
+      | just(m) -> m
+      | nothing() -> error("No thm " ++ justShow(hyp.pp))
+      end;
 
   local hypOldM::Metaterm =
-      lookup(hyp.shortName, top.oldHyps).fromJust;
+      case lookup(hyp.shortName, top.oldHyps) of
+      | just(m) -> m
+      | nothing() -> error("No old hyp " ++ hyp.shortName)
+      end;
   local hypNewM::Metaterm =
-      lookup(lookup(hyp.shortName, top.mapHyps).fromJust.1,
-             top.newHyps).fromJust;
+      case lookup(hyp.shortName, top.mapHyps) of
+      | just((nh, _)) ->
+        case lookup(nh, top.newHyps) of
+        | just(m) -> m
+        | nothing() -> error("No new hyp " ++ nh)
+        end
+      | nothing() ->
+        error("No map for " ++ hyp.shortName ++ " (clearable)")
+      end;
   local hypNameMap::[(String, String)] =
       case hypOldM, hypNewM of
       | bindingMetaterm(_, oldB, _), bindingMetaterm(_, newB, _) ->
@@ -401,14 +426,24 @@ top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
 aspect production hypApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
 {
-  top.mapped = hypApplyArg(newHyp, instantiation);
+  top.mapped = hypApplyArg(finalHyp, instantiation);
 
-  local newHyp::String =
-      if hyp == "_" then hyp else lookup(hyp, top.mapHyps).fromJust.1;
+  local finalHyp::String =
+      if hyp == "_" then hyp else
+      case lookup(hyp, top.mapHyps) of
+      | just((x, isTrans)) ->
+        if isTrans && top.basicKeyRelExpected then genName else x
+      | nothing() -> error("Looking up " ++ hyp ++ " gave nothing")
+      end;
   local newHypIsTrans::Boolean =
-      case lookup(newHyp, top.newHyps) of
-      | just(transRelMetaterm(_, _, _)) -> true
+      case lookup(hyp, top.mapHyps) of
+      | just((_, x)) -> x
       | _ -> false
+      end;
+  local newHyp::String =
+      case lookup(hyp, top.mapHyps) of
+      | just((x, _)) -> x
+      | _ -> error("hypApplyArg.newHyp")
       end;
   local newHypRel::QName =
       case lookup(newHyp, top.newHyps) of
@@ -423,7 +458,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       then dropT_for_all(top.newHyps)
       else if newHypIsTrans
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, drop_ext_ind_name(newHypRel),
+               clearable(false, toQName(dropTName(newHypRel)),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
@@ -434,14 +469,24 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
 aspect production starApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
 {
-  top.mapped = starApplyArg(newHyp, instantiation);
+  top.mapped = starApplyArg(finalHyp, instantiation);
 
-  local newHyp::String =
-      if hyp == "_" then hyp else lookup(hyp, top.mapHyps).fromJust.1;
+  local finalHyp::String =
+      if hyp == "_" then hyp else
+      case lookup(hyp, top.mapHyps) of
+      | just((x, isTrans)) ->
+        if isTrans && top.basicKeyRelExpected then genName else x
+      | nothing() -> error("Looking up " ++ hyp ++ " gave nothing")
+      end;
   local newHypIsTrans::Boolean =
-      case lookup(newHyp, top.newHyps) of
-      | just(transRelMetaterm(_, _, _)) -> true
+      case lookup(hyp, top.mapHyps) of
+      | just((_, x)) -> x
       | _ -> false
+      end;
+  local newHyp::String =
+      case lookup(hyp, top.mapHyps) of
+      | just((x, _)) -> x
+      | _ -> error("hypApplyArg.newHyp")
       end;
   local newHypRel::QName =
       case lookup(newHyp, top.newHyps) of
@@ -456,7 +501,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       then dropT_for_all(top.newHyps)
       else if newHypIsTrans
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, drop_ext_ind_name(newHypRel),
+               clearable(false, toQName(dropTName(newHypRel)),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]

@@ -34,8 +34,6 @@ global unknownMap_combine::(Maybe<Term> ::= Maybe<Term> Maybe<Term>) =
      | just(ta), _ -> a
      | _, _ -> b
      end;
---true if a metaterm uses R_T instead of R at the top level
-synthesized attribute addT::Boolean;
 
 
 
@@ -117,10 +115,22 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
                  goal.varMap);
 
   top.mapSuccess = goal.mapSuccess && ctxMap.isJust;
-  top.varMap = ctxMap.fromJust.2;
-  top.hypMap = ctxMap.fromJust.1;
+  top.varMap =
+      case ctxMap of
+      | just((_, x, _)) -> x
+      | nothing() -> error("currentGoal.varMap")
+      end;
+  top.hypMap =
+      case ctxMap of
+      | just((x, _, _)) -> x
+      | nothing() -> error("currentGoal.hypMap")
+      end;
   top.unknownMap :=
-      unknownMap_combine(goal.unknownMap, ctxMap.fromJust.3);
+      unknownMap_combine(goal.unknownMap,
+         case ctxMap of
+         | just((_, _, x)) -> x
+         | nothing() -> error("currentGoal.unknownMap")
+         end);
 }
 
 
@@ -157,13 +167,24 @@ Maybe<([(String, String, Boolean)], --hypMap
       case oldHyps, newHyps of
       | [], _ -> just(([], varMap_in, nothing()))
       | _::_, [] -> nothing() --must map all old hyps
-      | (oh, _)::_, (nh, _)::_ ->
+      | (oh, ob)::_, (nh, nb)::_ ->
         if body.mapSuccess && again.isJust
         then --fully successful map, so add this hyp binding
-             just(((oh, nh, body.addT)::again.fromJust.1,
-                   again.fromJust.2,
-                   unknownMap_combine(body.unknownMap,
-                                      again.fromJust.3)))
+             case again of
+             | just((hypMap, varMap, unknownMap)) ->
+               let addT::Boolean =
+                   case ob, nb of
+                   | relationMetaterm(_, _, _),
+                     transRelMetaterm(_, _, _) -> true
+                   | _, _ -> false
+                   end
+               in
+                 just(((oh, nh, addT)::hypMap, varMap,
+                       unknownMap_combine(body.unknownMap,
+                                          unknownMap)))
+               end
+             | nothing() -> error("mapContext nothing()")
+             end
         else --something failed, so try skipping first new hyp
              --either body mapping failed or had spurious map
              mapContext(oldHyps, tail(newHyps), varMap_in)
@@ -175,17 +196,10 @@ Maybe<([(String, String, Boolean)], --hypMap
 
 
 attribute
-   mapTo<Metaterm>, mapSuccess, varMap_in, varMap, unknownMap, addT
+   mapTo<Metaterm>, mapSuccess, varMap_in, varMap, unknownMap
 occurs on Metaterm;
 propagate unknownMap on Metaterm;
 propagate varMap_in, varMap on Metaterm excluding bindingMetaterm;
-
-aspect default production
-top::Metaterm ::=
-{
-  top.addT = false;
-}
-
 
 aspect production relationMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
@@ -203,12 +217,6 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
         args.mapSuccess && rel2 == rel && r2 == r
       | transRelMetaterm(rel2, _, r2) ->
         args.mapSuccess && rel2 == rel && r2 == r
-      | _ -> false
-      end;
-
-  top.addT =
-      case top.mapTo of
-      | transRelMetaterm(_, _, _) -> true
       | _ -> false
       end;
 }

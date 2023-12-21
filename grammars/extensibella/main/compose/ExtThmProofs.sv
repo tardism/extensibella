@@ -2,10 +2,10 @@ grammar extensibella:main:compose;
 
 function buildExtThmProofs
 IOVal<[String]> ::=
-   --[(thm name, key relation, property is host-y, bindings, body,
-   --  key relation intros name)]
-   thmsInfo::[(QName, RelationEnvItem, Boolean, Bindings, ExtBody,
-               String)]
+   --[(thm name, key relation, property is host-y, property is R_T,
+   --  bindings, body, key relation intros name)]
+   thmsInfo::[(QName, RelationEnvItem, Boolean, Boolean, Bindings,
+               ExtBody, String)]
        --[(mod name, proof stuff grouped by all subgoals)]
    topGoalProofInfo::[(QName, [[(ProofState, [AnyCommand])]])]
    allThms::[(QName, Metaterm)] typeEnv::Env<TypeEnvItem>
@@ -13,23 +13,23 @@ IOVal<[String]> ::=
    abella::ProcessHandle config::Configuration
    parsers::AllParsers keyRels::[QName] ioin::IOToken
 {
-  local fstThm::(QName, RelationEnvItem, Boolean, Bindings,
+  local fstThm::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                  ExtBody, String) = head(thmsInfo);
 
   local intros_case::String =
       let prems::[(Maybe<String>, Metaterm)] =
-        decorate fstThm.5 with {
+        decorate fstThm.6 with {
            typeEnv = error("typeEnv not needed");
            relationEnv = error("relationEnv not needed");
            constructorEnv = error("constructorEnv not needed");
-           boundNames = fstThm.4.usedNames;
+           boundNames = fstThm.5.usedNames;
         }.premises
       in
         "intros " ++
         implode(" ",
            generateExtIntrosNames(catMaybes(map(fst, prems)),
-              prems)) ++ ". %here " ++ toString(fstThm.3) ++ "\n" ++
-        fstThm.6 ++ ": case " ++ fstThm.6 ++ " (keep)."
+              prems)) ++ ". " ++
+        fstThm.7 ++ ": case " ++ fstThm.7 ++ " (keep)."
       end;
   local intros_case_to_abella::IOVal<String> =
       sendBlockToAbella(intros_case, abella, ioin, config);
@@ -432,7 +432,7 @@ IOVal<([String], ProofState)> ::= cmd::(ProofState, [AnyCommand])
               oldHyps =
                  unifyMap.extensibella:common:abstractSyntax:hypList;
               newHyps =
-                 cmd.1.extensibella:common:abstractSyntax:hypList;
+                 incomingState.extensibella:common:abstractSyntax:hypList;
               keyRels = keyRels;
            }.mappedCmds,
          cmd.2);

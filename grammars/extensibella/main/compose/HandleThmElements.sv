@@ -51,11 +51,6 @@ top::ThmElement ::=
    thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
    alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
 {
-  local multiple::Boolean = length(thms) + length(alsos) > 1;
-  local extName::QName =
-      if multiple
-      then toQName("$extThm_" ++ toString(genInt()))
-      else fst(head(thms));
   local extThms::ExtThms =
       foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>)
               rest::ExtThms ->
@@ -66,9 +61,62 @@ top::ThmElement ::=
   extThms.typeEnv = top.tyEnv;
   extThms.expectedIHNum = 0;
 
+  --[(thm name, key relation, is host-y or not, uses R_T or not,
+  --  bindings, body, intros name for key relation)] for thms
+  local thmsInfo::[(QName, RelationEnvItem, Boolean, Boolean,
+                    Bindings, ExtBody, String)] =
+      map(--(induction rel, thm name, ...)
+         \ p::(QName, QName, Bindings, ExtBody, String, Maybe<String>) ->
+           let rei::RelationEnvItem =
+               decorate p.1 with {relationEnv=top.relEnv;}.fullRel
+           in
+             (p.2, rei,
+              --host-y if thm, rel, and pc all from same mod
+              sameModule(p.2.moduleName, rei.name) &&
+                 sameModule(p.2.moduleName, rei.pcType.name),
+              --uses R_T if thm and rel from different mods
+              !sameModule(p.2.moduleName, rei.name),
+              p.3, p.4, p.5)
+           end,
+         zip(extThms.inductionRels, thms)); --cuts off the alsos part
+
+  local multiple::Boolean = length(thms) + length(alsos) > 1;
+  local extName::QName = --multiple theorems or the one uses R_T
+      if multiple || head(thmsInfo).4
+      then toQName("$extThm_" ++ toString(genInt()))
+      else fst(head(thms));
+
+  --build the thm statements we need to declare and prove
+  local proveThmStmts::[Metaterm] =
+      --thms
+      map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
+                ExtBody, String) ->
+            bindingMetaterm(forallBinder(), p.5,
+               decorate if p.4
+                        then decorate p.6 with {
+                                makeTransRel = p.7;
+                             }.transRelMade
+                        else p.6 with {
+                  relationEnv = top.relEnv;
+                  constructorEnv = top.constrEnv;
+                  typeEnv = top.tyEnv;
+                  boundNames = p.5.usedNames;
+               }.toAbella),
+          thmsInfo) ++
+      --alsos
+      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+            bindingMetaterm(forallBinder(), p.2,
+               decorate p.3 with {
+                  relationEnv = top.relEnv;
+                  constructorEnv = top.constrEnv;
+                  typeEnv = top.tyEnv;
+                  boundNames = p.2.usedNames;
+               }.toAbella),
+          alsos);
+
   local declare::String =
       "Theorem " ++ extName.abella_pp ++ " : " ++
-      extThms.toAbella.abella_pp ++ ".\n";
+      foldr1(andMetaterm, proveThmStmts).abella_pp ++ ".\n";
   local inductions::String =
       "induction on " ++
       implode(" ", map(toString, extThms.inductionNums)) ++ ". ";
@@ -88,22 +136,6 @@ top::ThmElement ::=
       sendBlockToAbella(proofStart, top.liveAbella, top.runAbella,
                         top.configuration);
 
-  --[(thm name, key relation, is host-y or not, bindings,
-  --  body, intros name for key relation)] for thms
-  local thmsInfo::[(QName, RelationEnvItem, Boolean, Bindings,
-                    ExtBody, String)] =
-      map(--(induction rel, thm name, ...)
-         \ p::(QName, QName, Bindings, ExtBody, String, Maybe<String>) ->
-           let rei::RelationEnvItem =
-               decorate p.1 with {relationEnv=top.relEnv;}.fullRel
-           in
-             (p.2, rei,
-              --host-y if thm, rel, and pc all from same mod
-              sameModule(p.2.moduleName, rei.name) &&
-                 sameModule(p.2.moduleName, rei.pcType.name),
-              p.3, p.4, p.5)
-           end,
-         zip(extThms.inductionRels, thms)); --cuts off the alsos part
   --proof steps for thms and alsos; introducing module is first
   local basicProofInfo::[(QName, [(ProofState, [AnyCommand])])] =
       getThmProofSteps(top.incomingMods, map(fst, thms));
@@ -119,8 +151,8 @@ top::ThmElement ::=
       buildExtThmProofs(thmsInfo, topGoalProofInfo, top.allThms,
          top.tyEnv, top.relEnv, top.constrEnv, top.liveAbella,
          top.configuration, top.allParsers,
-         map(\ p::(QName, RelationEnvItem, Boolean, Bindings, ExtBody,
-                   String) -> p.2.name, thmsInfo),
+         map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
+                   ExtBody, String) -> p.2.name, thmsInfo),
          proofStart_abella.io);
 
   --Commands for proving alsos
@@ -166,13 +198,69 @@ top::ThmElement ::=
       sendBlockToAbella(implode(" ", fullAlsos), top.liveAbella,
          thmProofs.io, top.configuration);
 
-  local after::String =
+  --After the main proof:
+  local thmSplitNames::[String] =
+      map(\ p::(QName, RelationEnvItem, Boolean, Boolean,
+                Bindings, ExtBody, String) ->
+            if p.4 --uses R_T
+            then "$extSplit" ++ toString(genInt())
+            else p.1.abella_pp,
+          thmsInfo);
+  local splitThm::String =
       if multiple
       then "\nSplit " ++ extName.abella_pp ++ " as " ++
-           implode(", ",
-                   map((.abella_pp),
-                       map(fst, thms) ++ map(fst, alsos))) ++ ".\n"
+           implode(", ", thmSplitNames ++
+                   map((.abella_pp), map(fst, alsos))) ++ ".\n"
       else "\n";
+  --turn all the R_T -> F thms into R -> F
+  local buildFullProof::(String ::= String QName RelationEnvItem
+                                    Bindings ExtBody String) =
+      \ partialName::String thmName::QName keyRel::RelationEnvItem
+        bindings::Bindings body::ExtBody keyRelName::String ->
+        let decBody::Decorated ExtBody with {
+               relationEnv, typeEnv, constructorEnv, boundNames} =
+           decorate body with {
+              relationEnv = top.relEnv; typeEnv = top.tyEnv;
+              constructorEnv = top.constrEnv;
+              boundNames = bindings.usedNames;
+           }
+        in
+        let introsNames::[String] =
+            generateExtIntrosNames(catMaybes(map(fst,
+                                                 decBody.premises)),
+               decBody.premises)
+        in
+          "Theorem " ++ thmName.abella_pp ++ " : forall " ++
+             bindings.abella_pp ++ ", " ++
+             decBody.toAbella.abella_pp ++ ".\n" ++
+          "intros " ++ implode(" ", introsNames) ++ ". " ++
+          "$R: apply " ++ extIndThmName(keyRel.name) ++ " to " ++
+             keyRelName ++ ". " ++
+          "apply " ++ partialName ++ " to " ++
+             implode(" ", map(\ x::String -> if x == keyRelName
+                                             then "$R" else x,
+                              introsNames)) ++ ". " ++
+          "search."
+        end end;
+  local applyExtInds::String =
+      if multiple
+      then implode("\n",
+              filterMap(\ p::(String, QName, RelationEnvItem, Boolean,
+                              Boolean, Bindings, ExtBody, String) ->
+                          if p.5 --uses R_T
+                          then just(buildFullProof(p.1, p.2, p.3, p.6,
+                                                   p.7, p.8))
+                          else nothing(),
+                        zip(thmSplitNames, thmsInfo)))
+      else if head(thmsInfo).4 --single thm, but uses R_T
+      then let p::(QName, RelationEnvItem, Boolean, Boolean,
+                   Bindings, ExtBody, String) = head(thmsInfo)
+           in
+             buildFullProof(extName.abella_pp,
+                            p.1, p.2, p.5, p.6, p.7)
+           end
+      else ""; --single thm that doesn't use R_T
+  local after::String = splitThm ++ applyExtInds;
   --send after to Abella
   local after_abella::IOVal<String> =
       sendBlockToAbella(after, top.liveAbella, alsos_abella.io,
@@ -192,7 +280,11 @@ top::ThmElement ::=
 
   top.newThms =
       map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
-            (p.1, bindingMetaterm(forallBinder(), p.2, p.3.thm)),
+            (p.1, bindingMetaterm(forallBinder(), p.2,
+             decorate p.3 with {
+                relationEnv = top.relEnv; boundNames = p.2.usedNames;
+                typeEnv = top.tyEnv; constructorEnv = top.constrEnv;
+             }.toAbella)),
           thms ++ alsos);
 }
 
@@ -831,9 +923,23 @@ top::ThmElement ::=
             end,
           enumerate(rels));
 
+  {-
+    R_T to R proof
+  -}
+  local dropTProofs::[String] =
+      map(\ p::(QName, [String], [Term], QName, String, String) ->
+            "Theorem " ++ dropTName(p.1) ++ " : forall " ++
+               implode(" ", p.2) ++ ", " ++
+               transRelQName(p.1.sub).abella_pp ++ " " ++
+                  implode(" ", p.2) ++ " -> " ++
+               p.1.abella_pp ++ " " ++ implode(" ", p.2) ++ ".\n" ++
+            "skip.",
+          rels);
+
 
   top.composedCmds = fullLemmas ++ "\n" ++ fullToExtSize ++ "\n" ++
-      fullToTransRel ++ "\n" ++ implode("\n", extIndProofs) ++ "\n\n\n";
+      fullToTransRel ++ "\n" ++ implode("\n", extIndProofs) ++ "\n" ++
+      implode("\n", dropTProofs) ++ "\n\n\n";
 
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
@@ -847,6 +953,11 @@ function extIndThmName
 String ::= rel::QName
 {
   return "$extInd_" ++ rel.abella_pp;
+}
+function dropTName
+String ::= rel::QName
+{
+  return "$dropT_" ++ rel.abella_pp;
 }
 
 
@@ -1121,6 +1232,44 @@ String ::= prfs::[[String]]
            implode("\n", map(head, prfs)) ++ "\n" ++
            joinProofGroups(map(tail, prfs))
          end;
+}
+
+
+
+
+
+--make the appropriate premise into the R_T version
+inherited attribute makeTransRel::String occurs on ExtBody;
+synthesized attribute transRelMade::ExtBody occurs on ExtBody;
+
+aspect production endExtBody
+top::ExtBody ::= conc::Metaterm
+{
+  top.transRelMade =
+      error("Should not access endExtBody.transRelMade");
+}
+
+
+aspect production addLabelExtBody
+top::ExtBody ::= label::String m::Metaterm rest::ExtBody
+{
+  rest.makeTransRel = top.makeTransRel;
+  top.transRelMade =
+      if label == top.makeTransRel
+      then case m of
+           | relationMetaterm(q, a, r) ->
+             addLabelExtBody(label, transRelMetaterm(q, a, r), rest)
+           | _ -> error("Should not access transRelMade")
+           end
+      else addLabelExtBody(label, m, rest.transRelMade);
+}
+
+
+aspect production addBasicExtBody
+top::ExtBody ::= m::Metaterm rest::ExtBody
+{
+  rest.makeTransRel = top.makeTransRel;
+  top.transRelMade = addBasicExtBody(m, rest.transRelMade);
 }
 
 
