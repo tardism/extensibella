@@ -246,7 +246,7 @@ top::Metaterm ::= t1::Term t2::Term
       end;
   t2.mapTo =
       case top.mapTo of
-      | eqMetaterm(x, _) -> x
+      | eqMetaterm(_, x) -> x
       | _ -> error("Should not access (eqMetaterm)")
       end;
 
@@ -290,7 +290,7 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
       end;
   t2.mapTo =
       case top.mapTo of
-      | orMetaterm(x, _) -> x
+      | orMetaterm(_, x) -> x
       | _ -> error("Should not access (orMetaterm)")
       end;
 
@@ -312,7 +312,7 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
       end;
   t2.mapTo =
       case top.mapTo of
-      | andMetaterm(x, _) -> x
+      | andMetaterm(_, x) -> x
       | _ -> error("Should not access (andMetaterm)")
       end;
 

@@ -118,7 +118,10 @@ top::ThmElement ::=
       --doesn't matter if alsos proof information in topGoalProofInfo
       buildExtThmProofs(thmsInfo, topGoalProofInfo, top.allThms,
          top.tyEnv, top.relEnv, top.constrEnv, top.liveAbella,
-         top.configuration, top.allParsers, proofStart_abella.io);
+         top.configuration, top.allParsers,
+         map(\ p::(QName, RelationEnvItem, Boolean, Bindings, ExtBody,
+                   String) -> p.2.name, thmsInfo),
+         proofStart_abella.io);
 
   --Commands for proving alsos
   local alsosIntros::[String] =

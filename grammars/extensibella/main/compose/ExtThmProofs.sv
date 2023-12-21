@@ -11,7 +11,7 @@ IOVal<[String]> ::=
    allThms::[(QName, Metaterm)] typeEnv::Env<TypeEnvItem>
    relEnv::Env<RelationEnvItem> constrEnv::Env<ConstructorEnvItem>
    abella::ProcessHandle config::Configuration
-   parsers::AllParsers ioin::IOToken
+   parsers::AllParsers keyRels::[QName] ioin::IOToken
 {
   local fstThm::(QName, RelationEnvItem, Boolean, Bindings,
                  ExtBody, String) = head(thmsInfo);
@@ -28,7 +28,7 @@ IOVal<[String]> ::=
         "intros " ++
         implode(" ",
            generateExtIntrosNames(catMaybes(map(fst, prems)),
-              prems)) ++ ". " ++
+              prems)) ++ ". %here " ++ toString(fstThm.3) ++ "\n" ++
         fstThm.6 ++ ": case " ++ fstThm.6 ++ " (keep)."
       end;
   local intros_case_to_abella::IOVal<String> =
@@ -64,16 +64,16 @@ IOVal<[String]> ::=
               | _ -> (rest.1, here::rest.2) --no proof here
               end,
             ([], []), topGoalProofInfo);
-  local host_string::String =
-      intros_case ++ "\n  " ++
-      implode("\n  ", host_gathering.1);
+  local host_cases::String = implode("\n  ", host_gathering.1);
   local host_to_abella::IOVal<String> =
-      sendBlockToAbella(host_string, abella, intros_case_to_abella.io,
+      sendBlockToAbella(host_cases, abella, intros_case_to_abella.io,
                         config);
+  local host_string::String =
+      intros_case ++ "\n  " ++ host_cases;
   local host_rest::IOVal<[String]> =
       buildExtThmProofs(tail(thmsInfo), host_gathering.2, allThms,
          typeEnv, relEnv, constrEnv, abella, config, parsers,
-         host_to_abella.io);
+         keyRels, host_to_abella.io);
 
 
   --Extension Theorem Proof
@@ -86,9 +86,6 @@ IOVal<[String]> ::=
   --preservability proof is the last one done
   local extPreservabilityCase::[[(ProofState, [AnyCommand])]] =
       last(extSplitCases.1);
-  local keyRels::[QName] =
-      map(\ p::(QName, RelationEnvItem, Boolean, Bindings, ExtBody,
-                String) -> p.2.name, thmsInfo);
   --proof state after thm set-up
   local initProofState::ProofState =
       fullStateProcessing(intros_case_to_abella.iovalue, typeEnv,
@@ -111,7 +108,7 @@ IOVal<[String]> ::=
   local ext_rest::IOVal<[String]> =
       buildExtThmProofs(tail(thmsInfo), extUpdatedGoalInfo, allThms,
          typeEnv, relEnv, constrEnv, abella, config, parsers,
-         extRun.io);
+         keyRels, extRun.io);
 
 
   return
