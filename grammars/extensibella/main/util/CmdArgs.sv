@@ -10,6 +10,9 @@ synthesized attribute displayHelp::Boolean occurs on CmdArgs;
 
 synthesized attribute runsInteractive::Boolean occurs on CmdArgs;
 
+--whether to run the REPL in the end (other options turn it off)
+synthesized attribute runREPL::Boolean occurs on CmdArgs;
+
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -19,6 +22,8 @@ top::CmdArgs ::= l::[String]
   top.displayHelp = false;
 
   top.runsInteractive = true;
+
+  top.runREPL = true;
 }
 
 
@@ -29,6 +34,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.filenames = rest.filenames;
 
   top.displayHelp = true;
+
+  top.runREPL = rest.runREPL;
 
   forwards to rest;
 }

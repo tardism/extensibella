@@ -75,6 +75,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.runningFile = true;
   top.showUser = rest.showUser;
 
+  top.runREPL = false;
+
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = rest.dumpAbellaFile;
 
@@ -98,6 +100,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.runningFile = rest.runningFile;
   top.showUser = rest.showUser;
 
+  top.runREPL = rest.runREPL;
+
   top.dumpAbella = true;
   top.dumpAbellaFile = "abella_dump.thm";
 
@@ -118,6 +122,8 @@ top::CmdArgs ::= rest::CmdArgs
 
   top.runningFile = rest.runningFile;
   top.showUser = rest.showUser;
+
+  top.runREPL = rest.runREPL;
 
   top.dumpAbella = rest.dumpAbella;
   top.dumpAbellaFile = "abella_dump.thm";

@@ -48,25 +48,13 @@ IOVal<Integer> ::= parsers::AllParsers largs::[String] ioin::IOToken
           actionDesc = "Compose")
       ];
 
-  {-
-    Whether to run the REPL for Extensibella
-    Should be true if no other action is given
-  -}
-  production attribute runREPL::Boolean with &&;
-  runREPL :=
-      case parsedArgs of
-      | left(_) -> false --parse failure is just print errors
-      | right(a) ->
-        !a.checkFile && !a.compileFile && null(a.generateFiles)
-      end;
-
   return
       case parsedArgs of
       | left(errs) -> ioval(printT(errs, ioin), 1)
       | right(a) ->
         let i::IOVal<Integer> = runActions(actions, parsers, a, ioin)
         in
-          if i.iovalue != 0 || !runREPL
+          if i.iovalue != 0 || !a.runREPL
           then i
           else run_interactive(parsers, i.io, a)
         end

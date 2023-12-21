@@ -44,6 +44,8 @@ top::CmdArgs ::= moduleInfo::[String] rest::CmdArgs
         rest.generateFiles
       end;
 
+  top.runREPL = false;
+
   top.displayHelp = rest.displayHelp;
 
   forwards to rest;

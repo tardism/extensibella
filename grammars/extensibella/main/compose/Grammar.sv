@@ -43,6 +43,8 @@ top::CmdArgs ::= args::[String] rest::CmdArgs
 
   top.runsInteractive = false;
 
+  top.runREPL = false;
+
   forwards to rest;
 }
 

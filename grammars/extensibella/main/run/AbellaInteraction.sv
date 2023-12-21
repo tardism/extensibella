@@ -96,7 +96,8 @@ IOVal<String> ::= cmds::String abella::ProcessHandle
 {
   local blocked::[String] = explode(".", cmds);
   local filtered::[String] =
-      filter(\ s::String -> !isSpace(s), blocked);
+      filter(\ s::String -> !isSpace(s),
+             if !null(blocked) then init(blocked) else []);
   local dotted::[String] =
       map(\ s::String -> s ++ ".", filtered);
   return sendCmdsToAbella(dotted, abella, ioin, config);

@@ -38,6 +38,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.compileFile = true;
   top.filenames = rest.filenames;
 
+  top.runREPL = false;
+
   top.displayHelp = rest.displayHelp;
 
   forwards to rest;
