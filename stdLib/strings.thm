@@ -121,3 +121,14 @@ assert (forall L1 L2, is_list $is_char L1 -> is_list $is_char L2 ->
          right. intros. case H9. backchain H8.
 intros. case H2. case H3. apply H1 to H4 H5. search.
 
+
+Theorem extensibella-$-stdLib-$-append_string_is : forall S1 S2 S,
+  is_string S1 -> is_string S2 -> $append S1 S2 S -> is_string S.
+assert forall S1 S2 S, is_list $is_char S1 -> is_list $is_char S2 ->
+                       $append S1 S2 S -> is_list $is_char S.
+  induction on 1. intros SA SB App. SA: case SA.
+    %nil
+     case App. search.
+    %cons
+     App: case App. apply IH to SA1 SB App. search.
+intros Is1 Is2 App. case Is1. case Is2. apply H1 to _ _ App. search.

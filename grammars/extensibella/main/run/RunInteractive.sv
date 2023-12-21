@@ -188,7 +188,8 @@ String ::= line::String
   local quote::Integer = indexOf("\"", line);
   local slashquote::Integer = indexOf ("\\\"", line); --\"
   return
-     if quote < slashquote --quote must be found for valid syntax
+     if slashquote < 0 ||
+        quote < slashquote --quote must be found for valid syntax
      then substring(quote + 1, length(line), line)
      else clear_string(substring(slashquote + 2, length(line), line));
 }
