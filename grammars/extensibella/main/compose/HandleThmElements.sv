@@ -926,20 +926,61 @@ top::ThmElement ::=
   {-
     R_T to R proof
   -}
+  local dropTThmName::String =
+      if length(rels) == 1
+      then dropTName(head(rels).1)
+      else "$dropT_" ++ toString(genInt());
+  local dropTStmt::Metaterm =
+      foldr1(andMetaterm,
+         map(\ p::(QName, [String], [Term], QName, String, String) ->
+               bindingMetaterm(forallBinder(),
+                  toBindings(p.2),
+                  impliesMetaterm(
+                     relationMetaterm(transRelQName(p.1.sub),
+                        toTermList(map(basicNameTerm, p.2)),
+                        emptyRestriction()),
+                     relationMetaterm(p.1,
+                        toTermList(map(basicNameTerm, p.2)),
+                        emptyRestriction()))),
+            rels));
+  local dropTProofStart::String =
+      "induction on " ++ implode(" ", repeat("1", length(rels))) ++
+      "." ++ if length(rels) == 1 then "\n" else " split.\n ";
   local dropTProofs::[String] =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
-            "Theorem " ++ dropTName(p.1) ++ " : forall " ++
-               implode(" ", p.2) ++ ", " ++
-               transRelQName(p.1.sub).abella_pp ++ " " ++
-                  implode(" ", p.2) ++ " -> " ++
-               p.1.abella_pp ++ " " ++ implode(" ", p.2) ++ ".\n" ++
-            "skip.",
-          rels);
+      map(--[(plus count, [(ES premise, IH num)], is host)]
+        \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
+          "intros R. R: case R (keep).\n " ++
+          implode("\n ",
+             map(\ p::(Integer, [(Integer, Integer)], Boolean) ->
+                   implode("",
+                      map(\ ip::(Integer, Integer) ->
+                            let rnum::String =
+                                if p.3 --host rule adds nothing
+                                then toString(ip.1 - p.1)
+                                     --ext rules add premises
+                                else toString(ip.1 - p.1 + 2)
+                            in
+                              " apply IH" ++ (if ip.2 == 0 then ""
+                                              else toString(ip.2)) ++
+                                 " to R" ++ rnum ++ "."
+                            end,
+                          p.2)) ++ " search.",
+                 l)),
+        clauseInfo);
+  local dropTAfter::String =
+      if length(rels) == 1 then ""
+      else "Split " ++ dropTThmName ++ " as " ++
+           implode(" ", map(dropTName, map(fst, rels))) ++ ".\n";
+  local dropTFull::String =
+      "Theorem " ++ dropTThmName ++ " : " ++ dropTStmt.abella_pp ++
+          ".\n" ++ dropTProofStart ++
+      implode("\n ", dropTProofs) ++ "\n" ++
+      dropTAfter;
 
 
   top.composedCmds = fullLemmas ++ "\n" ++ fullToExtSize ++ "\n" ++
       fullToTransRel ++ "\n" ++ implode("\n", extIndProofs) ++ "\n" ++
-      implode("\n", dropTProofs) ++ "\n\n\n";
+      dropTFull ++ "\n\n\n";
 
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
