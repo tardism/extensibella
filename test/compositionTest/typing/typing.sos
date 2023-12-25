@@ -1,0 +1,115 @@
+Module compositionTest:typing
+
+Builds on compositionTest:host
+
+
+ty ::= intTy
+     | boolTy
+Translation ty :
+
+
+
+
+
+Judgment typeE : [(string, ty)] expr* ty
+Judgment typeS : [(string, ty)] stmt* [(string, ty)]
+
+-------------------- [T-Num]
+typeE G num(I) intTy
+
+
+typeE G E1 intTy
+typeE G E2 intTy
+-------------------------- [T-Plus]
+typeE G plus(E1, E2) intTy
+
+
+------------------- [T-True]
+typeE G true boolTy
+
+
+-------------------- [T-False]
+typeE G false boolTy
+
+
+typeE G E1 boolTy
+typeE G E2 boolTy
+-------------------------- [T-And]
+typeE G and(E1, E2) boolTy
+
+
+typeE G E1 Ty
+typeE G E2 Ty
+------------------------- [T-Eq]
+typeE G eq(E1, E2) boolTy
+
+
+typeS G S G1
+typeE G E Ty
+------------------------- [T-StmtExpr]
+typeE G stmtExpr(S, E) Ty
+
+
+lookup G X Ty
+------------------ [T-Name]
+typeE G name(X) Ty
+
+
+|{expr}- E ~~> E_T
+typeE G E_T Ty
+------------------ [T-ETrans]*
+typeE G E Ty
+
+
+
+
+
+-------------- [T-Noop]
+typeS G noop G
+
+
+typeS G S1 G1
+typeS G1 S2 G2
+typeS G2 S3 G3
+-------------------------- [T-Seq]
+typeS G seq(S1, S2, S3) G3
+
+
+typeS G S1 G1
+typeS G1 S2 G2
+typeS G2 S3 G3
+typeS G3 S4 G4
+typeS G4 S5 G5
+----------------------------------- [T-Seq5]
+typeS G seq5(S1, S2, S3, S4, S5) G5
+
+
+typeE G E Ty
+lookup G X Ty
+---------------------- [T-Assign-Present]
+typeS G assign(X, E) G
+
+
+typeE G E Ty
+no_lookup G X
+------------------------------- [T-Assign-NotPresent]
+typeS G assign(X, E) (X, Ty)::G
+
+
+typeE G Cond boolTy
+typeS G Th G1
+typeS G El G2
+---------------------------------- [T-IfThenElse]
+typeS G ifThenElse(Cond, Th, El) G
+
+
+typeE G Cond boolTy
+typeS G Body G1
+--------------------------- [T-While]
+typeS G while(Cond, Body) G
+
+
+|{stmt}- S ~~> S_T
+typeS G S_T G1
+------------------ [T-STrans]*
+typeS G S G1

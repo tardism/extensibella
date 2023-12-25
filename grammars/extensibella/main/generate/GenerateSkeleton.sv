@@ -126,6 +126,7 @@ top::ThmElement ::=
   top.inSkeleton = true;
   top.skeletonText =
       showDoc(80, text("Prove_Ext_Ind ") ++
-         ppImplode(text(",") ++ line(), map((.pp), map(fst, rels))) ++
+         nest(14, ppImplode(text(",") ++ line(),
+                     map((.pp), map(fst, rels)))) ++
          text("."));
 }

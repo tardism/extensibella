@@ -1,0 +1,20 @@
+Module compositionTest:host
+
+expr ::= num(int)
+       | plus(expr, expr)
+       | true
+       | false
+       | and(expr, expr)
+       | eq(expr, expr)
+       | stmtExpr(stmt, expr)
+       | name(string)
+Translation expr :
+
+
+stmt ::= noop
+       | seq(stmt, stmt, stmt) /*3 because of composition-test reasons*/
+       | seq5(stmt, stmt, stmt, stmt, stmt) /*same*/
+       | assign(string, expr)
+       | ifThenElse(expr, stmt, stmt)
+       | while(expr, stmt)
+Translation stmt :

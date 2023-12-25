@@ -1,0 +1,191 @@
+Module compositionTest:typing.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+Prove_Constraint compositionTest:host:evalExpr_back.
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+Prove_Constraint compositionTest:host:evalStmt_back.
+
+
+Prove_Constraint compositionTest:host:expr_same.
+Prove_Constraint compositionTest:host:stmt_same.
+
+
+Extensible_Theorem
+   typeS_unchanged : forall G S G' X Ty,
+     Ty : typeS G S G' ->
+     Lkp : lookup G X Ty ->
+     lookup G' X Ty
+   on Ty.
+%T-Noop
+ search.
+%T-Seq
+ L2: apply IH to Ty1 Lkp. L3: apply IH to Ty2 L2.
+ apply IH to Ty3 L3. search.
+%T-Seq5
+ L2: apply IH to Ty1 Lkp. L3: apply IH to Ty2 L2.
+ L4: apply IH to Ty3 L3. L5: apply IH to Ty4 L4.
+ apply IH to Ty5 L5. search.
+%T-Assign-Present
+ search.
+%T-Assign-NotPresent
+ assert X1 = X -> false. intros E. case E. apply no_lookup to Ty2 Lkp.
+ search.
+%T-IfThenElse
+ search.
+%T-While
+ search.
+%T-STrans
+ apply IH to Ty2 Lkp. search.
+
+
+/*
+  This may or may not actually be true; I didn't want to figure it out
+  once I ran into problems (hence the skips in the middle).  That
+  doesn't matter for testing.
+*/
+Extensible_Theorem
+   typePres : forall E G_T Ty G_E V G_E',
+     Ty : typeE G_T E Ty ->
+     Ev : evalExpr G_E E V G_E' ->
+     Rel : (forall X XTy XV, lookup G_T X XTy -> lookup G_E X XV ->
+               typeE [] XV XTy) ->
+     typeE [] V Ty
+   on Ev as IH_E,
+   typePres_S : forall S G_T G_T' G_E G_E' Z ZTy ZV,
+     Ty : typeS G_T S G_T' ->
+     Ev : evalStmt G_E S G_E' ->
+     Rel : (forall X XTy XV, lookup G_T X XTy -> lookup G_E X XV ->
+               typeE [] XV XTy) ->
+     LkpTy : lookup G_T' Z ZTy ->
+     LkpV : lookup G_E' Z ZV ->
+     typeE [] ZV ZTy
+   on Ev as IH_S,
+   typePres_E_Ctx : forall E G_T Ty G_E V G_E' Z ZTy ZV,
+     Ty : typeE G_T E Ty ->
+     Ev : evalExpr G_E E V G_E' ->
+     Rel : (forall X XTy XV, lookup G_T X XTy -> lookup G_E X XV ->
+               typeE [] XV XTy) ->
+     LkpTy : lookup G_T Z ZTy ->
+     LkpV : lookup G_E' Z ZV ->
+     typeE [] ZV ZTy
+   on Ev as IH_E_C.
+%typePres
+ %E-Num
+  case Ty. search.
+ %E-Plus
+  case Ty. search.
+ %E-True
+  case Ty. search.
+ %E-False
+  case Ty. search.
+ %E-And-False1
+  case Ty. search.
+ %E-And-False2
+  case Ty. search.
+ %E-And-True
+  case Ty. search.
+ %E-Eq-True
+  case Ty. search.
+ %E-Eq-False
+  case Ty. search.
+ %E-StmtExpr
+  Ty: case Ty. apply IH_E to Ty1 Ev2 _. intros LkpXTy LkpXV.
+  LkpXTy': apply typeS_unchanged to Ty LkpXTy.
+  apply IH_S to Ty Ev1 _ LkpXTy' LkpXV. search. search.
+ %E-Name
+  Ty: case Ty. apply Rel to Ty Ev1. search.
+ %Preservability
+  Ty: case Ty. apply expr_same to Ev2 Ty. apply IH_E to Ty1 Ev1 _.
+  search.
+%typePres_S
+ %E-Noop
+  case Ty. apply Rel to LkpTy LkpV. search.
+ %E-Seq
+  Ty: case Ty (keep). apply IH_S to Ty3 Ev3 _ LkpTy LkpV.
+  intros LT2 LV2. apply IH_S to Ty2 Ev2 _ LT2 LV2.
+  intros LT1 LV1. apply IH_S to Ty1 Ev1 _ LT1 LV1.
+  search. search. search.
+ %E-Seq5
+  Ty: case Ty (keep). apply IH_S to Ty5 Ev5 _ LkpTy LkpV.
+  intros LT4 LV4. apply IH_S to Ty4 Ev4 _ LT4 LV4.
+  intros LT3 LV3. apply IH_S to Ty3 Ev3 _ LT3 LV3.
+  intros LT2 LV2. apply IH_S to Ty2 Ev2 _ LT2 LV2.
+  intros LT1 LV1. apply IH_S to Ty1 Ev1 _ LT1 LV1.
+  search. search. search. search. search.
+ %E-Assign
+  Ty: case Ty.
+    %T-Assign-Present
+     apply IH_E to Ty Ev1 _. L: case LkpV.
+       %Lkp-Here (X = Z)
+        apply lookup_unique to LkpTy Ty1. search.
+       %Lkp-Later (X != Z)
+        apply IH_E_C to Ty Ev1 _ LkpTy L1. search.
+    %T-Assign-NotPresent
+     LT: case LkpTy.
+       %Lkp-Here (X = Z)
+        LV: case LkpV.
+          %Lkp-Here
+           apply IH_E to Ty Ev1 _. search.
+          %Lkp-Later
+           apply LV to _.
+       %Lkp-Later (X != Z)
+        LV: case LkpV.
+          %Lkp-Here
+           apply LT to _.
+          %Lkp-Later
+           backchain IH_E_C with E = E, G_T = G_T, Ty = Ty, G_E = G_E,
+              G_E' = G1.
+ %E-IfThenElse-True
+  skip.
+ %E-IfThenElse-False
+  skip.
+ %E-While-False
+  skip.
+ %E-While-True
+  skip.
+ %Preservability
+  Ty: case Ty. apply stmt_same to Ev2 Ty.
+  apply IH_S to Ty1 Ev1 _ LkpTy LkpV. search.
+%typePres_E_Cxt
+ %E-Num
+  case Ty. apply Rel to LkpTy LkpV. search.
+ %E-Plus
+  Ty: case Ty. apply IH_E_C to Ty1 Ev2 _ LkpTy LkpV. intros LT LV.
+  apply IH_E_C to Ty Ev1 _ LT LV. search. search.
+ %E-True
+  case Ty. apply Rel to LkpTy LkpV. search.
+ %E-False
+  case Ty. apply Rel to LkpTy LkpV. search.
+ %E-And-False1
+  Ty: case Ty. apply IH_E_C to Ty Ev1 _ LkpTy LkpV. search.
+ %E-And-False2
+  Ty: case Ty. apply IH_E_C to Ty1 Ev2 _ LkpTy LkpV. intros LT LV.
+  apply IH_E_C to Ty Ev1 _ LT LV. search. search.
+ %E-And-True
+  Ty: case Ty. apply IH_E_C to Ty1 Ev2 _ LkpTy LkpV. intros LT LV.
+  apply IH_E_C to Ty Ev1 _ LT LV. search. search.
+ %E-Eq-True
+  Ty: case Ty. apply IH_E_C to Ty1 Ev2 _ LkpTy LkpV. intros LT LV.
+  apply IH_E_C to Ty Ev1 _ LT LV. search. search.
+ %E-Eq-False
+  Ty: case Ty. apply IH_E_C to Ty1 Ev2 _ LkpTy LkpV. intros LT LV.
+  apply IH_E_C to Ty Ev1 _ LT LV. search. search.
+ %E-StmtExpr
+  Ty: case Ty. apply IH_E_C to Ty1 Ev2 _ LkpTy LkpV. intros LT LV.
+  LT': apply typeS_unchanged to Ty LT. apply IH_S to Ty Ev1 _ LT' LV.
+  search. search.
+ %E-Name
+  Ty: case Ty. apply Rel to LkpTy LkpV. search.
+ %Preservability
+  Ty: case Ty. apply expr_same to Ev2 Ty.
+  apply IH_E_C to Ty1 Ev1 _ LkpTy LkpV. search.

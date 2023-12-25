@@ -1,0 +1,116 @@
+Module compositionTest:host
+
+Judgment evalExpr : [(string, expr)] expr* expr [(string, expr)]
+Judgment evalStmt : [(string, expr)] stmt* [(string, expr)]
+
+
+-------------------------- [E-Num]
+evalExpr G num(I) num(I) G
+
+
+evalExpr G E1 num(I1) G1
+evalExpr G1 E2 num(I2) G2
+I1 + I2 = I
+--------------------------------- [E-Plus]
+evalExpr G plus(E1, E2) num(I) G2
+
+
+---------------------- [E-True]
+evalExpr G true true G
+
+
+------------------------ [E-False]
+evalExpr G false false G
+
+
+evalExpr G E1 false G1
+------------------------------- [E-And-False1]
+evalExpr G and(E1, E2) false G1
+
+
+evalExpr G E1 true G1
+evalExpr G1 E2 false G2
+------------------------------- [E-And-False2]
+evalExpr G and(E1, E2) false G2
+
+
+evalExpr G E1 true G1
+evalExpr G1 E2 true G2
+------------------------------ [E-And-True]
+evalExpr G and(E1, E2) true G2
+
+
+evalExpr G E1 V G1
+evalExpr G1 E2 V G2
+----------------------------- [E-Eq-True]
+evalExpr G eq(E1, E2) true G2
+
+
+evalExpr G E1 V1 G1
+evalExpr G1 E2 V2 G2
+V1 != V2
+------------------------------ [E-Eq-False]
+evalExpr G eq(E1, E2) false G2
+
+
+evalStmt G S G1
+evalExpr G1 E V G2
+------------------------------ [E-StmtExpr]
+evalExpr G stmtExpr(S, E) V G2
+
+
+lookup G X V
+---------------------- [E-Name]
+evalExpr G name(X) V G
+
+
+
+
+
+----------------- [E-Noop]
+evalStmt G noop G
+
+
+evalStmt G S1 G1
+evalStmt G1 S2 G2
+evalStmt G2 S3 G3
+----------------------------- [E-Seq]
+evalStmt G seq(S1, S2, S3) G3
+
+
+evalStmt G S1 G1
+evalStmt G1 S2 G2
+evalStmt G2 S3 G3
+evalStmt G3 S4 G4
+evalStmt G4 S5 G5
+-------------------------------------- [E-Seq5]
+evalStmt G seq5(S1, S2, S3, S4, S5) G5
+
+
+evalExpr G E V G1
+---------------------------------- [E-Assign]
+evalStmt G assign(X, E) (X, V)::G1
+
+
+evalExpr G Cond true G1
+evalStmt G1 Th G2
+-------------------------------------- [E-IfThenElse-True]
+evalStmt G ifThenElse(Cond, Th, El) G2
+
+
+evalExpr G Cond false G1
+evalStmt G1 El G2
+-------------------------------------- [E-IfThenElse-False]
+evalStmt G ifThenElse(Cond, Th, El) G2
+
+
+evalExpr G Cond false G1
+------------------------------- [E-While-False]
+evalStmt G while(Cond, Body) G1
+
+
+evalExpr G Cond true G1
+evalStmt G1 Body G2
+evalStmt G2 while(Cond, Body) G3
+-------------------------------- [E-While-True]
+evalStmt G while(Cond, Body) G3

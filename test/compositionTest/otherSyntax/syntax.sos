@@ -1,0 +1,35 @@
+Module compositionTest:otherSyntax
+
+Builds on compositionTest:host
+
+expr ::= ...
+       | double(expr)
+
+
+--------------------------------- [Trans-Double]
+|{expr}- double(E) ~~> plus(E, E)
+
+
+
+stmt ::= ...
+       | seq2(stmt, stmt)
+
+
+------------------------------------------- [Trans-Seq2]
+|{stmt}- seq2(S1, S2) ~~> seq(S1, S2, noop)
+
+
+
+
+
+evalExpr G E num(Half) G1
+Half + Half = I
+------------------------------ [E-Double]
+evalExpr G double(E) num(I) G1
+
+
+
+evalStmt G S1 G1
+evalStmt G1 S2 G2
+-------------------------- [E-Seq2]
+evalStmt G seq2(S1, S2) G2

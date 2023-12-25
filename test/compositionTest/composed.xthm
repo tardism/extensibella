@@ -1,0 +1,36 @@
+Module compositionTest:composed.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+
+
+Prove_Constraint compositionTest:host:evalExpr_back.
+
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+
+
+Prove_Constraint compositionTest:host:evalStmt_back.
+
+
+Prove_Constraint compositionTest:host:expr_same.
+
+
+Prove_Constraint compositionTest:host:stmt_same.
+
+
+Prove compositionTest:typing:typeS_unchanged.
+
+
+Prove compositionTest:typing:typePres,
+      compositionTest:typing:typePres_S,
+      compositionTest:typing:typePres_E_Ctx.
+

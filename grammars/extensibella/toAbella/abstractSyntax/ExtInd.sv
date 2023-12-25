@@ -400,6 +400,8 @@ top::TopCommand ::= rels::[QName]
                  anyProofCommand(skipTactic())],
               extSizeLemmas) ++ [anyTopCommand(thmDecl)] ++
       map(anyProofCommand, inductionCommands) ++
+      (if length(rels) > 1 then [anyProofCommand(splitTactic())]
+                           else []) ++
       --intros/case for first thm
       map(anyProofCommand,
           head(computeDuringCommands.duringCommands).2);

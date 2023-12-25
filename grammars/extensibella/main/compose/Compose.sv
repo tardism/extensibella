@@ -234,13 +234,15 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
          []);
 
   --proof definitions
+  local fullProofDefs::[String] =
+      map((.abella_pp), flatMap((.encode), proofDefs)) ++
+      flatMap(buildExtIndDefs(_, proverState), thms);
   local proofDefsString::String =
-      if null(proofDefs) then ""
+      if null(fullProofDefs) then ""
       else "/********************************************************************\n" ++
            " Proof-Level Definitions\n" ++
            " ********************************************************************/\n" ++
-           implode("\n", map((.abella_pp), flatMap((.encode), proofDefs)) ++
-                         flatMap(buildExtIndDefs(_, proverState), thms)) ++ "\n\n\n";
+           implode("\n", fullProofDefs) ++ "\n\n\n";
 
   --properties and proofs
   local abella::IOVal<Either<String ProcessHandle>> =

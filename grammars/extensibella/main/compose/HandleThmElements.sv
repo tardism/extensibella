@@ -617,9 +617,9 @@ top::ThmElement ::=
                               " to " ++ ep.1 ++ ".")
                            end, appIHs)
                  in
-                 let adds::String =
-                     foldl(--(hyp name, application)
-                        \ rest::(String, String) isp::(String, String) ->
+                 let adds::(String, String) =
+                     foldr(                  --(hyp name, application)
+                        \ isp::(String, String) rest::(String, String) ->
                           let plusHyp::String =
                               "Plus" ++ toString(genInt())
                           in
@@ -630,14 +630,21 @@ top::ThmElement ::=
                              rest.2 ++ " " ++
                              plusHyp ++ ": apply " ++
                                 "extensibella-$-stdLib-$-" ++
-                                "plus_integer_total to " ++ rest.1 ++
-                                " " ++ isp.1 ++ ". " ++
+                                "plus_integer_total to " ++ isp.1 ++
+                                " " ++ rest.1 ++ ". " ++
                              isHyp ++ ": apply " ++
                                 "extensibella-$-stdLib-$-" ++
                                 "plus_integer_is_integer to _ _ " ++
                                 plusHyp ++ ".")
                           end end,
-                        (head(appIses).1, ""), tail(appIses)).2
+                        (last(appIses).1, ""), init(appIses))
+                 in
+                 let finalAdd::String =
+                     if p.3
+                     then "" --host, so don't add 1
+                     else " apply extensibella-$-stdLib-$-" ++
+                            "plus_integer_total to _ " ++ adds.1 ++
+                            " with N1 = $posInt ($succ $zero)."
                  in
                    if null(p.2) then "search."
                    else
@@ -646,8 +653,8 @@ top::ThmElement ::=
                             appIHs)) ++ " " ++
                      implode(" ", map(\ p::(String, String) -> p.2,
                                       appIses)) ++ " " ++
-                     adds ++ " search."
-                 end end end, l)),
+                     adds.2 ++ finalAdd ++ " search."
+                 end end end end, l)),
         clauseInfo);
   local afterToExtSize::String =
       if length(toExtSizeNames) == 1
@@ -723,7 +730,7 @@ top::ThmElement ::=
                              "apply extensibella-$-stdLib-$-" ++
                                 "plus_integer_is_integer to " ++
                                 "_ _ Rel" ++ toString(i) ++ ".",
-                           range(1, p.1 + 1))
+                           reverse(range(1, p.1 + 1)))
                    in --apply lte_left/lte_right to all additions
                       --[(left result hyp, right result hyp, applications)]
                    let ltes::[(String, String, String)] =
@@ -762,9 +769,9 @@ top::ThmElement ::=
                                h ++ ": apply extensibella-$-stdLib" ++
                                  "-$-is_integer_lesseq to " ++ is ++ ".")
                             end end
-                       else foldl(
-                              \ rest::([String], String)
-                                here::(String, String, String) ->
+                       else foldr(
+                              \ here::(String, String, String)
+                                rest::([String], String) ->
                                 let leftHyp::String =
                                     "LE" ++ toString(genInt())
                                 in
@@ -772,7 +779,7 @@ top::ThmElement ::=
                                     "LE" ++ toString(genInt())
                                 in --drop first in rest.1 because it is
                                    --for a sum, not an R_{ES} num
-                                  (leftHyp::rightHyp::tail(rest.1),
+                                  (rightHyp::leftHyp::tail(rest.1),
                                    rest.2 ++
                                    leftHyp ++ ": apply extensibella" ++
                                       "-$-stdLib-$-lesseq_integer_" ++
@@ -783,8 +790,8 @@ top::ThmElement ::=
                                       "transitive to " ++ here.2 ++
                                       " " ++ head(rest.1) ++ ". ")
                                 end end,
-                              ([head(ltes).1, head(ltes).2], ""),
-                              tail(ltes))
+                              ([last(ltes).2, last(ltes).1], ""),
+                              init(ltes))
                    in
                    {-
                      My initial plan was to apply the IH with "_" for
@@ -834,7 +841,7 @@ top::ThmElement ::=
                                  toString(t.2) ++ " Acc. " ++
                               rest
                             end end end end,
-                           "search.", zip(transes.1, p.2))
+                          "search.", zip(transes.1, reverse(p.2)))
                      end
                    in
                      if !p.3 --is host
@@ -970,7 +977,7 @@ top::ThmElement ::=
   local dropTAfter::String =
       if length(rels) == 1 then ""
       else "Split " ++ dropTThmName ++ " as " ++
-           implode(" ", map(dropTName, map(fst, rels))) ++ ".\n";
+           implode(", ", map(dropTName, map(fst, rels))) ++ ".\n";
   local dropTFull::String =
       "Theorem " ++ dropTThmName ++ " : " ++ dropTStmt.abella_pp ++
           ".\n" ++ dropTProofStart ++

@@ -1,0 +1,52 @@
+Module compositionTest:otherSyntax.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+%E-Double
+ EvB: case EvB. apply IH to EvA1 EvB.
+ apply plus_integer_unique to EvA2 EvB1. search.
+%E-Seq2
+ EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
+ search.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+%E-Double
+ unfold. exists Half = Half. exists plus E1 E1. Acc: case Acc.
+ IsN2: apply ext_ind_is_int_evalExpr to Rel2.
+ L: apply lt_plus_one to Rel1 _. apply ext_ind_pos_evalExpr to Rel2.
+ A: apply Acc to _ L. apply IH to Rel2 A. split.
+   %Trans
+    search.
+   %plus eval
+    skip. %different eval ctx, so not necessarily
+   %eval_T E1
+    search.
+   %plus
+    search.
+%E-Seq2
+ unfold. exists seq S1 S2 noop. exists G'. Acc: case Acc.
+ IsN2: apply ext_ind_is_int_evalStmt to Rel3.
+ IsN3: apply ext_ind_is_int_evalStmt to Rel4.
+ skip. %this is true, but I don't want to mess with it
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+skip.
+
+Prove_Constraint compositionTest:host:evalExpr_back.
+skip.
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+case Hyp1. case H3. search.
+
+Prove_Constraint compositionTest:host:evalStmt_back.
+case Hyp1. search.
+
+Prove_Constraint compositionTest:host:expr_same.
+case Hyp1. search.
+
+Prove_Constraint compositionTest:host:stmt_same.
+case Hyp1. search.
