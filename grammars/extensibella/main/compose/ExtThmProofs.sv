@@ -224,6 +224,8 @@ Eq a => [(a, b)] ::= l::[(a, b)] key::a value::b
 
 
 
+--while the Abella state is rooted in rootSubgoal, apply either the
+--next known case or the preservability case
 function buildExtensionThmProof
 IOVal<([[String]], ProofState)> ::=
    knownCases::[[[(ProofState, [AnyCommand])]]]

@@ -816,7 +816,7 @@ Metaterm ::= allRels::[QName] m::Metaterm
 
 {-
   Generate the translation and R_T for the translation
-  Returns (new bindings, translation, R_T)
+  Returns (new bindings, R_T, translation)
 -}
 function createTransRelPremises
 ([String], Metaterm, Metaterm) ::=
@@ -851,7 +851,17 @@ function createTransRelPremises
   local newBoundVars::[String] =
       removeAll(nub(alreadyBoundVars), nub(transVars ++ relVars));
 
-  return (newBoundVars, fullTranslation, newRelation);
+  {-
+    We put the new relation first before the translation so it is put
+    in the definition first.  This seems like a strange ordering, but
+    because we assert the translation for proving extensible theorems
+    based on Ext_Inds, the translation premise comes after the premise
+    for the relation holding on it.  We need to duplicate this in the
+    definition of R_T because the composition process relies on the
+    corresponding premises in the after-composition proof state being
+    in the same order.
+  -}
+  return (newBoundVars, newRelation, fullTranslation);
 }
 
 

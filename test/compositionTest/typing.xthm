@@ -51,7 +51,9 @@ Extensible_Theorem
 /*
   This may or may not actually be true; I didn't want to figure it out
   once I ran into problems (hence the skips in the middle).  That
-  doesn't matter for testing.
+  doesn't matter for testing composition, since Abella accepts the
+  modular proof and thus will accept the composed proof, even if it
+  uses skip.
 */
 Extensible_Theorem
    typePres : forall E G_T Ty G_E V G_E',

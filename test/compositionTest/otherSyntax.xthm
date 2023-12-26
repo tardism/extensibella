@@ -18,10 +18,10 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
  IsN2: apply ext_ind_is_int_evalExpr to Rel2.
  L: apply lt_plus_one to Rel1 _. apply ext_ind_pos_evalExpr to Rel2.
  A: apply Acc to _ L. apply IH to Rel2 A. split.
-   %Trans
-    search.
    %plus eval
     skip. %different eval ctx, so not necessarily
+   %Trans
+    search.
    %eval_T E1
     search.
    %plus
