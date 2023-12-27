@@ -1,0 +1,33 @@
+Module compositionTest:moreSyntax.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+EvB: case EvB. apply minus_integer_unique to EvA1 EvB. search.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+unfold. exists num N1. search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+case Hyp1. search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_back.
+case Hyp1. apply minus_integer_unique to H1 Hyp2. search.
+
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+
+
+Prove_Constraint compositionTest:host:evalStmt_back.
+
+
+Prove_Constraint compositionTest:host:expr_same.
+case Hyp1. apply minus_integer_unique to H1 Hyp2. search.
+
+
+Prove_Constraint compositionTest:host:stmt_same.
+

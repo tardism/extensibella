@@ -4,10 +4,15 @@ Builds on compositionTest:host
 
 expr ::= ...
        | double(expr)
+       | triple(expr)
 
 
 --------------------------------- [Trans-Double]
 |{expr}- double(E) ~~> plus(E, E)
+
+
+------------------------------------------ [Trans-Triple]
+|{expr}- triple(E) ~~> plus(plus(E, E), E)
 
 
 
@@ -26,6 +31,13 @@ evalExpr G E num(Half) G1
 Half + Half = I
 ------------------------------ [E-Double]
 evalExpr G double(E) num(I) G1
+
+
+evalExpr G E num(Third) G1
+Third + Third = Double
+Double + Third = I
+------------------------------ [E-Triple]
+evalExpr G triple(E) num(I) G1
 
 
 

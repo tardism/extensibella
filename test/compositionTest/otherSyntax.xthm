@@ -6,6 +6,10 @@ Prove compositionTest:host:evalExpr_unique,
 %E-Double
  EvB: case EvB. apply IH to EvA1 EvB.
  apply plus_integer_unique to EvA2 EvB1. search.
+%E-Triple
+ EvB: case EvB. apply IH to EvA1 EvB.
+ apply plus_integer_unique to EvA2 EvB1.
+ apply plus_integer_unique to EvA3 EvB2. search.
 %E-Seq2
  EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
  search.
@@ -26,6 +30,21 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
     search.
    %plus
     search.
+%E-Triple
+ unfold. exists plus (plus E1 E1) E1, Third, Double. split.
+   %plus eval
+    skip.
+   %Trans
+    search.
+   %eval_T E1
+    Acc: case Acc. Is: apply ext_ind_is_int_evalExpr to Rel2.
+    L: apply lt_plus_one to Rel1 _.
+    apply ext_ind_pos_evalExpr to Rel2. A: apply Acc to _ L.
+    apply IH to Rel2 A. search.
+   %plus
+    search.
+   %plus
+    search.
 %E-Seq2
  unfold. exists seq S1 S2 noop. exists G'. Acc: case Acc.
  IsN2: apply ext_ind_is_int_evalStmt to Rel3.
@@ -34,10 +53,10 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.
-skip.
+skip. skip.
 
 Prove_Constraint compositionTest:host:evalExpr_back.
-skip.
+skip. skip.
 
 Prove_Constraint compositionTest:host:evalStmt_forward.
 case Hyp1. case H3. search.
@@ -46,6 +65,7 @@ Prove_Constraint compositionTest:host:evalStmt_back.
 case Hyp1. search.
 
 Prove_Constraint compositionTest:host:expr_same.
+case Hyp1. search.
 case Hyp1. search.
 
 Prove_Constraint compositionTest:host:stmt_same.

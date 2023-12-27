@@ -863,23 +863,29 @@ top::ThmElement ::=
       filter(\ p::(QName, [(ProofState, [AnyCommand])]) -> !null(p.2),
              getExtIndProofSteps(top.incomingMods, map(fst, rels)));
   local toTransRelSplitProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
-      map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
-            (p.1, splitAtTopGoals(p.2)),
-          toTransRelProofInfo);
+      if length(rels) == 1
+         --only one proof, so all go together
+      then map(\ p::(QName, [(ProofState, [AnyCommand])]) -> (p.1, [p.2]),
+               toTransRelProofInfo)
+         --multiple proofs, so top-level goals are the splits
+      else map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
+                 (p.1, splitAtTopGoals(p.2)),
+               toTransRelProofInfo);
   --proofs for each module, in each top goal
-  local toTransRelJoinOtherProofs::[[String]] =
+  local toTransRelJoinOtherProofs::[(QName, [String])] =
       map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
+           (p.1,
             map(\ l::[(ProofState, [AnyCommand])] ->
                   implode(" ",
                      map(\ pr::(ProofState, [AnyCommand]) ->
                            implode(" ",
                               map((.abella_pp), pr.2)),
                          l)),
-                p.2),
+                p.2)),
           toTransRelSplitProofInfo);
   --joining the host and extension proofs into one
   local toTransRelProofContents::String =
-      joinProofGroups(toTransRelHostProofs::toTransRelJoinOtherProofs);
+      joinProofGroups((toQName("host"), toTransRelHostProofs)::toTransRelJoinOtherProofs);
   local afterToTransRel::String =
       if length(toTransRelNames) == 1
       then "" --nothing to split
@@ -1271,14 +1277,25 @@ function splitAtAllGoals
 --outer list is grouped by module, each module has proofs for related thms
 --e.g. [ [mod 1 thm a, mod 1 thm b], [mod 2 thm a, mod 2 thm b], ... ]
 function joinProofGroups
-String ::= prfs::[[String]]
+String ::= prfs::[(QName, [String])]
 {
   return case prfs of
          | [] -> ""
-         | []::_ -> "" --all are empty
-         | x::l ->
-           implode("\n", map(head, prfs)) ++ "\n" ++
-           joinProofGroups(map(tail, prfs))
+         | _::_ ->
+           implode("\n",
+              filterMap(\ l::(QName, [String]) ->
+                          case l.2 of
+                          | h::_ -> just(h)
+                          | [] -> nothing()
+                          end,
+                  prfs)) ++ "\n" ++
+           joinProofGroups(
+              filterMap(\ l::(QName, [String]) ->
+                          case l.2 of
+                          | _::t -> just((l.1, t))
+                          | [] -> nothing()
+                          end,
+                        prfs))
          end;
 }
 

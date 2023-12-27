@@ -16,8 +16,8 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
   local parsedMods::ParseResult<ModuleList_c> =
       parsers.interface_parse(interfaceFileContents.iovalue,
                               interfaceFileLoc.iovalue.fromJust);
-  local expectedMods::[QName] =
-      parsedMods.parseTree.ast.mods ++
+  local expectedMods::[QName] = --reverse to put host first
+      reverse(parsedMods.parseTree.ast.mods) ++
       --add because interface file doesn't include the module itself
       [composeModule];
 
@@ -234,8 +234,20 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
          []);
 
   --proof definitions
+  local encodedProofDefs::[AnyCommand] =
+      flatMap(\ c::AnyCommand ->
+                decorate c with {
+                   stateListIn = error("stateListIn not needed");
+                   proverState = proverState;
+                   typeEnv = proverState.knownTypes;
+                   relationEnv = proverState.knownRels;
+                   constructorEnv = proverState.knownConstrs;
+                   currentModule = error("currentModule not needed");
+                   boundNames = [];
+                }.toAbella,
+              flatMap((.encode), proofDefs));
   local fullProofDefs::[String] =
-      map((.abella_pp), flatMap((.encode), proofDefs)) ++
+      map((.abella_pp), encodedProofDefs) ++
       flatMap(buildExtIndDefs(_, proverState), thms);
   local proofDefsString::String =
       if null(fullProofDefs) then ""

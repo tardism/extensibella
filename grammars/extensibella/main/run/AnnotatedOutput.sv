@@ -148,6 +148,8 @@ top::CmdArgs ::= name::String rest::CmdArgs
   top.outputAnnotated = true;
   top.annotatedFile = name;
 
+  top.runREPL = false;
+
   forwards to rest;
 }
 

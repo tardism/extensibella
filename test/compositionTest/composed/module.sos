@@ -2,4 +2,5 @@ Module compositionTest:composed
 
 Builds on compositionTest:host
 Builds on compositionTest:typing
+Builds on compositionTest:moreSyntax
 Builds on compositionTest:otherSyntax

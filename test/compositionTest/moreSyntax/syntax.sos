@@ -1,0 +1,16 @@
+Module compositionTest:moreSyntax
+
+Builds on compositionTest:host
+
+expr ::= ...
+       | negNum(int)
+
+0 - I = N
+----------------------------- [Trans-Neg]
+|{expr}- negNum(I) ~~> num(N)
+
+
+
+0 - I = N
+----------------------------- [E-NegNum]
+evalExpr G negNum(I) num(N) G
