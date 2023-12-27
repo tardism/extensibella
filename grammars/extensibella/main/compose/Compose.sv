@@ -275,9 +275,15 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
          printT("Writing " ++ outFilename ++ "...",
                 sendAbellaDefs.io));
 
+  --compose the proofs and write them to the file
   local builtProps::IOToken =
       compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
                      parsers, config, outFilename, allThms, output);
+
+  --clean up by quitting Abella
+  local quitAbella::IOToken =
+      exitAbella([anyNoOpCommand(quitCommand())], builtProps,
+         abella.iovalue.fromRight, false, config);
 
   return ioval(printT("Done\n", builtProps), 0);
 }

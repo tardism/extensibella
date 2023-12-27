@@ -199,7 +199,11 @@ top::RunCommands ::=
   production attribute io::(IOToken ::= IOToken) with combineIO;
   io := \ i::IOToken -> i;
 
-  local finalIO::IOToken = io(top.ioin);
+  --clean up by exiting Abella now that there is nothing more to do
+  local finalIO::IOToken =
+      exitAbella([anyNoOpCommand(quitCommand())], io(top.ioin),
+         top.abella, currentProverState.debug, top.config);
+
   top.runResult =
       if !top.config.runningFile --non-file can quit whenever
       then ioval(finalIO, 0)
