@@ -493,9 +493,7 @@ abstract production stringTerm
 top::Term ::= contents::String
 {
   top.pp = text("\"" ++ contents ++ "\"");
-  top.abella_pp =
-      foldr(\ x::String rest::String -> x ++ "::" ++ rest, "nil",
-            map(ordinalToCharConstructor, stringToChars(contents)));
+  top.abella_pp = "\"" ++ contents ++ "\"";
   top.isAtomic = true;
 
   top.isStructured = true;

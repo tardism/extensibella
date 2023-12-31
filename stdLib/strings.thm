@@ -132,3 +132,30 @@ assert forall S1 S2 S, is_list $is_char S1 -> is_list $is_char S2 ->
     %cons
      App: case App. apply IH to SA1 SB App. search.
 intros Is1 Is2 App. case Is1. case Is2. apply H1 to _ _ App. search.
+
+
+Theorem extensibella-$-stdLib-$-append_string_total : forall S1 S2,
+  is_string S1 -> is_string S2 -> exists S, $append S1 S2 S.
+assert forall S1 S2, is_list $is_char S1 -> is_list $is_char S2 ->
+                     exists S, $append S1 S2 S.
+  induction on 1. intros IsSA IsSB. Is: case IsSA.
+    %nil
+     search.
+    %cons
+     apply IH to Is1 IsSB. search.
+intros IsA IsB. case IsA. case IsB. apply H1 to H2 H3. search.
+
+
+Theorem extensibella-$-stdLib-$-string_length_total : forall S,
+  is_string S -> exists N, extensibella-$-stdLib-$-length S N.
+assert forall S, is_list $is_char S ->
+                 exists N, extensibella-$-stdLib-$-length S N.
+  induction on 1. intros Is. Is: case Is.
+    %nil
+     search.
+    %cons
+     Len: apply IH to Is1.
+     IsN: apply extensibella-$-stdLib-$-length_is to Len.
+     apply extensibella-$-stdLib-$-plus_integer_total to _ IsN
+        with N1 = $posInt ($succ $zero). search.
+intros Is. case Is. apply H1 to H2. search.

@@ -84,6 +84,16 @@ induction on 1. intros L. L: case L.
    apply IH to L.
    apply extensibella-$-stdLib-$-plus_integer_is_integer to _ _ L1. search.
 
+Theorem extensibella-$-stdLib-$-length_unique[A] : forall (L : list A) N1 N2,
+  extensibella-$-stdLib-$-length L N1 ->
+  extensibella-$-stdLib-$-length L N2 -> N1 = N2.
+induction on 1. intros LA LB. LA: case LA.
+  %nil
+   case LB. search.
+  %cons
+   LB: case LB. apply IH to LA LB.
+   apply extensibella-$-stdLib-$-plus_integer_unique to LA1 LB1. search.
+
 %lemma
 Theorem $greater+1 : forall N N',
   is_integer N -> $greater_integer N ($posInt $zero) ->
