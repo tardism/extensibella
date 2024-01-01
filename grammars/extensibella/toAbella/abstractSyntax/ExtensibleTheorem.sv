@@ -39,7 +39,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       map(anyProofCommand,
           head(thms.duringCommands).2); --intros for first thm
   production fullThms::Metaterm =
-      if alsos.len > 1
+      if alsos.len > 0
       then andMetaterm(thms.toAbella, alsos.toAbella)
       else thms.toAbella;
 
