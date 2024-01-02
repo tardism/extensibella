@@ -5,6 +5,7 @@ imports extensibella:main:run;
 imports extensibella:main:compile;
 imports extensibella:main:generate;
 imports extensibella:main:compose;
+imports extensibella:main:thmDoc;
 
 imports silver:util:cmdargs;
 
@@ -45,7 +46,11 @@ IOVal<Integer> ::= parsers::AllParsers largs::[String] ioin::IOToken
        actionSpec(
           runFun = compose_files,
           shouldDoFun = \ c::Configuration -> c.composeFile,
-          actionDesc = "Compose")
+          actionDesc = "Compose"),
+       actionSpec(
+          runFun = thmDoc_html_files,
+          shouldDoFun = \ c::Configuration -> c.genThmDocHtml,
+          actionDesc = "HTML Property File")
       ];
 
   return
