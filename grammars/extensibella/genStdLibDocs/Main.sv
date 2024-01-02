@@ -293,14 +293,16 @@ IOVal<String> ::= filename::String
   local contents::IOVal<String> = readFileT(filename, ioin);
   local parsed::ParseResult<ListOfCommands_c> =
       file_parse(contents.iovalue, filename);
+  --to get the basic, initial envs
+  local basicProverState::ProverState =
+      defaultProverState([], buildEnv([]), buildEnv([]),
+                         buildEnv([]), []);
   local ast::ListOfCommands = parsed.parseTree.ast;
-  ast.typeEnv = buildEnv([]);
-  ast.constructorEnv = buildEnv([]);
-  ast.relationEnv = buildEnv([]);
+  ast.typeEnv = basicProverState.knownTypes;
+  ast.constructorEnv = basicProverState.knownConstrs;
+  ast.relationEnv = basicProverState.knownRels;
   ast.currentModule = toQName("extensibella:stdLib");
-  ast.proverState =
-      defaultProverState([], ast.typeEnv, ast.relationEnv,
-         ast.constructorEnv, []);
+  ast.proverState = basicProverState;
   ast.ignoreDefErrors = true;
   --
   ast.formatThm = formatThm;
@@ -371,10 +373,12 @@ String ::= name::QName params::[String] body::Metaterm
   local pString::String =
       if null(params)
       then ""
-      else " <tt>[" ++ implode(", ", params) ++ "]</tt>";
+      else " [" ++ implode(", ", params) ++ "]";
   local startString::String =
-      "\n<li> " ++ name.shortName ++ pString;
-  local bodyString::String = "<pre>" ++ justShow(body.pp) ++ "</pre>";
+      "\n<li> <code>" ++ name.shortName ++ pString ++ "</code>";
+  local bodyString::String =
+      "<pre class=\"code extensibella\">" ++ show(100, body.pp) ++
+      "</pre>";
   return startString ++ " : " ++ bodyString;
 }
 
@@ -383,8 +387,9 @@ String ::= filename::String thmDocs::String
 {
   return if isSpace(thmDocs)
          then ""
-         else "<h2>" ++ filename ++ "</h2>\n" ++
-              "<ul>" ++ thmDocs ++ "\n</ul>\n";
+         else "<div class=\"section\">\n" ++
+              "<h2>" ++ filename ++ "</h2>\n" ++
+              "<ul>" ++ thmDocs ++ "\n</ul>\n</div>\n";
 }
 
 function formatHtmlFull
@@ -392,11 +397,13 @@ String ::= fileDocs::[String]
 {
   return "<html>\n" ++
          "<body>\n" ++
+         "<div class=\"section\">\n" ++
          "<h1>Extensibella Standard Library</h1>\n" ++
          "<p>All theorems are part of the <tt>extensibella:stdLib</tt> " ++
          "reasoning module.  Then, for example, the full name of the " ++
          "theorem listed below as <tt>plus_integer_unique</tt> is " ++
-         "<tt>extensibella:stdLib:plus_integer_unique</tt>.</p>\n\n" ++
+         "<tt>extensibella:stdLib:plus_integer_unique</tt>.</p>\n" ++
+         "</div>\n\n" ++
          implode("\n\n", fileDocs) ++
          "</body>\n" ++
          "</html>\n";
