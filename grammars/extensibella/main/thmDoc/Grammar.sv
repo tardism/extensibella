@@ -18,7 +18,7 @@ synthesized attribute genThmDocHtml::Boolean occurs on CmdArgs;
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
 {
-  top.genThmDocHtml = true;
+  top.genThmDocHtml = false;
 }
 
 
