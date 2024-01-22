@@ -4,7 +4,6 @@ grammar extensibella:toAbella:abstractSyntax;
 nonterminal AnyCommand with
    pp, abella_pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
-   stateListIn, stateListOut,
    newProofState,
    isQuit, interactive,
    boundNames,

@@ -88,6 +88,18 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
 function build_interactive_commands
 ListOfCommands ::= parsers::AllParsers
 {
+  local cq::(AnyCommand, Boolean) = read_one_command(parsers);
+  return if cq.2
+         then addListOfCommands(cq.1, emptyListOfCommands())
+         else addListOfCommands(cq.1,
+                 build_interactive_commands(parsers));
+}
+
+--Read a single command, returning (cmd, isQuit)
+--Return isQuit is more efficient:  can throw away decorated cmd
+function read_one_command
+(AnyCommand, Boolean) ::= parsers::AllParsers
+{
   local printed_prompt::IOToken = printT(" < ", unsafeIO());
   local raw_input::IOVal<String> = read_full_input(printed_prompt);
   local input::String = stripExternalWhiteSpace(raw_input.iovalue);
@@ -98,11 +110,8 @@ ListOfCommands ::= parsers::AllParsers
         then result.parseTree.ast
         else anyParseFailure(result.parseErrors);
   return if isSpace(input)
-         then build_interactive_commands(parsers)
-         else if any_a.isQuit
-              then addListOfCommands(any_a, emptyListOfCommands())
-              else addListOfCommands(any_a,
-                      build_interactive_commands(parsers));
+         then read_one_command(parsers)
+         else (any_a, any_a.isQuit);
 }
 
 

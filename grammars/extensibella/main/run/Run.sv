@@ -170,9 +170,12 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 ----------------------------------------------------------------------
 -- Actually run the commands
 ----------------------------------------------------------------------
+type PriorStep = Decorated RunCommands;
+
 inherited attribute filename::String;
 inherited attribute parsers::AllParsers;
-inherited attribute stateList::StateList;
+inherited attribute priorStep::PriorStep;
+inherited attribute currentProverState::ProverState;
 inherited attribute abella::ProcessHandle;
 inherited attribute ioin::IOToken;
 
@@ -180,20 +183,41 @@ synthesized attribute runResult::IOVal<Integer>;
 
 synthesized attribute isNull::Boolean;
 
+--number of Abella commands run by this step in the end
+synthesized attribute numAbellaCommands::Integer;
+
 nonterminal RunCommands with
-   filename, parsers, stateList, abella, ioin, runResult, isNull,
-   config, interactive, currentModule;
+   filename, parsers, abella, ioin, runResult, isNull, config,
+   currentProverState, priorStep, numAbellaCommands, interactive,
+   currentModule;
 propagate filename, parsers, abella, config, interactive,
    currentModule on RunCommands;
+
+
+{-
+
+
+  TODO:
+  - Add aspect productions here for *Command to set the equivalent of
+    stateListOut, which should be a state, a number of commands, and a
+    PriorState
+  - Change the processing functions to produce the equivalent of
+    stateListOut, which is again a state, a number of commands, and a
+    PriorState
+  - Set the currentProverState, priorStep, and numCommands attributes
+    accordingly in addRunCommands
+
+
+-}
 
 
 abstract production emptyRunCommands
 top::RunCommands ::=
 {
   top.isNull = true;
+  top.numAbellaCommands = 0; --not really needed
 
-  local currentProverState::ProverState = head(top.stateList).snd;
-  local state::ProofState = currentProverState.state;
+  local state::ProofState = top.currentProverState.state;
 
   --Permit the addition of extra actions to be carried out
   production attribute io::(IOToken ::= IOToken) with combineIO;
@@ -202,7 +226,7 @@ top::RunCommands ::=
   --clean up by exiting Abella now that there is nothing more to do
   local finalIO::IOToken =
       exitAbella([anyNoOpCommand(quitCommand())], io(top.ioin),
-         top.abella, currentProverState.debug, top.config);
+         top.abella, top.currentProverState.debug, top.config);
 
   top.runResult =
       if !top.config.runningFile --non-file can quit whenever
@@ -223,19 +247,18 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
 {
   top.isNull = false;
 
-  local currentProverState::ProverState = head(top.stateList).snd;
-  production state::ProofState = currentProverState.state;
-  local debug::Boolean = currentProverState.debug;
+  production state::ProofState = top.currentProverState.state;
+  local debug::Boolean = top.currentProverState.debug;
 
   {-
     PROCESS COMMAND
   -}
   --Translate command
   ----------------------------
-  a.typeEnv = currentProverState.knownTypes;
-  a.relationEnv = currentProverState.knownRels;
-  a.constructorEnv = currentProverState.knownConstrs;
-  a.proverState = currentProverState;
+  a.typeEnv = top.currentProverState.knownTypes;
+  a.relationEnv = top.currentProverState.knownRels;
+  a.constructorEnv = top.currentProverState.knownConstrs;
+  a.proverState = top.currentProverState;
   a.boundNames = state.boundNames_out;
   a.stateListIn = top.stateList;
   a.ignoreDefErrors = false; --running, so check defs
@@ -300,7 +323,7 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
   local finalDisplay::FullDisplay = duringed.2;
   local width::Integer =
       if speak_to_abella || is_error
-      then currentProverState.displayWidth
+      then top.currentProverState.displayWidth
       else head(a.stateListOut).2.displayWidth;
   production output_output::String =
       if speak_to_abella && continueProcessing
@@ -309,9 +332,9 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
               nonErrorProverState.knownRels,
               nonErrorProverState.knownConstrs, width) ++ "\n"
       else our_own_output ++
-           decorateAndShow(state, currentProverState.knownTypes,
-              currentProverState.knownRels,
-              currentProverState.knownConstrs, width) ++ "\n";
+           decorateAndShow(state, top.currentProverState.knownTypes,
+              top.currentProverState.knownRels,
+              top.currentProverState.knownConstrs, width) ++ "\n";
   local io_action_6::IOToken =
       if top.config.showUser
       then printT(output_output, io_action_5.io)
@@ -338,12 +361,18 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
       io(if a.isQuit then exited else io_action_6);
 
   rest.ioin = finalIO;
-  rest.stateList =
+  rest.currentProverState =
        if speak_to_abella
        then nonErrorStateList
        else if is_error
-       then top.stateList
+       then top.currentProverState
        else a.stateListOut;
+  rest.priorState =
+       if speak_to_abella
+       then top
+       else if is_error
+       then top.priorState
+       else _;
 
   top.runResult =
       if top.config.runningFile
@@ -353,9 +382,9 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
                          "\n", finalIO), 1)
            else if full_a.isError
            then ioval(printT("Could not process full file " ++
-                             top.filename ++ ":\n" ++
-                             showDoc(currentProverState.displayWidth,
-                                     full_a.pp),
+                         top.filename ++ ":\n" ++
+                         showDoc(top.currentProverState.displayWidth,
+                                 full_a.pp),
                          finalIO), 1)
            else if a.isQuit && !rest.isNull
            then ioval(printT("Warning:  File contains Quit before " ++

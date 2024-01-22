@@ -7,7 +7,6 @@ nonterminal NoOpCommand with
    --pp should always end with a newline
    pp, abella_pp,
    toAbella<[NoOpCommand]>, toAbellaMsgs,
-   stateListIn, stateListOut,
    isQuit,
    proverState, interactive;
 propagate proverState, toAbellaMsgs, interactive on NoOpCommand;

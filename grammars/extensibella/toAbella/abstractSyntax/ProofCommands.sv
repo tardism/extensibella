@@ -9,8 +9,7 @@ nonterminal ProofCommand with
    boundNames,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState,
    toAbella<[ProofCommand]>, toAbellaMsgs,
-   isUndo, interactive,
-   stateListIn, stateListOut;
+   isUndo, interactive;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           proverState, boundNames, toAbellaMsgs, interactive
    on ProofCommand;

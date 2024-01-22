@@ -44,12 +44,6 @@ synthesized attribute relationClauseModules::[(QName, QName)];
 --information about the current state of the prover
 inherited attribute proverState::ProverState;
 
---the number of commands and resulting states in reverse order
---first element is current state
-inherited attribute stateListIn::[(Integer, ProverState)];
---modified state list produced by command
-synthesized attribute stateListOut::[(Integer, ProverState)];
-
 --whether the tree being processed should ignore errors in determining
 --whether definitions succeed
 inherited attribute ignoreDefErrors::Boolean;
