@@ -8,6 +8,7 @@ nonterminal ProofCommand with
    pp, abella_pp,
    boundNames,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState,
+   priorStep, newPriorStep, newProverState,
    toAbella<[ProofCommand]>, toAbellaMsgs,
    isUndo, interactive;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
@@ -18,8 +19,9 @@ aspect default production
 top::ProofCommand ::=
 {
   top.isUndo = false;
-  top.stateListOut =
-      error("Should only access ProofCommand.stateListOut for undo");
+  top.newProverState =
+      error("Should only access ProofCommand.newProverState for undo");
+  top.newPriorStep = nothing();
 }
 
 
@@ -363,8 +365,18 @@ top::ProofCommand ::=
   top.pp = cat(text("undo."), line());
   top.abella_pp = "undo.  ";
 
-  top.toAbella = repeat(undoCommand(), head(top.stateListIn).1);
+  local undone::Maybe<(Integer, PriorStep, ProverState)> =
+      undoN(1, top.priorStep);
+  top.newProverState = undone.fromJust.3;
+  top.newPriorStep = just(undone.fromJust.2);
 
+  top.toAbella = repeat(undoCommand(), undone.fromJust.1);
+
+  top.toAbellaMsgs <-
+      case undone of
+      | nothing() -> [errorMsg("Cannot go back that far")]
+      | just(_) -> []
+      end;
   top.toAbellaMsgs <-
       if top.interactive
       then []
@@ -372,7 +384,6 @@ top::ProofCommand ::=
                      "non-interactive settings")];
 
   top.isUndo = true;
-  top.stateListOut = tail(top.stateListIn);
 }
 
 

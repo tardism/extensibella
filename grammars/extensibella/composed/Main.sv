@@ -2,6 +2,7 @@ grammar extensibella:composed;
 
 imports extensibella:main:util;
 imports extensibella:main;
+imports extensibella:toAbella:abstractSyntax only SetOfParsers;
 
 function main
 IOVal<Integer> ::= largs::[String] ioin::IOToken

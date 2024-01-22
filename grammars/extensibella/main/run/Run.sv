@@ -1,10 +1,9 @@
 grammar extensibella:main:run;
 
 
-type StateList = [(Integer, ProverState)];
 type DecCmds = Decorated RunCommands with {
-                  currentModule, filename, parsers, stateList, config,
-                  abella, ioin, interactive, cmdID
+                  currentModule, filename, parsers, priorStep, config,
+                  proverState, abella, ioin, interactive, cmdID
                };
 
 
@@ -87,8 +86,8 @@ Either<IOVal<String>  DecCmds> ::=
               \ a::AnyCommand ->
                 decorate a with {
                   currentModule = error("currentModule not needed");
-                  stateListIn = error("stateListIn not needed");
                   proverState = startProverState;
+                  priorStep = error("priorStep not needed");
                   typeEnv = startProverState.knownTypes;
                   relationEnv = startProverState.knownRels;
                   constructorEnv = startProverState.knownConstrs;
@@ -110,7 +109,18 @@ Either<IOVal<String>  DecCmds> ::=
   cmds.currentModule = currentModule;
   cmds.filename = filename;
   cmds.parsers = parsers;
-  cmds.stateList = [(-1, handleIncoming.2)];
+  cmds.proverState = handleIncoming.2;
+  cmds.priorStep =
+      decorate emptyRunCommands() with {
+         currentModule = currentModule;
+         interactive = config.runsInteractive;
+         priorStep = error("initial.priorStep");
+         proverState = handleIncoming.2;
+         abella = started.iovalue.fromRight;
+         ioin = error("initial.ioin");
+         parsers = parsers;
+         config = config;
+      };
   cmds.config = config;
   cmds.abella = started.iovalue.fromRight;
   cmds.ioin = sendIncoming.io;
@@ -170,54 +180,18 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 ----------------------------------------------------------------------
 -- Actually run the commands
 ----------------------------------------------------------------------
-type PriorStep = Decorated RunCommands;
-
 inherited attribute filename::String;
-inherited attribute parsers::AllParsers;
-inherited attribute priorStep::PriorStep;
-inherited attribute currentProverState::ProverState;
-inherited attribute abella::ProcessHandle;
-inherited attribute ioin::IOToken;
 
 synthesized attribute runResult::IOVal<Integer>;
 
-synthesized attribute isNull::Boolean;
+attribute
+   filename, runResult
+occurs on RunCommands;
 
---number of Abella commands run by this step in the end
-synthesized attribute numAbellaCommands::Integer;
-
-nonterminal RunCommands with
-   filename, parsers, abella, ioin, runResult, isNull, config,
-   currentProverState, priorStep, numAbellaCommands, interactive,
-   currentModule;
-propagate filename, parsers, abella, config, interactive,
-   currentModule on RunCommands;
-
-
-{-
-
-
-  TODO:
-  - Add aspect productions here for *Command to set the equivalent of
-    stateListOut, which should be a state, a number of commands, and a
-    PriorState
-  - Change the processing functions to produce the equivalent of
-    stateListOut, which is again a state, a number of commands, and a
-    PriorState
-  - Set the currentProverState, priorStep, and numCommands attributes
-    accordingly in addRunCommands
-
-
--}
-
-
-abstract production emptyRunCommands
+aspect production emptyRunCommands
 top::RunCommands ::=
 {
-  top.isNull = true;
-  top.numAbellaCommands = 0; --not really needed
-
-  local state::ProofState = top.currentProverState.state;
+  local state::ProofState = top.proverState.state;
 
   --Permit the addition of extra actions to be carried out
   production attribute io::(IOToken ::= IOToken) with combineIO;
@@ -226,7 +200,7 @@ top::RunCommands ::=
   --clean up by exiting Abella now that there is nothing more to do
   local finalIO::IOToken =
       exitAbella([anyNoOpCommand(quitCommand())], io(top.ioin),
-         top.abella, top.currentProverState.debug, top.config);
+         top.abella, top.proverState.debug, top.config);
 
   top.runResult =
       if !top.config.runningFile --non-file can quit whenever
@@ -234,7 +208,7 @@ top::RunCommands ::=
       else if state.inProof
       then ioval(printT("Proof in progress at end of file " ++
                         top.filename ++ "\n", finalIO), 1)
-      else if !null(head(top.stateList).2.remainingObligations)
+      else if !null(top.proverState.remainingObligations)
       then ioval(printT("Not all proof obligations fulfilled in " ++
                         "file " ++ top.filename ++ "\n", finalIO), 1)
       else ioval(printT("Successfully processed file " ++
@@ -245,22 +219,33 @@ top::RunCommands ::=
 abstract production addRunCommands
 top::RunCommands ::= a::AnyCommand rest::RunCommands
 {
+  forwards to error("Should not forward");
+
   top.isNull = false;
 
-  production state::ProofState = top.currentProverState.state;
-  local debug::Boolean = top.currentProverState.debug;
+  rest.currentModule = top.currentModule;
+  rest.filename = top.filename;
+  rest.parsers = top.parsers;
+  rest.abella = top.abella;
+  rest.config = top.config;
+  rest.interactive = top.interactive;
+
+  production state::ProofState = top.proverState.state;
+  local debug::Boolean = top.proverState.debug;
 
   {-
     PROCESS COMMAND
   -}
   --Translate command
   ----------------------------
-  a.typeEnv = top.currentProverState.knownTypes;
-  a.relationEnv = top.currentProverState.knownRels;
-  a.constructorEnv = top.currentProverState.knownConstrs;
-  a.proverState = top.currentProverState;
+  a.typeEnv = top.proverState.knownTypes;
+  a.relationEnv = top.proverState.knownRels;
+  a.constructorEnv = top.proverState.knownConstrs;
+  a.proverState = top.proverState;
   a.boundNames = state.boundNames_out;
-  a.stateListIn = top.stateList;
+  a.priorStep = top.priorStep;
+  a.currentModule = top.currentModule;
+  a.interactive = top.interactive;
   a.ignoreDefErrors = false; --running, so check defs
   --whether we have an error
   local is_error::Boolean = any(map((.isError), a.toAbellaMsgs));
@@ -292,39 +277,45 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
   {-
     FURTHER STATE PROCESSING
   -}
+  --whether the command was full undo in PG
+  local fullUndo::Boolean =
+      case a.newPriorStep of
+      | nothing() -> false
+      | just(s) -> s.isNull
+      end;
   --whether to do the processing or launder the IOToken through
   local continueProcessing::Boolean =
-      speak_to_abella && !is_error && !null(a.stateListOut);
+      speak_to_abella && !is_error && !fullUndo;
   --Run any during commands for the current subgoal
-  local io_action_3::IOVal<(StateList, FullDisplay)> =
+  local io_action_3::IOVal<(Integer, ProverState, FullDisplay)> =
       if continueProcessing
-      then runDuringCommands(a.stateListOut, full_a,
+      then runDuringCommands(a.newProverState, full_a,
               top.parsers.from_parse, io_action_2, top.abella, debug,
               top.config)
       else ioval(io_action_2, error("Should not access (3)"));
-  local duringed::(StateList, FullDisplay) = io_action_3.iovalue;
+  local duringed::(Integer, ProverState, FullDisplay) =
+      io_action_3.iovalue;
   --After-proof commands
-  local io_action_4::IOVal<StateList> =
+  local io_action_4::IOVal<(Integer, ProverState)> =
       if continueProcessing
-      then runAfterProofCommands(duringed.1, io_action_3.io,
+      then runAfterProofCommands(duringed.2, io_action_3.io,
               top.abella, debug, top.config)
       else ioval(io_action_3.io, error("Should not access (4)"));
-  local aftered::StateList = io_action_4.iovalue;
+  local aftered::(Integer, ProverState) = io_action_4.iovalue;
   --Process any imported theorems we can now add
-  local io_action_5::IOVal<StateList> =
+  local io_action_5::IOVal<(Integer, ProverState)> =
       if continueProcessing
-      then runIncoming(aftered, io_action_4.io, top.abella,
+      then runIncoming(aftered.2, io_action_4.io, top.abella,
                        debug, top.config)
       else ioval(io_action_4.io, error("Should not access (5)"));
-  local nonErrorStateList::StateList = io_action_5.iovalue;
-  local nonErrorProverState::ProverState = head(nonErrorStateList).2;
+  local nonErrorProverState::ProverState = io_action_5.iovalue.2;
   --Show to user
   ----------------------------
-  local finalDisplay::FullDisplay = duringed.2;
+  local finalDisplay::FullDisplay = duringed.3;
   local width::Integer =
       if speak_to_abella || is_error
-      then top.currentProverState.displayWidth
-      else head(a.stateListOut).2.displayWidth;
+      then top.proverState.displayWidth
+      else a.newProverState.displayWidth;
   production output_output::String =
       if speak_to_abella && continueProcessing
       then decorateAndShow(finalDisplay,
@@ -332,9 +323,9 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
               nonErrorProverState.knownRels,
               nonErrorProverState.knownConstrs, width) ++ "\n"
       else our_own_output ++
-           decorateAndShow(state, top.currentProverState.knownTypes,
-              top.currentProverState.knownRels,
-              top.currentProverState.knownConstrs, width) ++ "\n";
+           decorateAndShow(state, top.proverState.knownTypes,
+              top.proverState.knownRels,
+              top.proverState.knownConstrs, width) ++ "\n";
   local io_action_6::IOToken =
       if top.config.showUser
       then printT(output_output, io_action_5.io)
@@ -360,19 +351,29 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
   local finalIO::IOToken =
       io(if a.isQuit then exited else io_action_6);
 
+  --Note:  The only way to fix the MWDA error here is to move all the
+  --processing attrs to extensibella:toAbella:abstractSyntax
+  top.numAbellaCommands = length(a.toAbella) +
+      if continueProcessing --only add others if they happened
+      then duringed.1 + aftered.1 + io_action_5.iovalue.1
+      else 0;
+
   rest.ioin = finalIO;
-  rest.currentProverState =
+  rest.proverState =
        if speak_to_abella
-       then nonErrorStateList
+       then nonErrorProverState
        else if is_error
-       then top.currentProverState
-       else a.stateListOut;
-  rest.priorState =
+       then top.proverState
+       else a.newProverState;
+  rest.priorStep =
        if speak_to_abella
        then top
        else if is_error
-       then top.priorState
-       else _;
+       then top.priorStep --can't use this if this was bad
+       else case a.newPriorStep of
+            | nothing() -> top
+            | just(s) -> s
+            end;
 
   top.runResult =
       if top.config.runningFile
@@ -383,7 +384,7 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
            else if full_a.isError
            then ioval(printT("Could not process full file " ++
                          top.filename ++ ":\n" ++
-                         showDoc(top.currentProverState.displayWidth,
+                         showDoc(top.proverState.displayWidth,
                                  full_a.pp),
                          finalIO), 1)
            else if a.isQuit && !rest.isNull
@@ -392,8 +393,7 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
            else rest.runResult
       else if a.isQuit
            then ioval(finalIO, 0)
-           else if !is_error &&
-                   null(a.stateListOut) --full undo in PG
+           else if !is_error && fullUndo
            then expect_quit("Error:  After full undo, must have a " ++
                    "Quit command to finish", finalIO)
                --use unsafeTrace to force it to print output
@@ -420,12 +420,11 @@ function combineIO
 
 --Run any during commands that apply at this subgoal
 function runDuringCommands
-IOVal<(StateList, FullDisplay)> ::=
-   stateListIn::StateList displayIn::FullDisplay
+IOVal<(Integer, ProverState, FullDisplay)> ::=
+   initProverState::ProverState displayIn::FullDisplay
    from_parse::Parser<FullDisplay_c> ioin::IOToken
    abella::ProcessHandle debug::Boolean config::Configuration
 {
-  local initProverState::ProverState = head(stateListIn).2;
   local shouldClean::Boolean =
       --check for errors from given commands
       !displayIn.isError &&
@@ -448,23 +447,21 @@ IOVal<(StateList, FullDisplay)> ::=
               "Run During Commands", cleaned.iovalue, cleaned.io)
       else debugOutput(debug, config, cleanCommands,
               "Run During Commands", "", ioin);
-  local cleanedStateList::StateList =
-      (head(stateListIn).1 + length(cleanCommands),
-       dropDuringCommand(setProofState(initProverState,
-                            cleaned_display.proof))
-      )::tail(stateListIn);
+  local cleanedState::ProverState =
+      --(head(stateListIn).1 + length(cleanCommands),
+      dropDuringCommand(setProofState(initProverState,
+                                      cleaned_display.proof));
   --get the Extensibella version of the proof state
-  local penultimateStateList::StateList =
-      if shouldClean then cleanedStateList else stateListIn;
-  local proofState::ProofState = head(penultimateStateList).2.state;
+  local penultimateState::ProverState =
+      if shouldClean then cleanedState else initProverState;
+  local proofState::ProofState = penultimateState.state;
   proofState.typeEnv = initProverState.knownTypes;
   proofState.relationEnv = initProverState.knownRels;
   proofState.constructorEnv = initProverState.knownConstrs;
   return ioval(outputCleanCommands,
-               ((head(penultimateStateList).1,
-                 setProofState(head(penultimateStateList).2,
-                               proofState.fromAbella)
-                )::tail(penultimateStateList),
+               (if shouldClean then length(cleanCommands) else 0,
+                setProofState(penultimateState,
+                              proofState.fromAbella),
                 if shouldClean
                 then cleaned_display
                 else displayIn));
@@ -474,11 +471,10 @@ IOVal<(StateList, FullDisplay)> ::=
 --Once a proof is done to Abella's satisfaction, do the after-proof
 --commands needed for it
 function runAfterProofCommands
-IOVal<StateList> ::=
-   stateListIn::StateList ioin::IOToken abella::ProcessHandle
+IOVal<(Integer, ProverState)> ::=
+   initProverState::ProverState ioin::IOToken abella::ProcessHandle
    debug::Boolean config::Configuration
 {
-  local initProverState::ProverState = head(stateListIn).2;
   local proofDone::Boolean =
       case initProverState.state of
       | proofCompleted() -> true
@@ -500,26 +496,25 @@ IOVal<StateList> ::=
               "After-Proof Commands", "", ioin);
 
   --Put it together
-  local newStateList::StateList =
-      (head(stateListIn).1 +
-       if runAfterCommands then length(afterCommands) else 0,
-       finishProof(initProverState))::tail(stateListIn);
+  local newState::(Integer, ProverState) =
+      (if runAfterCommands then length(afterCommands) else 0,
+       finishProof(initProverState));
   return ioval(if runAfterCommands then outputAfterCommands else ioin,
-               if proofDone then newStateList else stateListIn);
+               if proofDone then newState else (0, initProverState));
 }
 
 
 --If the proof is done, pass through any imported proof pieces that
 --can now be done
 function runIncoming
-IOVal<StateList> ::=
-   stateListIn::StateList ioin::IOToken abella::ProcessHandle
+IOVal<(Integer, ProverState)> ::=
+   stateIn::ProverState ioin::IOToken abella::ProcessHandle
    debug::Boolean config::Configuration
 {
   local handleIncoming::([AnyCommand], ProverState) =
-      if head(stateListIn).2.state.inProof
-      then ([], head(stateListIn).2)
-      else handleIncomingThms(head(stateListIn).2);
+      if stateIn.state.inProof
+      then ([], stateIn)
+      else handleIncomingThms(stateIn);
   local incomingCommands::[AnyCommand] = handleIncoming.1;
   local incominged::IOVal<String> =
       sendCmdsToAbella(map((.abella_pp), incomingCommands), abella,
@@ -531,13 +526,12 @@ IOVal<StateList> ::=
               "Imported Theorems", incominged.iovalue, incominged.io)
       else debugOutput(debug, config, incomingCommands,
               "Imported Theorems", "", ioin);
-  local completeStateList::[(Integer, ProverState)] =
-      (head(stateListIn).1 + length(handleIncoming.1),
-       handleIncoming.2)::tail(stateListIn);
+  local completeState::(Integer, ProverState) =
+      (length(handleIncoming.1), handleIncoming.2);
   return ioval(outputIncomingThms,
                if !null(incomingCommands)
-               then completeStateList
-               else stateListIn);
+               then completeState
+               else (0, stateIn));
 }
 
 

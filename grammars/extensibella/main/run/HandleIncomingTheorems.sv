@@ -16,7 +16,7 @@ function handleIncomingThms
       flatMap(\ c::AnyCommand ->
                 decorate c with {
                    currentModule = error("currentModule not needed");
-                   stateListIn = error("stateListIn not needed");
+                   priorStep = error("priorStep not needed");
                    proverState = initialState;
                    typeEnv = initialState.knownTypes;
                    relationEnv = initialState.knownRels;

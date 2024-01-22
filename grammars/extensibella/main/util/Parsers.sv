@@ -9,17 +9,16 @@ imports extensibella:outerfaceFile;
 --This is much nicer than the full type:
 type Parser<a> = (ParseResult<a> ::= String String);
 
-type AllParsers = Decorated SetOfParsers with {};
-
 
 {-
   In order to have extensible parsers along with extensible actions,
   we have a type to hold them and pass them to actions
 -}
 
-nonterminal SetOfParsers with
+attribute
    module_decl_parse, cmd_parse, from_parse, file_parse, import_parse,
-   interface_parse, outerface_parse;
+   interface_parse, outerface_parse
+occurs on SetOfParsers;
 
 synthesized attribute module_decl_parse::Parser<ModuleDecl_c>;
 synthesized attribute cmd_parse::Parser<AnyCommand_c>;
@@ -46,4 +45,6 @@ top::SetOfParsers ::=
   top.import_parse = import_parse;
   top.interface_parse = interface_parse;
   top.outerface_parse = outerface_parse;
+
+  forwards to error("Should not forward");
 }

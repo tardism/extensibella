@@ -1242,7 +1242,7 @@ function getProofSteps
       | emptyRunCommands() -> []
       | addRunCommands(anyTopCommand(_), _) -> []
       | addRunCommands(c, rest) ->
-        (head(cmds.stateList).2.state, c.toAbella)::getProofSteps(rest)
+        (cmds.proverState.state, c.toAbella)::getProofSteps(rest)
       end;
 }
 

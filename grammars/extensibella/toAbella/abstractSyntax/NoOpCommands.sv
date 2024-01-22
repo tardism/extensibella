@@ -7,13 +7,11 @@ nonterminal NoOpCommand with
    --pp should always end with a newline
    pp, abella_pp,
    toAbella<[NoOpCommand]>, toAbellaMsgs,
+   priorStep, newPriorStep, newProverState,
    isQuit,
    proverState, interactive;
 propagate proverState, toAbellaMsgs, interactive on NoOpCommand;
 
---because we only intend to pass these through to Abella, we don't
---   need to actually know anything about the option or its value
---   other than its text, other than our own debug option
 abstract production setCommand
 top::NoOpCommand ::= opt::String val::String
 {
@@ -24,13 +22,13 @@ top::NoOpCommand ::= opt::String val::String
   top.toAbella =
       if abellaSetting then [setCommand(opt, val)] else [];
 
-  top.stateListOut =
-      (if abellaSetting then 1 else 0,
-       if opt == "debug"
-       then setProverDebug(top.proverState, val == "on")
-       else if opt == "display_width"
-       then setProverWidth(top.proverState, toInteger(val))
-       else top.proverState)::top.stateListIn;
+  top.newProverState =
+      if opt == "debug"
+      then setProverDebug(top.proverState, val == "on")
+      else if opt == "display_width"
+      then setProverWidth(top.proverState, toInteger(val))
+      else top.proverState;
+  top.newPriorStep = nothing();
 
   top.toAbellaMsgs <-
       if opt == "debug"
@@ -79,6 +77,9 @@ top::NoOpCommand ::= theoremName::QName
       findTheorem(theoremName, top.proverState);
   top.toAbella = [showCommand(head(possibleThms).1)];
 
+  top.newProverState = top.proverState;
+  top.newPriorStep = nothing();
+
   top.toAbellaMsgs <-
       case possibleThms of
       | [] ->
@@ -97,8 +98,6 @@ top::NoOpCommand ::= theoremName::QName
                      "non-interactive settings")]
       else [];
 
-  top.stateListOut = (1, top.proverState)::top.stateListIn;
-
   top.isQuit = false;
 }
 
@@ -111,14 +110,14 @@ top::NoOpCommand ::=
 
   top.toAbella = [top];
 
+  top.newProverState = top.proverState;
+  top.newPriorStep = nothing();
+
   top.toAbellaMsgs <-
       if !top.interactive
       then [errorMsg("Quit command should not be used in " ++
                      "non-interactive settings")]
       else [];
-
-  --this probably isn't needed
-  top.stateListOut = top.stateListIn;
 
   top.isQuit = true;
 }
@@ -132,24 +131,25 @@ top::NoOpCommand ::= n::Integer
                realLine());
   top.abella_pp = justShow(top.pp);
 
-  local trans_n::Integer =
-      foldr(\ p::(Integer, ProverState) rest::Integer -> p.1 + rest,
-            0, take(n, top.stateListIn));
+  local undone::Maybe<(Integer, PriorStep, ProverState)> =
+      undoN(n, top.priorStep);
+  top.newPriorStep = just(undone.fromJust.2);
+  top.newProverState = undone.fromJust.3;
+
   --send a set of "back one"s so sending them to Abella and reading
   --them back works correctly
-  top.toAbella = repeat(backCommand(1), trans_n);
+  top.toAbella = repeat(backCommand(1), undone.fromJust.1);
 
   top.toAbellaMsgs <-
-      if length(top.stateListIn) < n
-      then [errorMsg("Cannot go back that far")]
-      else [];
+      case undone of
+      | nothing() -> [errorMsg("Cannot go back that far")]
+      | _ -> []
+      end;
   top.toAbellaMsgs <-
       if !top.interactive
       then [errorMsg("#back command should not be used in " ++
                      "non-interactive settings")]
       else [];
-
-  top.stateListOut = drop(n, top.stateListIn);
 
   top.isQuit = false;
 }
@@ -163,15 +163,18 @@ top::NoOpCommand ::=
 
   top.toAbella = [top];
 
-  top.toAbellaMsgs <- [errorMsg("Cannot #reset")];
+  --this command is a fiction, so nothing here
+  top.newProverState = error("resetCommand.newProverState");
+  top.newPriorStep = error("resetCommand.newPriorStep");
 
-  --shouldn't need this since this command isn't allowed
-  top.stateListOut = top.stateListIn;
+  top.toAbellaMsgs <- [errorMsg("Cannot #reset")];
 
   top.isQuit = false;
 }
 
 
+--this doesn't really count as a command since it shouldn't be used
+--other than by Proof General
 abstract production showCurrentCommand
 top::NoOpCommand ::=
 {
@@ -181,15 +184,14 @@ top::NoOpCommand ::=
 
   top.toAbella = [];
 
+  top.newProverState = top.proverState;
+  top.newPriorStep = just(top.priorStep);
+
   top.toAbellaMsgs <-
       if !top.interactive
       then [errorMsg("'Show $$current.' command should not be " ++
                      "used in non-interactive settings")]
       else [];
-
-  --this doesn't really count as a command since it shouldn't be used
-  --other than by Proof General
-  top.stateListOut = top.stateListIn;
 
   top.isQuit = false;
 }

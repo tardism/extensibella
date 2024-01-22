@@ -5,11 +5,12 @@ nonterminal AnyCommand with
    pp, abella_pp,
    toAbella<[AnyCommand]>, toAbellaMsgs,
    newProofState,
+   priorStep, newPriorStep, newProverState,
    isQuit, interactive,
    boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-          proverState, boundNames, toAbellaMsgs, interactive
+      proverState, boundNames, toAbellaMsgs, interactive, priorStep
    on AnyCommand;
 
 
@@ -28,12 +29,11 @@ top::AnyCommand ::= c::TopCommand
 
   c.newProofState = top.newProofState;
 
-  top.stateListOut =
-      (length(c.toAbella),
-       updateProverStateTop(top.proverState, top.newProofState,
-          c.newTheorems, c.tys, c.rels, c.constrs, c.provingTheorems,
-          c.provingExtInds, c.duringCommands, c.afterCommands)
-      )::top.stateListIn;
+  top.newProverState =
+      updateProverStateTop(top.proverState, top.newProofState,
+         c.newTheorems, c.tys, c.rels, c.constrs, c.provingTheorems,
+         c.provingExtInds, c.duringCommands, c.afterCommands);
+  top.newPriorStep = nothing();
 
   top.isQuit = false;
 }
@@ -47,18 +47,19 @@ top::AnyCommand ::= c::ProofCommand
 
   top.toAbella = map(anyProofCommand, c.toAbella);
 
+  top.newProverState =
+      if c.isUndo
+      then c.newProverState
+      else setProofState(top.proverState, top.newProofState);
+  top.newPriorStep =
+      if c.isUndo
+      then c.newPriorStep
+      else nothing();
+
   top.toAbellaMsgs <-
       if top.proverState.state.inProof
       then []
       else [errorMsg("Cannot use proof commands when not in proof")];
-
-  c.stateListIn = top.stateListIn;
-  top.stateListOut =
-      if c.isUndo
-      then c.stateListOut
-      else (length(c.toAbella),
-            setProofState(top.proverState, top.newProofState)
-           )::top.stateListIn;
 
   top.isQuit = false;
 }
@@ -72,8 +73,8 @@ top::AnyCommand ::= c::NoOpCommand
 
   top.toAbella = map(anyNoOpCommand, c.toAbella);
 
-  c.stateListIn = top.stateListIn;
-  top.stateListOut = c.stateListOut;
+  top.newProverState = c.newProverState;
+  top.newPriorStep = c.newPriorStep;
 
   top.isQuit = c.isQuit;
 }
@@ -89,10 +90,10 @@ top::AnyCommand ::= parseErrors::String
 
   top.toAbella = [];
 
-  top.toAbellaMsgs <- [errorMsg(parseErrors)];
+  top.newProverState = top.proverState;
+  top.newPriorStep = just(top.priorStep);
 
-  --shouldn't be needed since this is an error
-  top.stateListOut = top.stateListIn;
+  top.toAbellaMsgs <- [errorMsg(parseErrors)];
 
   top.isQuit = false;
 }

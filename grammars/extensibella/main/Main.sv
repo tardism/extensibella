@@ -7,6 +7,9 @@ imports extensibella:main:generate;
 imports extensibella:main:compose;
 imports extensibella:main:thmDoc;
 
+imports extensibella:toAbella:abstractSyntax only
+   Configuration, SetOfParsers, AllParsers;
+
 imports silver:util:cmdargs;
 
 

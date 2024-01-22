@@ -237,7 +237,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
   local encodedProofDefs::[AnyCommand] =
       flatMap(\ c::AnyCommand ->
                 decorate c with {
-                   stateListIn = error("stateListIn not needed");
+                   priorStep = error("priorStep not needed");
                    proverState = proverState;
                    typeEnv = proverState.knownTypes;
                    relationEnv = proverState.knownRels;
