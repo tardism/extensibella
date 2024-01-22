@@ -1065,18 +1065,18 @@ DecCmds ::= c::DecCmds
 {
   return
       case c of
-      | emptyRunCommands() -> error("dropFirstTopCommand(empty)")
       | addRunCommands(a, r) -> dropFirstTopCommand_help(r)
+      | emptyRunCommands() -> error("dropFirstTopCommand(empty)")
       end;
 }
 function dropFirstTopCommand_help
 DecCmds ::= c::DecCmds
 {
   return case c of
-         | emptyRunCommands() -> c
          | addRunCommands(anyTopCommand(t), r) -> c
          | addRunCommands(_, r) ->
            dropFirstTopCommand_help(r)
+         | emptyRunCommands() -> c
          end;
 }
 
@@ -1088,15 +1088,14 @@ function getProof
 {
   return
       case c of
-      | emptyRunCommands() -> error("getProof(empty)")
       | addRunCommands(a, r) -> getProof_help(r)
+      | emptyRunCommands() -> error("getProof(empty)")
       end;
 }
 function getProof_help
 (DecCmds, String) ::= c::DecCmds
 {
   return case c of
-         | emptyRunCommands() -> (c, "")
          | addRunCommands(anyTopCommand(t), r) -> (c, "")
          | addRunCommands(anyProofCommand(p), r) ->
            let rest::(DecCmds, String) = getProof_help(r)
@@ -1112,6 +1111,7 @@ function getProof_help
            end
          | addRunCommands(anyParseFailure(e), r) ->
            error("How did this get here?")
+         | emptyRunCommands() -> (c, "")
          end;
 }
 
@@ -1141,12 +1141,12 @@ function dropAllOccurrences
          | [] -> []
          | (q, c)::r ->
            case c of
-           | emptyRunCommands() ->
-             (q, c)::dropAllOccurrences(r, thms)
            | addRunCommands(anyTopCommand(t), _)
              when t.matchesNames(thms) ->
              (q, dropFirstTopCommand(c))::dropAllOccurrences(r, thms)
            | addRunCommands(a, _) ->
+             (q, c)::dropAllOccurrences(r, thms)
+           | emptyRunCommands() ->
              (q, c)::dropAllOccurrences(r, thms)
            end
          end;
@@ -1159,12 +1159,12 @@ function dropExtInd
          | [] -> []
          | (q, c)::r ->
            case c of
-           | emptyRunCommands() ->
-             (q, c)::dropExtInd(r, rels)
            | addRunCommands(anyTopCommand(t), _)
              when t.matchesRels(rels) ->
              (q, dropFirstTopCommand(c))::dropExtInd(r, rels)
            | addRunCommands(a, _) ->
+             (q, c)::dropExtInd(r, rels)
+           | emptyRunCommands() ->
              (q, c)::dropExtInd(r, rels)
            end
          end;
@@ -1223,10 +1223,10 @@ function dropNonProof_oneMod
 DecCmds ::= c::DecCmds
 {
   return case c of
-         | emptyRunCommands() -> c
          | addRunCommands(anyTopCommand(t), r) when t.isNotProof ->
            dropNonProof_oneMod(dropFirstTopCommand(c))
-         | _ -> c
+         | addRunCommands(_, _) -> c
+         | emptyRunCommands() -> c
          end;
 }
 
@@ -1239,10 +1239,10 @@ function getProofSteps
 {
   return
       case cmds of
-      | emptyRunCommands() -> []
       | addRunCommands(anyTopCommand(_), _) -> []
       | addRunCommands(c, rest) ->
         (cmds.proverState.state, c.toAbella)::getProofSteps(rest)
+      | emptyRunCommands() -> []
       end;
 }
 
