@@ -24,7 +24,7 @@ type DecCmds = Decorated RunCommands with {
 -}
 function run
 IOVal<Integer> ::=
-   filename::String cmds::ListOfCommands
+   filename::String cmds::RunCommands
    parsers::AllParsers
    currentModule::QName
    definitionCmds::ListOfCommands
@@ -33,9 +33,8 @@ IOVal<Integer> ::=
    config::Configuration ioin::IOToken
 {
   local decCmds::Either<IOVal<String>  DecCmds> =
-      buildDecRunCommands(filename, cmds.toRunCommands, parsers,
-         currentModule, definitionCmds, importDefs, importThms,
-         config, ioin);
+      buildDecRunCommands(filename, cmds, parsers, currentModule,
+         definitionCmds, importDefs, importThms, config, ioin);
 
   return
      case decCmds of

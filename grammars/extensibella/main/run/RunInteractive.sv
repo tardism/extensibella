@@ -86,12 +86,12 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
 
 --Create a list of commands by reading them from the user
 function build_interactive_commands
-ListOfCommands ::= parsers::AllParsers
+RunCommands ::= parsers::AllParsers
 {
   local cq::(AnyCommand, Boolean) = read_one_command(parsers);
   return if cq.2
-         then addListOfCommands(cq.1, emptyListOfCommands())
-         else addListOfCommands(cq.1,
+         then addRunCommands(cq.1, emptyRunCommands())
+         else addRunCommands(cq.1,
                  build_interactive_commands(parsers));
 }
 

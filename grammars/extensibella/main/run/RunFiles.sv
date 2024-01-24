@@ -40,9 +40,9 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
      case fileInfo.iovalue of
      | left(err) -> ioval(printT(err, finalIOToken), 1)
      | right(_) ->
-       run(filename, fileAST.2, parsers, fileAST.1.fromJust,
-           processed.1, processed.2, processed.3, config,
-           finalIOToken)
+       run(filename, fileAST.2.toRunCommands, parsers,
+           fileAST.1.fromJust, processed.1, processed.2, processed.3,
+           config, finalIOToken)
      end;
 }
 
