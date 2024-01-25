@@ -126,6 +126,9 @@ top::TopCommand ::= name::QName
         then []
         else [errorMsg("Expected translation constraint obligation" ++
                  " " ++ justShow(q.pp))]
+      | extIndElement(relInfo)::_ ->
+        [errorMsg("Expected Ext_Ind obligation for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | _ ->
         error("Should be impossible (proveConstraint.toAbellaMsgs)")
       end;
