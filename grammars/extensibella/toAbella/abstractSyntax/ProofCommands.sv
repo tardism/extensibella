@@ -207,7 +207,7 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
                     "relation " ++ justShow(rel.pp) ++ " with " ++
                     "unstructured primary component")]
            else if elemAtIndex(args.toList,
-                               rel.fullRel.pcIndex).isUnknownTerm &&
+                               rel.fullRel.pcIndex).isUnknownTermI &&
                    !sameModule(top.currentModule, rel.fullRel.name)
            then [errorMsg("Cannot do case analysis on host " ++
                     "extensible relation with unknown primary " ++

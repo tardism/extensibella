@@ -177,10 +177,17 @@ top::Term ::=
   UNKNOWN TERMS
 -}
 
-aspect production unknownTerm
+aspect production unknownITerm
 top::Term ::= ty::QName
 {
-  top.fromAbella = error("Should never be translating unknownTerm");
+  top.fromAbella = error("Should never be translating unknownITerm");
+}
+
+
+aspect production unknownKTerm
+top::Term ::= ty::QName
+{
+  top.fromAbella = error("Should never be translating unknownKTerm");
 }
 
 

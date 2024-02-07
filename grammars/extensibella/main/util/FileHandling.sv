@@ -38,7 +38,8 @@ IOVal<Maybe<String>> ::= filename::String dirs::[String] ioin::IOToken
 function processFile
 IOVal<
    Either<String ((Maybe<QName>, ListOfCommands),
-                  (ListOfCommands, [DefElement], [ThmElement]))>> ::=
+                  (ListOfCommands, [DefElement], [ThmElement],
+                   [(QName, [QName])]))>> ::=
    filename::String parsers::AllParsers ioin::IOToken
 {
   local fileExists::IOVal<Boolean> = isFileT(filename, ioin);
@@ -49,8 +50,11 @@ IOVal<
   local fileAST::(Maybe<QName>, ListOfCommands) =
       fileParsed.parseTree.ast;
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
-                                        [ThmElement])>> =
+                                        [ThmElement],
+                                        [(QName, [QName])])>> =
       processModuleDecl(fileAST.1.fromJust, parsers, fileContents.io);
+  local proc::(ListOfCommands, [DefElement], [ThmElement],
+               [(QName, [QName])]) = processed.iovalue.fromRight;
 
   return
      if !fileExists.iovalue
@@ -68,7 +72,7 @@ IOVal<
      then ioval(processed.io,
              left("Error:  " ++ processed.iovalue.fromLeft ++ "\n"))
      else ioval(processed.io,
-             right((fileAST, processed.iovalue.fromRight)));
+             right((fileAST, proc.1, proc.2, proc.3, proc.4)));
 }
 
 
@@ -139,7 +143,17 @@ top::QName ::= rest::SubQName
 }
 
 
-aspect production unknownQName
+aspect production unknownIQName
+top::QName ::= rest::SubQName
+{
+  top.interfaceFileName = rest.interfaceFileName;
+  top.outerfaceFileName = rest.outerfaceFileName;
+  top.definitionFileName = rest.definitionFileName;
+  top.composedFileName = rest.composedFileName;
+}
+
+
+aspect production unknownKQName
 top::QName ::= rest::SubQName
 {
   top.interfaceFileName = rest.interfaceFileName;

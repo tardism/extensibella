@@ -359,18 +359,48 @@ top::QName ::= rest::SubQName
 
 
 --constructor standing in for those from unknown modules
-abstract production unknownQName
+abstract production unknownIQName
 top::QName ::= rest::SubQName
 {
   top.pp = rest.pp;
-  top.abella_pp = "$unknown__" ++ rest.abella_pp;
+  top.abella_pp = "$unknownI__" ++ rest.abella_pp;
 
   top.isQualified = rest.isQualified;
   top.shortName = rest.shortName;
   top.moduleName = basicQName(rest.moduleName);
 
   rest.addBase = top.addBase;
-  top.baseAdded = unknownQName(rest.baseAdded);
+  top.baseAdded = unknownIQName(rest.baseAdded);
+
+  top.typeErrors = rest.typeErrors;
+  top.typeFound = rest.typeFound;
+  top.fullType = rest.fullType;
+
+  top.constrErrors = rest.constrErrors;
+  top.constrFound = rest.constrFound;
+  top.fullConstr = rest.fullConstr;
+
+  top.relErrors = rest.relErrors;
+  top.relFound = rest.relFound;
+  top.fullRel = rest.fullRel;
+
+  top.sub = rest;
+
+  rest.compareTo = decorate top.compareTo.sub with {};
+  top.isEqual = rest.isEqual;
+}
+abstract production unknownKQName
+top::QName ::= rest::SubQName
+{
+  top.pp = rest.pp;
+  top.abella_pp = "$unknownK__" ++ rest.abella_pp;
+
+  top.isQualified = rest.isQualified;
+  top.shortName = rest.shortName;
+  top.moduleName = basicQName(rest.moduleName);
+
+  rest.addBase = top.addBase;
+  top.baseAdded = unknownIQName(rest.baseAdded);
 
   top.typeErrors = rest.typeErrors;
   top.typeFound = rest.typeFound;
@@ -403,7 +433,7 @@ top::QName ::= rest::SubQName
   top.moduleName = basicQName(rest.moduleName);
 
   rest.addBase = top.addBase;
-  top.baseAdded = unknownQName(rest.baseAdded);
+  top.baseAdded = unknownIQName(rest.baseAdded);
 
   top.typeErrors = rest.typeErrors;
   top.typeFound = rest.typeFound;
@@ -436,7 +466,7 @@ top::QName ::= rest::SubQName
   top.moduleName = basicQName(rest.moduleName);
 
   rest.addBase = top.addBase;
-  top.baseAdded = unknownQName(rest.baseAdded);
+  top.baseAdded = unknownIQName(rest.baseAdded);
 
   top.typeErrors = rest.typeErrors;
   top.typeFound = rest.typeFound;
@@ -575,7 +605,7 @@ QName ::= name::String
       else if startsWith("$lib__", name)
       then libQName(buildSub(6, name))
       else if startsWith("$unknown__", name)
-      then unknownQName(buildSub(10, name))
+      then unknownIQName(buildSub(10, name))
       else if startsWith("$extSize__", name)
       then extSizeQName(buildSub(10, name))
       else if startsWith("$transRel__", name)

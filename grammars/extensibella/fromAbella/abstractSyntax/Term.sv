@@ -180,7 +180,8 @@ top::Term ::= name::QName ty::MaybeType
         charTerm(charsToString(
                  [toInteger(substring(3, length(x), x))]))
       --Unknown terms
-      | unknownQName(ty) -> unknownTerm(name.tyFromAbella)
+      | unknownIQName(ty) -> unknownITerm(name.tyFromAbella)
+      | unknownKQName(ty) -> unknownKTerm(name.tyFromAbella)
       --Other
       | _ -> nameTerm(name.constrFromAbella, ty)
       end;

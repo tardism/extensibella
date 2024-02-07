@@ -589,7 +589,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local translation::Metaterm =
       relationMetaterm(transName(thisExtInd.fromJust.4),
          toTermList(transArgs ++
-                    [nameTerm(unknownQName(thisExtInd.fromJust.4.sub),
+                    [nameTerm(unknownIQName(thisExtInd.fromJust.4.sub),
                               nothingType()),
                      basicNameTerm(translationName)]),
          emptyRestriction());

@@ -9,7 +9,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
 {
   --get the module information
   local processed::IOVal<Maybe<(QName, ListOfCommands, [DefElement],
-                                [ThmElement])>> =
+                                [ThmElement], [(QName, [QName])])>> =
       get_module_interactive(parsers, config, ioin);
 
   return
@@ -20,14 +20,16 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
               parsers, processed.iovalue.fromJust.1,
               processed.iovalue.fromJust.2,
               processed.iovalue.fromJust.3,
-              processed.iovalue.fromJust.4, config, processed.io);
+              processed.iovalue.fromJust.4,
+              processed.iovalue.fromJust.5, config, processed.io);
 }
 
 
 --Continue trying to get a module declaration from the user until
 --   they actually give one
 function get_module_interactive
-IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
+IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement],
+             [(QName, [QName])])>> ::=
    parsers::AllParsers config::Configuration ioin::IOToken
 {
   --Get input
@@ -40,7 +42,8 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
   local result::ParseResult<ModuleDecl_c> =
       parsers.module_decl_parse(input, "<<input>>");
   local processed::IOVal<Either<String (ListOfCommands, [DefElement],
-                                        [ThmElement])>> =
+                                        [ThmElement],
+                                        [(QName, [QName])])>> =
       if result.parseSuccess && result.parseTree.ast.isJust
       then processModuleDecl(result.parseTree.ast.fromJust, parsers,
               raw_input.io)
@@ -77,9 +80,9 @@ IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
           | left(err) ->
             get_module_interactive(parsers, config,
                printT(output, finalIOToken))
-          | right((a, b, c)) ->
+          | right((a, b, c, d)) ->
             ioval(finalIOToken,
-                  just((result.parseTree.ast.fromJust, a, b, c)))
+                  just((result.parseTree.ast.fromJust, a, b, c, d)))
           end;
 }
 

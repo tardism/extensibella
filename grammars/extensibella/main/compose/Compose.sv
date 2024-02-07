@@ -103,18 +103,20 @@ IOVal<Either<String [(QName, String, DecCmds)]>> ::=
   --initial set-up for file
   local fileInfo::
         IOVal<Either<String ((Maybe<QName>, ListOfCommands),
-                     (ListOfCommands, [DefElement], [ThmElement]))>> =
+                     (ListOfCommands, [DefElement], [ThmElement],
+                      [(QName, [QName])]))>> =
       processFile(filename, parsers, ioin);
   local fileAST::(Maybe<QName>, ListOfCommands) =
       fileInfo.iovalue.fromRight.1;
-  local processed::(ListOfCommands, [DefElement], [ThmElement]) =
+  local processed::(ListOfCommands, [DefElement], [ThmElement],
+                    [(QName, [QName])]) =
       fileInfo.iovalue.fromRight.snd;
 
   --run it
   local runFile::Either<IOVal<String>  DecCmds> =
       buildDecRunCommands(filename, fileAST.2.toRunCommands, parsers,
          fileAST.1.fromJust, processed.1, processed.2, processed.3,
-         config, fileInfo.io);
+         processed.4, config, fileInfo.io);
   local runIO::IOToken = --pull out an IOToken
       case runFile of
       | left(errIO) -> errIO.io
@@ -231,7 +233,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
          addEnv(defTyEnv, proofDefItems.1),
          addEnv(defRelEnv, proofDefItems.2),
          addEnv(defConstrEnv, proofDefItems.3),
-         []);
+         [], error("build_composed_file.buildsOns not needed"));
 
   --proof definitions
   local encodedProofDefs::[AnyCommand] =

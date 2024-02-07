@@ -128,7 +128,21 @@ top::QName ::= rest::SubQName
 }
 
 
-aspect production unknownQName
+aspect production unknownIQName
+top::QName ::= rest::SubQName
+{
+  top.isTranslation = false;
+  top.transFromAbella = error("Not a translation");
+
+  top.fromAbella = rest.fromAbella;
+
+  top.relFromAbella = rest.relFromAbella;
+  top.tyFromAbella = rest.tyFromAbella;
+  top.constrFromAbella = rest.constrFromAbella;
+}
+
+
+aspect production unknownKQName
 top::QName ::= rest::SubQName
 {
   top.isTranslation = false;

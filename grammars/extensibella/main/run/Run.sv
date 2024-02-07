@@ -30,11 +30,13 @@ IOVal<Integer> ::=
    definitionCmds::ListOfCommands
    importDefs::[DefElement]
    importThms::[ThmElement]
+   buildsOns::[(QName, [QName])]
    config::Configuration ioin::IOToken
 {
   local decCmds::Either<IOVal<String>  DecCmds> =
       buildDecRunCommands(filename, cmds, parsers, currentModule,
-         definitionCmds, importDefs, importThms, config, ioin);
+         definitionCmds, importDefs, importThms, buildsOns, config,
+         ioin);
 
   return
      case decCmds of
@@ -56,6 +58,7 @@ Either<IOVal<String>  DecCmds> ::=
    definitionCmds::ListOfCommands
    importDefs::[DefElement]
    importThms::[ThmElement]
+   buildsOns::[(QName, [QName])]
    config::Configuration ioin::IOToken
 {
   local started::IOVal<Either<String ProcessHandle>> =
@@ -76,7 +79,7 @@ Either<IOVal<String>  DecCmds> ::=
          addEnv(build_context.1, importedProofDefs.1),
          addEnv(build_context.2, importedProofDefs.2),
          addEnv(build_context.3, importedProofDefs.3),
-         stdLibThms.iovalue.fromRight);
+         stdLibThms.iovalue.fromRight, buildsOns);
   --send definitions to Abella
   local importDefCmds::[AnyCommand] =
       flatMap(

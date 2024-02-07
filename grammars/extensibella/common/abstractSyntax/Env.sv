@@ -52,14 +52,15 @@ attribute name {} occurs on a => String ::= e::Env<a>
 
 data nonterminal TypeEnvItem with
    name, type, transTypes, isLangType, isProofType, isLibType, kind,
-   unknownConstr, clauseModules;
+   unknownConstrI, unknownConstrK, clauseModules;
 
 synthesized attribute isLangType::Boolean;
 synthesized attribute isProofType::Boolean;
 synthesized attribute isLibType::Boolean;
 synthesized attribute transTypes::TypeList;
 synthesized attribute kind::Integer; --number of args to type
-synthesized attribute unknownConstr::QName;
+synthesized attribute unknownConstrI::QName;
+synthesized attribute unknownConstrK::QName;
 
 --the modules for the PC of the clauses, in clause order
 synthesized attribute clauseModules::[QName];
@@ -80,7 +81,8 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
 
   top.transTypes = args;
 
-  top.unknownConstr = unknownQName(name.sub);
+  top.unknownConstrI = unknownIQName(name.sub);
+  top.unknownConstrK = unknownKQName(name.sub);
 
   top.clauseModules = clauseModules;
 }
@@ -102,8 +104,10 @@ top::TypeEnvItem ::= name::QName kind::Integer
   top.transTypes =
       error("Should not access transTypes on libTypeEnvItem");
 
-  top.unknownConstr =
-      error("Should not access unknownConstr on libTypeEnvItem");
+  top.unknownConstrI =
+      error("Should not access unknownConstrI on libTypeEnvItem");
+  top.unknownConstrK =
+      error("Should not access unknownConstrK on libTypeEnvItem");
 
   top.clauseModules =
       error("Should not access clauseModules on libTypeEnvItem");
@@ -126,8 +130,10 @@ top::TypeEnvItem ::= name::QName kind::Integer
   top.transTypes =
       error("Should not access transTypes on proofTypeEnvItem");
 
-  top.unknownConstr =
-      error("Should not access unknownConstr on proofTypeEnvItem");
+  top.unknownConstrI =
+      error("Should not access unknownConstrI on proofTypeEnvItem");
+  top.unknownConstrK =
+      error("Should not access unknownConstrK on proofTypeEnvItem");
 
   top.clauseModules =
       error("Should not access clauseModules on proofTypeEnvItem");
@@ -150,8 +156,10 @@ top::TypeEnvItem ::= name::String
   top.transTypes =
       error("Should not access transTypes on typeVarEnvItem");
 
-  top.unknownConstr =
-      error("Should not access unknownConstr on typeVarEnvItem");
+  top.unknownConstrI =
+      error("Should not access unknownConstrI on typeVarEnvItem");
+  top.unknownConstrK =
+      error("Should not access unknownConstrK on typeVarEnvItem");
 
   top.clauseModules =
       error("Should not access clauseModules on typeVarEnvItem");

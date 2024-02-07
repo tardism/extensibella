@@ -11,7 +11,7 @@ data nonterminal ProverState with
    pp, --solely for debugging purposes
    state, debug, displayWidth,
    knownTheorems, knownExtInds, remainingObligations,
-   knownTypes, knownRels, knownConstrs,
+   knownTypes, knownRels, knownConstrs, buildsOns,
    provingThms, provingExtInds, duringCommands, afterCommands;
 
 
@@ -42,6 +42,9 @@ annotation remainingObligations::[ThmElement];
 annotation knownTypes::Env<TypeEnvItem>;
 annotation knownRels::Env<RelationEnvItem>;
 annotation knownConstrs::Env<ConstructorEnvItem>;
+
+--modules and the modules on which they build
+annotation buildsOns::[(QName, [QName])];
 
 
 abstract production proverState
@@ -113,7 +116,8 @@ ProverState ::= current::ProverState
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs =current.knownConstrs,
-            provingThms = current.provingThms);
+            provingThms = current.provingThms,
+            buildsOns = current.buildsOns);
 }
 
 
@@ -167,7 +171,8 @@ ProverState ::= current::ProverState
                removeFinishedObligation(current.remainingObligations,
                   current.provingThms),
             knownTypes = current.knownTypes, knownRels = current.knownRels,
-            knownConstrs = current.knownConstrs, provingThms = []);
+            knownConstrs = current.knownConstrs, provingThms = [],
+            buildsOns = current.buildsOns);
 }
 
 
@@ -186,7 +191,8 @@ ProverState ::= current::ProverState
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
-            provingThms = []);
+            provingThms = [],
+            buildsOns = current.buildsOns);
 }
 
 
@@ -205,7 +211,8 @@ ProverState ::= current::ProverState debugVal::Boolean
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
-            provingThms = current.provingThms);
+            provingThms = current.provingThms,
+            buildsOns = current.buildsOns);
 }
 
 
@@ -224,7 +231,8 @@ ProverState ::= current::ProverState width::Integer
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
-            provingThms = current.provingThms);
+            provingThms = current.provingThms,
+            buildsOns = current.buildsOns);
 }
 
 
@@ -249,7 +257,7 @@ ProverState ::= current::ProverState newProofState::ProofState
             knownTypes = addEnv(current.knownTypes, newTys),
             knownRels = addEnv(current.knownRels, newRels),
             knownConstrs = addEnv(current.knownConstrs, newConstrs),
-            provingThms = provingThms);
+            provingThms = provingThms, buildsOns = current.buildsOns);
 }
 
 
@@ -267,7 +275,8 @@ ProverState ::= current::ProverState newProofState::ProofState
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels =current.knownRels, knownConstrs = current.knownConstrs,
-            provingThms = current.provingThms);
+            provingThms = current.provingThms,
+            buildsOns = current.buildsOns);
 }
 
 
@@ -275,7 +284,7 @@ ProverState ::= current::ProverState newProofState::ProofState
 function defaultProverState
 ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
    relEnv::Env<RelationEnvItem> constrEnv::Env<ConstructorEnvItem>
-   knownThms::[(QName, Metaterm)]
+   knownThms::[(QName, Metaterm)] buildsOns::[(QName, [QName])]
 {
   {-Starting environments with the things from the environment not
     having special syntax to hide them-}
@@ -378,7 +387,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
             knownTypes = addEnv(tyEnv, knownTys),
             knownRels = addEnv(relEnv, knownRels),
             knownConstrs = addEnv(constrEnv, knownConstrs),
-            provingThms = []);
+            provingThms = [], buildsOns = buildsOns);
 }
 
 
@@ -396,7 +405,8 @@ ProverState ::= p::ProverState
             knownExtInds = p.knownExtInds,
             remainingObligations = p.remainingObligations,
             knownTypes = p.knownTypes, knownRels = p.knownRels,
-            knownConstrs = p.knownConstrs, provingThms = p.provingThms);
+            knownConstrs = p.knownConstrs, provingThms = p.provingThms,
+            buildsOns = p.buildsOns);
 }
 
 

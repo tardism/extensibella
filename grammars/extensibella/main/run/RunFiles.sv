@@ -21,11 +21,13 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
 {
   local fileInfo::
         IOVal<Either<String ((Maybe<QName>, ListOfCommands),
-                     (ListOfCommands, [DefElement], [ThmElement]))>> =
+                     (ListOfCommands, [DefElement], [ThmElement],
+                      [(QName, [QName])]))>> =
       processFile(filename, parsers, ioin);
   production fileAST::(Maybe<QName>, ListOfCommands) =
       fileInfo.iovalue.fromRight.1;
-  production processed::(ListOfCommands, [DefElement], [ThmElement]) =
+  production processed::(ListOfCommands, [DefElement], [ThmElement],
+                         [(QName, [QName])]) =
       fileInfo.iovalue.fromRight.snd;
 
   --Permit the addition of extra actions to be carried out after the
@@ -42,7 +44,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
      | right(_) ->
        run(filename, fileAST.2.toRunCommands, parsers,
            fileAST.1.fromJust, processed.1, processed.2, processed.3,
-           config, finalIOToken)
+           processed.4, config, finalIOToken)
      end;
 }
 

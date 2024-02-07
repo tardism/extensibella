@@ -7,7 +7,8 @@ imports silver:langutil only pp;
 --Read the interface file for a module
 function processModuleDecl
 IOVal<Either<String
-             (ListOfCommands, [DefElement], [ThmElement])>> ::=
+             (ListOfCommands, [DefElement], [ThmElement],
+              [(QName, [QName])])>> ::=
    moduleName::QName parsers::AllParsers ioin::IOToken
 {
   local gen_dirs::IOVal<[String]> = getGenDirs(ioin);
@@ -72,7 +73,8 @@ IOVal<Either<String
      --success
      else ioval(definition_file_contents.io,
                 right((definition, outerface.iovalue.fromRight.1,
-                       outerface.iovalue.fromRight.2)));
+                       outerface.iovalue.fromRight.2,
+                       interface.buildsOns)));
 }
 
 

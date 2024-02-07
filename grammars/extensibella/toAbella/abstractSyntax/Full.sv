@@ -387,10 +387,17 @@ top::Term ::= mty::MaybeType
 }
 
 
-aspect production unknownTerm
+aspect production unknownITerm
 top::Term ::= ty::QName
 {
-  top.full = unknownTerm(ty.fullType.name);
+  top.full = unknownITerm(ty.fullType.name);
+}
+
+
+aspect production unknownKTerm
+top::Term ::= ty::QName
+{
+  top.full = unknownKTerm(ty.fullType.name);
 }
 
 

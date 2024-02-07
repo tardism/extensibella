@@ -680,7 +680,7 @@ function buildTransRelDef
   local defList::[([Term], Maybe<Metaterm>)] =
       filter(\ p::([Term], Maybe<Metaterm>) ->
                case elemAtIndex(p.1, pcIndex) of
-               | nameTerm(unknownQName(_), _) -> false
+               | nameTerm(unknownIQName(_), _) -> false
                | _ -> true
                end,
              r.7.defsList);

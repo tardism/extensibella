@@ -420,18 +420,21 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 
 
 --TERMS
-abstract production unknownTerm
+abstract production unknownITerm
 top::Term ::= ty::QName
 {
-  top.pp = ppConcat([text("<unknown "), ty.pp, text(">")]);
-  top.abella_pp = "<unknown " ++ ty.abella_pp ++ ">";
+  top.pp = ppConcat([text("<unknown I "), ty.pp, text(">")]);
+  top.abella_pp = "<unknown I " ++ ty.abella_pp ++ ">";
   top.isAtomic = true;
 
   top.isStructured = true;
-  top.isUnknownTerm = true;
+  top.isUnknownTermI = true;
+  top.unknownTy = if ty.typeFound
+                  then just(ty.fullType.name)
+                  else nothing();
 
   top.headConstructor =
-      error("unknownTerm.headConstructor not valid");
+      error("unknownITerm.headConstructor not valid");
 
   top.subst = top;
 
@@ -439,7 +442,47 @@ top::Term ::= ty::QName
 
   top.unifySuccess =
       case top.unifyWith of
-      | unknownTerm(ty2) -> ty == ty2
+      | unknownITerm(ty2) -> ty == ty2
+      | nameTerm(q, _) when !q.isQualified -> true
+      | _ -> false
+      end;
+  top.unifyEqs = [];
+  top.unifySubst =
+      case top.unifyWith of
+      | nameTerm(q, _) -> [(q.shortName, top)]
+      | _ -> []
+      end;
+
+  top.type =
+      if ty.typeFound
+      then nameType(ty.fullType.name)
+      else errorType();
+  top.upSubst = top.downSubst;
+}
+
+abstract production unknownKTerm
+top::Term ::= ty::QName
+{
+  top.pp = ppConcat([text("<unknown K "), ty.pp, text(">")]);
+  top.abella_pp = "<unknown K " ++ ty.abella_pp ++ ">";
+  top.isAtomic = true;
+
+  top.isStructured = true;
+  top.isUnknownTermK = true;
+  top.unknownTy = if ty.typeFound
+                  then just(ty.fullType.name)
+                  else nothing();
+
+  top.headConstructor =
+      error("unknownKTerm.headConstructor not valid");
+
+  top.subst = top;
+
+  top.isConstant = true;
+
+  top.unifySuccess =
+      case top.unifyWith of
+      | unknownKTerm(ty2) -> ty == ty2
       | nameTerm(q, _) when !q.isQualified -> true
       | _ -> false
       end;

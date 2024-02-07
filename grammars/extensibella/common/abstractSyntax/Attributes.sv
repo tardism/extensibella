@@ -60,7 +60,9 @@ synthesized attribute headConstructor::QName;
 
 --Whether a term is the unknown constructor standing in for
 --constructors from other extensions
-synthesized attribute isUnknownTerm::Boolean;
+synthesized attribute isUnknownTermI::Boolean;
+synthesized attribute isUnknownTermK::Boolean;
+synthesized attribute unknownTy::Maybe<QName>;
 
 --Whether a term is built by constructors all the way down
 synthesized attribute isConstant::Boolean;

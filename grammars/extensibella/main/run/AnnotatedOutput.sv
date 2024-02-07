@@ -14,6 +14,7 @@ Either<IOVal<String>  DecCmds> ::=
    definitionCmds::ListOfCommands
    importDefs::[DefElement]
    importThms::[ThmElement]
+   buildsOns::[(QName, [QName])]
    config::Configuration ioin::IOToken
 {
   cmds.cmdID = 1;
@@ -55,7 +56,8 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
 
 
 aspect function get_module_interactive
-IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement])>> ::=
+IOVal<Maybe<(QName, ListOfCommands, [DefElement], [ThmElement],
+             [(QName, [QName])])>> ::=
    parsers::AllParsers config::Configuration ioin::IOToken
 {
   --Annotated output

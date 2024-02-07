@@ -826,7 +826,7 @@ attribute
    mapTo<Term>, mapSuccess, varMap_in, varMap, unknownMap
 occurs on Term;
 propagate varMap_in, varMap on Term excluding nameTerm;
-propagate unknownMap on Term excluding unknownTerm;
+propagate unknownMap on Term excluding unknownITerm;
 
 aspect production applicationTerm
 top::Term ::= f::Term args::TermList
@@ -918,11 +918,18 @@ top::Term ::= mty::MaybeType
 }
 
 
-aspect production unknownTerm
+aspect production unknownITerm
 top::Term ::= ty::QName
 {
   top.mapSuccess = true;
   top.unknownMap := just(top.mapTo);
+}
+
+
+aspect production unknownKTerm
+top::Term ::= ty::QName
+{
+  top.mapSuccess = true;
 }
 
 

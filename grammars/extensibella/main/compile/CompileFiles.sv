@@ -21,11 +21,13 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
 {
   local fileInfo::
         IOVal<Either<String ((Maybe<QName>, ListOfCommands),
-                     (ListOfCommands, [DefElement], [ThmElement]))>> =
+                     (ListOfCommands, [DefElement], [ThmElement],
+                      [(QName, [QName])]))>> =
       processFile(filename, parsers, ioin);
   local fileAST::(Maybe<QName>, ListOfCommands) =
       fileInfo.iovalue.fromRight.1;
-  local processed::(ListOfCommands, [DefElement], [ThmElement]) =
+  local processed::(ListOfCommands, [DefElement], [ThmElement],
+                    [(QName, [QName])]) =
       fileInfo.iovalue.fromRight.snd;
   --
   local modComms::ListOfCommands = processed.1;
@@ -47,7 +49,8 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
          buildEnv(modComms.tys ++ importedProofDefs.1),
          buildEnv(modComms.rels ++ importedProofDefs.2),
          buildEnv(modComms.constrs ++ importedProofDefs.3),
-         stdLibThms.iovalue.fromRight);
+         stdLibThms.iovalue.fromRight,
+         processed.4);
   --
   local compiledContents::String =
       buildCompiledOutput(fileAST.1.fromJust, fileAST.2, proverState);

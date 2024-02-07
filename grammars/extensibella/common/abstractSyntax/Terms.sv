@@ -299,7 +299,8 @@ top::Binder::=
 nonterminal Term with
    pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
-   isStructured, headConstructor, isUnknownTerm, isConstant,
+   isStructured, headConstructor, isConstant,
+   isUnknownTermI, isUnknownTermK, unknownTy,
    substName, substTerm, subst<Term>,
    unifyWith<Term>, unifySuccess, unifyEqs, unifySubst,
    boundNames, usedNames,
@@ -315,7 +316,9 @@ propagate compareTo, isEqual on Term
 aspect default production
 top::Term ::=
 {
-  top.isUnknownTerm = false;
+  top.isUnknownTermI = false;
+  top.isUnknownTermK = false;
+  top.unknownTy = nothing();
 }
 
 
@@ -386,10 +389,14 @@ top::Term ::= name::QName mty::MaybeType
   top.usedNames := if name.isQualified then [] else [name.shortName];
 
   top.isStructured = name.constrFound;
-  top.isUnknownTerm = case name of
-                      | unknownQName(_) -> true
-                      | _ -> false
-                      end;
+  top.isUnknownTermI = case name of
+                       | unknownIQName(_) -> true
+                       | _ -> false
+                       end;
+  top.isUnknownTermK = case name of
+                       | unknownKQName(_) -> true
+                       | _ -> false
+                       end;
 
   top.headConstructor = name;
 
