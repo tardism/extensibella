@@ -36,6 +36,8 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   args.downSubst = top.downSubst;
   unify.downSubst = args.upSubst;
   top.upSubst = unify.upSubst;
+
+  top.subst = relationMetaterm(rel, args.subst, r);
 }
 
 abstract production trueMetaterm
@@ -49,6 +51,8 @@ top::Metaterm ::=
   top.splitConjunctions = [top];
 
   top.upSubst = top.downSubst;
+
+  top.subst = top;
 }
 
 abstract production falseMetaterm
@@ -62,6 +66,8 @@ top::Metaterm ::=
   top.splitConjunctions = [top];
 
   top.upSubst = top.downSubst;
+
+  top.subst = top;
 }
 
 abstract production eqMetaterm
@@ -79,6 +85,8 @@ top::Metaterm ::= t1::Term t2::Term
   t2.downSubst = t1.upSubst;
   unify.downSubst = t2.upSubst;
   top.upSubst = unify.upSubst;
+
+  top.subst = eqMetaterm(t1.subst, t2.subst);
 }
 
 abstract production impliesMetaterm
@@ -95,6 +103,8 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
   t1.downSubst = top.downSubst;
   t2.downSubst = t1.upSubst;
   top.upSubst = t2.upSubst;
+
+  top.subst = impliesMetaterm(t1.subst, t2.subst);
 }
 
 abstract production orMetaterm
@@ -113,6 +123,8 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
   t1.downSubst = top.downSubst;
   t2.downSubst = t1.upSubst;
   top.upSubst = t2.upSubst;
+
+  top.subst = orMetaterm(t1.subst, t2.subst);
 }
 
 abstract production andMetaterm
@@ -132,6 +144,8 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
   t1.downSubst = top.downSubst;
   t2.downSubst = t1.upSubst;
   top.upSubst = t2.upSubst;
+
+  top.subst = andMetaterm(t1.subst, t2.subst);
 }
 
 abstract production bindingMetaterm
@@ -177,6 +191,8 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
                           | right(s) -> [s]
                           end,
                         varTys);
+
+  top.subst = bindingMetaterm(b, nameBindings, body.subst);
 }
 
 

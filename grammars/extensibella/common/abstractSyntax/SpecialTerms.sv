@@ -36,6 +36,8 @@ top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
   unifyTerms.downSubst = unifyTransTy.upSubst;
   unifyArgs.downSubst = unifyTerms.upSubst;
   top.upSubst = unifyArgs.upSubst;
+
+  top.subst = translationMetaterm(args.subst, ty, orig.subst, trans.subst);
 }
 
 
@@ -72,6 +74,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = plusMetaterm(t1.subst, t2.subst, result.subst);
 }
 
 abstract production minusMetaterm
@@ -96,6 +100,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = minusMetaterm(t1.subst, t2.subst, result.subst);
 }
 
 abstract production multiplyMetaterm
@@ -120,6 +126,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = multiplyMetaterm(t1.subst, t2.subst, result.subst);
 }
 
 abstract production divideMetaterm
@@ -144,6 +152,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = divideMetaterm(t1.subst, t2.subst, result.subst);
 }
 
 abstract production modulusMetaterm
@@ -168,6 +178,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = modulusMetaterm(t1.subst, t2.subst, result.subst);
 }
 
 abstract production negateMetaterm
@@ -188,6 +200,8 @@ top::Metaterm ::= t::Term result::Term
   unify1.downSubst = result.upSubst;
   unify2.downSubst = unify1.upSubst;
   top.upSubst = unify2.upSubst;
+
+  top.subst = negateMetaterm(t.subst, result.subst);
 }
 
 abstract production lessMetaterm
@@ -208,6 +222,8 @@ top::Metaterm ::= t1::Term t2::Term
   unify1.downSubst = t2.upSubst;
   unify2.downSubst = unify1.upSubst;
   top.upSubst = unify2.upSubst;
+
+  top.subst = lessMetaterm(t1.subst, t2.subst);
 }
 
 abstract production lessEqMetaterm
@@ -228,6 +244,8 @@ top::Metaterm ::= t1::Term t2::Term
   unify1.downSubst = t2.upSubst;
   unify2.downSubst = unify1.upSubst;
   top.upSubst = unify2.upSubst;
+
+  top.subst = lessEqMetaterm(t1.subst, t2.subst);
 }
 
 abstract production greaterMetaterm
@@ -248,6 +266,8 @@ top::Metaterm ::= t1::Term t2::Term
   unify1.downSubst = t2.upSubst;
   unify2.downSubst = unify1.upSubst;
   top.upSubst = unify2.upSubst;
+
+  top.subst = greaterMetaterm(t1.subst, t2.subst);
 }
 
 abstract production greaterEqMetaterm
@@ -268,6 +288,8 @@ top::Metaterm ::= t1::Term t2::Term
   unify1.downSubst = t2.upSubst;
   unify2.downSubst = unify1.upSubst;
   top.upSubst = unify2.upSubst;
+
+  top.subst = greaterEqMetaterm(t1.subst, t2.subst);
 }
 
 --because we can do induction on append, should have a restriction
@@ -295,6 +317,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = appendMetaterm(t1.subst, t2.subst, result.subst, r);
 }
 
 abstract production orBoolMetaterm
@@ -319,6 +343,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = orBoolMetaterm(t1.subst, t2.subst, result.subst);
 }
 
 abstract production andBoolMetaterm
@@ -343,6 +369,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term
   unify2.downSubst = unify1.upSubst;
   unify3.downSubst = unify2.upSubst;
   top.upSubst = unify3.upSubst;
+
+  top.subst = andBoolMetaterm(t1.subst, t2.subst, result.subst);
 }
 
 abstract production notBoolMetaterm
@@ -363,6 +391,8 @@ top::Metaterm ::= t::Term result::Term
   unify1.downSubst = result.upSubst;
   unify2.downSubst = unify1.upSubst;
   top.upSubst = unify2.upSubst;
+
+  top.subst = notBoolMetaterm(t.subst, result.subst);
 }
 
 
@@ -389,6 +419,8 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   args.downSubst = top.downSubst;
   unify.downSubst = args.upSubst;
   top.upSubst = unify.upSubst;
+
+  top.subst = extSizeMetaterm(rel, args.subst, r);
 }
 
 abstract production transRelMetaterm
@@ -413,6 +445,8 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   args.downSubst = top.downSubst;
   unify.downSubst = args.upSubst;
   top.upSubst = unify.upSubst;
+
+  top.subst = transRelMetaterm(rel, args.subst, r);
 }
 
 
