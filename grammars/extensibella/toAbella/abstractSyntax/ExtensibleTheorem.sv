@@ -53,6 +53,8 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
                map(fst, thms.provingTheorems ++ alsos.provingTheorems)))]
       else []; --nothing to do after if there is only one being proven
 
+  top.keyRelModules = thms.keyRelModules ++ alsos.keyRelModules;
+
   thms.startingGoalNum =
        if thms.len + alsos.len > 1
        then [1]
@@ -271,6 +273,9 @@ top::TopCommand ::= names::[QName]
       then [anyTopCommand(splitTheorem(extName,
                              map(fst, top.provingTheorems)))]
       else []; --nothing to split, so nothing to do
+
+  --don't need alsos because we aren't proving them
+  top.keyRelModules = thms.keyRelModules;
 }
 
 
@@ -285,6 +290,7 @@ nonterminal ExtThms with
    useExtInd, shouldBeExtensible,
    expectedIHNum, renamedIHs, specialIHNames, thmNames,
    startingGoalNum, nextGoalNum, followingCommands, duringCommands,
+   keyRelModules,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           proverState, toAbellaMsgs, useExtInd, shouldBeExtensible,
@@ -330,6 +336,8 @@ top::ExtThms ::=
   top.inductionRels = [];
 
   top.duringCommands = top.followingCommands;
+
+  top.keyRelModules = [];
 
   top.renamedIHs = [];
 
@@ -699,6 +707,9 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            then (top.startingGoalNum,
                  skipTactic()::head(combinedCommands).2)::tail(combinedCommands)
            else [(top.startingGoalNum, [skipTactic()])];
+
+  top.keyRelModules =
+      (top.startingGoalNum, inductionRel.name.moduleName)::rest.keyRelModules;
 
   --can't name IH to something that might be an Abella-generated IH name
   top.toAbellaMsgs <-

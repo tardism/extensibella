@@ -213,7 +213,9 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
                   if pc.isUnknownTermI
                   then if !buildsOn(top.proverState,
                               rel.fullRel.name.moduleName,
-                              error("key relation module"))
+                              --must be just() in extensible theorem
+                              --must be extensible theorem to have unknownTermI
+                              top.proverState.currentKeyRelModule.fromJust)
                        then []
                        else [errorMsg("Cannot do case analysis on " ++
                                 "extensible relation " ++

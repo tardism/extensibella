@@ -10,6 +10,7 @@ nonterminal TopCommand with
    newProofState,
    newTheorems,
    provingTheorems, provingExtInds, duringCommands, afterCommands,
+   keyRelModules,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate constructorEnv, relationEnv, currentModule, proverState,
           toAbellaMsgs, interactive on TopCommand
@@ -24,6 +25,7 @@ top::TopCommand ::=
   top.afterCommands = [];
   top.newTheorems = [];
   top.provingExtInds = [];
+  top.keyRelModules = [(initialSubgoalNum, top.currentModule)];
 }
 
 

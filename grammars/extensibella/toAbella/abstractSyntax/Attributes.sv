@@ -37,6 +37,10 @@ synthesized attribute duringCommands::[(SubgoalNum, [ProofCommand])];
 synthesized attribute afterCommands::[AnyCommand];
 
 
+--key relations for a set of properties by subgoal number, in order
+synthesized attribute keyRelModules::[(SubgoalNum, QName)];
+
+
 --[(relation, module defining primary component constructor)]
 synthesized attribute relationClauseModules::[(QName, QName)];
 

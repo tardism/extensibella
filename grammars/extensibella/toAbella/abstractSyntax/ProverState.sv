@@ -12,7 +12,8 @@ data nonterminal ProverState with
    state, debug, displayWidth,
    knownTheorems, knownExtInds, remainingObligations,
    knownTypes, knownRels, knownConstrs, buildsOns,
-   provingThms, provingExtInds, duringCommands, afterCommands;
+   provingThms, provingExtInds, duringCommands, afterCommands,
+   keyRelModules, currentKeyRelModule;
 
 
 --current state of Abella
@@ -46,6 +47,10 @@ annotation knownConstrs::Env<ConstructorEnvItem>;
 --modules and the modules on which they build
 annotation buildsOns::[(QName, [QName])];
 
+--module introducing key relation for current property being proven
+--use Maybe because there might not be one for some ProverStates
+annotation currentKeyRelModule::Maybe<QName>;
+
 
 abstract production proverState
 top::ProverState ::=
@@ -60,6 +65,9 @@ top::ProverState ::=
    --  a single entry because we don't want to need to check this
    --  repeatedly.
    duringCommands::[(SubgoalNum, [ProofCommand])]
+   --module introducing the key relation for each property being proven
+   --subgoal number is for when that property becomes current
+   keyRelModules::[(SubgoalNum, QName)]
    --things to do when the proof is done
    --I think this is only ever one Split, but make it general in case
    afterCommands::[AnyCommand]
@@ -87,6 +95,7 @@ top::ProverState ::=
 
   top.provingExtInds = provingExtInds;
   top.duringCommands = duringCommands;
+  top.keyRelModules = keyRelModules;
   top.afterCommands = afterCommands;
 }
 
@@ -107,7 +116,7 @@ ProverState ::= current::ProverState
               decorate t with {knownThms = rest;}.thms ++ rest,
             current.knownTheorems, take);
   return proverState(current.provingExtInds, current.duringCommands,
-            current.afterCommands,
+            current.keyRelModules, current.afterCommands,
             --
             state = current.state, debug = current.debug,
             displayWidth = current.displayWidth, knownTheorems = outThms,
@@ -117,7 +126,8 @@ ProverState ::= current::ProverState
             knownRels = current.knownRels,
             knownConstrs =current.knownConstrs,
             provingThms = current.provingThms,
-            buildsOns = current.buildsOns);
+            buildsOns = current.buildsOns,
+            currentKeyRelModule = current.currentKeyRelModule);
 }
 
 
@@ -158,7 +168,7 @@ function removeFinishedObligation
 function finishProof
 ProverState ::= current::ProverState
 {
-  return proverState([], [], [],
+  return proverState([], [], [], [],
             --
             state = current.state, debug = current.debug,
             displayWidth = current.displayWidth,
@@ -172,7 +182,8 @@ ProverState ::= current::ProverState
                   current.provingThms),
             knownTypes = current.knownTypes, knownRels = current.knownRels,
             knownConstrs = current.knownConstrs, provingThms = [],
-            buildsOns = current.buildsOns);
+            buildsOns = current.buildsOns,
+            currentKeyRelModule = nothing());
 }
 
 
@@ -181,7 +192,7 @@ ProverState ::= current::ProverState
 function abortProof
 ProverState ::= current::ProverState
 {
-  return proverState([], [], [],
+  return proverState([], [], [], [],
             --
             state = current.state, debug = current.debug,
             displayWidth = current.displayWidth,
@@ -192,7 +203,8 @@ ProverState ::= current::ProverState
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
             provingThms = [],
-            buildsOns = current.buildsOns);
+            buildsOns = current.buildsOns,
+            currentKeyRelModule = nothing());
 }
 
 
@@ -201,7 +213,8 @@ function setProverDebug
 ProverState ::= current::ProverState debugVal::Boolean
 {
   return proverState(current.provingExtInds,
-            current.duringCommands, current.afterCommands,
+            current.duringCommands, current.keyRelModules,
+            current.afterCommands,
             --
             state = current.state, debug = debugVal,
             displayWidth = current.displayWidth,
@@ -212,7 +225,8 @@ ProverState ::= current::ProverState debugVal::Boolean
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
             provingThms = current.provingThms,
-            buildsOns = current.buildsOns);
+            buildsOns = current.buildsOns,
+            currentKeyRelModule = current.currentKeyRelModule);
 }
 
 
@@ -221,7 +235,8 @@ function setProverWidth
 ProverState ::= current::ProverState width::Integer
 {
   return proverState(current.provingExtInds,
-            current.duringCommands, current.afterCommands,
+            current.duringCommands, current.keyRelModules,
+            current.afterCommands,
             --
             state = current.state, debug = current.debug,
             displayWidth = width,
@@ -232,7 +247,8 @@ ProverState ::= current::ProverState width::Integer
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
             provingThms = current.provingThms,
-            buildsOns = current.buildsOns);
+            buildsOns = current.buildsOns,
+            currentKeyRelModule = current.currentKeyRelModule);
 }
 
 
@@ -245,9 +261,12 @@ ProverState ::= current::ProverState newProofState::ProofState
    provingThms::[(QName, Metaterm)]
    provingExtInds::[(QName, [String], [Term], QName, String, String)]
    duringCmds::[(SubgoalNum, [ProofCommand])]
+   keyRelModules::[(SubgoalNum, QName)]
    afterCmds::[AnyCommand]
 {
-  return proverState(provingExtInds, duringCmds, afterCmds,
+  return proverState(provingExtInds, duringCmds,
+            if null(keyRelModules) then [] else tail(keyRelModules),
+            afterCmds,
             --
             state = newProofState, debug = current.debug,
             displayWidth = current.displayWidth,
@@ -257,7 +276,10 @@ ProverState ::= current::ProverState newProofState::ProofState
             knownTypes = addEnv(current.knownTypes, newTys),
             knownRels = addEnv(current.knownRels, newRels),
             knownConstrs = addEnv(current.knownConstrs, newConstrs),
-            provingThms = provingThms, buildsOns = current.buildsOns);
+            provingThms = provingThms, buildsOns = current.buildsOns,
+            currentKeyRelModule =
+                if null(keyRelModules) then nothing()
+                else just(head(keyRelModules).2));
 }
 
 
@@ -265,7 +287,14 @@ ProverState ::= current::ProverState newProofState::ProofState
 function setProofState
 ProverState ::= current::ProverState newProofState::ProofState
 {
+  local updateKeyRelModule::Boolean =
+      case current.keyRelModules of
+      | [] -> false
+      | (s, _)::_ -> subgoalStartsWith(s, newProofState.currentSubgoal)
+      end;
   return proverState(current.provingExtInds, current.duringCommands,
+            if updateKeyRelModule then tail(current.keyRelModules)
+            else current.keyRelModules,
             current.afterCommands,
             --
             state = newProofState, debug = current.debug,
@@ -276,7 +305,10 @@ ProverState ::= current::ProverState newProofState::ProofState
             knownTypes = current.knownTypes,
             knownRels =current.knownRels, knownConstrs = current.knownConstrs,
             provingThms = current.provingThms,
-            buildsOns = current.buildsOns);
+            buildsOns = current.buildsOns,
+            currentKeyRelModule = if updateKeyRelModule
+                                  then just(head(current.keyRelModules).2)
+                                  else current.currentKeyRelModule);
 }
 
 
@@ -379,7 +411,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
                nameType(toQName("$lib__nat")), toTypeList([]))
            ]);
 
-  return proverState([], [], [],
+  return proverState([], [], [], [],
             --
             state = noProof(isAbellaForm=false), debug = false,
             displayWidth = 80, knownTheorems = knownThms,
@@ -387,7 +419,8 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
             knownTypes = addEnv(tyEnv, knownTys),
             knownRels = addEnv(relEnv, knownRels),
             knownConstrs = addEnv(constrEnv, knownConstrs),
-            provingThms = [], buildsOns = buildsOns);
+            provingThms = [], buildsOns = buildsOns,
+            currentKeyRelModule = nothing());
 }
 
 
@@ -397,7 +430,7 @@ function dropDuringCommand
 ProverState ::= p::ProverState
 {
   return proverState(p.provingExtInds, tail(p.duringCommands),
-            p.afterCommands,
+            p.keyRelModules, p.afterCommands,
             --
             state = p.state, debug = p.debug,
             displayWidth = p.displayWidth,
@@ -406,7 +439,8 @@ ProverState ::= p::ProverState
             remainingObligations = p.remainingObligations,
             knownTypes = p.knownTypes, knownRels = p.knownRels,
             knownConstrs = p.knownConstrs, provingThms = p.provingThms,
-            buildsOns = p.buildsOns);
+            buildsOns = p.buildsOns,
+            currentKeyRelModule = p.currentKeyRelModule);
 }
 
 
