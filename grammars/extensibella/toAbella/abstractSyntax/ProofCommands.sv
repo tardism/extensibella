@@ -201,8 +201,8 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
            then [] --can do case analysis on non-extensible whenever
            else if length(args.isStructuredList) <= rel.fullRel.pcIndex
            then [] --too few args
-           else if elemAtIndex(args.isStructuredList,
-                         rel.fullRel.pcIndex)
+           else if !elemAtIndex(args.isStructuredList,
+                          rel.fullRel.pcIndex)
            then [errorMsg("Cannot do case analysis on " ++
                     "extensible relation " ++
                     justShow(rel.pp) ++ " with unstructured" ++

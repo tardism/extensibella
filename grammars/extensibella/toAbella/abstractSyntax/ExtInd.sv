@@ -520,10 +520,7 @@ function buildExtSizeClauses
           if null(x.1)
           then (false, x.2) --should hypothetically be equal to m
           else (true,
-                bindingMetaterm(existsBinder(),
-                   foldrLastElem(addBindings(_, nothingType(), _),
-                      oneBinding(_, nothingType()), x.1),
-                   x.2))
+                bindingMetaterm(existsBinder(), toBindings(x.1), x.2))
         end
       | nothing() -> (false, error("Should not access this half"))
       end;
@@ -662,7 +659,9 @@ TopCommand ::= relInfo::[(QName, [String], [Term], QName, String,
   local defs::[Def] =
       buildTransRelDef(fullRelInfo, map(fst, preds));
   return definitionDeclaration(preds,
-             foldrLastElem(consDefs, singleDefs, defs));
+             if null(defs)
+             then error("buildTransRel null list")
+             else foldrLastElem(consDefs, singleDefs, defs));
 }
 
 {-
@@ -679,7 +678,7 @@ function buildTransRelDef
   --split out clauses for non-unknownK and unknownK, of which there is <= 1
   local split::([([Term], Maybe<Metaterm>)], [([Term], Maybe<Metaterm>)]) =
       partition(\ p::([Term], Maybe<Metaterm>) ->
-                  elemAtIndex(p.1, pcIndex).isUnknownTermK,
+                  !elemAtIndex(p.1, pcIndex).isUnknownTermK,
                 r.7.defsList);
   local defList::[([Term], Maybe<Metaterm>)] =
       map(\ p::([Term], Maybe<Metaterm>) ->
@@ -803,8 +802,7 @@ function buildTransRelClauses
        if null(freshQBindings)
        then just(andMetaterm(m1, m2))
        else just(bindingMetaterm(existsBinder(),
-                    foldrLastElem(addBindings(_, nothingType(), _),
-                       oneBinding(_, nothingType()), freshQBindings),
+                    toBindings(freshQBindings),
                     andMetaterm(m1, m2)))
      | just(m), nothing() -> just(m)
      | nothing(), _ -> replacedQBody
