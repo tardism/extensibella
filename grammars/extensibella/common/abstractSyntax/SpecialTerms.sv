@@ -473,6 +473,8 @@ top::Term ::= ty::QName
                   then just(ty.fullType.name)
                   else nothing();
 
+  top.unknownKReplaced = top.replaceUnknownK;
+
   top.headConstructor =
       error("unknownKTerm.headConstructor not valid");
 

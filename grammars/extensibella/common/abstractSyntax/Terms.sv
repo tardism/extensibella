@@ -6,8 +6,12 @@ nonterminal Metaterm with
    splitImplies, splitConjunctions,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames,
-   upSubst, downSubst, downVarTys, tyVars;
-propagate typeEnv, constructorEnv, relationEnv on Metaterm;
+   upSubst, downSubst, downVarTys, tyVars,
+   unknownKReplaced<Metaterm>, replaceUnknownK,
+   subst<Metaterm>, substName, substTerm;
+propagate typeEnv, constructorEnv, relationEnv,
+          unknownKReplaced, replaceUnknownK, substName, substTerm
+   on Metaterm;
 propagate boundNames, downVarTys on Metaterm
    excluding bindingMetaterm;
 
@@ -301,13 +305,15 @@ nonterminal Term with
    typeEnv, constructorEnv, relationEnv,
    isStructured, headConstructor, isConstant,
    isUnknownTermI, isUnknownTermK, unknownTy,
+   unknownKReplaced, replaceUnknownK,
    substName, substTerm, subst<Term>,
    unifyWith<Term>, unifySuccess, unifyEqs, unifySubst,
    boundNames, usedNames,
    upSubst, downSubst, downVarTys, tyVars, type;
 --note typeErrors does not include errors for not finding definitions of QNames
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm, downVarTys on Term;
+          substName, substTerm, downVarTys, replaceUnknownK on Term;
+propagate unknownKReplaced on Term excluding unknownKTerm;
 
 attribute compareTo, isEqual occurs on Term;
 propagate compareTo, isEqual on Term

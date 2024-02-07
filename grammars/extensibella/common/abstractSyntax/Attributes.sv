@@ -79,6 +79,11 @@ inherited attribute substTerm::Term;
 synthesized attribute subst<a>::a;
 
 
+--Substitute a term for unknownKTerm
+inherited attribute replaceUnknownK::Term;
+functor attribute unknownKReplaced;
+
+
 --Unify the top-level structure, getting a set of new equations
 inherited attribute unifyWith<a>::a;
 synthesized attribute unifySuccess::Boolean;

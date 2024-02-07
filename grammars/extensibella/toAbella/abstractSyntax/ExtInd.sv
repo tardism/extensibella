@@ -676,16 +676,62 @@ function buildTransRelDef
   local r::(QName, [String], [Term], QName, String, String,
             RelationEnvItem) = head(relInfo);
   local pcIndex::Integer = r.7.pcIndex;
-  --filter out clauses for unknown
+  --split out clauses for non-unknownK and unknownK, of which there is <= 1
+  local split::([([Term], Maybe<Metaterm>)], [([Term], Maybe<Metaterm>)]) =
+      partition(\ p::([Term], Maybe<Metaterm>) ->
+                  elemAtIndex(p.1, pcIndex).isUnknownTermK,
+                r.7.defsList);
   local defList::[([Term], Maybe<Metaterm>)] =
-      filter(\ p::([Term], Maybe<Metaterm>) ->
-               case elemAtIndex(p.1, pcIndex) of
-               | nameTerm(unknownIQName(_), _) -> false
-               | _ -> true
-               end,
-             r.7.defsList);
+      map(\ p::([Term], Maybe<Metaterm>) ->
+            (p.1, bind(p.2, \ m::Metaterm ->
+                              just(replaceRelsTransRels(allRels, m)))),
+          split.1);
+  --(args to conclusion, existentially-bound vars for body, binderless body)
+  local qRule::([String], [String], Maybe<Metaterm>) =
+      if null(split.2)
+      then error("Should not access (buildTransRelDef.qRule)")
+      else let kClause::([Term], Maybe<Metaterm>) = head(split.2)
+           in
+           let usedNames::[String] =
+               case kClause.2 of
+               | nothing() -> []
+               | just(m) -> m.usedNames
+               end ++
+               flatMap((.usedNames), kClause.1)
+           in
+           let kName::String = freshName("K", usedNames)
+           in
+           let newArgs::[String] =
+               map(\ t::Term ->
+                     case t of
+                     | nameTerm(v, _) -> v.shortName
+                     | unknownKTerm(_) -> kName
+                     | _ -> error("Nothing else should be here")
+                     end, kClause.1)
+           in
+           let newBodyPieces::([String], Maybe<Metaterm>) =
+               case kClause.2 of
+               | nothing() -> ([], nothing())
+               | just(bindingMetaterm(existsBinder(), binds, body)) ->
+                 (map(fst, binds.toList),
+                  just(replaceRelsTransRels(allRels,
+                          decorate body with {
+                             replaceUnknownK =
+                                nameTerm(toQName(kName), nothingType());
+                          }.unknownKReplaced)))
+               | just(m) ->
+                 ([],
+                  just(replaceRelsTransRels(allRels,
+                          decorate m with {
+                             replaceUnknownK =
+                                nameTerm(toQName(kName), nothingType());
+                          }.unknownKReplaced)))
+               end
+           in
+             (newArgs, newBodyPieces)
+           end end end end end;
   local firstRel::[Def] =
-      buildTransRelClauses(r.1, defList, r.2, r.3, r.4, r.5, r.6,
+      buildTransRelClauses(r.1, defList, qRule.1, qRule.2, qRule.3,
                            pcIndex, allRels);
   return case relInfo of
          | [] -> []
@@ -699,8 +745,10 @@ function buildTransRelDef
 -}
 function buildTransRelClauses
 [Def] ::= rel::QName defs::[([Term], Maybe<Metaterm>)]
-          relArgs::[String] transArgs::[Term] transTy::QName
-          original::String translated::String
+          qRuleArgs::[String] qRuleBindings::[String]
+          qRuleBody::Maybe<Metaterm>
+          --relArgs::[String] transArgs::[Term] transTy::QName
+          --original::String translated::String
           pcIndex::Integer allRels::[QName]
 {
   local transRel::QName = transRelQName(rel.sub);
@@ -709,8 +757,29 @@ function buildTransRelClauses
       | (tms, just(m)) -> m.usedNames ++ flatMap((.usedNames), tms)
       | (tms, nothing()) -> flatMap((.usedNames), tms)
       end;
-  --need a fresh version in case translated is already in the rule
-  local freshTransName::String = freshName(translated, usedVars);
+
+  --fresh names for bound variables in body of Q rule
+  --disjoint from the names in head(defs) and qRuleArgs
+  local freshQBindings::[String] =
+      foldr(\ x::String thusFar::[String] ->
+              freshName(x, thusFar ++ qRuleArgs ++ usedVars)::thusFar,
+            [], qRuleBindings);
+  local freshQBody::Maybe<Metaterm> =
+      case qRuleBody of
+      | just(m) ->
+        just(
+           head(safeReplace([m], qRuleBindings,
+                   map(\ x::String -> nameTerm(toQName(x), nothingType()),
+                       freshQBindings))))
+      | nothing() -> nothing()
+      end;
+
+  --replace vars from Q rule conclusion with terms from rule
+  local replacedQBody::Maybe<Metaterm> =
+      case freshQBody of
+      | just(m) -> just(head(safeReplace([m], qRuleArgs, head(defs).1)))
+      | nothing() -> nothing()
+      end;
 
   --determine whether this is a rule needing a translation
   local isExtRule::Boolean =
@@ -721,83 +790,41 @@ function buildTransRelClauses
         !sameModule(rel.moduleName, constr)
       end end;
 
-  --(body should be used, new body)
-  local modBody::(Boolean, Metaterm) =
-      case head(defs).2 of
-      | just(bindingMetaterm(existsBinder(), binds, body)) ->
-        let newBody::Metaterm = replaceRelsTransRels(allRels, body)
-        in
-        let transRelStuff::([String], Metaterm, Metaterm) =
-            createTransRelPremises(transRel, head(defs).1, relArgs,
-               transArgs, transTy, original, freshTransName, pcIndex,
-               freshTransName::usedVars ++ binds.usedNames)
-        in
-          if isExtRule
-          then
-             (true,
-              bindingMetaterm(existsBinder(),
-                 foldr(addBindings(_, nothingType(), _), binds,
-                       transRelStuff.1),
-                 andMetaterm(transRelStuff.2,
-                 andMetaterm(transRelStuff.3, newBody))))
-          else --don't add new premises
-             (true, bindingMetaterm(existsBinder(), binds, newBody))
-        end end
-      | just(m) ->
-        let newBody::Metaterm = replaceRelsTransRels(allRels, m)
-        in
-        let transRelStuff::([String], Metaterm, Metaterm) =
-            createTransRelPremises(transRel, head(defs).1, relArgs,
-               transArgs, transTy, original, freshTransName, pcIndex,
-               freshTransName::usedVars)
-        in
-          if isExtRule
-          then
-             (true,
-              if null(transRelStuff.1)
-              then andMetaterm(transRelStuff.2,
-                   andMetaterm(transRelStuff.3, newBody))
-              else bindingMetaterm(existsBinder(),
-                      foldrLastElem(addBindings(_, nothingType(), _),
-                         oneBinding(_, nothingType()),
-                         transRelStuff.1),
-                      andMetaterm(transRelStuff.2,
-                      andMetaterm(transRelStuff.3, newBody))))
-          else (true, newBody) --don't add new premises
-        end end
-      | nothing() when isExtRule ->
-        let transRelStuff::([String], Metaterm, Metaterm) =
-            createTransRelPremises(transRel, head(defs).1, relArgs,
-               transArgs, transTy, original, freshTransName, pcIndex,
-               freshTransName::usedVars)
-        in
-          (true,
-           if null(transRelStuff.1)
-           then andMetaterm(transRelStuff.2, transRelStuff.3)
-           else bindingMetaterm(existsBinder(),
-                   foldrLastElem(addBindings(_, nothingType(), _),
-                      oneBinding(_, nothingType()),
-                      transRelStuff.1),
-                   andMetaterm(transRelStuff.2, transRelStuff.3)))
-        end
-      | nothing() -> (false, error("Should not access this half"))
-      end;
+  --new body for the rule, with all bindings
+  local modBody::Maybe<Metaterm> =
+     case head(defs).2, replacedQBody of
+     | mm, _ when !isExtRule -> mm
+     | just(bindingMetaterm(existsBinder(), binds, body)), just(m2) ->
+       just(bindingMetaterm(existsBinder(),
+               foldr(addBindings(_, nothingType(), _), binds,
+                     freshQBindings),
+               andMetaterm(body, m2)))
+     | just(m1), just(m2) ->
+       if null(freshQBindings)
+       then just(andMetaterm(m1, m2))
+       else just(bindingMetaterm(existsBinder(),
+                    foldrLastElem(addBindings(_, nothingType(), _),
+                       oneBinding(_, nothingType()), freshQBindings),
+                    andMetaterm(m1, m2)))
+     | just(m), nothing() -> just(m)
+     | nothing(), _ -> replacedQBody
+     end;
 
   local hereDef::Def =
-      if modBody.1
-      then ruleDef(transRel, toTermList(head(defs).1), modBody.2)
-      else factDef(transRel, toTermList(head(defs).1));
+      case modBody of
+      | just(body) -> ruleDef(transRel, toTermList(head(defs).1), body)
+      | nothing() -> factDef(transRel, toTermList(head(defs).1))
+      end;
 
   return case defs of
          | [] -> []
-         | _::tl -> hereDef::buildTransRelClauses(rel, tl, relArgs,
-                                transArgs, transTy, original,
-                                translated, pcIndex, allRels)
+         | _::tl -> hereDef::buildTransRelClauses(rel, tl, qRuleArgs,
+                                qRuleBindings, qRuleBody, pcIndex, allRels)
          end;
 }
 
 {-
-  Replace all occurrences of rules in rels in the given metaterm with
+  Replace all occurrences of relations in rels in the given metaterm with
   their transRel versions
 -}
 function replaceRelsTransRels
@@ -812,56 +839,6 @@ Metaterm ::= allRels::[QName] m::Metaterm
             end,
           splitMetaterm(m));
   return foldr1(andMetaterm, replaced);
-}
-
-{-
-  Generate the translation and R_T for the translation
-  Returns (new bindings, R_T, translation)
--}
-function createTransRelPremises
-([String], Metaterm, Metaterm) ::=
-    transRel::QName actualArgs::[Term] varArgs::[String]
-    transArgs::[Term] transTy::QName original::String trans::String
-    pcIndex::Integer usedNames::[String]
-{
-  --replace varArgs with actualArgs in transArgs
-  local replacedTransArgs::[Term] =
-      safeReplace(transArgs, varArgs, actualArgs);
-  --full translation
-  local fullTranslation::Metaterm =
-      relationMetaterm(transName(transTy),
-         toTermList(replacedTransArgs ++
-            [elemAtIndex(actualArgs, pcIndex), basicNameTerm(trans)]),
-         emptyRestriction());
-
-  --replace only the primary component in the args
-  local newArgs::[Term] =
-      take(pcIndex, actualArgs) ++
-      basicNameTerm(trans)::drop(pcIndex + 1, actualArgs);
-  local newRelation::Metaterm =
-      relationMetaterm(transRel, toTermList(newArgs),
-                       emptyRestriction());
-
-  --new vars:  gather vars in fullTranslation and newRelation, then
-  --subtract those from the original args
-  local transVars::[String] = fullTranslation.usedNames;
-  local relVars::[String] = newRelation.usedNames;
-  local alreadyBoundVars::[String] =
-      flatMap((.usedNames), actualArgs);
-  local newBoundVars::[String] =
-      removeAll(nub(alreadyBoundVars), nub(transVars ++ relVars));
-
-  {-
-    We put the new relation first before the translation so it is put
-    in the definition first.  This seems like a strange ordering, but
-    because we assert the translation for proving extensible theorems
-    based on Ext_Inds, the translation premise comes after the premise
-    for the relation holding on it.  We need to duplicate this in the
-    definition of R_T because the composition process relies on the
-    corresponding premises in the after-composition proof state being
-    in the same order.
-  -}
-  return (newBoundVars, newRelation, fullTranslation);
 }
 
 

@@ -46,13 +46,18 @@ Maybe<Metaterm> ::= arg::ApplyArg hyps::[(String, Metaterm)]
 
 
 
---Safely replace a whole list of variables with a list of variables
+--Safely replace a whole list of variables with a list of terms
 --that might contain the same variables, but those should stay
 function safeReplace
-[Term] ::= replaceIn::[Term] replaceVars::[String] replaceTerms::[Term]
+  attribute substName occurs on a,
+  attribute substTerm occurs on a,
+  attribute subst<a> {substName, substTerm} occurs on a,
+  attribute usedNames {} occurs on a =>
+[a] ::= replaceIn::[a] replaceVars::[String] replaceTerms::[Term]
 {
   local usedNames::[String] =
-      replaceVars ++ flatMap((.usedNames), replaceIn ++ replaceTerms);
+      replaceVars ++ flatMap((.usedNames), replaceIn) ++
+      flatMap((.usedNames), replaceTerms);
 
   --replace replaceVars with ones fresh in everything for safety in
   --replacing them in the transArgs
@@ -62,9 +67,9 @@ function safeReplace
             [], replaceVars);
 
   --replace replaceVars with newVars in replaceIn
-  local step1::[Term] =
-      map(\ t::Term ->
-            foldr(\ p::(String, String) rest::Term ->
+  local step1::[a] =
+      map(\ t::a ->
+            foldr(\ p::(String, String) rest::a ->
                     decorate rest with {
                       substName=p.1; substTerm=basicNameTerm(p.2);
                     }.subst,
@@ -73,9 +78,9 @@ function safeReplace
 
   --replace newVars with the corresponding terms from replaceTerms,
   --now that it is safe to do so
-  local step2::[Term] =
-      map(\ t::Term ->
-            foldr(\ p::(String, Term) rest::Term ->
+  local step2::[a] =
+      map(\ t::a ->
+            foldr(\ p::(String, Term) rest::a ->
                     decorate rest with {
                       substName=p.1; substTerm=p.2;
                     }.subst,
