@@ -537,44 +537,6 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | _ -> error("Should not access inductionRel")
       end;
 
-  {-
-   - Preservability for imported relations requires us to add the
-     translation assertion manually, which we do here
-   - Because the PC has to be a variable, the rule for preservability
-     will always apply, so we don't need to check if it unifies
-   - This outer list is actually a maybe, but easier to add to others
-  -}
-  local preservabilityAssert::[(Integer, [ProofCommand])] =
-      if sameModule(top.currentModule, fullName) && --new prop
-         inductionRelFound && --not a relation error
-         !sameModule(top.currentModule, inductionRel.name) --old rel 
-      then let subgoalNum::Integer =
-               last(expectedSubgoals).1 --last number is preservability
-           in
-           let prems::[String] = catMaybes(map(fst, body.premises))
-           in
-           let transHyp1::String = freshName(onLabel, prems)
-           in
-           let transHyp2::String = freshName(onLabel, transHyp1::prems)
-           in
-               --clear (0 = 0 -> false)
-           let clearImpossible::ProofCommand =
-               clearCommand([transHyp1], false)
-           in
-               --move (R Trans *) to transHyp1
-           let renameSub::ProofCommand =
-               renameTactic(transHyp2, transHyp1)
-           in
-               --put (|{ty}- <unknown ty> ~~> Trans) in transHyp2
-           let assertTrans::ProofCommand =
-               assertTactic(nameHint(transHyp2), nothing(),
-                  translation)
-           in
-             [(subgoalNum, [clearImpossible, renameSub,
-                            assertTrans, skipTactic()])]
-           end end end end end end end
-      else []; --nothing to do if not new prop/imported rel
-  --
   local thisExtInd::Maybe<(QName, [String], [Term],
                            QName, String, String)> =
       if inductionRelFound --guard against out-of-order access
@@ -584,29 +546,12 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            end
       else nothing();
   --
-  local propUsedNames::[String] = body.thm.usedNames;
-  --It is named "Trans" in the definition file, so it will have either
-  --that name or a fresh version of it, if something else uses that
-  local translationName::String = freshName("Trans", propUsedNames);
-  local transArgs::[Term] =
-      safeReplace(thisExtInd.fromJust.3, thisExtInd.fromJust.2,
-         case foundLabeledPremise of
-         | just(relationMetaterm(_, args, _)) -> args.toList
-         | _ -> [] --shouldn't access
-         end);
-  local translation::Metaterm =
-      relationMetaterm(transName(thisExtInd.fromJust.4),
-         toTermList(transArgs ++
-                    [nameTerm(unknownIQName(thisExtInd.fromJust.4.sub),
-                              nothingType()),
-                     basicNameTerm(translationName)]),
-         emptyRestriction());
-
   local relArgs::[Term] =
       case foundLabeledPremise of
       | just(relationMetaterm(_, a, _)) -> a.toList
       | _ -> [] --should not need in this case
       end;
+
 
   --for the subgoals that should arise, the last digit of the subgoal
   --number and whether we need to prove it
@@ -648,7 +593,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                        map(\ x::(Integer, Boolean) ->
                              skipTactic(), l))]
                 else [], --nothing for things we need to prove
-              groupedExpectedSubgoals) ++ preservabilityAssert;
+              groupedExpectedSubgoals);
   --turned into full subgoals
   local subgoalDuringCommands::[(SubgoalNum, [ProofCommand])] =
       map(\ p::(Integer, [ProofCommand]) ->
