@@ -437,3 +437,16 @@ Maybe<[(QName, [String], [Term], QName, String, String)]> ::=
          | _ -> error("findExtIndGroup impossible")
          end;
 }
+
+
+--check whether builtOnMod is in the builds-on set for buildingOnMod
+function buildsOn
+Boolean ::= p::ProverState builtOnMod::QName buildingOnMod::QName
+{
+  return
+      case lookup(buildingOnMod, p.buildsOns) of
+      | just(l) -> contains(builtOnMod, l)
+      | nothing() ->
+        error("Unknown module " ++ justShow(buildingOnMod.pp))
+      end;
+}

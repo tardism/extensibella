@@ -201,18 +201,36 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
            then [] --can do case analysis on non-extensible whenever
            else if length(args.isStructuredList) <= rel.fullRel.pcIndex
            then [] --too few args
-           else if !elemAtIndex(args.isStructuredList,
-                                rel.fullRel.pcIndex)
-           then [errorMsg("Cannot do case analysis on extensible " ++
-                    "relation " ++ justShow(rel.pp) ++ " with " ++
-                    "unstructured primary component")]
-           else if elemAtIndex(args.toList,
-                               rel.fullRel.pcIndex).isUnknownTermI &&
-                   !sameModule(top.currentModule, rel.fullRel.name)
-           then [errorMsg("Cannot do case analysis on host " ++
-                    "extensible relation with unknown primary " ++
-                    "component")]
-           else []
+           else if elemAtIndex(args.isStructuredList,
+                         rel.fullRel.pcIndex)
+           then [errorMsg("Cannot do case analysis on " ++
+                    "extensible relation " ++
+                    justShow(rel.pp) ++ " with unstructured" ++
+                    " primary component")]
+           else let pc::Term =
+                    elemAtIndex(args.toList, rel.fullRel.pcIndex)    
+                in
+                  if pc.isUnknownTermI
+                  then if !buildsOn(top.proverState,
+                              rel.fullRel.name.moduleName,
+                              error("key relation module"))
+                       then []
+                       else [errorMsg("Cannot do case analysis on " ++
+                                "extensible relation " ++
+                                justShow(rel.fullRel.name.pp) ++
+                                " with unknown primary component " ++
+                                justShow(pc.pp))]
+                  else if pc.isUnknownTermK
+                       then if sameModule(top.currentModule,
+                                          rel.fullRel.name)
+                            then []
+                            else [errorMsg("Cannot do case " ++
+                                     "analysis on extensible relation " ++
+                                     justShow(rel.fullRel.name.pp) ++
+                                     " with unknown primary component " ++
+                                     justShow(pc.pp))]
+                       else []
+                end
          | _ -> []
          end;
 }
