@@ -14,12 +14,34 @@ top::TopCommand ::= body::ExtIndBody
   top.provingTheorems = [];
   top.provingExtInds = body.extIndInfo;
 
+  body.startingGoalNum =
+      if body.len > 1
+      then [1]
+      else []; --only one, so subgoals are 1, 2, ...
+
+  local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
+      --relation definitions
       [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
+      --ext size lemmas
       flatMap(\ p::(QName, Metaterm) ->
                 [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
                  anyProofCommand(skipTactic())],
-              extSizeLemmas);
+              extSizeLemmas) ++
+       --declare theorem
+      [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
+                        body.toAbella)),
+       --declare inductions
+       anyProofCommand(inductionTactic(noHint(),
+                          repeat(1, body.len)))] ++
+       --split
+      (if body.len > 1 then [anyProofCommand(splitTactic())]
+                       else []) ++
+       --initial set of during commands, which is at least intros
+      map(anyProofCommand, head(body.duringCommands).2);
+
+  body.downDuringCommands = [];
+  top.duringCommands = tail(body.duringCommands);
 
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                        RelationEnvItem)] =
@@ -63,7 +85,9 @@ top::TopCommand ::= body::ExtIndBody
 
 nonterminal ExtIndBody with
    pps, abella_pp,
-   toAbellaMsgs,
+   len,
+   toAbella<Metaterm>, toAbellaMsgs,
+   downDuringCommands, duringCommands, startingGoalNum, nextGoalNum,
    relations, extIndInfo, relationEnvItems,
    currentModule, typeEnv, constructorEnv, relationEnv;
 propagate constructorEnv, relationEnv, typeEnv, currentModule,
@@ -74,6 +98,8 @@ synthesized attribute relations::[QName];
 synthesized attribute extIndInfo::[(QName, [String], Bindings,
                                     ExtIndPremiseList)];
 synthesized attribute relationEnvItems::[RelationEnvItem];
+--thread commands around, since we might need to combine them
+inherited attribute downDuringCommands::[(SubgoalNum, [ProofCommand])];
 
 abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
@@ -81,11 +107,23 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
   top.pps = e1.pps ++ e2.pps;
   top.abella_pp = e1.abella_pp ++ ",\n        " ++ e2.abella_pp;
 
+  top.len = e1.len + e2.len;
+
   top.relations = e1.relations ++ e2.relations;
 
   top.extIndInfo = e1.extIndInfo ++ e2.extIndInfo;
 
   top.relationEnvItems = e1.relationEnvItems ++ e2.relationEnvItems;
+
+  e1.startingGoalNum = top.startingGoalNum;
+  e2.startingGoalNum = e1.nextGoalNum;
+  top.nextGoalNum = e2.nextGoalNum;
+
+  e2.downDuringCommands = top.downDuringCommands;
+  e1.downDuringCommands = e2.duringCommands;
+  top.duringCommands = e1.duringCommands;
+
+  top.toAbella = andMetaterm(e1.toAbella, e2.toAbella);
 }
 
 
@@ -96,20 +134,109 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
   top.pps = [text("forall ") ++ ppImplode(text(" "), boundVars.pps) ++
              text(", ") ++
              ppImplode(text(" "), rel.pp::map(text, relArgs)) ++
-             text(" with") ++ line() ++
-             nest(3, ppImplode(text(", "), premises.pps))];
+             if premises.len > 0
+             then ( text(" with") ++ line() ++
+                    nest(3, ppImplode(text(", "), premises.pps)) )
+             else text("")];
   top.abella_pp =
       "forall " ++ boundVars.abella_pp ++ ", " ++
-      implode(" ", rel.abella_pp::relArgs) ++ " with " ++
-      premises.abella_pp;
+      implode(" ", rel.abella_pp::relArgs) ++
+      if premises.len > 0
+      then (" with " ++ premises.abella_pp)
+      else "";
+
+  top.len = 1;
+
+  local fullRel::RelationEnvItem = rel.fullRel;
 
   premises.boundNames = boundVars.usedNames ++ relArgs;
 
-  top.relations = if rel.relFound then [rel.fullRel.name] else [];
+  top.relations = if rel.relFound then [fullRel.name] else [];
 
   top.extIndInfo = [(rel, relArgs, boundVars, premises)];
 
-  top.relationEnvItems = if rel.relFound then [rel.fullRel] else [];
+  top.relationEnvItems = if rel.relFound then [fullRel] else [];
+
+  top.nextGoalNum = [head(top.startingGoalNum) + 1];
+
+  local givenLabels::[String] = filterMap(fst, premises.toList);
+  local relLabel::String = freshName("R", givenLabels);
+  local introsNames::[String] =
+      relLabel::freshName("Acc", givenLabels)::
+      map(fromMaybe("_", _), map(fst, premises.toList)); 
+
+  --[(last element of subgoal number, whether to prove it)]
+  local expectedSubgoals::[(Integer, Boolean)] =
+      if !rel.relFound
+      then [] --no cases without known relation
+      else foldl(\ thusFar::(Integer, [(Integer, Boolean)])
+                   now::([Term], Maybe<Metaterm>) ->
+                   let pc::Term =
+                       elemAtIndex(now.1, fullRel.pcIndex)
+                   in
+                   let pcMod::QName =
+                       if decorate pc with {
+                             relationEnv = top.relationEnv;
+                             constructorEnv = top.constructorEnv;
+                          }.isStructured
+                       then pc.headConstructor.moduleName
+                       else fullRel.name.moduleName
+                   in
+                     (thusFar.1 + 1,
+                      thusFar.2 ++ [(thusFar.1,
+                                     pcMod == top.currentModule)])
+                   end end,
+                 (1, []), fullRel.defsList).2;
+  --group consecutive skips
+  local groupedExpectedSubgoals::[[(Integer, Boolean)]] =
+      groupBy(\ p1::(Integer, Boolean) p2::(Integer, Boolean) ->
+                p1.2 == p2.2, expectedSubgoals);
+  --last element of subgoal and skips needed
+  local subgoalDurings::[(Integer, [ProofCommand])] =
+      flatMap(\ l::[(Integer, Boolean)] ->
+                if !null(l) && !head(l).2 --things we don't do we skip
+                then [(head(l).1,
+                       map(\ x::(Integer, Boolean) ->
+                             skipTactic(), l))]
+                else [], --nothing for things we need to prove
+              groupedExpectedSubgoals);
+  --turned into full subgoals
+  local subgoalDuringCommands::[(SubgoalNum, [ProofCommand])] =
+      map(\ p::(Integer, [ProofCommand]) ->
+            (top.startingGoalNum ++ [p.1], p.2),
+          subgoalDurings);
+  --combine with the first one of downDuringCommands if we skip the
+  --   last thing here
+  local combinedCommands::[(SubgoalNum, [ProofCommand])] =
+      if !null(expectedSubgoals) && !last(expectedSubgoals).2 &&
+         !null(top.downDuringCommands) && !null(subgoalDuringCommands)
+      then let lastSubgoal::(SubgoalNum, [ProofCommand]) =
+               last(subgoalDuringCommands)
+           in
+             init(subgoalDuringCommands) ++
+             [(lastSubgoal.1,
+               lastSubgoal.2 ++ head(top.downDuringCommands).2)] ++
+             tail(top.downDuringCommands)
+           end
+      else subgoalDuringCommands ++ top.downDuringCommands;
+
+  top.duringCommands =
+      [(top.startingGoalNum,
+        [introsTactic(introsNames),
+         caseTactic(nameHint(relLabel), relLabel, true)] ++
+        --add first skips if they happen right away
+        (if !null(combinedCommands) && !null(subgoalDurings) &&
+            head(subgoalDurings).1 == 1
+         then head(combinedCommands).2
+         else []))] ++
+      --add rest of during commands, dropping head if we took it
+      if !null(combinedCommands) && !null(subgoalDurings) &&
+         head(subgoalDurings).1 == 1
+      then tail(combinedCommands)
+      else combinedCommands;
+
+  top.toAbella = buildExtIndThm(boundVars.toAbella, rel.fullRel.name,
+                                relArgs, premises.toAbella);
 
   --Check relation is an extensible relation from this module
   top.toAbellaMsgs <-
@@ -180,6 +307,31 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
   unifyRelArgs.downSubst = premises.upSubst;
 }
 
+function buildExtIndThm
+Metaterm ::= boundVars::Bindings rel::QName relArgs::[String]
+             premises::[(Maybe<String>, Metaterm)]
+{
+  local args::[Term] =
+      map(\ x::String -> nameTerm(toQName(x), nothingType()), relArgs);
+  local n::String = freshName("N", boundVars.usedNames);
+  local extSize::Metaterm =
+      relationMetaterm(extSizeQName(rel.sub),
+         toTermList(args ++ [nameTerm(toQName(n), nothingType())]),
+         emptyRestriction());
+  local acc::Metaterm =
+      relationMetaterm(toQName("acc"),
+         toTermList([nameTerm(toQName(n), nothingType())]),
+         emptyRestriction());
+  local conc::Metaterm =
+      relationMetaterm(transRelQName(rel.sub), toTermList(args),
+                       emptyRestriction());
+  return
+      bindingMetaterm(forallBinder(),
+         addBindings(n, nothingType(), boundVars),
+         foldr(impliesMetaterm, conc,
+               extSize::acc::(map(snd, premises))));
+}
+
 
 nonterminal ExtIndPremiseList with
    pps, abella_pp,
@@ -187,9 +339,10 @@ nonterminal ExtIndPremiseList with
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames,
    upSubst, downSubst, downVarTys, tyVars,
-   toAbellaMsgs, proverState;
+   toAbella<[(Maybe<String>, Metaterm)]>, toAbellaMsgs, proverState;
 propagate typeEnv, constructorEnv, relationEnv, boundNames, downVarTys,
-          proverState, toAbellaMsgs on ExtIndPremiseList;
+          tyVars, usedNames, proverState, toAbellaMsgs
+   on ExtIndPremiseList;
 
 abstract production emptyExtIndPremiseList
 top::ExtIndPremiseList ::=
@@ -201,6 +354,8 @@ top::ExtIndPremiseList ::=
   top.len = 0;
 
   top.upSubst = top.downSubst;
+
+  top.toAbella = [];
 }
 
 
@@ -219,6 +374,8 @@ top::ExtIndPremiseList ::= name::String m::Metaterm
   m.downSubst = top.downSubst;
   rest.downSubst = m.upSubst;
   top.upSubst = rest.upSubst;
+
+  top.toAbella = (just(name), m.toAbella)::rest.toAbella;
 }
 
 
@@ -235,6 +392,8 @@ top::ExtIndPremiseList ::= m::Metaterm rest::ExtIndPremiseList
   m.downSubst = top.downSubst;
   rest.downSubst = m.upSubst;
   top.upSubst = rest.upSubst;
+
+  top.toAbella = (nothing(), m.toAbella)::rest.toAbella;
 }
 
 
@@ -293,9 +452,7 @@ top::TopCommand ::= rels::[QName]
       end;
   --This should only be accessed if there are no errors
   top.provingExtInds = obligations;
-
-  local tempThmName::QName =
-      toQName("$$$$$ext_ind_" ++ toString(genInt()));
+  top.provingTheorems = [];
 
   --get the environment entry for the relation as well
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
@@ -321,83 +478,44 @@ top::TopCommand ::= rels::[QName]
                     RelationEnvItem) ->
                 buildExtSizeLemmas(p.1, p.2), fullRelInfo);
 
-  local thmDecl::TopCommand =
-      theoremDeclaration(tempThmName, [],
-         foldr1(andMetaterm, map(snd, top.provingTheorems)));
-
-  local inductionCommands::[ProofCommand] =
-      let numRels::Integer = length(rels)
-      in --induction on (acc, extSize)
-        [inductionTactic(noHint(), repeat(2, numRels)),
-         inductionTactic(noHint(), repeat(1, numRels))]
-      end;
+  local body::ExtIndBody =
+      foldr1(branchExtIndBody,
+         map(\ here::(QName, [String], Bindings, ExtIndPremiseList) ->
+               oneExtIndBody(here.3, here.1, here.2, here.4),
+             obligations));
+  body.startingGoalNum =
+       if body.len > 1 then [1] else [];
+  body.typeEnv = top.typeEnv;
+  body.relationEnv = top.relationEnv;
+  body.currentModule = top.currentModule;
+  body.constructorEnv = top.constructorEnv;
+  body.downDuringCommands = [];
 
   --Add these to the known theorems, as they are now proven
   top.newTheorems = extSizeLemmas;
 
-  --To get the appropriate skips and such for the during commands, we
-  --use ExtThms to compute them for us
-  local computeDuringCommands::ExtThms =
-      foldr(\ p::(QName, [String], Bindings, ExtIndPremiseList,
-                  RelationEnvItem) rest::ExtThms ->
-              addExtThms(p.1, --name just needs to have right module
-                 p.3,
-                 --thm just needs right relations and names for intros
-                 addLabelExtBody("Rel",
-                    relationMetaterm(p.1, toTermList([]),
-                       emptyRestriction()),
-                 addLabelExtBody("Acc", trueMetaterm(),
-                    endExtBody(trueMetaterm()))),
-                 "Rel", nothing(), rest),
-            endExtThms(), fullRelInfo);
-  computeDuringCommands.startingGoalNum =
-      --if only one thm, subgoals for it are 1, 2, ...
-      if length(rels) > 1 then [1] else [];
-  computeDuringCommands.typeEnv = top.typeEnv;
-  computeDuringCommands.relationEnv = top.relationEnv;
-  computeDuringCommands.currentModule = top.currentModule;
-  computeDuringCommands.constructorEnv = top.constructorEnv;
-  computeDuringCommands.useExtInd = []; --none needed here
-  computeDuringCommands.shouldBeExtensible = true;
-  computeDuringCommands.followingCommands = [];
-  --tail because the first one is intros/case for first thm
-  top.duringCommands = tail(computeDuringCommands.duringCommands);
-  --nothing to do, since we don't need the theorems until composition
-  top.afterCommands = [];
-
+  local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
+      --relation definitions
       [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
+      --ext size lemmas
       flatMap(\ p::(QName, Metaterm) ->
                 [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
                  anyProofCommand(skipTactic())],
-              extSizeLemmas) ++ [anyTopCommand(thmDecl)] ++
-      map(anyProofCommand, inductionCommands) ++
-      (if length(rels) > 1 then [anyProofCommand(splitTactic())]
-                           else []) ++
-      --intros/case for first thm
-      map(anyProofCommand,
-          head(computeDuringCommands.duringCommands).2);
+              extSizeLemmas) ++
+       --declare theorem
+      [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
+                        body.toAbella)),
+       --declare inductions
+       anyProofCommand(inductionTactic(noHint(),
+                          repeat(1, body.len)))] ++
+       --split
+      (if body.len > 1 then [anyProofCommand(splitTactic())]
+                       else []) ++
+       --initial set of during commands, which is at least intros
+      map(anyProofCommand, head(body.duringCommands).2);
 
-  top.provingTheorems = error("proveExtInd.provingTheorems");
-{-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
-            (extIndThmName(p.1),
-             let num::String = freshName("N", p.2)
-             in
-               bindingMetaterm(forallBinder(),
-                  toBindings(num::p.2),
-                  impliesMetaterm(
-                     relationMetaterm(extSizeQName(p.1.sub),
-                        toTermList(map(basicNameTerm, p.2 ++ [num])),
-                        emptyRestriction()),
-                  impliesMetaterm(
-                     relationMetaterm(intStrongInductionRel,
-                        toTermList([basicNameTerm(num)]),
-                        emptyRestriction()),
-                     relationMetaterm(transRelQName(p.1.sub),
-                        toTermList(map(basicNameTerm, p.2)),
-                        emptyRestriction()))))
-             end),
-          obligations);-}
+  top.duringCommands = tail(body.duringCommands);
 }
 
 
