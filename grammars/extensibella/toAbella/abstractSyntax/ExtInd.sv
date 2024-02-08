@@ -688,7 +688,7 @@ function buildTransRelDef
   --(args to conclusion, existentially-bound vars for body, binderless body)
   local qRule::([String], [String], Maybe<Metaterm>) =
       if null(split.2)
-      then error("Should not access (buildTransRelDef.qRule)")
+      then ([], [], nothing())
       else let kClause::([Term], Maybe<Metaterm>) = head(split.2)
            in
            let usedNames::[String] =
