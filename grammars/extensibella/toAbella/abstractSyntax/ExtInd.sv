@@ -21,11 +21,11 @@ top::TopCommand ::= body::ExtIndBody
                  anyProofCommand(skipTactic())],
               extSizeLemmas);
 
-  local fullRelInfo::[(QName, [String], [Term], QName,
-                       String, String, RelationEnvItem)] =
-      zipWith(\ p::(QName, [String], [Term], QName, String, String)
+  local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
+                       RelationEnvItem)] =
+      zipWith(\ p::(QName, [String], Bindings, ExtIndPremiseList)
                 e::RelationEnvItem ->
-                (e.name, p.2, p.3, p.4, p.5, p.6, e),
+                (e.name, p.2, p.3, p.4, e),
               body.extIndInfo, body.relationEnvItems);
 
   --definition of R_{ES}
@@ -38,7 +38,7 @@ top::TopCommand ::= body::ExtIndBody
 
   --lemmas about R_{ES}
   local extSizeLemmas::[(QName, Metaterm)] =
-      flatMap(\ p::(QName, [String], [Term], QName, String, String,
+      flatMap(\ p::(QName, [String], Bindings, ExtIndPremiseList,
                     RelationEnvItem) ->
                 buildExtSizeLemmas(p.1, p.2), fullRelInfo);
 
@@ -70,8 +70,9 @@ propagate constructorEnv, relationEnv, typeEnv, currentModule,
           toAbellaMsgs on ExtIndBody;
 
 synthesized attribute relations::[QName];
-synthesized attribute extIndInfo::[(QName, [String], [Term],
-                                    QName, String, String)];
+                --[(rel, args, total bound vars, premises)]
+synthesized attribute extIndInfo::[(QName, [String], Bindings,
+                                    ExtIndPremiseList)];
 synthesized attribute relationEnvItems::[RelationEnvItem];
 
 abstract production branchExtIndBody
@@ -89,36 +90,24 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 
 
 abstract production oneExtIndBody
-top::ExtIndBody ::= rel::QName relArgs::[String]
-                    boundVars::MaybeBindings transArgs::TermList
-                    transTy::QName original::String translated::String
+top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
+                    premises::ExtIndPremiseList
 {
-  top.pps = [ppImplode(text(" "), rel.pp::map(text, relArgs)) ++
+  top.pps = [text("forall ") ++ ppImplode(text(" "), boundVars.pps) ++
+             text(", ") ++
+             ppImplode(text(" "), rel.pp::map(text, relArgs)) ++
              text(" with") ++ line() ++
-             nest(3, case boundVars of
-                     | justBindings(b) ->
-                       text("forall ") ++ ppImplode(text(" "),
-                                             b.pps) ++ text(", ")
-                     | nothingBindings() -> text("")
-                     end ++
-                     ppImplode(text(" "), transArgs.pps) ++
-                     text(" |{") ++ transTy.pp ++ text("}- ") ++
-                       text(original ++ " ~~> " ++ translated))];
+             nest(3, ppImplode(text(", "), premises.pps))];
   top.abella_pp =
+      "forall " ++ boundVars.abella_pp ++ ", " ++
       implode(" ", rel.abella_pp::relArgs) ++ " with " ++
-      (case boundVars of
-       | justBindings(b) -> "forall " ++ b.abella_pp ++ ", "
-       | nothingBindings() -> ""
-       end) ++
-      transArgs.abella_pp ++ " |{" ++ transTy.abella_pp ++ "}- " ++
-      original ++ " ~~> " ++ translated;
+      premises.abella_pp;
 
-  transArgs.boundNames = boundVars.usedNames ++ relArgs;
+  premises.boundNames = boundVars.usedNames ++ relArgs;
 
   top.relations = if rel.relFound then [rel.fullRel.name] else [];
 
-  top.extIndInfo = [(rel, relArgs, transArgs.toList,
-                     transTy, original, translated)];
+  top.extIndInfo = [(rel, relArgs, boundVars, premises)];
 
   top.relationEnvItems = if rel.relFound then [rel.fullRel] else [];
 
@@ -135,32 +124,6 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
                " non-extensible relation " ++
                justShow(rel.fullRel.name.pp))]
       else [];
-  --Check ty exists and the translation translates the right type
-  top.toAbellaMsgs <-
-      if !transTy.typeFound
-      then transTy.typeErrors
-      else if !rel.relFound 
-      then []
-      else case rel.fullRel.pcType of
-           | nameType(q) ->
-             if q == transTy.fullType.name
-             then []
-             else [errorMsg("Translation must be for relation " ++
-                      justShow(rel.fullRel.name.pp) ++ "'s primary " ++
-                      "component type " ++ justShow(q.pp) ++ " but " ++
-                      "found " ++ justShow(transTy.fullType.name.pp))]
-           | _ -> error("PC type must be a name")
-           end;
-  --Check the PC is the one being translated
-  top.toAbellaMsgs <-
-      if !rel.relFound
-      then []
-      else if elemAtIndex(relArgs, rel.fullRel.pcIndex) == original
-      then []
-      else [errorMsg("Must translate primary component of relation" ++
-               justShow(rel.pp) ++ " (name " ++
-               elemAtIndex(relArgs, rel.fullRel.pcIndex) ++
-               ") but found " ++ original)];
   --Check the arguments to the relation are variables (capitalized)
   top.toAbellaMsgs <-
       flatMap(\ x::String ->
@@ -169,23 +132,25 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
                          justShow(rel.pp) ++
                          " must be capitalized, but found " ++ x)],
               relArgs);
-  --Check the translation is a variable (capitalized)
+  --Check the arguments to the relation are unique
   top.toAbellaMsgs <-
-      if isCapitalized(translated) then []
-      else [errorMsg("Translation " ++ translated ++
-                     " for relation " ++ justShow(rel.pp) ++
-                     " must be capitalized")];
-  --Check the translation is not in the bound variables
-  top.toAbellaMsgs <-
-      if contains(translated, boundVars.usedNames)
-      then [errorMsg("Translation name " ++ translated ++
-               " for relation " ++ justShow(rel.pp) ++
-               " should not be included in bound variables")]
+      if length(relArgs) != length(nub(relArgs))
+      then [errorMsg("Arguments to " ++ justShow(rel.pp) ++
+               " must be unique variables; found duplicates")]
       else [];
+  --Check names given to premises are unique
+  top.toAbellaMsgs <-
+      foldr(\ x::String rest::([String], [Message]) ->
+              if contains(x, rest.1)
+              then (rest.1,
+                    errorMsg("Repeated premise name " ++ x ++
+                       " for relation " ++ justShow(rel.pp))::rest.2)
+              else (x::rest.1, rest.2),
+            ([], []), filterMap(fst, premises.toList)).2;
 
   --Check it is well-typed
   top.toAbellaMsgs <-
-      case unifyTransArgs.upSubst of
+      case unifyRelArgs.upSubst of
       | right(_) -> []
       | left(_) ->
         --given the messages are not terribly useful:
@@ -204,65 +169,72 @@ top::ExtIndBody ::= rel::QName relArgs::[String]
                  foldr1(arrowType, rel.fullRel.types.toList)),
               foldr(arrowType, propType, map(snd, relArgTys)))
       else blankUnify();
-  local unifyTransTy::TypeUnify =
-      if transTy.typeFound && contains(original, relArgs)
-      then typeUnify(nameType(transTy.fullType.name),
-              lookup(original, relArgTys).fromJust)
-      else blankUnify();
-  local unifyTransArgs::TypeUnify =
-      if transTy.typeFound
-      then typeUnify( --propType for convenience (need if empty)
-              foldr(arrowType, propType,
-                    transTy.fullType.transTypes.toList),
-              foldr(arrowType, propType, transArgs.types.toList))
-      else blankUnify();
-  transArgs.downVarTys =
-      (translated, if transTy.typeFound
-                   then nameType(transTy)
-                   else varType("__Trans" ++ toString(genInt()))
-      )::relArgTys ++
+  premises.downVarTys = relArgTys ++
       map(\ p::(String, MaybeType) ->
             (p.1,
              case p.2 of
              | justType(t) -> t
              | nothingType() -> varType("__X" ++ toString(genInt()))
              end), boundVars.toList);
-  transArgs.downSubst = emptySubst();
-  unifyRelArgs.downSubst = transArgs.upSubst;
-  unifyTransTy.downSubst = unifyRelArgs.upSubst;
-  unifyTransArgs.downSubst = unifyTransTy.upSubst;
+  premises.downSubst = emptySubst();
+  unifyRelArgs.downSubst = premises.upSubst;
 }
 
 
-nonterminal MaybeBindings with
-   pp, abella_pp,
-   toList<(String, MaybeType)>, len,
-   usedNames,
-   typeEnv;
-propagate typeEnv on MaybeBindings;
+nonterminal ExtIndPremiseList with
+   pps, abella_pp,
+   toList<(Maybe<String>, Metaterm)>, len,
+   typeEnv, constructorEnv, relationEnv,
+   boundNames, usedNames,
+   upSubst, downSubst, downVarTys, tyVars,
+   toAbellaMsgs, proverState;
+propagate typeEnv, constructorEnv, relationEnv, boundNames, downVarTys,
+          proverState, toAbellaMsgs on ExtIndPremiseList;
 
-abstract production justBindings
-top::MaybeBindings ::= b::Bindings
+abstract production emptyExtIndPremiseList
+top::ExtIndPremiseList ::=
 {
-  top.pp = ppImplode(text(" "), b.pps);
-  top.abella_pp = b.abella_pp;
-
-  top.toList = b.toList;
-  top.len = b.len;
-
-  top.usedNames := b.usedNames;
-}
-
-abstract production nothingBindings
-top::MaybeBindings ::=
-{
-  top.pp = text("");
+  top.pps = [];
   top.abella_pp = "";
 
   top.toList = [];
   top.len = 0;
 
-  top.usedNames := [];
+  top.upSubst = top.downSubst;
+}
+
+
+abstract production addNameExtIndPremiseList
+top::ExtIndPremiseList ::= name::String m::Metaterm
+                           rest::ExtIndPremiseList
+{
+  top.pps = (text(name ++ " : ") ++ nest(3, m.pp))::rest.pps;
+  top.abella_pp = name ++ " : " ++ m.abella_pp ++
+                  if rest.abella_pp == "" then ""
+                  else ", " ++ rest.abella_pp;
+
+  top.toList = (just(name), m)::rest.toList;
+  top.len = 1 + rest.len;
+
+  m.downSubst = top.downSubst;
+  rest.downSubst = m.upSubst;
+  top.upSubst = rest.upSubst;
+}
+
+
+abstract production addExtIndPremiseList
+top::ExtIndPremiseList ::= m::Metaterm rest::ExtIndPremiseList
+{
+  top.pps = (m.pp)::rest.pps;
+  top.abella_pp = m.abella_pp ++ if rest.abella_pp == "" then ""
+                                 else ", " ++ rest.abella_pp;
+
+  top.toList = (nothing(), m)::rest.toList;
+  top.len = 1 + rest.len;
+
+  m.downSubst = top.downSubst;
+  rest.downSubst = m.upSubst;
+  top.upSubst = rest.upSubst;
 }
 
 
@@ -314,7 +286,7 @@ top::TopCommand ::= rels::[QName]
         error("Should be impossible (proveExtInd.toAbellaMsgs)")
       end;
 
-  local obligations::[(QName, [String], [Term], QName, String, String)] =
+  local obligations::[(QName, [String], Bindings, ExtIndPremiseList)] =
       case head(top.proverState.remainingObligations) of
       | extIndElement(r) -> r
       | _ -> error("Not possible (proveExtInd.obligations)")
@@ -326,13 +298,13 @@ top::TopCommand ::= rels::[QName]
       toQName("$$$$$ext_ind_" ++ toString(genInt()));
 
   --get the environment entry for the relation as well
-  local fullRelInfo::[(QName, [String], [Term], QName, String, String,
+  local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                        RelationEnvItem)] =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             let rel::RelationEnvItem =
                 decorate p.1 with {relationEnv=top.relationEnv;}.fullRel
             in
-              (rel.name, p.2, p.3, p.4, p.5, p.6, rel)
+              (rel.name, p.2, p.3, p.4, rel)
             end,
           obligations);
 
@@ -345,7 +317,7 @@ top::TopCommand ::= rels::[QName]
       buildTransRel(obligations, top.relationEnv);
 
   local extSizeLemmas::[(QName, Metaterm)] =
-      flatMap(\ p::(QName, [String], [Term], QName, String, String,
+      flatMap(\ p::(QName, [String], Bindings, ExtIndPremiseList,
                     RelationEnvItem) ->
                 buildExtSizeLemmas(p.1, p.2), fullRelInfo);
 
@@ -366,10 +338,10 @@ top::TopCommand ::= rels::[QName]
   --To get the appropriate skips and such for the during commands, we
   --use ExtThms to compute them for us
   local computeDuringCommands::ExtThms =
-      foldr(\ p::(QName, [String], [Term], QName, String, String,
+      foldr(\ p::(QName, [String], Bindings, ExtIndPremiseList,
                   RelationEnvItem) rest::ExtThms ->
               addExtThms(p.1, --name just needs to have right module
-                 oneBinding("", nothingType()), --unneeded for cmds
+                 p.3,
                  --thm just needs right relations and names for intros
                  addLabelExtBody("Rel",
                     relationMetaterm(p.1, toTermList([]),
@@ -406,8 +378,8 @@ top::TopCommand ::= rels::[QName]
       map(anyProofCommand,
           head(computeDuringCommands.duringCommands).2);
 
-  top.provingTheorems =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
+  top.provingTheorems = error("proveExtInd.provingTheorems");
+{-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             (extIndThmName(p.1),
              let num::String = freshName("N", p.2)
              in
@@ -425,7 +397,7 @@ top::TopCommand ::= rels::[QName]
                         toTermList(map(basicNameTerm, p.2)),
                         emptyRestriction()))))
              end),
-          obligations);
+          obligations);-}
 }
 
 
@@ -638,23 +610,23 @@ function buildExtSizeDefBody
   Build the full R_T relation
 -}
 function buildTransRel
-TopCommand ::= relInfo::[(QName, [String], [Term], QName, String,
-                          String)] relEnv::Env<RelationEnvItem>
+TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
+               relEnv::Env<RelationEnvItem>
 {
-  local fullRelInfo::[(QName, [String], [Term], QName, String, String,
+  local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                        RelationEnvItem)] =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             let rel::RelationEnvItem =
                 decorate p.1 with {relationEnv=relEnv;}.fullRel
             in
-              (rel.name, p.2, p.3, p.4, p.5, p.6, rel)
+              (rel.name, p.2, p.3, p.4, rel)
             end,
           relInfo);
   local preds::[(QName, Type)] =
-      map(\ p::(QName, [String], [Term], QName, String, String,
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
                 RelationEnvItem) ->
-            (transRelQName(p.7.name.sub),
-             foldr1(arrowType, p.7.types.toList)),
+            (transRelQName(p.5.name.sub),
+             foldr1(arrowType, p.5.types.toList)),
             fullRelInfo);
   local defs::[Def] =
       buildTransRelDef(fullRelInfo, map(fst, preds));
@@ -669,17 +641,17 @@ TopCommand ::= relInfo::[(QName, [String], [Term], QName, String,
   the relations in relInfo
 -}
 function buildTransRelDef
-[Def] ::= relInfo::[(QName, [String], [Term], QName, String, String,
+[Def] ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                      RelationEnvItem)] allRels::[QName]
 {
-  local r::(QName, [String], [Term], QName, String, String,
+  local r::(QName, [String], Bindings, ExtIndPremiseList,
             RelationEnvItem) = head(relInfo);
-  local pcIndex::Integer = r.7.pcIndex;
+  local pcIndex::Integer = r.5.pcIndex;
   --split out clauses for non-unknownK and unknownK, of which there is <= 1
   local split::([([Term], Maybe<Metaterm>)], [([Term], Maybe<Metaterm>)]) =
       partition(\ p::([Term], Maybe<Metaterm>) ->
                   !elemAtIndex(p.1, pcIndex).isUnknownTermK,
-                r.7.defsList);
+                r.5.defsList);
   local defList::[([Term], Maybe<Metaterm>)] =
       map(\ p::([Term], Maybe<Metaterm>) ->
             (p.1, bind(p.2, \ m::Metaterm ->

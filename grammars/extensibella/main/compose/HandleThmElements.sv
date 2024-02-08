@@ -360,9 +360,8 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 aspect production extIndElement
 top::ThmElement ::=
-   --[(rel name, rel arg names, trans args, trans ty,
-   --    original, translated name)]
-   rels::[(QName, [String], [Term], QName, String, String)]
+   --[(rel name, rel arg names, all bindings, extra premises)]
+   rels::[(QName, [String], Bindings, ExtIndPremiseList)]
 {
   {-
     Definitions of R_{ES} and R_T relations
@@ -432,7 +431,7 @@ top::ThmElement ::=
     Lemmas about R_{ES}
   -}
   local lemmaStatements::[[(QName, Metaterm)]] =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             buildExtSizeLemmas(p.1, p.2),
           rels);
   local jointLemmaNames::(String, String, String) =
@@ -556,7 +555,7 @@ top::ThmElement ::=
   -}
   local toExtSizeStatement::Metaterm =
       foldr1(andMetaterm,
-         map(\ p::(QName, [String], [Term], QName, String, String) ->
+         map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
                let num::String = freshName("N", p.2)
                in
                  bindingMetaterm(forallBinder(),
@@ -573,7 +572,7 @@ top::ThmElement ::=
                end,
              rels));
   local toExtSizeNames::[String] =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             "$toExtSize__" ++ p.1.abella_pp,
           rels);
   local toExtSizeProveName::String =
@@ -673,7 +672,7 @@ top::ThmElement ::=
   -}
   local toTransRelStatement::Metaterm =
      foldr1(andMetaterm,
-        map(\ p::(QName, [String], [Term], QName, String, String) ->
+        map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
               let num::String = freshName("N", p.2)
               in
                 bindingMetaterm(forallBinder(),
@@ -692,7 +691,7 @@ top::ThmElement ::=
               end,
             rels));
   local toTransRelNames::[String] =
-      map(\ p::(QName, [String], [Term], QName, String, String) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             "$toTransRel__" ++ p.1.abella_pp,
           rels);
   local toTransRelProveName::String =
@@ -902,8 +901,7 @@ top::ThmElement ::=
     R to R_T proof
   -}
   local extIndProofs::[String] =
-      map(\ p::(Integer, QName, [String], [Term], QName,
-                         String, String) ->
+      map(\ p::(Integer, QName, [String], Bindings, ExtIndPremiseList) ->
             let stmt::Metaterm =
                 bindingMetaterm(forallBinder(),
                    toBindings(p.3),
@@ -945,7 +943,7 @@ top::ThmElement ::=
       else "$dropT_" ++ toString(genInt());
   local dropTStmt::Metaterm =
       foldr1(andMetaterm,
-         map(\ p::(QName, [String], [Term], QName, String, String) ->
+         map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
                bindingMetaterm(forallBinder(),
                   toBindings(p.2),
                   impliesMetaterm(

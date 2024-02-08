@@ -297,27 +297,6 @@ top::Bindings ::= name::String mty::MaybeType rest::Bindings
 
 
 attribute
-full<MaybeBindings>
-occurs on MaybeBindings;
-
-aspect production justBindings
-top::MaybeBindings ::= b::Bindings
-{
-  top.full = justBindings(b.full);
-}
-
-
-aspect production nothingBindings
-top::MaybeBindings ::=
-{
-  top.full = nothingBindings();
-}
-
-
-
-
-
-attribute
    full<ExtIndBody>
 occurs on ExtIndBody;
 
@@ -329,13 +308,40 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 
 
 aspect production oneExtIndBody
-top::ExtIndBody ::= rel::QName relArgs::[String]
-                    boundVars::MaybeBindings transArgs::TermList
-                    transTy::QName original::String translated::String
+top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
+                    premises::ExtIndPremiseList
 {
-  top.full = oneExtIndBody(rel.fullRel.name, relArgs, boundVars.full,
-                           transArgs.full, transTy.fullType.name,
-                           original, translated);
+  top.full = oneExtIndBody(boundVars.full, rel.fullRel.name, relArgs,
+                           premises.full);
+}
+
+
+
+
+
+attribute
+   full<ExtIndPremiseList>
+occurs on ExtIndPremiseList;
+
+aspect production emptyExtIndPremiseList
+top::ExtIndPremiseList ::=
+{
+  top.full = emptyExtIndPremiseList();
+}
+
+
+aspect production addNameExtIndPremiseList
+top::ExtIndPremiseList ::= name::String m::Metaterm
+                           rest::ExtIndPremiseList
+{
+  top.full = addNameExtIndPremiseList(name, m.full, rest.full);
+}
+
+
+aspect production addExtIndPremiseList
+top::ExtIndPremiseList ::= m::Metaterm rest::ExtIndPremiseList
+{
+  top.full = addExtIndPremiseList(m.full, rest.full);
 }
 
 

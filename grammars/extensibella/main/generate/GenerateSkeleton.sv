@@ -122,7 +122,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 aspect production extIndElement
 top::ThmElement ::=
-   rels::[(QName, [String], [Term], QName, String, String)]
+   rels::[(QName, [String], Bindings, ExtIndPremiseList)]
 {
   top.inSkeleton = true;
   top.skeletonText =

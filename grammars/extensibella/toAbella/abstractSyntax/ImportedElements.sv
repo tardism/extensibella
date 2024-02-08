@@ -76,9 +76,8 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 abstract production extIndElement
 top::ThmElement ::=
-   --[(rel name, rel arg names, trans args, trans ty,
-   --    original, translated name)]
-   rels::[(QName, [String], [Term], QName, String, String)]
+   --[(rel name, rel arg names, full bindings, extra premises)]
+   rels::[(QName, [String], Bindings, ExtIndPremiseList)]
 {
   top.pp = error("extIndElement.pp");
 
@@ -88,30 +87,18 @@ top::ThmElement ::=
   --only user-relevant theorems are the lemmas about extSize
   --the proven things are only for framework use
   top.thms =
-      flatMap(\ p::(QName, [String], [Term], QName, String, String) ->
+      flatMap(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
                 buildExtSizeLemmas(p.1, p.2), rels);
 }
 
 --Create the contents of Ext_Ind from the tuple of its information
 function extIndInfo_to_extIndBody
 ExtIndBody ::=
-   extIndInfo::[(QName, [String], [Term], QName, String, String)]
+   extIndInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
 {
-  local p::(QName, [String], [Term], QName, String, String) =
+  local p::(QName, [String], Bindings, ExtIndPremiseList) =
       head(extIndInfo);
-  local transArgs::TermList = toTermList(p.3);
-  local newNames::[String] =
-      removeAll(p.2, remove(p.5, transArgs.usedNames));
-  local boundVars::MaybeBindings =
-      if null(newNames)
-      then nothingBindings()
-      else justBindings(
-              foldr(\ x::String rest::Bindings ->
-                      addBindings(x, nothingType(), rest),
-                 oneBinding(head(newNames), nothingType()),
-                 tail(newNames)));
-  local one::ExtIndBody =
-      oneExtIndBody(p.1, p.2, boundVars, transArgs, p.4, p.5, p.6);
+  local one::ExtIndBody = oneExtIndBody(p.3, p.1, p.2, p.4);
   return
       case extIndInfo of
       | [] -> error("Should not call extIndInfo_to_extIndBody " ++

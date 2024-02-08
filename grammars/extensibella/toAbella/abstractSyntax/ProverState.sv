@@ -32,8 +32,8 @@ annotation knownTheorems::[(QName, Metaterm)];
 
 --ExtInds we have proven and available
 --Each sublist is a group of mutually-ext-inded relations
---[[(rel, rel arg names, trans args, trans ty, original, translated)]]
-annotation knownExtInds::[[(QName, [String], [Term], QName, String, String)]];
+--[[(rel, rel arg names, full bindings, premises)]]
+annotation knownExtInds::[[(QName, [String], Bindings, ExtIndPremiseList)]];
 
 --Things we will need to do in the proof based on imports that we
 --haven't done yet
@@ -56,7 +56,7 @@ abstract production proverState
 top::ProverState ::=
    --extInds we are currently in the process of proving
    --should be added to knownExtInds when we finish the proof
-   provingExtInds::[(QName, [String], [Term], QName, String, String)]
+   provingExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
    --things to do when the subgoal reaches that number
    --should clear it once it has been sent to Abella
    --Note:  If there are commands for e.g. Subgoal 2 that are expected
@@ -85,7 +85,7 @@ top::ProverState ::=
                                 map((.name), top.knownConstrs))) ++ text("]"), realLine(),
       --ext inds
       text("  Ext Inds:  ["), ppImplode(text(",  "),
-                                 map(\ l::[(QName, [String], [Term], QName, String, String)] ->
+                                 map(\ l::[(QName, [String], Bindings, ExtIndPremiseList)] ->
                                        ppConcat([text("["),
                                           ppImplode(text(", "), map((.pp), map(fst, l))),
                                           text("]")]), top.knownExtInds)),
@@ -259,7 +259,7 @@ ProverState ::= current::ProverState newProofState::ProofState
    newThms::[(QName, Metaterm)] newTys::[TypeEnvItem]
    newRels::[RelationEnvItem] newConstrs::[ConstructorEnvItem]
    provingThms::[(QName, Metaterm)]
-   provingExtInds::[(QName, [String], [Term], QName, String, String)]
+   provingExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
    duringCmds::[(SubgoalNum, [ProofCommand])]
    keyRelModules::[(SubgoalNum, QName)]
    afterCmds::[AnyCommand]
@@ -458,11 +458,11 @@ function findTheorem
 
 --Find an ExtInd declaration group including rel
 function findExtIndGroup
-Maybe<[(QName, [String], [Term], QName, String, String)]> ::=
+Maybe<[(QName, [String], Bindings, ExtIndPremiseList)]> ::=
    name::QName state::ProverState
 {
-  local find::[[(QName, [String], [Term], QName, String, String)]] =
-      filter(\ l::[(QName, [String], [Term], QName, String, String)] ->
+  local find::[[(QName, [String], Bindings, ExtIndPremiseList)]] =
+      filter(\ l::[(QName, [String], Bindings, ExtIndPremiseList)] ->
                contains(name, map(fst, l)),
              state.knownExtInds);
   return case find of

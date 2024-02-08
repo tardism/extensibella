@@ -51,8 +51,8 @@ closed nonterminal AnyCommand_c
    with ast<AnyCommand>;
 closed nonterminal TheoremStmts_c with ast<Either<String ExtThms>>;
 closed nonterminal ExtBody_c with ast<Either<String ExtBody>>;
-closed nonterminal ExtIndBodies_c with ast<ExtIndBody>;
-closed nonterminal ExtIndBody_c with ast<ExtIndBody>;
+closed nonterminal ExtIndBodies_c with ast<Either<String ExtIndBody>>;
+closed nonterminal ExtIndPremiseList_c with ast<Either<String ExtIndPremiseList>>;
 closed nonterminal QnameList_c with ast<[QName]>;
 
 concrete productions top::AnyCommand_c
@@ -256,10 +256,14 @@ concrete productions top::PureTopCommand_c
   { top.ast = anyTopCommand(proveConstraint(toQName(tc.lexeme))); }
 -----
 | 'Ext_Ind' e::ExtIndBodies_c '.'
-  { top.ast = anyTopCommand(extIndDeclaration(e.ast)); }
+  { top.ast =
+        case e.ast of
+        | left(err) -> anyParseFailure(err)
+        | right(a) -> anyTopCommand(extIndDeclaration(a))
+        end; }
 | 'Prove_Ext_Ind' rels::QnameList_c '.'
   { top.ast = anyTopCommand(proveExtInd(rels.ast)); }
-| 'Prove_Ext_Ind' e::ExtIndBodies_c 'with' oldRels::QnameList_c '.'
+| 'Prove_Ext_Ind' oldRels::QnameList_c 'with' e::ExtIndBodies_c '.'
   { top.ast = todoError("Adding new relations to ExtInd groups not done yet"); }
 
 
@@ -407,118 +411,106 @@ concrete productions top::ExtBody_c
 
 
 concrete productions top::ExtIndBodies_c
-| e::ExtIndBody_c
-  { top.ast = e.ast; }
-| e::ExtIndBody_c ',' rest::ExtIndBodies_c
-  { top.ast = branchExtIndBody(e.ast, rest.ast); }
-
-
-concrete productions top::ExtIndBody_c
-| rel::Id_t args::VarList_c 'with'
-  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
+| 'forall' b::BindingList_c ',' rel::Id_t args::VarList_c 'with'
+  premises::ExtIndPremiseList_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
+        case premises.ast of
+        | left(err) -> left(err)
+        | right(a) ->
+          right(oneExtIndBody(b.ast, toQName(rel.lexeme), args.ast, a))
+        end; }
+| 'forall' b::BindingList_c ',' rel::Qname_t args::VarList_c 'with'
+  premises::ExtIndPremiseList_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Id_t args::VarList_c 'with'
-  '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
+        case premises.ast of
+        | left(err) -> left(err)
+        | right(a) ->
+          right(oneExtIndBody(b.ast, toQName(rel.lexeme), args.ast, a))
+        end; }
+| 'forall' b::BindingList_c ',' rel::Id_t args::VarList_c 'with'
+  premises::ExtIndPremiseList_c ';' rest::ExtIndBodies_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
+        case premises.ast, rest.ast of
+        | left(err), _ -> left(err)
+        | _, left(err) -> left(err)
+        | right(a), right(r) ->
+          right(branchExtIndBody(
+                   oneExtIndBody(b.ast, toQName(rel.lexeme), args.ast, a),
+                   r))
+        end; }
+| 'forall' b::BindingList_c ',' rel::Qname_t args::VarList_c 'with'
+  premises::ExtIndPremiseList_c ';' rest::ExtIndBodies_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Id_t args::VarList_c 'with'
-  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
-  { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
-  { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
-| rel::Id_t args::VarList_c 'with'
-  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
-  { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
-  { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           nothingBindings(), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
+        case premises.ast, rest.ast of
+        | left(err), _ -> left(err)
+        | _, left(err) -> left(err)
+        | right(a), right(r) ->
+          right(branchExtIndBody(
+                   oneExtIndBody(b.ast, toQName(rel.lexeme), args.ast, a),
+                   r))
+        end; }
 --
-| rel::Id_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
+| 'forall' b::BindingList_c ',' rel::Id_t args::VarList_c
+  { top.ast = right(oneExtIndBody(b.ast,
+                       toQName(rel.lexeme), args.ast,
+                       emptyExtIndPremiseList())); }
+| 'forall' b::BindingList_c ',' rel::Qname_t args::VarList_c
+  { top.ast = right(oneExtIndBody(b.ast,
+                       toQName(rel.lexeme), args.ast,
+                       emptyExtIndPremiseList())); }
+| 'forall' b::BindingList_c ',' rel::Id_t args::VarList_c ';'
+  rest::ExtIndBodies_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
+        case rest.ast of
+        | left(err) -> left(err)
+        | right(a) ->
+          right(branchExtIndBody(
+                   oneExtIndBody(b.ast, toQName(rel.lexeme), args.ast,
+                      emptyExtIndPremiseList()), a))
+        end; }
+| 'forall' b::BindingList_c ',' rel::Qname_t args::VarList_c ';'
+  rest::ExtIndBodies_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Id_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
+        case rest.ast of
+        | left(err) -> left(err)
+        | right(a) ->
+          right(branchExtIndBody(
+                   oneExtIndBody(b.ast, toQName(rel.lexeme), args.ast,
+                      emptyExtIndPremiseList()), a))
+        end; }
+
+
+concrete productions top::ExtIndPremiseList_c
+| name::Id_t ':' m::Metaterm_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  ',' '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
+        case m.ast of
+        | left(err) -> left(err)
+        | right(a) ->
+          right(addNameExtIndPremiseList(name.lexeme, a,
+                                         emptyExtIndPremiseList()))
+        end; }
+| m::Metaterm_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme),  args.ast,
-           justBindings(b.ast), emptyTermList(), toQName(ty.lexeme),
-           o.lexeme, t.lexeme); }
-| rel::Id_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
+        case m.ast of
+        | left(err) -> left(err)
+        | right(a) ->
+          right(addExtIndPremiseList(a, emptyExtIndPremiseList()))
+        end; }
+| name::Id_t ':' m::Metaterm_c ',' rest::ExtIndPremiseList_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           justBindings(b.ast), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  targs::ExpList_c '|{' ty::Id_t '}-' o::Id_t '~~>' t::Id_t
+        case m.ast, rest.ast of
+        | left(err), _ -> left(err)
+        | _, left(err) -> left(err)
+        | right(a), right(r) ->
+          right(addNameExtIndPremiseList(name.lexeme, a, r))
+        end; }
+| m::Metaterm_c ',' rest::ExtIndPremiseList_c
   { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           justBindings(b.ast), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
-| rel::Id_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
-  { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           justBindings(b.ast), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
-| rel::Qname_t args::VarList_c 'with'
-  'forall' b::BindingList_c ','
-  targs::ExpList_c '|{' ty::Qname_t '}-' o::Id_t '~~>' t::Id_t
-  { top.ast =
-        oneExtIndBody(toQName(rel.lexeme), args.ast,
-           justBindings(b.ast), targs.ast,
-           toQName(ty.lexeme), o.lexeme, t.lexeme); }
+        case m.ast, rest.ast of
+        | left(err), _ -> left(err)
+        | _, left(err) -> left(err)
+        | right(a), right(r) -> right(addExtIndPremiseList(a, r))
+        end; }
 
 
 concrete productions top::QnameList_c

@@ -61,8 +61,8 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
        else []; --only one thm, so subgoals for it are 1, 2, ...
 
   --find extInd if needed for the relations
-  local extIndGroup::Maybe<[(QName, [String], [Term],
-                             QName, String, String)]> =
+  local extIndGroup::Maybe<[(QName, [String], Bindings,
+                             ExtIndPremiseList)]> =
       findExtIndGroup(head(thms.inductionRels), top.proverState);
   --need extInd for all if any relations are imported
   local importedIndRels::[QName] =
@@ -304,9 +304,9 @@ synthesized attribute nextGoalNum::SubgoalNum;
 synthesized attribute inductionNums::[Integer];
 --Relations on which we are doing induction
 synthesized attribute inductionRels::[QName];
---Ext_Ind definition to use for preservability if needed
-inherited attribute useExtInd::[(QName, [String], [Term],
-                                 QName, String, String)];
+--Ext_Ind definition to use if needed
+inherited attribute useExtInd::[(QName, [String], Bindings,
+                                 ExtIndPremiseList)];
 --commands following this set of ExtThms
 inherited attribute followingCommands::[(SubgoalNum, [ProofCommand])];
 --whether the theorem is expected to be extensible
@@ -537,8 +537,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | _ -> error("Should not access inductionRel")
       end;
 
-  local thisExtInd::Maybe<(QName, [String], [Term],
-                           QName, String, String)> =
+  local thisExtInd::Maybe<(QName, [String], Bindings, ExtIndPremiseList)> =
       if inductionRelFound --guard against out-of-order access
       then case lookup(inductionRel.name, top.useExtInd) of
            | just(p) -> just((inductionRel.name, p))

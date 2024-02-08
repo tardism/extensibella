@@ -29,8 +29,8 @@ synthesized attribute newTheorems::[(QName, Metaterm)];
 --theorems currently being proven
 synthesized attribute provingTheorems::[(QName, Metaterm)];
 --extInds currently being proven
-synthesized attribute provingExtInds::[(QName, [String], [Term],
-                                        QName, String, String)];
+synthesized attribute provingExtInds::[(QName, [String], Bindings,
+                                        ExtIndPremiseList)];
 --commands that need to happen at points in the proof of an ext thm
 synthesized attribute duringCommands::[(SubgoalNum, [ProofCommand])];
 --commands that need to happen after a proof completes
