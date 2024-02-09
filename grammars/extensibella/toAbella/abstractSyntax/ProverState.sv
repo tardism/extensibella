@@ -137,7 +137,7 @@ function removeFinishedObligation
 [ThmElement] ::=
    obligations::[ThmElement] provenThms::[(QName, Metaterm)]
 {
-  local newObligations::[ThmElement] =
+  return
       case obligations of
       | extensibleMutualTheoremGroup(thms, alsos)::rest ->
         --everything imported here is in the things we just proved
@@ -159,7 +159,6 @@ function removeFinishedObligation
         else obligations
       | _ -> obligations
       end;
-  return newObligations;
 }
 
 

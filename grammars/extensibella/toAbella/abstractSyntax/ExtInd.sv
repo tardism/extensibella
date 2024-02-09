@@ -441,8 +441,14 @@ top::TopCommand ::= rels::[QName]
                    " " ++ implode(", ",
                              map(justShow, map((.pp), expectedNames))))]
         end
-      | _ ->
-        error("Should be impossible (proveExtInd.toAbellaMsgs)")
+      --split these out explicitly for better errors/catching if a
+      --new constructor is added
+      | nonextensibleTheorem(_, _, _)::_ ->
+        error("Should be impossible (proveExtInd.toAbellaMsgs " ++
+              "nonextensibleTheorem)")
+      | splitElement(_, _)::_ ->
+        error("Should be impossible (proveExtInd.toAbellaMsgs " ++
+              "splitElement)")
       end;
 
   local obligations::[(QName, [String], Bindings, ExtIndPremiseList)] =
@@ -452,7 +458,11 @@ top::TopCommand ::= rels::[QName]
       end;
   --This should only be accessed if there are no errors
   top.provingExtInds = obligations;
-  top.provingTheorems = [];
+  top.provingTheorems =
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+            --don't need the actual metaterm, only the name
+            (extIndThmName(p.1), trueMetaterm()),
+          obligations);
 
   --get the environment entry for the relation as well
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
