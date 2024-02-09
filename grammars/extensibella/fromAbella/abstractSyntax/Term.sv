@@ -181,7 +181,7 @@ top::Term ::= name::QName ty::MaybeType
                  [toInteger(substring(3, length(x), x))]))
       --Unknown terms
       | unknownIQName(ty) -> unknownITerm(name.tyFromAbella)
-      | unknownKQName(ty) -> unknownKTerm(name.tyFromAbella)
+      | unknownKQName(rel) -> unknownKTerm(name.relFromAbella)
       --Other
       | _ -> nameTerm(name.constrFromAbella, ty)
       end;

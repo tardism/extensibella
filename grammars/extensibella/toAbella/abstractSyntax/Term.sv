@@ -373,25 +373,25 @@ top::Term ::= ty::QName
       then [] --ty.typeErrors gives this
       else if ty.fullType.isLangType
       then []
-      else [errorMsg("Cannot have an unknown term for type " ++
+      else [errorMsg("Cannot have an unknown I term for type " ++
                justShow(ty.fullType.name.pp) ++ " that is not " ++
                "defined as part of the language")];
 }
 
 
 aspect production unknownKTerm
-top::Term ::= ty::QName
+top::Term ::= rel::QName
 {
-  top.toAbella = nameTerm(ty.fullType.unknownConstrK, nothingType());
-  top.toAbellaMsgs <- ty.typeErrors;
+  top.toAbella = nameTerm(rel.fullRel.unknownConstrK, nothingType());
+  top.toAbellaMsgs <- rel.relErrors;
   top.toAbellaMsgs <-
-      if !ty.typeFound
-      then [] --ty.typeErrors gives this
-      else if ty.fullType.isLangType
+      if !rel.relFound
+      then [] --rel.relErrors gives this
+      else if rel.fullRel.isExtensible
       then []
-      else [errorMsg("Cannot have an unknown term for type " ++
-               justShow(ty.fullType.name.pp) ++ " that is not " ++
-               "defined as part of the language")];
+      else [errorMsg("Cannot have an unknown K term for relation " ++
+               justShow(rel.fullRel.name.pp) ++ " that is not " ++
+               "extensible")];
 }
 
 

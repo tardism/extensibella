@@ -320,7 +320,7 @@ nonterminal Term with
    pp, abella_pp, isAtomic,
    typeEnv, constructorEnv, relationEnv,
    isStructured, headConstructor, isConstant,
-   isUnknownTermI, isUnknownTermK, unknownTy,
+   isUnknownTermI, isUnknownTermK, unknownId,
    unknownKReplaced, replaceUnknownK,
    substName, substTerm, subst<Term>,
    unifyWith<Term>, unifySuccess, unifyEqs, unifySubst,
@@ -340,7 +340,7 @@ top::Term ::=
 {
   top.isUnknownTermI = false;
   top.isUnknownTermK = false;
-  top.unknownTy = nothing();
+  top.unknownId = nothing();
 }
 
 
@@ -419,6 +419,12 @@ top::Term ::= name::QName mty::MaybeType
                        | unknownKQName(_) -> true
                        | _ -> false
                        end;
+  top.unknownId =
+      case name of
+      | unknownIQName(_) when name.typeFound -> just(name.fullType.name)
+      | unknownKQName(_) when name.relFound -> just(name.fullRel.name)
+      | _ -> nothing()
+      end;
 
   top.headConstructor = name;
 

@@ -74,7 +74,8 @@ IOVal<Either<String
      else ioval(definition_file_contents.io,
                 right((definition, outerface.iovalue.fromRight.1,
                        outerface.iovalue.fromRight.2,
-                       interface.buildsOns)));
+                       --add this module to it
+                       (moduleName, interface.mods)::interface.buildsOns)));
 }
 
 

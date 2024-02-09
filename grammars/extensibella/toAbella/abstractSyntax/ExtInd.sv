@@ -775,10 +775,18 @@ function buildTransRelDef
   local r::(QName, [String], Bindings, ExtIndPremiseList,
             RelationEnvItem) = head(relInfo);
   local pcIndex::Integer = r.5.pcIndex;
-  --split out clauses for non-unknownK and unknownK, of which there is <= 1
+  --split out clauses for non-unknownK and unknownK for this relation,
+  --   of which there is <= 1
   local split::([([Term], Maybe<Metaterm>)], [([Term], Maybe<Metaterm>)]) =
       partition(\ p::([Term], Maybe<Metaterm>) ->
-                  !elemAtIndex(p.1, pcIndex).isUnknownTermK,
+                  let pc::Term = elemAtIndex(p.1, pcIndex)
+                  in
+                    !pc.isUnknownTermK ||
+                    decorate pc with {
+                       relationEnv = buildEnv([r.5]);
+                       typeEnv = error("not actually needed");
+                    }.unknownId.isJust
+                  end,
                 r.5.defsList);
   local defList::[([Term], Maybe<Metaterm>)] =
       map(\ p::([Term], Maybe<Metaterm>) ->
@@ -885,8 +893,9 @@ function buildTransRelClauses
       let pc::Term = elemAtIndex(head(defs).1, pcIndex)
       in
       let constr::QName = pc.headConstructor
-      in
-        !sameModule(rel.moduleName, constr)
+      in --rules for K's getting here are instantiated default rules,
+         --  which are host rules
+        !pc.isUnknownTermK && !sameModule(rel.moduleName, constr)
       end end;
 
   --new body for the rule, with all bindings

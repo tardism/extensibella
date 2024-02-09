@@ -52,7 +52,7 @@ attribute name {} occurs on a => String ::= e::Env<a>
 
 data nonterminal TypeEnvItem with
    name, type, transTypes, isLangType, isProofType, isLibType, kind,
-   unknownConstrI, unknownConstrK, clauseModules;
+   unknownConstrI, clauseModules;
 
 synthesized attribute isLangType::Boolean;
 synthesized attribute isProofType::Boolean;
@@ -60,7 +60,6 @@ synthesized attribute isLibType::Boolean;
 synthesized attribute transTypes::TypeList;
 synthesized attribute kind::Integer; --number of args to type
 synthesized attribute unknownConstrI::QName;
-synthesized attribute unknownConstrK::QName;
 
 --the modules for the PC of the clauses, in clause order
 synthesized attribute clauseModules::[QName];
@@ -82,7 +81,6 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
   top.transTypes = args;
 
   top.unknownConstrI = unknownIQName(name.sub);
-  top.unknownConstrK = unknownKQName(name.sub);
 
   top.clauseModules = clauseModules;
 }
@@ -106,8 +104,6 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.unknownConstrI =
       error("Should not access unknownConstrI on libTypeEnvItem");
-  top.unknownConstrK =
-      error("Should not access unknownConstrK on libTypeEnvItem");
 
   top.clauseModules =
       error("Should not access clauseModules on libTypeEnvItem");
@@ -132,8 +128,6 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.unknownConstrI =
       error("Should not access unknownConstrI on proofTypeEnvItem");
-  top.unknownConstrK =
-      error("Should not access unknownConstrK on proofTypeEnvItem");
 
   top.clauseModules =
       error("Should not access clauseModules on proofTypeEnvItem");
@@ -158,8 +152,6 @@ top::TypeEnvItem ::= name::String
 
   top.unknownConstrI =
       error("Should not access unknownConstrI on typeVarEnvItem");
-  top.unknownConstrK =
-      error("Should not access unknownConstrK on typeVarEnvItem");
 
   top.clauseModules =
       error("Should not access clauseModules on typeVarEnvItem");
@@ -186,11 +178,13 @@ top::ConstructorEnvItem ::= name::QName builtType::Type args::TypeList
 
 
 data nonterminal RelationEnvItem with
-   name, types, isExtensible, pcIndex, pcType, clauseModules, defsList;
+   name, types, isExtensible, pcIndex, pcType, clauseModules,
+   defsList, unknownConstrK;
 
 synthesized attribute pcIndex::Integer;
 synthesized attribute pcType::Type;
 synthesized attribute defsList::[([Term], Maybe<Metaterm>)];
+synthesized attribute unknownConstrK::QName;
 
 abstract production extRelationEnvItem
 top::RelationEnvItem ::= name::QName args::TypeList pcIndex::Integer
@@ -208,6 +202,8 @@ top::RelationEnvItem ::= name::QName args::TypeList pcIndex::Integer
   top.clauseModules = clauseModules;
 
   top.defsList = defsList;
+
+  top.unknownConstrK = unknownKQName(name.sub);
 }
 
 
@@ -227,4 +223,7 @@ top::RelationEnvItem ::= name::QName args::TypeList
 
   top.defsList =
       error("Should not access defsList on non-extensible relation");
+
+  top.unknownConstrK =
+      error("Should not access unknownConstrK on non-extensible relation");
 }

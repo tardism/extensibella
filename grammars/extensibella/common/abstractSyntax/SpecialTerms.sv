@@ -463,7 +463,7 @@ top::Term ::= ty::QName
 
   top.isStructured = true;
   top.isUnknownTermI = true;
-  top.unknownTy = if ty.typeFound
+  top.unknownId = if ty.typeFound
                   then just(ty.fullType.name)
                   else nothing();
 
@@ -495,16 +495,16 @@ top::Term ::= ty::QName
 }
 
 abstract production unknownKTerm
-top::Term ::= ty::QName
+top::Term ::= rel::QName
 {
-  top.pp = ppConcat([text("<unknown K "), ty.pp, text(">")]);
-  top.abella_pp = "<unknown K " ++ ty.abella_pp ++ ">";
+  top.pp = ppConcat([text("<unknown K "), rel.pp, text(">")]);
+  top.abella_pp = "<unknown K " ++ rel.abella_pp ++ ">";
   top.isAtomic = true;
 
   top.isStructured = true;
   top.isUnknownTermK = true;
-  top.unknownTy = if ty.typeFound
-                  then just(ty.fullType.name)
+  top.unknownId = if rel.relFound
+                  then just(rel.fullRel.name)
                   else nothing();
 
   top.unknownKReplaced = top.replaceUnknownK;
@@ -518,7 +518,7 @@ top::Term ::= ty::QName
 
   top.unifySuccess =
       case top.unifyWith of
-      | unknownKTerm(ty2) -> ty == ty2
+      | unknownKTerm(rel2) -> rel == rel2
       | nameTerm(q, _) when !q.isQualified -> true
       | _ -> false
       end;
@@ -530,8 +530,8 @@ top::Term ::= ty::QName
       end;
 
   top.type =
-      if ty.typeFound
-      then nameType(ty.fullType.name)
+      if rel.relFound
+      then rel.fullRel.pcType
       else errorType();
   top.upSubst = top.downSubst;
 }

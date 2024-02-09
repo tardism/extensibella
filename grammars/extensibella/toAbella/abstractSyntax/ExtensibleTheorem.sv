@@ -606,20 +606,24 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       foldl(
          \ thusFar::(Integer, [(Integer, Boolean)])
            now::([Term], Maybe<Metaterm>) ->
-           let pc::Term =
-               elemAtIndex(now.1, inductionRel.pcIndex)
+           let pc::Decorated Term with {relationEnv, constructorEnv, typeEnv} =
+               decorate elemAtIndex(now.1, inductionRel.pcIndex) with {
+                  relationEnv = top.relationEnv;
+                  constructorEnv = top.constructorEnv;
+                  typeEnv = top.typeEnv;
+               }
            in
            let pcMod::QName =
-               if decorate pc with {
-                     relationEnv = top.relationEnv;
-                     constructorEnv = top.constructorEnv;
-                  }.isStructured
+               if pc.isStructured
                then pc.headConstructor.moduleName
                else inductionRel.name.moduleName
            in
              if unifyTermsSuccess(now.1, relArgs) --rule applies
-             then if fullName.moduleName == top.currentModule || --new thm
-                     pcMod == top.currentModule --new constr
+             then if (fullName.moduleName == top.currentModule || --new thm
+                      pcMod == top.currentModule) && --new constr
+                     (!pc.isUnknownTermK || --not unknownTermK
+                      pc.unknownId.fromJust == --for this relation
+                            inductionRel.name)
                   then (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, true)])
                   else (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, false)])
              else thusFar --doesn't apply:  just continue with next
