@@ -23,6 +23,11 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       else head(thms.provingTheorems).1;
 
   top.toAbella =
+      if null(thms.extIndChecks)
+      then extThmCmds
+      else extIndCheckStart;
+
+  local extThmCmds::[AnyCommand] =
       --declare theorems
       [anyTopCommand(theoremDeclaration(extName, [], fullThms)),
       --declare inductions
@@ -43,9 +48,40 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       then andMetaterm(thms.toAbella, alsos.toAbella)
       else thms.toAbella;
 
+  local extIndCheck::Metaterm =
+      foldr1(andMetaterm,
+             map(fst, thms.extIndChecks) ++ [trueMetaterm()]);
+  --during commands for extIndCheck, including declaration of ExtThm
+  local extIndCheckCmds::[(SubgoalNum, [ProofCommand])] =
+      --intros for each check
+      foldl(\ thusFar::(Integer, [(SubgoalNum, [ProofCommand])])
+              p::(Metaterm, [ProofCommand]) ->
+              (thusFar.1 + 1, ([thusFar.1], p.2)::thusFar.2),
+            (1, []), thms.extIndChecks).2 ++
+      --search to finish true, then declaration and set-up for ExtThm
+      [([length(thms.extIndChecks)],
+        searchTactic()::map(\ a::AnyCommand ->
+                              case a of
+                              | anyTopCommand(t) -> smuggleTopCommand(t)
+                              | anyProofCommand(p) -> p
+                              | _ -> error("only top and proof commands")
+                              end, extThmCmds))];
+  local extIndCheckStart::[AnyCommand] =
+      --declare checks
+      [anyTopCommand(
+          theoremDeclaration(toQName("$ExtIndCheck_" ++ toString(genInt())),
+             [], extIndCheck)),
+      --split (must split because at least 1 + true)
+       anyProofCommand(splitTactic())] ++
+      --intros/set-up for first one
+      map(anyProofCommand, head(extIndCheckCmds).2);
+
   top.provingTheorems = thms.provingTheorems ++ alsos.provingTheorems;
 
-  top.duringCommands = tail(thms.duringCommands);
+  top.duringCommands =
+      if null(thms.extIndChecks)
+      then tail(thms.duringCommands)
+      else tail(extIndCheckCmds) ++ tail(thms.duringCommands);
 
   top.afterCommands =
       if thms.len + alsos.len > 1
@@ -296,7 +332,7 @@ nonterminal ExtThms with
    useExtInd, shouldBeExtensible,
    expectedIHNum, renamedIHs, specialIHNames, thmNames,
    startingGoalNum, nextGoalNum, followingCommands, duringCommands,
-   keyRelModules,
+   keyRelModules, extIndChecks,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           proverState, toAbellaMsgs, useExtInd, shouldBeExtensible,
@@ -325,6 +361,8 @@ synthesized attribute renamedIHs::[(String, String, String)];
 inherited attribute specialIHNames::[(String, String, String)];
 --thm names used
 synthesized attribute thmNames::[QName];
+--statements and initial commands for showing ExtInd use is valid
+synthesized attribute extIndChecks::[(Metaterm, [ProofCommand])];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -342,6 +380,8 @@ top::ExtThms ::=
   top.inductionRels = [];
 
   top.duringCommands = top.followingCommands;
+
+  top.extIndChecks = [];
 
   top.keyRelModules = [];
 
@@ -658,6 +698,43 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                  skipTactic()::head(combinedCommands).2)::tail(combinedCommands)
            else [(top.startingGoalNum, [skipTactic()])];
 
+  {-Build the metaterm for checking the ExtInd use is valid-}
+  --names left in ExtInd bindings after removing arguments to R
+  local extIndRemainingNames::[String] =
+      removeAll(thisExtInd.fromJust.2, thisExtInd.fromJust.3.usedNames);
+  --fresh names for those to avoid capture with args for relation here
+  local extIndUseCheckBinds::[String] =
+      let alreadyUsed::[String] = flatMap((.usedNames), relArgs)
+      in
+        foldl(\ rest::[String] x::String ->
+                if contains(x, rest ++ alreadyUsed)
+                then freshName(x, rest ++ alreadyUsed)::rest
+                else x::rest,
+              [], extIndRemainingNames)
+      end;
+  --things to go in the conclusion
+  local extIndUseCheckConcs::[Metaterm] =
+      safeReplace(map(snd, thisExtInd.fromJust.4.toList),
+         thisExtInd.fromJust.2 ++ extIndRemainingNames,
+         relArgs ++ map(\ x::String -> nameTerm(toQName(x), nothingType()),
+                        extIndUseCheckBinds));
+  --full metaterm to prove to show this use of ExtInd is valid
+  local extIndUseCheck::Metaterm =
+      bindingMetaterm(forallBinder(), bindings,
+         foldr1(impliesMetaterm,
+            map(snd, body.premises) ++
+            [if null(extIndUseCheckBinds)
+             then foldr1(andMetaterm, extIndUseCheckConcs)
+             else bindingMetaterm(existsBinder(), bindings,
+                     foldr1(andMetaterm, extIndUseCheckConcs))]));
+  --
+  top.extIndChecks =
+      if !sameModule(top.currentModule, inductionRel.name) &&
+         --if premises are empty, nothing to show
+         thisExtInd.fromJust.4.len != 0
+      then (extIndUseCheck, [introsTactic(introsNames)])::rest.extIndChecks
+      else rest.extIndChecks;
+
   top.keyRelModules =
       (top.startingGoalNum, inductionRel.name.moduleName)::rest.keyRelModules;
 
@@ -710,13 +787,13 @@ nonterminal ExtBody with
    pp, abella_pp,
    toAbella<Metaterm>, toAbellaMsgs,
    premises, thm,
-   boundNames,
+   boundNames, usedNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState,
    upSubst, downSubst, downVarTys, tyVars,
    specialIHNames;
 propagate typeEnv, constructorEnv, relationEnv,
           currentModule, proverState, toAbellaMsgs,
-          downVarTys, tyVars, specialIHNames on ExtBody;
+          downVarTys, tyVars, usedNames, specialIHNames on ExtBody;
 
 --premises should have full version of premise
 synthesized attribute premises::[(Maybe<String>, Metaterm)];
@@ -825,4 +902,27 @@ function matches_IH_form
 Boolean ::= n::String
 {
   return startsWith(n, "IH") && isDigit(substring(2, length(n), n));
+}
+
+
+
+
+{-
+  The sole of purpose of this production is to get a TopCommand into
+  duringCommands without officially changing the type.  During
+  commands are really proof commands; we just happen to be using them
+  to get a second proof done.  Thus we smuggle the top command for the
+  second theorem into them, using this production.  It should not
+  appear anywhere else.
+-}
+abstract production smuggleTopCommand
+top::ProofCommand ::= t::TopCommand
+{
+  top.pp = t.pp;
+  top.abella_pp = t.abella_pp;
+  top.toAbella = error("smuggleTopCommand.toAbella");
+  top.full = top;
+
+  --hide it from any further grammars
+  forwards to searchTactic();
 }
