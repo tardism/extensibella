@@ -87,6 +87,12 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
                             implode(", ",
                                map(justShow, map((.pp), missing))))]
            end;
+  top.toAbellaMsgs <-
+      if null(importedIndRels)
+      then []
+      else if alsos.len > 0
+      then [errorMsg("Cannot have also theorems when using Ext_Ind")]
+      else [];
 
   --check for naming IH's the same thing
   top.toAbellaMsgs <-
