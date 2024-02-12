@@ -19,6 +19,16 @@ String ::= s::String
 }
 
 
+--Remove digits from the end of the string
+function dropNums
+String ::= s::String
+{
+  return if isDigit(substring(length(s) - 1, length(s), s))
+         then dropNums(substring(0, length(s) - 1, s))
+         else s;
+}
+
+
 --Split based on actual conjunctions
 function splitMetaterm
 [Metaterm] ::= mt::Metaterm

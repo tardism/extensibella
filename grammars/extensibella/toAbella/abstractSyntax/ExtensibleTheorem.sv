@@ -599,14 +599,16 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
 
   --for the subgoals that should arise, the last digit of the subgoal
-  --number and whether we need to prove it
-  local expectedSubgoals::[(Integer, Boolean)] =
+  --number, whether we need to prove it, name to clear for unknownTermK
+  --for DefR preventer ("" if nothing to clear)
+  local expectedSubgoals::[(Integer, Boolean, String)] =
       if !inductionRelFound then [] --guard against out-of-order access
       else
       foldl(
-         \ thusFar::(Integer, [(Integer, Boolean)])
+         \ thusFar::(Integer, [(Integer, Boolean, String)])
            now::([Term], Maybe<Metaterm>) ->
-           let pc::Decorated Term with {relationEnv, constructorEnv, typeEnv} =
+           let pc::Decorated Term with {relationEnv, constructorEnv,
+                                        typeEnv} =
                decorate elemAtIndex(now.1, inductionRel.pcIndex) with {
                   relationEnv = top.relationEnv;
                   constructorEnv = top.constructorEnv;
@@ -618,30 +620,83 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                then pc.headConstructor.moduleName
                else inductionRel.name.moduleName
            in
-             if unifyTermsSuccess(now.1, relArgs) --rule applies
-             then if (fullName.moduleName == top.currentModule || --new thm
-                      pcMod == top.currentModule) && --new constr
-                     (!pc.isUnknownTermK || --not unknownTermK
-                      pc.unknownId.fromJust == --for this relation
-                            inductionRel.name)
-                  then (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, true)])
-                  else (thusFar.1 + 1, thusFar.2 ++ [(thusFar.1, false)])
+           let pcThisK::Boolean =
+               pc.isUnknownTermK &&                       --unknownTermK
+               pc.unknownId.fromJust == inductionRel.name --for this rel
+           in
+           let premBaseName::String = dropNums(onLabel)
+           in
+           let prems::[Metaterm] =
+               case now.2 of
+               | nothing() -> []
+               | just(bindingMetaterm(existsBinder(), _, m)) ->
+                 splitMetaterm(m)
+               | just(m) -> splitMetaterm(m)
+               end
+           in
+           let falsePremName::String =
+               head(foldr(\ m::Metaterm rest::[String] ->
+                            case m of
+                            | eqMetaterm(_, _) -> rest
+                            | _ -> freshName(premBaseName, rest)::rest
+                            end,
+                          catMaybes(map(fst, body.premises)),
+                          prems))
+           in --freshen rule to check if it unifies
+           let existingVars::[String] =
+               nub(flatMap((.usedNames), now.1) ++
+                   flatMap((.usedNames), prems))
+           in
+           let freshVars::[String] =
+               foldr(\ x::String rest::[String] ->
+                       freshName(x, rest ++ bindings.usedNames)::rest,
+                     [], existingVars)
+           in
+           let newTerms::[Term] =
+               map(\ x::String -> nameTerm(toQName(x), nothingType()),
+                   freshVars)
+           in
+           let unifySides::([Term], [Term]) =
+               foldr(\ m::Metaterm rest::([Term], [Term]) ->
+                       case m of
+                       | eqMetaterm(a, b) -> (a::rest.1, b::rest.2)
+                       | _ -> rest
+                       end,
+                     (safeReplace(now.1, existingVars, newTerms), relArgs),
+                     safeReplace(prems, existingVars, newTerms))
+           in
+           let unifies::Boolean =
+               unifyTermsSuccess(unifySides.1, unifySides.2)
+           in
+           let needToProve::Boolean =
+               (fullName.moduleName == top.currentModule || --new thm
+                pcMod == top.currentModule) && --new constr
+               (!pc.isUnknownTermK || --not unknownTermK
+                pc.unknownId.fromJust == --for this relation
+                      inductionRel.name)
+           in
+             if unifies --rule applies
+             then (thusFar.1 + 1,
+                   thusFar.2 ++ [(thusFar.1, needToProve,
+                                  if pcThisK then falsePremName else "")])
              else thusFar --doesn't apply:  just continue with next
-           end end,
+           end end end end end end end end end end end end,
          (1, []), inductionRel.defsList).2;
-  --group consecutive skips
-  local groupedExpectedSubgoals::[[(Integer, Boolean)]] =
-      groupBy(\ p1::(Integer, Boolean) p2::(Integer, Boolean) ->
-                p1.2 == p2.2,
+  --group consecutive skips; leave non-skips alone
+  local groupedExpectedSubgoals::[[(Integer, Boolean, String)]] =
+      groupBy(\ p1::(Integer, Boolean, String)
+                p2::(Integer, Boolean, String) -> !p1.2 && p1.2 == p2.2,
               expectedSubgoals);
   --last digit of subgoal and skips needed
   local subgoalDurings::[(Integer, [ProofCommand])] =
-      flatMap(\ l::[(Integer, Boolean)] ->
+      flatMap(\ l::[(Integer, Boolean, String)] ->
                 if !null(l) && !head(l).2 --things we don't do we skip
                 then [(head(l).1,
-                       map(\ x::(Integer, Boolean) ->
+                       map(\ x::(Integer, Boolean, String) ->
                              skipTactic(), l))]
-                else [], --nothing for things we need to prove
+                else if head(l).3 != ""
+                then [(head(l).1, [clearCommand([head(l).3], false)])]
+                else [], --nothing for things we need to prove other than K
               groupedExpectedSubgoals);
   --turned into full subgoals
   local subgoalDuringCommands::[(SubgoalNum, [ProofCommand])] =
@@ -661,8 +716,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            then let lastSubgoal::(SubgoalNum, [ProofCommand]) =
                     last(subgoalDuringCommands)
                 in
-                  take(length(subgoalDuringCommands) - 1,
-                       subgoalDuringCommands) ++
+                  init(subgoalDuringCommands) ++
                   [(lastSubgoal.1,
                     lastSubgoal.2 ++ head(rest.duringCommands).2)] ++
                   tail(rest.duringCommands)
