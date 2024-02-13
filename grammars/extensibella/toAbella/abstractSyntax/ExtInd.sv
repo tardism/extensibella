@@ -31,9 +31,9 @@ top::TopCommand ::= body::ExtIndBody
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella)),
-       --declare inductions
-       anyProofCommand(inductionTactic(noHint(),
-                          repeat(1, body.len)))] ++
+       --declare inductions:  acc and rel
+       anyProofCommand(inductionTactic(noHint(), repeat(2, body.len))),
+       anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
        --split
       (if body.len > 1 then [anyProofCommand(splitTactic())]
                        else []) ++
@@ -517,8 +517,8 @@ top::TopCommand ::= rels::[QName]
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella)),
        --declare inductions
-       anyProofCommand(inductionTactic(noHint(),
-                          repeat(1, body.len)))] ++
+       anyProofCommand(inductionTactic(noHint(), repeat(2, body.len))),
+       anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
        --split
       (if body.len > 1 then [anyProofCommand(splitTactic())]
                        else []) ++
