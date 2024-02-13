@@ -642,7 +642,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                             end,
                           catMaybes(map(fst, body.premises)),
                           prems))
-           in --freshen rule to check if it unifies
+           in
+           --freshen rule to check if it unifies
            let existingVars::[String] =
                nub(flatMap((.usedNames), now.1) ++
                    flatMap((.usedNames), prems))
@@ -684,9 +685,11 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
          (1, []), inductionRel.defsList).2;
   --group consecutive skips; leave non-skips alone
   local groupedExpectedSubgoals::[[(Integer, Boolean, String)]] =
-      groupBy(\ p1::(Integer, Boolean, String)
-                p2::(Integer, Boolean, String) -> !p1.2 && p1.2 == p2.2,
-              expectedSubgoals);
+      foldr(\ p::(Integer, Boolean, String)
+              rest::[[(Integer, Boolean, String)]] ->
+              if p.2 || null(rest) || head(head(rest)).2
+              then [p]::rest
+              else (p::head(rest))::tail(rest), [], expectedSubgoals);
   --last digit of subgoal and skips needed
   local subgoalDurings::[(Integer, [ProofCommand])] =
       flatMap(\ l::[(Integer, Boolean, String)] ->
@@ -694,7 +697,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                 then [(head(l).1,
                        map(\ x::(Integer, Boolean, String) ->
                              skipTactic(), l))]
-                else if head(l).3 != ""
+                else if !null(l) && head(l).3 != ""
                 then [(head(l).1, [clearCommand([head(l).3], false)])]
                 else [], --nothing for things we need to prove other than K
               groupedExpectedSubgoals);
