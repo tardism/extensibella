@@ -791,7 +791,12 @@ function buildTransRelDef
   local defList::[([Term], Maybe<Metaterm>)] =
       map(\ p::([Term], Maybe<Metaterm>) ->
             (p.1, bind(p.2, \ m::Metaterm ->
-                              just(replaceRelsTransRels(allRels, m)))),
+                              case m of
+                              | bindingMetaterm(existsBinder(), b, m) ->
+                                just(bindingMetaterm(existsBinder(), b,
+                                        replaceRelsTransRels(allRels, m)))
+                              | _ -> just(replaceRelsTransRels(allRels, m))
+                              end)),
           split.1);
   --(args to conclusion, existentially-bound vars for body, binderless body)
   local qRule::([String], [String], Maybe<Metaterm>) =
