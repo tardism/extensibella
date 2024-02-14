@@ -90,14 +90,12 @@ Boolean ::= a::ThmElement b::ThmElement
         nonextensibleTheorem(nb, _, _) -> na == nb
       | splitElement(an, alst), splitElement(bn, blst) ->
         an == bn && alst == blst
-      | extensibleMutualTheoremGroup(athms, _),
-        extensibleMutualTheoremGroup(bthms, _) ->
-        --thms intersect; can ignore alsos because thms must exist first
-        !null(intersect(map(fst, athms), map(fst, bthms)))
-      | translationConstraintTheorem(an, _, _),
-        translationConstraintTheorem(bn, _, _) -> an == bn
-      | extIndElement(ar), extIndElement(br) ->
-        !null(intersect(map(fst, ar), map(fst, br)))
+      | extensibleMutualTheoremGroup(_, _, taga),
+        extensibleMutualTheoremGroup(_, _, tagb) -> taga == tagb
+      | translationConstraintTheorem(an, _, _, taga),
+        translationConstraintTheorem(bn, _, _, tagb) -> taga == tagb
+      | extIndElement(ar, taga), extIndElement(br, tagb) ->
+        taga == tagb
       | _, _ -> false
       end;
 }
@@ -114,16 +112,13 @@ function cleanModThms
       | nonextensibleTheorem(aname, aparams, astmt),
         nonextensibleTheorem(bname, bparams, bstmt) ->
         aname == bname
-      | extensibleMutualTheoremGroup(athms, _),
-        extensibleMutualTheoremGroup(bthms, _) ->
-        --need to check thms only, not alsos, because thms must be
-        --present to add alsos
-        !null(intersect(map(fst, athms), map(fst, bthms)))
-      | translationConstraintTheorem(aname, abinds, abody),
-        translationConstraintTheorem(bname, bbinds, bbody) ->
-        aname == bname
-      | extIndElement(arelinfo), extIndElement(brelinfo) ->
-        !null(intersect(map(fst, arelinfo), map(fst, brelinfo)))
+      | extensibleMutualTheoremGroup(athms, _, atag),
+        extensibleMutualTheoremGroup(bthms, _, btag) -> atag == btag
+      | translationConstraintTheorem(aname, abinds, abody, atag),
+        translationConstraintTheorem(bname, bbinds, bbody, btag) ->
+        atag == btag
+      | extIndElement(arelinfo, atag), extIndElement(brelinfo, btag) ->
+        atag == btag
       | _, _ -> false
       end;
   return case modThms of
@@ -171,11 +166,27 @@ top::TopCommands ::=
 }
 
 
+abstract production addTagTopCommands
+top::TopCommands ::= tag::(Integer, Integer, String)
+                     t::TopCommand rest::TopCommands
+{
+  top.pp = t.pp ++ rest.pp;
+  top.len = 1 + rest.len;
+
+  t.downTag = tag;
+
+  top.defElements = t.defElements ++ rest.defElements;
+  top.thmElements = t.thmElements ++ rest.thmElements;
+}
+
+
 abstract production addTopCommands
 top::TopCommands ::= t::TopCommand rest::TopCommands
 {
   top.pp = t.pp ++ rest.pp;
   top.len = 1 + rest.len;
+
+  t.downTag = error("Down tag not needed if not in outerface file");
 
   top.defElements = t.defElements ++ rest.defElements;
   top.thmElements = t.thmElements ++ rest.thmElements;
@@ -186,8 +197,10 @@ top::TopCommands ::= t::TopCommand rest::TopCommands
 
 
 attribute
-   defElements, thmElements
+   defElements, thmElements, downTag
 occurs on TopCommand;
+
+inherited attribute downTag::(Integer, Integer, String);
 
 aspect production theoremDeclaration
 top::TopCommand ::= name::QName params::[String] body::Metaterm
@@ -268,7 +281,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 {
   top.defElements = [];
   top.thmElements = [extensibleMutualTheoremGroup(thms.thmInfo,
-                                                  alsos.thmInfo)];
+                        alsos.thmInfo, top.downTag)];
 }
 
 
@@ -286,7 +299,8 @@ aspect production translationConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.defElements = [];
-  top.thmElements = [translationConstraintTheorem(name, binds, body)];
+  top.thmElements = [translationConstraintTheorem(name, binds, body,
+                        top.downTag)];
 }
 
 
@@ -304,7 +318,7 @@ aspect production extIndDeclaration
 top::TopCommand ::= e::ExtIndBody
 {
   top.defElements = [];
-  top.thmElements = [extIndElement(e.extIndInfo)];
+  top.thmElements = [extIndElement(e.extIndInfo, top.downTag)];
 }
 
 
