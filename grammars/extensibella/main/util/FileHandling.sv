@@ -144,7 +144,7 @@ top::QName ::= rest::SubQName
 
 
 aspect production unknownIQName
-top::QName ::= rest::SubQName
+top::QName ::= rest::QName
 {
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;
@@ -154,7 +154,7 @@ top::QName ::= rest::SubQName
 
 
 aspect production unknownKQName
-top::QName ::= rest::SubQName
+top::QName ::= rest::QName
 {
   top.interfaceFileName = rest.interfaceFileName;
   top.outerfaceFileName = rest.outerfaceFileName;

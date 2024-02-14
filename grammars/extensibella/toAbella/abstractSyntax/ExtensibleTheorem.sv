@@ -90,7 +90,8 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       then flatMap(\ p::(QName, Metaterm) ->
                      [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
                       anyProofCommand(skipTactic())],
-                   thms.provingTheorems ++ alsos.provingTheorems)
+                   zip(map(fst, thms.provingTheorems ++ alsos.provingTheorems),
+                       splitMetaterm(fullThms)))
       else if thms.len + alsos.len == 1
       then [] --nothing to do after if there is only one being proven
       else [anyTopCommand(splitTheorem(extName,
@@ -125,8 +126,11 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
                      implode(", ",
                         map(justShow, map((.pp), importedIndRels))))]
       else let missing::[QName] =
-               removeAll(map(fst, extIndGroup.fromJust),
-                         thms.inductionRels)
+               case extIndGroup of
+               | just(eg) ->
+                 removeAll(map(fst, eg), thms.inductionRels)
+               | nothing() -> error("toAbellaMsgs:  let missing")
+               end
            in
              if null(missing)
              then []
@@ -169,7 +173,10 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 
   thms.useExtInd = if null(importedIndRels) || !extIndGroup.isJust
                    then []
-                   else extIndGroup.fromJust;
+                   else case extIndGroup of
+                        | just(eg) -> eg
+                        | nothing() -> error("thms.useExtInd")
+                        end;
   thms.shouldBeExtensible = true;
   thms.followingCommands = alsos.duringCommands;
   thms.expectedIHNum = 0;
@@ -634,8 +641,11 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                else inductionRel.name.moduleName
            in
            let pcThisK::Boolean =
-               pc.isUnknownTermK &&                       --unknownTermK
-               pc.unknownId.fromJust == inductionRel.name --for this rel
+               pc.isUnknownTermK &&                --unknownTermK
+               case pc.unknownId of
+               | just(i) -> i == inductionRel.name --for this rel
+               | nothing() -> error("pcThisK")
+               end
            in
            let premBaseName::String = dropNums(onLabel)
            in
@@ -686,8 +696,11 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                (fullName.moduleName == top.currentModule || --new thm
                 pcMod == top.currentModule) && --new constr
                (!pc.isUnknownTermK || --not unknownTermK
-                pc.unknownId.fromJust == --for this relation
-                      inductionRel.name)
+                case pc.unknownId of
+                | just(i) -> i == --for this relation
+                             inductionRel.name
+                | nothing() -> error("needToProve")
+                end)
            in
              if unifies --rule applies
              then (thusFar.1 + 1,
@@ -775,7 +788,10 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   {-Build the metaterm for checking the ExtInd use is valid-}
   --names left in ExtInd bindings after removing arguments to R
   local extIndRemainingNames::[String] =
-      removeAll(thisExtInd.fromJust.2, thisExtInd.fromJust.3.usedNames);
+      case thisExtInd of
+      | just((_, args, binds, _)) -> removeAll(args, binds.usedNames)
+      | nothing() -> error("extIndRemainingNames")
+      end;
   --fresh names for those to avoid capture with args for relation here
   local extIndUseCheckBinds::[String] =
       let alreadyUsed::[String] = flatMap((.usedNames), relArgs)
@@ -788,10 +804,14 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       end;
   --things to go in the conclusion
   local extIndUseCheckConcs::[Metaterm] =
-      safeReplace(map(snd, thisExtInd.fromJust.4.toList),
-         thisExtInd.fromJust.2 ++ extIndRemainingNames,
-         relArgs ++ map(\ x::String -> nameTerm(toQName(x), nothingType()),
-                        extIndUseCheckBinds));
+      case thisExtInd of
+      | just((_, args, _, prems)) ->
+        safeReplace(map(snd, prems.toList),
+           args ++ extIndRemainingNames,
+           relArgs ++ map(\ x::String -> nameTerm(toQName(x), nothingType()),
+                          extIndUseCheckBinds))
+      | nothing() -> error("extIndUseCheckConcs")
+      end;
   --full metaterm to prove to show this use of ExtInd is valid
   local extIndUseCheck::Metaterm =
       bindingMetaterm(forallBinder(), bindings,
@@ -805,7 +825,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   top.extIndChecks =
       if !sameModule(top.currentModule, inductionRel.name) &&
          --if premises are empty, nothing to show
-         thisExtInd.fromJust.4.len != 0
+         thisExtInd.isJust && thisExtInd.fromJust.4.len != 0
       then (extIndUseCheck, [introsTactic(introsNames)])::rest.extIndChecks
       else rest.extIndChecks;
 

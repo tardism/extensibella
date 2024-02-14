@@ -129,7 +129,7 @@ top::QName ::= rest::SubQName
 
 
 aspect production unknownIQName
-top::QName ::= rest::SubQName
+top::QName ::= rest::QName
 {
   top.isTranslation = false;
   top.transFromAbella = error("Not a translation");
@@ -143,7 +143,7 @@ top::QName ::= rest::SubQName
 
 
 aspect production unknownKQName
-top::QName ::= rest::SubQName
+top::QName ::= rest::QName
 {
   top.isTranslation = false;
   top.transFromAbella = error("Not a translation");

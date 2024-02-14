@@ -80,7 +80,7 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
 
   top.transTypes = args;
 
-  top.unknownConstrI = unknownIQName(name.sub);
+  top.unknownConstrI = unknownIQName(name);
 
   top.clauseModules = clauseModules;
 }
@@ -203,7 +203,7 @@ top::RelationEnvItem ::= name::QName args::TypeList pcIndex::Integer
 
   top.defsList = defsList;
 
-  top.unknownConstrK = unknownKQName(name.sub);
+  top.unknownConstrK = unknownKQName(name);
 }
 
 
