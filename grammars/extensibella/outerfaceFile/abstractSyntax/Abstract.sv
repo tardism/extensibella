@@ -49,28 +49,39 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
                fullRestMods::[[ThmElement]]
 {
   return
-      case modThms, thusFar of
-      | [], x -> x
-      --things without extended proofs first
-      | _::_, nonextensibleTheorem(_, _, _)
-        when !existsLater(thusFar, fullRestMods) -> thusFar
-      | nonextensibleTheorem(_, _, _)::_, _
-        when !existsLater(head(modThms), fullRestMods) ->
-        head(modThms)
-      | _::_, splitElement(_, _)
-        when !existsLater(thusFar, fullRestMods) -> thusFar
-      | splitElement(_, _)::_, _
-        when !existsLater(head(modThms), fullRestMods) ->
-        head(modThms)
-      --anything at this point is extensible
-      | t::r, _ when existsLater(thusFar, fullRestMods) ->
-        --can't take thusFar yet, so try again
+      case modThms of
+      | [] -> thusFar
+      --things without extended proofs first, but only when all
+      --   occurrences are at the beginning so we only get them once
+      | x::rest when thusFar.is_nonextensible ->
+        if !existsLater(thusFar, fullRestMods)
+        then thusFar
+        else getFirst(rest, x, fullRestMods)
+      | x::rest when x.is_nonextensible ->
+        if !existsLater(x, fullRestMods)
+        then x
+        else getFirst(rest, thusFar, fullRestMods)
+      --anything at this point is extensible, so earlier tag
+      | t::r when lessTags(t.tag, thusFar.tag) ->
+        --thusFar isn't minimum, so try again
         getFirst(r, t, fullRestMods)
-      | t::r, _ ->
-        --thusFar is still valid, but keep going in case there is
-        --   something non-extensible later
+      | t::r ->
+        --thusFar is still min seen, but keep going in case there is
+        --   something non-extensible or lower later
         getFirst(r, thusFar, fullRestMods)
       end;
+}
+
+--compare two tags, returning true if ta < tb
+function lessTags
+Boolean ::= ta::(Integer, Integer, String)
+            tb::(Integer, Integer, String)
+{
+        --lower number
+  return (ta.1 * tb.2 < tb.1 * ta.2) ||
+        --same number and lower name
+         (ta.1 * tb.2 == tb.1 * ta.2 &&
+          ta.3 < tb.3);
 }
 
 --check if t is anywhere in rest
