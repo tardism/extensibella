@@ -50,6 +50,7 @@ top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction measure, IH name)]
    thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
    alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
+   tag::(Integer, Integer, String)
 {
   local extThms::ExtThms =
       foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>)
@@ -291,6 +292,7 @@ top::ThmElement ::=
 
 aspect production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
+                    tag::(Integer, Integer, String)
 {
   --MWDA copy of body
   local bodyC::ExtBody = body;
@@ -362,6 +364,7 @@ aspect production extIndElement
 top::ThmElement ::=
    --[(rel name, rel arg names, all bindings, extra premises)]
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   tag::(Integer, Integer, String)
 {
   {-
     Definitions of R_{ES} and R_T relations

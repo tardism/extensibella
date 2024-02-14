@@ -185,13 +185,13 @@ top::TopCommand ::= names::[QName]
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
-      | translationConstraintTheorem(q, x, b)::_ ->
+      | translationConstraintTheorem(q, x, b, _)::_ ->
         [errorMsg("Expected translation constraint obligation " ++
             justShow(q.pp))]
-      | extIndElement(relInfo)::_ ->
+      | extIndElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext_Ind obligation for " ++
             implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | extensibleMutualTheoremGroup(thms, alsos)::_ ->
+      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
         let expectedNames::[QName] = map(fst, thms)
         in
         let expectedAlsoNames::[QName] = map(fst, alsos)
@@ -231,12 +231,12 @@ top::TopCommand ::= names::[QName]
 
   local obligations::[(QName, Bindings, ExtBody, String, Maybe<String>)] =
       case head(top.proverState.remainingObligations) of
-      | extensibleMutualTheoremGroup(x, _) -> x
+      | extensibleMutualTheoremGroup(x, _, _) -> x
       | _ -> error("Not possible (proveObligations.obligations)")
       end;
   local alsosInfo::[(QName, Bindings, ExtBody, String, Maybe<String>)] =
       case head(top.proverState.remainingObligations) of
-      | extensibleMutualTheoremGroup(_, x) -> x
+      | extensibleMutualTheoremGroup(_, x, _) -> x
       | _ -> error("Not possible (proveObligations.alsos)")
       end;
 
@@ -306,7 +306,8 @@ top::TopCommand ::= names::[QName]
 
   top.duringCommands =
       case head(top.proverState.remainingObligations) of
-      | extensibleMutualTheoremGroup(_, _) -> tail(thms.duringCommands)
+      | extensibleMutualTheoremGroup(_, _, _) ->
+        tail(thms.duringCommands)
       | _ -> [] --shouldn't really be accessed
       end;
 

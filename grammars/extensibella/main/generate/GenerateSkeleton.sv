@@ -87,6 +87,7 @@ synthesized attribute skeletonText::String;
 aspect production extensibleMutualTheoremGroup
 top::ThmElement ::= thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
                     alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
+                    tag::(Integer, Integer, String)
 {
   top.inSkeleton = true;
   top.skeletonText =
@@ -98,6 +99,7 @@ top::ThmElement ::= thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
 
 aspect production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
+                    tag::(Integer, Integer, String)
 {
   top.inSkeleton = true;
   top.skeletonText = "Prove_Constraint " ++ justShow(name.pp) ++ ".";
@@ -123,6 +125,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 aspect production extIndElement
 top::ThmElement ::=
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   tag::(Integer, Integer, String)
 {
   top.inSkeleton = true;
   top.skeletonText =
