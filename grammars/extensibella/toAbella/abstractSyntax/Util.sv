@@ -35,6 +35,12 @@ function splitMetaterm
 {
   return mt.splitConjunctions;
 }
+--Split based on implies, taking all but conclusion
+function metatermPremises
+[Metaterm] ::= m::Metaterm
+{
+  return init(m.splitImplies);
+}
 
 
 

@@ -50,7 +50,10 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 
   local extIndCheck::Metaterm =
       foldr1(andMetaterm,
-             map(fst, thms.extIndChecks) ++ [trueMetaterm()]);
+         map(fst, thms.extIndChecks) ++
+         [bindingMetaterm(existsBinder(),
+             oneBinding("$", justType(integerType)),
+             fullThms)]);
   --during commands for extIndCheck, including declaration of ExtThm
   local extIndCheckCmds::[(SubgoalNum, [ProofCommand])] =
       --intros for each check
@@ -58,14 +61,13 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
               p::(Metaterm, [ProofCommand]) ->
               (thusFar.1 + 1, ([thusFar.1], p.2)::thusFar.2),
             (1, []), thms.extIndChecks).2 ++
-      --search to finish true, then declaration and set-up for ExtThm
+      --exists to remove binding from front, then set-up for ExtThm
       [([length(thms.extIndChecks)],
-        searchTactic()::map(\ a::AnyCommand ->
-                              case a of
-                              | anyTopCommand(t) -> smuggleTopCommand(t)
-                              | anyProofCommand(p) -> p
-                              | _ -> error("only top and proof commands")
-                              end, extThmCmds))];
+        existsTactic(oneEWitnesses(termEWitness(integerToIntegerTerm(0))))::
+        map(\ a::AnyCommand -> case a of
+                               | anyProofCommand(p) -> p
+                               | _ -> error("only proof commands")
+                               end, tail(extThmCmds)))];
   local extIndCheckStart::[AnyCommand] =
       --declare checks
       [anyTopCommand(
@@ -84,17 +86,27 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       else tail(extIndCheckCmds) ++ tail(thms.duringCommands);
 
   top.afterCommands =
-      if thms.len + alsos.len > 1
-      then [anyTopCommand(splitTheorem(extName,
-               map(fst, thms.provingTheorems ++ alsos.provingTheorems)))]
-      else []; --nothing to do after if there is only one being proven
+      if !null(thms.extIndChecks)
+      then flatMap(\ p::(QName, Metaterm) ->
+                     [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                      anyProofCommand(skipTactic())],
+                   thms.provingTheorems ++ alsos.provingTheorems)
+      else if thms.len + alsos.len == 1
+      then [] --nothing to do after if there is only one being proven
+      else [anyTopCommand(splitTheorem(extName,
+               map(fst, thms.provingTheorems ++ alsos.provingTheorems)))];
 
   top.keyRelModules = thms.keyRelModules ++ alsos.keyRelModules;
 
   thms.startingGoalNum =
-       if thms.len + alsos.len > 1
-       then [1]
-       else []; --only one thm, so subgoals for it are 1, 2, ...
+       if null(thms.extIndChecks)
+       then if thms.len + alsos.len > 1
+            then [1]
+            else [] --only one thm, so subgoals for it are 1, 2, ...
+       else if thms.len + alsos.len > 1
+            --same, but under subgoal after ExtInd validity check
+            then [length(thms.extIndChecks), 1]
+            else [length(thms.extIndChecks)];
 
   --find extInd if needed for the relations
   local extIndGroup::Maybe<[(QName, [String], Bindings,
@@ -783,7 +795,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local extIndUseCheck::Metaterm =
       bindingMetaterm(forallBinder(), bindings,
          foldr1(impliesMetaterm,
-            map(snd, body.premises) ++
+            metatermPremises(body.toAbella) ++
             [if null(extIndUseCheckBinds)
              then foldr1(andMetaterm, extIndUseCheckConcs)
              else bindingMetaterm(existsBinder(), bindings,
@@ -963,27 +975,4 @@ function matches_IH_form
 Boolean ::= n::String
 {
   return startsWith(n, "IH") && isDigit(substring(2, length(n), n));
-}
-
-
-
-
-{-
-  The sole of purpose of this production is to get a TopCommand into
-  duringCommands without officially changing the type.  During
-  commands are really proof commands; we just happen to be using them
-  to get a second proof done.  Thus we smuggle the top command for the
-  second theorem into them, using this production.  It should not
-  appear anywhere else.
--}
-abstract production smuggleTopCommand
-top::ProofCommand ::= t::TopCommand
-{
-  top.pp = t.pp;
-  top.abella_pp = t.abella_pp;
-  top.toAbella = error("smuggleTopCommand.toAbella");
-  top.full = top;
-
-  --hide it from any further grammars
-  forwards to searchTactic();
 }
