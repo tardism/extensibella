@@ -14,7 +14,7 @@ synthesized attribute constrFromAbella::QName;
 aspect production baseName
 top::SubQName ::= name::String
 {
-  --if we only have the short name, this is a var
+  --if we only have the short name, this is a var or stdLib const/rel
   top.fromAbella = basicQName(baseName(name));
 
   top.relFromAbella = basicQName(top);
@@ -48,8 +48,16 @@ top::SubQName ::= name::String rest::SubQName
       end;
 
   --check if there are other constructors by the same short name
+  --filter out unknown constructors since they don't actually use the name
   top.constrFromAbella =
-      case lookupEnv(basicQName(baseName(rest.shortName)), top.constructorEnv),
+      case filter(\ c::ConstructorEnvItem ->
+                    case c.name of
+                    | unknownIQName(_) -> false
+                    | unknownKQName(_) -> false
+                    | _ -> true
+                    end,
+              lookupEnv(basicQName(baseName(rest.shortName)),
+                        top.constructorEnv)),
            lookupEnv(basicQName(baseName(rest.shortName)), top.relationEnv) of
       | [], [] -> error("Not possible (constr):  " ++ justShow(top.pp) ++ "  [" ++
                      implode(", ", map(justShow, map((.pp), map((.name),
