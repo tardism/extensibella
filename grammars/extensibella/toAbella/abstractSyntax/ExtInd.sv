@@ -410,16 +410,16 @@ top::TopCommand ::= rels::[QName]
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
-      | translationConstraintTheorem(q, x, b)::_ ->
+      | translationConstraintTheorem(q, x, b, _)::_ ->
         [errorMsg("Expected translation constraint obligation " ++
             justShow(q.pp))]
-      | extensibleMutualTheoremGroup(thms, alsos)::_ ->
+      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
         [errorMsg("Expected theorem obligations " ++
             implode(", ", map(justShow, map((.pp), map(fst, thms)))) ++
             if null(alsos) then ""
             else " also " ++
                  implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
-      | extIndElement(relInfo)::_ ->
+      | extIndElement(relInfo, _)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
           if setEq(rels, expectedNames)
@@ -453,7 +453,7 @@ top::TopCommand ::= rels::[QName]
 
   local obligations::[(QName, [String], Bindings, ExtIndPremiseList)] =
       case head(top.proverState.remainingObligations) of
-      | extIndElement(r) -> r
+      | extIndElement(r, _) -> r
       | _ -> error("Not possible (proveExtInd.obligations)")
       end;
   --This should only be accessed if there are no errors

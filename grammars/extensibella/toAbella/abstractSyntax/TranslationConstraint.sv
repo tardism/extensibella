@@ -113,7 +113,7 @@ top::TopCommand ::= name::QName
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
-      | extensibleMutualTheoremGroup(thms, alsos)::_ ->
+      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
         [errorMsg("Expected inductive obligation" ++
             (if length(thms) == 1 then "" else "s") ++
             " " ++ implode(", ",
@@ -121,12 +121,12 @@ top::TopCommand ::= name::QName
             if null(alsos) then ""
             else " also " ++
                  implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
-      | translationConstraintTheorem(q, x, b)::_ ->
+      | translationConstraintTheorem(q, x, b, _)::_ ->
         if name == q
         then []
         else [errorMsg("Expected translation constraint obligation" ++
                  " " ++ justShow(q.pp))]
-      | extIndElement(relInfo)::_ ->
+      | extIndElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext_Ind obligation for " ++
             implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | _ ->
@@ -135,7 +135,7 @@ top::TopCommand ::= name::QName
 
   local obligation::(QName, Bindings, ExtBody) =
       case head(top.proverState.remainingObligations) of
-      | translationConstraintTheorem(q, x, b) -> (q, x, b)
+      | translationConstraintTheorem(q, x, b, _) -> (q, x, b)
       | _ -> error("Not possible (length top.toAbellaMsgs = " ++
                    toString(length(top.toAbellaMsgs)) ++ ")")
       end;

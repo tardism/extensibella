@@ -63,13 +63,13 @@ IOToken ::= order::[ThmElement] config::Configuration ioin::IOToken
                | splitElement(n, ns) ->
                  "Split " ++ justShow(n.pp) ++ " as " ++
                  implode(", ", map(justShow, map((.pp), ns))) ++ "."
-               | extensibleMutualTheoremGroup(thms, alsos) ->
+               | extensibleMutualTheoremGroup(thms, alsos, tag) ->
                  "ExtTheorem " ++
                  implode(", ", map(justShow,
                                    map((.pp), map(fst, thms)))) ++ "."
-               | translationConstraintTheorem(n, _, _) ->
+               | translationConstraintTheorem(n, _, _, tag) ->
                  "TC " ++ justShow(n.pp) ++ "."
-               | extIndElement(r) ->
+               | extIndElement(r, tag) ->
                  "ExtInd " ++
                  implode(", ", map(justShow,
                                    map((.pp), map(fst, r)))) ++ "."

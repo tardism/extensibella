@@ -139,18 +139,18 @@ function removeFinishedObligation
 {
   return
       case obligations of
-      | extensibleMutualTheoremGroup(thms, alsos)::rest ->
+      | extensibleMutualTheoremGroup(thms, alsos, _)::rest ->
         --everything imported here is in the things we just proved
         if all(map(\ t::QName -> contains(t, map(fst, provenThms)),
                    map(fst, thms ++ alsos)))
         then rest
         else obligations
-      | translationConstraintTheorem(q, x, b)::rest ->
+      | translationConstraintTheorem(q, x, b, _)::rest ->
         case provenThms of
         | [(q2, _)] when q == q2 -> rest
         | _ -> obligations
         end
-      | extIndElement(rels)::rest ->
+      | extIndElement(rels, _)::rest ->
         --everything imported here is in the things we just proved
         if all(map(\ r::QName ->
                      contains(extIndThmName(r), map(fst, provenThms)),

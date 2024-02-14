@@ -2,12 +2,14 @@ grammar extensibella:toAbella:abstractSyntax;
 
 nonterminal ThmElement with
    pp,
-   encode, is_nonextensible,
+   encode, is_nonextensible, tag,
    knownThms, thms;
 
 --using AnyCommand allows having a theorem declaration and its proof
 synthesized attribute encode::[AnyCommand];
 synthesized attribute is_nonextensible::Boolean;
+--tag is (numerator, denominator, module)
+synthesized attribute tag::(Integer, Integer, String);
 
 --get the theorems produced out of each element
 synthesized attribute thms::[(QName, Metaterm)];
@@ -19,11 +21,13 @@ top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction measure, IH name)]
    thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
    alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
+   tag::(Integer, Integer, String)
 {
   top.pp = error("extensibleMutualTheoremGroup.pp");
 
   top.encode = error("extensibleMutualTheoremGroup.encode");
   top.is_nonextensible = false;
+  top.tag = tag;
 
   top.thms =
       map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
@@ -33,11 +37,13 @@ top::ThmElement ::=
 
 abstract production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
+                    tag::(Integer, Integer, String)
 {
   top.pp = error("translationConstraintTheorem.pp");
 
   top.encode = error("translationConstraintTheorem.encode");
   top.is_nonextensible = false;
+  top.tag = tag;
 
   top.thms =
       [(name, bindingMetaterm(forallBinder(), binds, body.thm))];
@@ -54,6 +60,7 @@ top::ThmElement ::= name::QName params::[String] stmt::Metaterm
       [anyTopCommand(theoremDeclaration(name, params, stmt)),
        anyProofCommand(skipTactic())];
   top.is_nonextensible = true;
+  top.tag = error("Non-extensible theorem tag");
 
   top.thms = [(name, stmt)];
 }
@@ -66,6 +73,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
   top.encode = [anyTopCommand(splitTheorem(toSplit, newNames))];
   top.is_nonextensible = true;
+  top.tag = error("Non-extensible theorem tag");
 
   --theorem must already exist, so don't need to consider Maybe
   local foundSplittee::Metaterm =
@@ -78,11 +86,13 @@ abstract production extIndElement
 top::ThmElement ::=
    --[(rel name, rel arg names, full bindings, extra premises)]
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   tag::(Integer, Integer, String)
 {
   top.pp = error("extIndElement.pp");
 
   top.encode = error("extIndElement.encode");
   top.is_nonextensible = false;
+  top.tag = tag;
 
   --only user-relevant theorems are the lemmas about extSize
   --the proven things are only for framework use
