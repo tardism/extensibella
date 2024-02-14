@@ -62,7 +62,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
               (thusFar.1 + 1, ([thusFar.1], p.2)::thusFar.2),
             (1, []), thms.extIndChecks).2 ++
       --exists to remove binding from front, then set-up for ExtThm
-      [([length(thms.extIndChecks)],
+      [([length(thms.extIndChecks) + 1],
         existsTactic(oneEWitnesses(termEWitness(integerToIntegerTerm(0))))::
         map(\ a::AnyCommand -> case a of
                                | anyProofCommand(p) -> p
@@ -105,8 +105,8 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
             else [] --only one thm, so subgoals for it are 1, 2, ...
        else if thms.len + alsos.len > 1
             --same, but under subgoal after ExtInd validity check
-            then [length(thms.extIndChecks), 1]
-            else [length(thms.extIndChecks)];
+            then [length(thms.extIndChecks) + 1, 1]
+            else [length(thms.extIndChecks) + 1];
 
   --find extInd if needed for the relations
   local extIndGroup::Maybe<[(QName, [String], Bindings,

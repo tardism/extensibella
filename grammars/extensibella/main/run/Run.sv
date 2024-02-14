@@ -445,8 +445,13 @@ IOVal<(Integer, ProverState, FullDisplay)> ::=
       processDisplay(cleaned.iovalue, from_parse);
   local outputCleanCommands::IOToken =
       if shouldClean
-      then debugOutput(debug, config, cleanCommands,
-              "Run During Commands", cleaned.iovalue, cleaned.io)
+      then debugOutput(debug, config,
+              cleanCommands,
+              "Run During Commands",
+              "(Cleaning commands were for Subgoal " ++
+              subgoalNumToString(
+                 head(initProverState.duringCommands).1) ++ ")\n\n" ++
+               cleaned.iovalue, cleaned.io)
       else debugOutput(debug, config, cleanCommands,
               "Run During Commands", "", ioin);
   local cleanedState::ProverState =
