@@ -105,8 +105,16 @@ top::SubQName ::= name::String
   --lookup name as a constructor
   --any time we can use a constructor, we can also use a relation,
   --   so include them
+  --filter out unknown constructors, since we don't mean them when we
+  --   look up a constructor
   production attribute possibleConstrs::[ConstructorEnvItem] =
-     lookupEnv(basicQName(top), top.constructorEnv);
+     filter(\ c::ConstructorEnvItem ->
+              case c.name of
+              | unknownIQName(_) -> false
+              | unknownKQName(_) -> false
+              | _ -> true
+              end,
+        lookupEnv(basicQName(top), top.constructorEnv));
   top.constrErrors =
       case possibleConstrs, possibleRels of
       | [], [] -> [errorMsg("Unknown constant " ++ name)]
@@ -193,8 +201,16 @@ top::SubQName ::= name::String rest::SubQName
   --lookup name as a constructor
   --any time we can use a constructor, we can also use a relation,
   --   so include them
+  --filter out unknown constructors, since we don't mean them when we
+  --   look up a constructor
   production attribute possibleConstrs::[ConstructorEnvItem] =
-     lookupEnv(basicQName(top), top.constructorEnv);
+     filter(\ c::ConstructorEnvItem ->
+              case c.name of
+              | unknownIQName(_) -> false
+              | unknownKQName(_) -> false
+              | _ -> true
+              end,
+        lookupEnv(basicQName(top), top.constructorEnv));
   top.constrErrors =
       case possibleConstrs, possibleRels of
       | [], [] -> [errorMsg("Unknown constant " ++ showed)]
