@@ -66,6 +66,16 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       then []
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
+  --check this is for a translation type from the same module
+  top.toAbellaMsgs <-
+      case body.premises of
+      | (_, translationMetaterm(_, q, _, _))::_ ->
+        if sameModule(top.currentModule, q)
+        then []
+        else [errorMsg("New translation constraints must be for " ++
+                 "new types; " ++ justShow(q.pp) ++ " is imported")]
+      | _ -> []
+      end;
 
   --check the body is well-typed
   top.toAbellaMsgs <-

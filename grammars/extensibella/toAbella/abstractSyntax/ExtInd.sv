@@ -80,6 +80,14 @@ top::TopCommand ::= body::ExtIndBody
               errorMsg("Duplicate definitions of extension " ++
                  "induction for relation " ++ justShow(q.pp)), split.1)
       end;
+  --Check no relation has a pre-existing ExtInd
+  top.toAbellaMsgs <-
+      flatMap(\ q::QName ->
+                if findExtIndGroup(q, top.proverState).isJust
+                then [errorMsg("Pre-existing ExtInd for " ++
+                         justShow(q.pp) ++ "; cannot redefine it")]
+                else [],
+              body.relations);
 }
 
 
