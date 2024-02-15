@@ -163,7 +163,8 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
 
   top.relations = if rel.relFound then [fullRel.name] else [];
 
-  top.extIndInfo = [(fullRel.name, relArgs, boundVars, premises)];
+  top.extIndInfo = [(if rel.relFound then fullRel.name else rel,
+                     relArgs, boundVars, premises)];
 
   top.relationEnvItems = if rel.relFound then [fullRel] else [];
 
