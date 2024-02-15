@@ -83,10 +83,12 @@ top::TopCommand ::= body::ExtIndBody
   --Check no relation has a pre-existing ExtInd
   top.toAbellaMsgs <-
       flatMap(\ q::QName ->
-                if findExtIndGroup(q, top.proverState).isJust
-                then [errorMsg("Pre-existing ExtInd for " ++
-                         justShow(q.pp) ++ "; cannot redefine it")]
-                else [],
+                case findExtIndGroup(q, top.proverState) of
+                | just(_) ->
+                  [errorMsg("Pre-existing ExtInd for " ++
+                      justShow(q.pp) ++ "; cannot redefine it")]
+                | nothing() -> []
+                end,
               body.relations);
 }
 
@@ -161,7 +163,7 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
 
   top.relations = if rel.relFound then [fullRel.name] else [];
 
-  top.extIndInfo = [(rel, relArgs, boundVars, premises)];
+  top.extIndInfo = [(fullRel.name, relArgs, boundVars, premises)];
 
   top.relationEnvItems = if rel.relFound then [fullRel] else [];
 
