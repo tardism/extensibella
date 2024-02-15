@@ -68,8 +68,8 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
                      " already exists")];
   --check this is for a translation type from the same module
   top.toAbellaMsgs <-
-      case body.premises of
-      | (_, translationMetaterm(_, q, _, _))::_ ->
+      case body.toAbella of
+      | impliesMetaterm(translationMetaterm(_, q, _, _), _) ->
         if sameModule(top.currentModule, q)
         then []
         else [errorMsg("New translation constraints must be for " ++
