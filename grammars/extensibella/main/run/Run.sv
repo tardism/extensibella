@@ -322,7 +322,8 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
       else a.newProverState.displayWidth;
   production output_output::String =
       if speak_to_abella && continueProcessing
-      then decorateAndShow(finalDisplay,
+      then our_own_output ++
+           decorateAndShow(finalDisplay,
               nonErrorProverState.knownTypes,
               nonErrorProverState.knownRels,
               nonErrorProverState.knownConstrs, width) ++ "\n"
