@@ -357,6 +357,24 @@ top::TopCommand ::= rels::[QName]
 }
 
 
+aspect production extSizeDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.defElements = [];
+  top.thmElements = [extSizeElement(rels, top.downTag)];
+}
+
+
+aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.defElements =
+      error("Should not have addExtSize in interface file");
+  top.thmElements =
+      error("Should not have addExtSize in interface file");
+}
+
+
 
 
 

@@ -73,6 +73,10 @@ IOToken ::= order::[ThmElement] config::Configuration ioin::IOToken
                  "ExtInd " ++
                  implode(", ", map(justShow,
                                    map((.pp), map(fst, r)))) ++ "."
+               | extSizeElement(r, tag) ->
+                 "ExtSize " ++
+                 implode(", ", map(justShow,
+                                   map((.pp), map(fst, r)))) ++ "."
                end,
              order)) ++ "\n\n\n";
 

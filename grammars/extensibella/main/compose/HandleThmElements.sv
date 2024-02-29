@@ -1027,6 +1027,16 @@ Integer ::= q::QName l::[(QName, a)]
 }
 
 
+aspect production extSizeElement
+top::ThmElement ::= rels::[(QName, [String])]
+                    tag::(Integer, Integer, String)
+{
+  top.outgoingMods = todoError("");
+  top.composedCmds = todoError("");
+  top.newThms = todoError("");
+}
+
+
 
 
 
@@ -1423,6 +1433,28 @@ top::TopCommand ::= rels::[QName]
   top.matchesRels = \ l::[QName] -> !null(intersect(rels, l));
 
   top.isNotProof = false;
+}
+
+
+aspect production extSizeDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.matchesNames = todoError("");
+
+  top.matchesRels = todoError("");
+
+  top.isNotProof = todoError("");
+}
+
+
+aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.matchesNames = todoError("");
+
+  top.matchesRels = todoError("");
+
+  top.isNotProof = todoError("");
 }
 
 

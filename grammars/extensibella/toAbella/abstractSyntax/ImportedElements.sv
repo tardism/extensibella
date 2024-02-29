@@ -82,6 +82,22 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 }
 
 
+abstract production extSizeElement
+top::ThmElement ::= rels::[(QName, [String])]
+                    tag::(Integer, Integer, String)
+{
+  top.pp = extSizeDeclaration(rels).pp;
+
+  top.encode = error("extSizeElement.encode");
+  top.is_nonextensible = false;
+  top.tag = tag;
+
+  top.thms =
+      flatMap(\ p::(QName, [String]) ->
+                buildExtSizeLemmas(p.1, p.2), rels);
+}
+
+
 abstract production extIndElement
 top::ThmElement ::=
    --[(rel name, rel arg names, full bindings, extra premises)]

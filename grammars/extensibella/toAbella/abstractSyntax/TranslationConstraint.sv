@@ -139,8 +139,17 @@ top::TopCommand ::= name::QName
       | extIndElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext_Ind obligation for " ++
             implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | _ ->
-        error("Should be impossible (proveConstraint.toAbellaMsgs)")
+      | extSizeElement(relInfo, _)::_ ->
+        [errorMsg("Expected Ext_Size obligation for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
+      --split these out explicitly for better errors/catching if a
+      --new constructor is added
+      | nonextensibleTheorem(_, _, _)::_ ->
+        error("Should be impossible (proveConstraint.toAbellaMsgs " ++
+              "nonextensibleTheorem)")
+      | splitElement(_, _)::_ ->
+        error("Should be impossible (proveConstraint.toAbellaMsgs " ++
+              "splitElement)")
       end;
 
   local obligation::(QName, Bindings, ExtBody) =

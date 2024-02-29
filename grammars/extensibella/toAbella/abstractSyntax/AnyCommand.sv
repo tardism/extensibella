@@ -32,8 +32,8 @@ top::AnyCommand ::= c::TopCommand
   top.newProverState =
       updateProverStateTop(top.proverState, top.newProofState,
          c.newTheorems, c.tys, c.rels, c.constrs, c.provingTheorems,
-         c.provingExtInds, c.duringCommands, c.keyRelModules,
-         c.afterCommands);
+         c.provingExtInds, c.newExtSizeGroup, c.duringCommands,
+         c.keyRelModules, c.afterCommands);
   top.newPriorStep = nothing();
 
   top.isQuit = false;

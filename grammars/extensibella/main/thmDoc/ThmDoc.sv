@@ -462,6 +462,26 @@ top::TopCommand ::= rels::[QName]
 }
 
 
+aspect production extSizeDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.thmStrings = [];
+  top.defStrings = [];
+
+  top.newThms = [];
+}
+
+
+aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.thmStrings = [];
+  top.defStrings = [];
+
+  top.newThms = [];
+}
+
+
 
 attribute
    formatThm, thmStrings, newThms

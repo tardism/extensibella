@@ -134,3 +134,16 @@ top::ThmElement ::=
                      map((.pp), map(fst, rels)))) ++
          text("."));
 }
+
+
+aspect production extSizeElement
+top::ThmElement ::= rels::[(QName, [String])]
+                    tag::(Integer, Integer, String)
+{
+  top.inSkeleton = true;
+  top.skeletonText =
+      showDoc(80, text("Add_Ext_Size ") ++
+         nest(12, ppImplode(text(",") ++ line(),
+                     map((.pp), map(fst, rels)))) ++
+         text("."));
+}

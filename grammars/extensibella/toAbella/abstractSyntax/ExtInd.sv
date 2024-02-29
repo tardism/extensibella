@@ -21,13 +21,8 @@ top::TopCommand ::= body::ExtIndBody
 
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
-      --relation definitions
-      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
-      --ext size lemmas
-      flatMap(\ p::(QName, Metaterm) ->
-                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
-                 anyProofCommand(skipTactic())],
-              extSizeLemmas) ++
+      --relation definition
+      [anyTopCommand(transRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella)),
@@ -50,22 +45,23 @@ top::TopCommand ::= body::ExtIndBody
                 (e.name, p.2, p.3, p.4, e),
               body.extIndInfo, body.relationEnvItems);
 
-  --definition of R_{ES}
-  local extSizeDef::TopCommand =
-      buildExtSize(map(fst, fullRelInfo), top.relationEnv);
+  --whether or not to use ExtSize for the proof, or just the relation
+  local useExtSize::Boolean =
+      case fullRelInfo of
+      | [] -> true
+      | (q, _, _, _, _)::rest ->
+        case findExtSizeGroup(q, top.proverState) of
+        | nothing() -> false
+        | just(g) -> subset(g, map(fst, rest))
+        end
+      end;
+  body.useExtSize = useExtSize;
 
   --definition of R_T
   local transRelDef::TopCommand =
       buildTransRel(body.extIndInfo, top.relationEnv);
 
-  --lemmas about R_{ES}
-  local extSizeLemmas::[(QName, Metaterm)] =
-      flatMap(\ p::(QName, [String], Bindings, ExtIndPremiseList,
-                    RelationEnvItem) ->
-                buildExtSizeLemmas(p.1, p.2), fullRelInfo);
-
-  --Add these to the known theorems, as they are now proven
-  top.newTheorems = extSizeLemmas;
+  top.newTheorems = [];
 
   --Check each relation occurs at most once
   top.toAbellaMsgs <- --([duplicated], [seen])
@@ -90,6 +86,14 @@ top::TopCommand ::= body::ExtIndBody
                 | nothing() -> []
                 end,
               body.relations);
+  --Check if the relations have ExtSize and have it together
+  --Not an error, but something possibly unintended, so warn
+  top.toAbellaMsgs <-
+      if useExtSize
+      then []
+      else [warningMsg("No definition of Ext Size for all " ++
+               "relations in Ext Ind; defaulting to proving " ++
+               "Ext Ind without Ext Size")];
 }
 
 
@@ -97,11 +101,12 @@ nonterminal ExtIndBody with
    pps, abella_pp,
    len,
    toAbella<Metaterm>, toAbellaMsgs,
+   useExtSize,
    downDuringCommands, duringCommands, startingGoalNum, nextGoalNum,
    relations, extIndInfo, relationEnvItems,
    currentModule, typeEnv, constructorEnv, relationEnv;
 propagate constructorEnv, relationEnv, typeEnv, currentModule,
-          toAbellaMsgs on ExtIndBody;
+          toAbellaMsgs, useExtSize on ExtIndBody;
 
 synthesized attribute relations::[QName];
                 --[(rel, args, total bound vars, premises)]
@@ -110,6 +115,8 @@ synthesized attribute extIndInfo::[(QName, [String], Bindings,
 synthesized attribute relationEnvItems::[RelationEnvItem];
 --thread commands around, since we might need to combine them
 inherited attribute downDuringCommands::[(SubgoalNum, [ProofCommand])];
+--whether to use ExtSize in thm statement, or just relation itself
+inherited attribute useExtSize::Boolean;
 
 abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
@@ -247,7 +254,7 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
       else combinedCommands;
 
   top.toAbella = buildExtIndThm(boundVars.toAbella, rel.fullRel.name,
-                                relArgs, premises.toAbella);
+                    relArgs, premises.toAbella, top.useExtSize);
 
   --Check relation is an extensible relation from this module
   top.toAbellaMsgs <-
@@ -320,13 +327,14 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
 
 function buildExtIndThm
 Metaterm ::= boundVars::Bindings rel::QName relArgs::[String]
-             premises::[(Maybe<String>, Metaterm)]
+             premises::[(Maybe<String>, Metaterm)] useExtSize::Boolean
 {
   local args::[Term] =
       map(\ x::String -> nameTerm(toQName(x), nothingType()), relArgs);
   local n::String = freshName("N", boundVars.usedNames);
-  local extSize::Metaterm =
-      relationMetaterm(extSizeQName(rel.sub),
+  local relPrem::Metaterm =
+      relationMetaterm(
+         if useExtSize then extSizeQName(rel.sub) else rel,
          toTermList(args ++ [nameTerm(toQName(n), nothingType())]),
          emptyRestriction());
   local acc::Metaterm =
@@ -340,7 +348,7 @@ Metaterm ::= boundVars::Bindings rel::QName relArgs::[String]
       bindingMetaterm(forallBinder(),
          addBindings(n, nothingType(), boundVars),
          foldr(impliesMetaterm, conc,
-               extSize::acc::(map(snd, premises))));
+               relPrem::acc::(map(snd, premises))));
 }
 
 
@@ -430,6 +438,9 @@ top::TopCommand ::= rels::[QName]
             if null(alsos) then ""
             else " also " ++
                  implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
+      | extSizeElement(rels, _)::_ ->
+        [errorMsg("Expected Ext Size addition for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, rels)))))]
       | extIndElement(relInfo, _)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -486,18 +497,23 @@ top::TopCommand ::= rels::[QName]
             end,
           obligations);
 
-  --definition of R_{ES}
-  local extSizeDef::TopCommand =
-      buildExtSize(map(fst, obligations), top.relationEnv);
+  --whether or not to use ExtSize for the proof, or just the relation
+  --because new ExtSize can only be declared for new relations, this
+  --   matches what is done in other modules
+  local useExtSize::Boolean =
+      case rels of
+      | [] -> true
+      | q::rest ->
+        case findExtSizeGroup(q, top.proverState) of
+        | nothing() -> false
+        | just(g) -> subset(g, rest)
+        end
+      end;
+  body.useExtSize = useExtSize;
 
   --definition of R_T
   local transRelDef::TopCommand =
       buildTransRel(obligations, top.relationEnv);
-
-  local extSizeLemmas::[(QName, Metaterm)] =
-      flatMap(\ p::(QName, [String], Bindings, ExtIndPremiseList,
-                    RelationEnvItem) ->
-                buildExtSizeLemmas(p.1, p.2), fullRelInfo);
 
   local body::ExtIndBody =
       foldr1(branchExtIndBody,
@@ -512,18 +528,12 @@ top::TopCommand ::= rels::[QName]
   body.constructorEnv = top.constructorEnv;
   body.downDuringCommands = [];
 
-  --Add these to the known theorems, as they are now proven
-  top.newTheorems = extSizeLemmas;
+  top.newTheorems = [];
 
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
-      --relation definitions
-      [anyTopCommand(extSizeDef), anyTopCommand(transRelDef)] ++
-      --ext size lemmas
-      flatMap(\ p::(QName, Metaterm) ->
-                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
-                 anyProofCommand(skipTactic())],
-              extSizeLemmas) ++
+      --relation definition
+      [anyTopCommand(transRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella)),
@@ -537,6 +547,235 @@ top::TopCommand ::= rels::[QName]
       map(anyProofCommand, head(body.duringCommands).2);
 
   top.duringCommands = tail(body.duringCommands);
+}
+
+
+
+abstract production extSizeDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.pp = text("Ext_Size ") ++
+           ppImplode(text(",") ++ line(),
+              map(\ p::(QName, [String]) ->
+                    nest(9, ppImplode(text(" "), p.1.pp::map(text, p.2))),
+                  rels)) ++ text(".");
+  top.abella_pp =
+      "Ext_Size " ++
+      implode(", ",
+         map(\ p::(QName, [String]) ->
+               implode(" ", p.1.abella_pp::p.2), rels)) ++ ".";
+
+  top.provingTheorems = [];
+  top.duringCommands = [];
+  top.afterCommands = [];
+  top.keyRelModules = [];
+
+  top.newExtSizeGroup =
+      foldr(\ p::(Decorated QName with {relationEnv}, [String])
+              rest::Maybe<[QName]> ->
+              bind(rest, \ r::[QName] ->
+                           if p.1.relFound then just(p.1.fullRel.name::r)
+                                           else nothing()),
+            just([]), decRels);
+
+  local decRels::[(Decorated QName with {relationEnv}, [String])] =
+      map(\ p::(QName, [String]) ->
+            (decorate p.1 with {
+               relationEnv = top.relationEnv;
+             }, p.2), rels);
+
+  top.toAbella =
+      anyTopCommand(extSizeDef)::
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              extSizeLemmas);
+  local extSizeDef::TopCommand =
+      buildExtSize(map(\ q::Decorated QName with {relationEnv} ->
+                         q.fullRel.name, map(fst, decRels)),
+                       top.relationEnv);
+  local extSizeLemmas::[(QName, Metaterm)] =
+      flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                buildExtSizeLemmas(new(p.1), p.2), decRels);
+
+  top.toAbellaMsgs <-
+      flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                (if length(nub(p.2)) != length(p.2)
+                 then [errorMsg("Repeated arguments in Ext Size for " ++
+                          justShow(p.1.pp))]
+                 else []) ++
+                flatMap(\ x::String ->
+                          if !isCapitalized(x)
+                          then [errorMsg("Arguments in Ext Size " ++
+                                   "declaration must be capitalized, but " ++
+                                   x ++ " is not")]
+                          else [], nub(p.2)) ++
+                (if p.1.relFound && length(p.2) != p.1.fullRel.types.len
+                 then [errorMsg("Expected " ++
+                          toString(p.1.fullRel.types.len) ++
+                          " arguments to " ++ justShow(p.1.pp) ++
+                          " but found " ++ toString(length(p.2)))]
+                 else []) ++
+                p.1.relErrors ++
+                if !p.1.relFound
+                then []
+                else (if !sameModule(top.currentModule, p.1.fullRel.name)
+                      then [errorMsg("Relation " ++
+                               justShow(p.1.fullRel.name.pp) ++
+                               " is not from this module")]
+                      else []) ++
+                     (if findExtSizeGroup(p.1.fullRel.name,
+                            top.proverState).isJust
+                      then [errorMsg("Relation " ++
+                              justShow(p.1.fullRel.name.pp) ++
+                              " already has ExtSize defined for it")]
+                      else []), decRels);
+}
+
+
+abstract production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.pp = text("Add_Ext_Size ") ++
+           ppImplode(text(",") ++ line(), map((.pp), oldRels)) ++
+           (if null(newRels)
+            then text("")
+            else line() ++ text("with ") ++
+                 ppImplode(text(",") ++ line(),
+                    map(\ p::(QName, [String]) ->
+                          nest(9, ppImplode(text(" "),
+                                     p.1.pp::map(text, p.2))),
+                        newRels))) ++ text(".");
+  top.abella_pp =
+      "Add_Ext_Size " ++
+      implode(", ", map(justShow, map((.pp), oldRels))) ++
+      (if null(newRels)
+       then ""
+       else " with " ++ implode(", ",
+                           map(\ p::(QName, [String]) ->
+                                 implode(" ", p.1.abella_pp::p.2),
+                               newRels))) ++ ".";
+
+  top.provingTheorems = [];
+  top.duringCommands = [];
+  top.afterCommands = [];
+  top.keyRelModules = [];
+
+  top.newExtSizeGroup =
+      bind(
+         foldr(\ p::(Decorated QName with {relationEnv}, [String])
+                 rest::Maybe<[QName]> ->
+                 bind(rest, \ r::[QName] ->
+                              if p.1.relFound then just(p.1.fullRel.name::r)
+                                              else nothing()),
+               just([]), decNewRels),
+         \ r::[QName] -> just(oldRels ++ r));
+
+  local decNewRels::[(Decorated QName with {relationEnv}, [String])] =
+      map(\ p::(QName, [String]) ->
+            (decorate p.1 with {
+               relationEnv = top.relationEnv;
+             }, p.2), newRels);
+
+  top.toAbella =
+      anyTopCommand(extSizeDef)::
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              extSizeLemmas);
+  local extSizeDef::TopCommand =
+      buildExtSize(map(fst, obligations) ++
+                   map(\ q::Decorated QName with {relationEnv} ->
+                         q.fullRel.name, map(fst, decNewRels)),
+                   top.relationEnv);
+  local extSizeLemmas::[(QName, Metaterm)] =
+      flatMap(\ p::(QName, [String]) ->
+                buildExtSizeLemmas(p.1, p.2), obligations ++ newRels);
+
+  local obligations::[(QName, [String])] =
+      case head(top.proverState.remainingObligations) of
+      | extSizeElement(r, _) -> r
+      | _ -> error("Not possible (addExtSize.obligations)")
+      end;
+
+  top.toAbellaMsgs <-
+      case top.proverState.remainingObligations of
+      | [] -> [errorMsg("No obligations left to prove")]
+      | translationConstraintTheorem(q, x, b, _)::_ ->
+        [errorMsg("Expected translation constraint obligation" ++
+            justShow(q.pp))]
+      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
+        [errorMsg("Expected theorem obligations " ++
+            implode(", ", map(justShow, map((.pp), map(fst, thms)))) ++
+            if null(alsos) then ""
+            else " also " ++
+                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
+      | extIndElement(relInfo, _)::_ ->
+        [errorMsg("Expected Ext Ind for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
+      | extSizeElement(relInfo, _)::_ ->
+        let expectedNames::[QName] = map(fst, relInfo)
+        in
+          if setEq(oldRels, expectedNames)
+          then []
+          else if subset(oldRels, expectedNames)
+          then let missing::[QName] = removeAll(oldRels, expectedNames)
+               in
+                 [errorMsg("Missing relation" ++
+                     (if length(missing) == 1 then " " else "s ") ++
+                     implode(", ", map(justShow,
+                        map((.pp), removeAll(oldRels, expectedNames)))))]
+               end
+          else if subset(expectedNames, oldRels)
+          then [errorMsg("Too many relations; should not have " ++
+                   implode(", ", map(justShow,
+                      map((.pp), removeAll(expectedNames, oldRels)))))]
+          else [errorMsg("Expected ExtSize addition" ++
+                   (if length(expectedNames) == 1 then "" else "s") ++
+                   " " ++ implode(", ",
+                             map(justShow, map((.pp), expectedNames))))]
+        end
+      --split these out explicitly for better errors/catching if a
+      --new constructor is added
+      | nonextensibleTheorem(_, _, _)::_ ->
+        error("Should be impossible (addExtSize.toAbellaMsgs " ++
+              "nonextensibleTheorem)")
+      | splitElement(_, _)::_ ->
+        error("Should be impossible (addExtSize.toAbellaMsgs " ++
+              "splitElement)")
+      end;
+  top.toAbellaMsgs <-
+      flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                (if length(nub(p.2)) != length(p.2)
+                 then [errorMsg("Repeated arguments in Ext Size for " ++
+                          justShow(p.1.pp))]
+                 else []) ++
+                flatMap(\ x::String ->
+                          if !isCapitalized(x)
+                          then [errorMsg("Arguments in Ext Size " ++
+                                   "declaration must be capitalized, but " ++
+                                   x ++ " is not")]
+                          else [], nub(p.2)) ++
+                (if p.1.relFound && length(p.2) != p.1.fullRel.types.len
+                 then [errorMsg("Expected " ++
+                          toString(p.1.fullRel.types.len) ++
+                          " arguments to " ++ justShow(p.1.pp) ++
+                          " but found " ++ toString(length(p.2)))]
+                 else []) ++
+                p.1.relErrors ++
+                if !p.1.relFound
+                then []
+                else (if !sameModule(top.currentModule, p.1.fullRel.name)
+                      then [errorMsg("Relation " ++
+                               justShow(p.1.fullRel.name.pp) ++
+                               " is not from this module")]
+                      else []) ++
+                     (if findExtSizeGroup(p.1.fullRel.name,
+                            top.proverState).isJust
+                      then [errorMsg("Relation " ++
+                              justShow(p.1.fullRel.name.pp) ++
+                              " already has ExtSize defined for it")]
+                      else []), decNewRels);
 }
 
 

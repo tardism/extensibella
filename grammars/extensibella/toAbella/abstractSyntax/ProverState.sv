@@ -4,13 +4,14 @@ grammar extensibella:toAbella:abstractSyntax;
   We store the pieces of the state of the theorem prover with this
   nonterminal.  It makes it a bit easier to handle changing the form
   of the state of the theorem prover to move things into it if we have
-  a nonterminal than if we were to use a tuple.
+  a nonterminal than if we were to use a tuple.  And by "a bit" I mean
+  "a lot".
 -}
 
 data nonterminal ProverState with
    pp, --solely for debugging purposes
    state, debug, displayWidth,
-   knownTheorems, knownExtInds, remainingObligations,
+   knownTheorems, knownExtInds, knownExtSizes, remainingObligations,
    knownTypes, knownRels, knownConstrs, buildsOns,
    provingThms, provingExtInds, duringCommands, afterCommands,
    keyRelModules, currentKeyRelModule;
@@ -34,6 +35,10 @@ annotation knownTheorems::[(QName, Metaterm)];
 --Each sublist is a group of mutually-ext-inded relations
 --[[(rel, rel arg names, full bindings, premises)]]
 annotation knownExtInds::[[(QName, [String], Bindings, ExtIndPremiseList)]];
+
+--ExtSize relations that have been proven
+--Each sublist is a group of mutually-defined ext size relations
+annotation knownExtSizes::[[QName]];
 
 --Things we will need to do in the proof based on imports that we
 --haven't done yet
@@ -121,6 +126,7 @@ ProverState ::= current::ProverState
             state = current.state, debug = current.debug,
             displayWidth = current.displayWidth, knownTheorems = outThms,
             knownExtInds = current.knownExtInds,
+            knownExtSizes = current.knownExtSizes,
             remainingObligations = outObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -176,6 +182,7 @@ ProverState ::= current::ProverState
             knownExtInds =
                 if null(current.provingExtInds) then current.knownExtInds
                 else current.provingExtInds::current.knownExtInds,
+            knownExtSizes = current.knownExtSizes,
             remainingObligations =
                removeFinishedObligation(current.remainingObligations,
                   current.provingThms),
@@ -197,6 +204,7 @@ ProverState ::= current::ProverState
             displayWidth = current.displayWidth,
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
+            knownExtSizes = current.knownExtSizes,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -219,6 +227,7 @@ ProverState ::= current::ProverState debugVal::Boolean
             displayWidth = current.displayWidth,
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
+            knownExtSizes = current.knownExtSizes,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -241,6 +250,7 @@ ProverState ::= current::ProverState width::Integer
             displayWidth = width,
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
+            knownExtSizes = current.knownExtSizes,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -259,6 +269,7 @@ ProverState ::= current::ProverState newProofState::ProofState
    newRels::[RelationEnvItem] newConstrs::[ConstructorEnvItem]
    provingThms::[(QName, Metaterm)]
    provingExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
+   newExtSizeGroup::Maybe<[QName]>
    duringCmds::[(SubgoalNum, [ProofCommand])]
    keyRelModules::[(SubgoalNum, QName)]
    afterCmds::[AnyCommand]
@@ -271,6 +282,10 @@ ProverState ::= current::ProverState newProofState::ProofState
             displayWidth = current.displayWidth,
             knownTheorems = newThms ++ current.knownTheorems,
             knownExtInds = current.knownExtInds,
+            knownExtSizes = case newExtSizeGroup of
+                            | nothing() -> current.knownExtSizes
+                            | just(g) -> g::current.knownExtSizes
+                            end,
             remainingObligations = current.remainingObligations,
             knownTypes = addEnv(current.knownTypes, newTys),
             knownRels = addEnv(current.knownRels, newRels),
@@ -300,6 +315,7 @@ ProverState ::= current::ProverState newProofState::ProofState
             displayWidth = current.displayWidth,
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
+            knownExtSizes = current.knownExtSizes,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels =current.knownRels, knownConstrs = current.knownConstrs,
@@ -414,7 +430,8 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
             --
             state = noProof(isAbellaForm=false), debug = false,
             displayWidth = 80, knownTheorems = knownThms,
-            knownExtInds = [], remainingObligations = obligations,
+            knownExtInds = [], knownExtSizes = [],
+            remainingObligations = obligations,
             knownTypes = addEnv(tyEnv, knownTys),
             knownRels = addEnv(relEnv, knownRels),
             knownConstrs = addEnv(constrEnv, knownConstrs),
@@ -435,6 +452,7 @@ ProverState ::= p::ProverState
             displayWidth = p.displayWidth,
             knownTheorems = p.knownTheorems,
             knownExtInds = p.knownExtInds,
+            knownExtSizes = p.knownExtSizes,
             remainingObligations = p.remainingObligations,
             knownTypes = p.knownTypes, knownRels = p.knownRels,
             knownConstrs = p.knownConstrs, provingThms = p.provingThms,
@@ -468,6 +486,18 @@ Maybe<[(QName, [String], Bindings, ExtIndPremiseList)]> ::=
          | [] -> nothing()
          | [x] -> just(x)
          | _ -> error("findExtIndGroup impossible")
+         end;
+}
+
+--Find an ExtSize declaration group including rel
+function findExtSizeGroup
+Maybe<[QName]> ::= name::QName state::ProverState
+{
+  local find::[[QName]] = filter(contains(name, _), state.knownExtSizes);
+  return case find of
+         | [] -> nothing()
+         | [x] -> just(x)
+         | _ -> error("findExtsizeGroup impossible")
          end;
 }
 

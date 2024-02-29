@@ -53,6 +53,7 @@ closed nonterminal TheoremStmts_c with ast<Either<String ExtThms>>;
 closed nonterminal ExtBody_c with ast<Either<String ExtBody>>;
 closed nonterminal ExtIndBodies_c with ast<Either<String ExtIndBody>>;
 closed nonterminal ExtIndPremiseList_c with ast<Either<String ExtIndPremiseList>>;
+closed nonterminal ExtSizeBodies_c with ast<[(QName, [String])]>;
 closed nonterminal QnameList_c with ast<[QName]>;
 
 concrete productions top::AnyCommand_c
@@ -264,7 +265,14 @@ concrete productions top::PureTopCommand_c
 | 'Prove_Ext_Ind' rels::QnameList_c '.'
   { top.ast = anyTopCommand(proveExtInd(rels.ast)); }
 | 'Prove_Ext_Ind' oldRels::QnameList_c 'with' e::ExtIndBodies_c '.'
-  { top.ast = todoError("Adding new relations to ExtInd groups not done yet"); }
+  { top.ast =
+        todoError("Adding new relations to ExtInd groups not done yet"); }
+| 'Ext_Size' rels::ExtSizeBodies_c '.'
+  { top.ast = anyTopCommand(extSizeDeclaration(rels.ast)); }
+| 'Add_Ext_Size' oldRels::QnameList_c '.'
+  { top.ast = anyTopCommand(addExtSize(oldRels.ast, [])); }
+| 'Add_Ext_Size' oldRels::QnameList_c 'with' newRels::ExtSizeBodies_c '.'
+  { top.ast = anyTopCommand(addExtSize(oldRels.ast, newRels.ast)); }
 
 
 nonterminal VarList_c with ast<[String]>;
@@ -511,6 +519,17 @@ concrete productions top::ExtIndPremiseList_c
         | _, left(err) -> left(err)
         | right(a), right(r) -> right(addExtIndPremiseList(a, r))
         end; }
+
+
+concrete productions top::ExtSizeBodies_c
+| rel::Id_t args::VarList_c
+  { top.ast = [(toQName(rel.lexeme), args.ast)]; }
+| rel::Qname_t args::VarList_c
+  { top.ast = [(toQName(rel.lexeme), args.ast)]; }
+| rel::Id_t args::VarList_c ',' rest::ExtSizeBodies_c
+  { top.ast = (toQName(rel.lexeme), args.ast)::rest.ast; }
+| rel::Qname_t args::VarList_c ',' rest::ExtSizeBodies_c
+  { top.ast = (toQName(rel.lexeme), args.ast)::rest.ast; }
 
 
 concrete productions top::QnameList_c

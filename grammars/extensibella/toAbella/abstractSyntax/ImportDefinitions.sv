@@ -345,3 +345,21 @@ top::TopCommand ::= rels::[QName]
   top.rels = [];
   top.constrs = [];
 }
+
+
+aspect production extSizeDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}

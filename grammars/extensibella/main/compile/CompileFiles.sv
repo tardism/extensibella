@@ -423,3 +423,44 @@ top::TopCommand ::= rels::[QName]
       end;
   top.maybeTag = just(head(foundExtInd).tag);
 }
+
+
+aspect production extSizeDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.compiled =
+      just(extSizeDeclaration(
+              map(\ p::(QName, [String]) ->
+                    (decorate p.1 with {
+                        relationEnv = top.relationEnv;}.fullRel.name,
+                     p.2),
+                  rels)));
+  top.maybeTag = nothing();
+}
+
+
+aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  local foundExtSize::[ThmElement] =
+      filter(\ t::ThmElement ->
+               case t of
+               | extSizeElement(relInfo, _) ->
+                 let l::[QName] = map(fst, relInfo)
+                 in --equal by mutual subsets
+                   subset(l, oldRels) && subset(oldRels, l)
+                 end
+               | _ -> false
+               end,
+             top.proverState.remainingObligations);
+  top.compiled =
+      case foundExtSize of
+      | [extSizeElement(relInfo, _)] ->
+        just(extSizeDeclaration(relInfo ++ newRels))
+      | _ ->
+        error("Could not identify Ext_Size when compiling " ++
+              "Add_Ext_Size; file must be checkable before " ++
+              "compilation")
+      end;
+  top.maybeTag = just(head(foundExtSize).tag);
+}
