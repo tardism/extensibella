@@ -25,10 +25,12 @@ top::TopCommand ::= body::ExtIndBody
       [anyTopCommand(transRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
-                        body.toAbella)),
-       --declare inductions:  acc and rel
-       anyProofCommand(inductionTactic(noHint(), repeat(2, body.len))),
-       anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
+                        body.toAbella))] ++
+       --declare inductions:  acc (if using ExtSize) and rel
+      (if useExtSize
+       then [anyProofCommand(inductionTactic(noHint(), repeat(2, body.len)))]
+       else []) ++
+      [anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
        --split
       (if body.len > 1 then [anyProofCommand(splitTactic())]
                        else []) ++
@@ -181,7 +183,9 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
   local givenLabels::[String] = filterMap(fst, premises.toList);
   local relLabel::String = freshName("R", givenLabels);
   local introsNames::[String] =
-      relLabel::freshName("Acc", givenLabels)::
+      [relLabel] ++
+      (if top.useExtSize then [freshName("Acc", givenLabels)]
+                         else []) ++
       map(fromMaybe("_", _), map(fst, premises.toList)); 
 
   --[(last element of subgoal number, whether to prove it)]
@@ -334,9 +338,18 @@ Metaterm ::= boundVars::Bindings rel::QName relArgs::[String]
       map(\ x::String -> nameTerm(toQName(x), nothingType()), relArgs);
   local n::String = freshName("N", boundVars.usedNames);
   local relPrem::Metaterm =
-      relationMetaterm(
-         if useExtSize then extSizeQName(rel.sub) else rel,
-         toTermList(args ++ [nameTerm(toQName(n), nothingType())]),
+      relationMetaterm(rel,
+         toTermList(args ++
+            if useExtSize
+            then [nameTerm(toQName(n), nothingType())]
+            else []),
+         emptyRestriction());
+  local extSize::Metaterm =
+      relationMetaterm(extSizeQName(rel.sub),
+         toTermList(args ++
+            if useExtSize
+            then [nameTerm(toQName(n), nothingType())]
+            else []),
          emptyRestriction());
   local acc::Metaterm =
       relationMetaterm(toQName("acc"),
@@ -347,9 +360,13 @@ Metaterm ::= boundVars::Bindings rel::QName relArgs::[String]
                        emptyRestriction());
   return
       bindingMetaterm(forallBinder(),
-         addBindings(n, nothingType(), boundVars),
+         if useExtSize
+         then addBindings(n, nothingType(), boundVars)
+         else boundVars,
          foldr(impliesMetaterm, conc,
-               relPrem::acc::(map(snd, premises))));
+               if useExtSize
+               then extSize::acc::map(snd, premises)
+               else relPrem::map(snd, premises)));
 }
 
 
@@ -537,10 +554,12 @@ top::TopCommand ::= rels::[QName]
       [anyTopCommand(transRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
-                        body.toAbella)),
-       --declare inductions
-       anyProofCommand(inductionTactic(noHint(), repeat(2, body.len))),
-       anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
+                        body.toAbella))] ++
+       --declare inductions:  acc (if using ExtSize) and rel
+      (if useExtSize
+       then [anyProofCommand(inductionTactic(noHint(), repeat(2, body.len)))]
+       else []) ++
+      [anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
        --split
       (if body.len > 1 then [anyProofCommand(splitTactic())]
                        else []) ++
