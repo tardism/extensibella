@@ -152,6 +152,7 @@ function defElementsDefinitions
   defs.constructorEnv = buildEnv([]);
   defs.currentModule = error("defElementsDefinitions.currentModule");
   defs.ignoreDefErrors = true;
+  defs.proverState = error("defElementsDefinitions.proverState");
   return (defs.tys, defs.rels, defs.constrs);
 }
 

@@ -100,13 +100,14 @@ top::TopCommand ::= body::ExtIndBody
 nonterminal ExtIndBody with
    pps, abella_pp,
    len,
+   proverState,
    toAbella<Metaterm>, toAbellaMsgs,
    useExtSize,
    downDuringCommands, duringCommands, startingGoalNum, nextGoalNum,
    relations, extIndInfo, relationEnvItems,
    currentModule, typeEnv, constructorEnv, relationEnv;
 propagate constructorEnv, relationEnv, typeEnv, currentModule,
-          toAbellaMsgs, useExtSize on ExtIndBody;
+          toAbellaMsgs, useExtSize, proverState on ExtIndBody;
 
 synthesized attribute relations::[QName];
                 --[(rel, args, total bound vars, premises)]

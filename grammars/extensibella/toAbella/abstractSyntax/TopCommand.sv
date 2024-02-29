@@ -123,7 +123,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                 foldrLastElem(addTypeList,
                    \ x::Type -> emptyTypeList(), p.2.toList)),
            fullNames) ++ top.relationEnv;
-  propagate typeEnv, constructorEnv, toAbellaMsgs;
+  propagate typeEnv, constructorEnv, proverState, toAbellaMsgs;
 
   top.toAbella =
       [anyTopCommand(definitionDeclaration(fullNames,

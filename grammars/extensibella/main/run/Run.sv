@@ -146,6 +146,8 @@ function module_elements
   comms.constructorEnv = [];
   comms.currentModule = error("currentModule not needed");
   comms.ignoreDefErrors = true;
+  comms.proverState =
+      error("extensibella:main:run:module_elements.proverState");
   return (buildEnv(comms.tys), buildEnv(comms.rels),
           buildEnv(comms.constrs));
 }

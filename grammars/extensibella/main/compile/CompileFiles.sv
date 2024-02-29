@@ -40,6 +40,8 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
   modComms.currentModule = fileAST.1.fromJust;
   modComms.config = config;
   modComms.ignoreDefErrors = true;
+  modComms.proverState =
+      error("extensibella:main:compile:compile_file.modComms.proverState");
   local fileErrors::[Message] = fileAST.2.fileErrors;
   --
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =

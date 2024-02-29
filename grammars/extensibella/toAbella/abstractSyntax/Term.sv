@@ -23,6 +23,12 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
                                   args.toAbella, r);
 
   top.toAbellaMsgs <- rel.relErrors;
+  top.toAbellaMsgs <-
+      if !rel.relFound ||
+         findExtSizeGroup(rel.fullRel.name, top.proverState).isJust
+      then []
+      else [errorMsg("Ext Size is not defined for " ++
+               justShow(rel.fullRel.name.pp))];
 }
 
 
@@ -33,6 +39,12 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
                                   args.toAbella, r);
 
   top.toAbellaMsgs <- rel.relErrors;
+  top.toAbellaMsgs <-
+      if !rel.relFound ||
+         findExtIndGroup(rel.fullRel.name, top.proverState).isJust
+      then []
+      else [errorMsg("Projection version is not defined for " ++
+               justShow(rel.fullRel.name.pp))];
 }
 
 
