@@ -286,7 +286,14 @@ ProverState ::= current::ProverState newProofState::ProofState
                             | nothing() -> current.knownExtSizes
                             | just(g) -> g::current.knownExtSizes
                             end,
-            remainingObligations = current.remainingObligations,
+            remainingObligations =
+               --other obligations are removed when they are proved
+               --since this has no proof, remove it here
+               case newExtSizeGroup, current.remainingObligations of
+               | just(g), extSizeElement(rels, _)::rest
+                 when subset(map(fst, rels), g) -> rest
+               | _, l -> l
+               end,
             knownTypes = addEnv(current.knownTypes, newTys),
             knownRels = addEnv(current.knownRels, newRels),
             knownConstrs = addEnv(current.knownConstrs, newConstrs),

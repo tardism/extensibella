@@ -54,7 +54,7 @@ top::TopCommand ::= body::ExtIndBody
       | (q, _, _, _, _)::rest ->
         case findExtSizeGroup(q, top.proverState) of
         | nothing() -> false
-        | just(g) -> subset(g, map(fst, rest))
+        | just(g) -> subset(map(fst, rest), g)
         end
       end;
   body.useExtSize = useExtSize;
@@ -524,7 +524,7 @@ top::TopCommand ::= rels::[QName]
       | q::rest ->
         case findExtSizeGroup(q, top.proverState) of
         | nothing() -> false
-        | just(g) -> subset(g, rest)
+        | just(g) -> subset(rest, g)
         end
       end;
   body.useExtSize = useExtSize;
@@ -589,6 +589,7 @@ top::TopCommand ::= rels::[(QName, [String])]
   top.duringCommands = [];
   top.afterCommands = [];
   top.keyRelModules = [];
+  top.newTheorems = extSizeLemmas;
 
   top.newExtSizeGroup =
       foldr(\ p::(Decorated QName with {relationEnv}, [String])
@@ -616,7 +617,7 @@ top::TopCommand ::= rels::[(QName, [String])]
                        top.relationEnv);
   local extSizeLemmas::[(QName, Metaterm)] =
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
-                buildExtSizeLemmas(new(p.1), p.2), decRels);
+                buildExtSizeLemmas(p.1.fullRel.name, p.2), decRels);
 
   top.toAbellaMsgs <-
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
@@ -630,9 +631,10 @@ top::TopCommand ::= rels::[(QName, [String])]
                                    "declaration must be capitalized, but " ++
                                    x ++ " is not")]
                           else [], nub(p.2)) ++
-                (if p.1.relFound && length(p.2) != p.1.fullRel.types.len
+                (if p.1.relFound &&  --len - 1 to drop prop
+                    length(p.2) != p.1.fullRel.types.len - 1
                  then [errorMsg("Expected " ++
-                          toString(p.1.fullRel.types.len) ++
+                          toString(p.1.fullRel.types.len - 1) ++
                           " arguments to " ++ justShow(p.1.pp) ++
                           " but found " ++ toString(length(p.2)))]
                  else []) ++
@@ -680,6 +682,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
   top.duringCommands = [];
   top.afterCommands = [];
   top.keyRelModules = [];
+  top.newTheorems = extSizeLemmas;
 
   top.newExtSizeGroup =
       bind(
