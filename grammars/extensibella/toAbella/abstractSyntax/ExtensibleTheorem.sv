@@ -532,6 +532,29 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                         " is extensible")]
                else []
         end
+      | just(extSizeMetaterm(rel, args, r)) ->
+        let decRel::Decorated QName with {relationEnv} =
+            decorate rel with {relationEnv = top.relationEnv;}
+        in
+          if !decRel.relFound
+          then [] --covered by other errors
+          else if top.shouldBeExtensible
+          then case head(drop(inductionRel.pcIndex, args.toList)) of
+               | nameTerm(q, _) when !q.isQualified -> [] --var
+               | _ -> --anything else is structured
+                 [errorMsg("Primary component of induction " ++
+                     "relation cannot be filled but is in theorem " ++
+                     justShow(name.pp))]
+               end ++
+               --check for same module; cannot have ExtInd for ExtSize
+               if sameModule(top.currentModule, decRel.fullRel.name)
+               then []
+               else [errorMsg("Cannot induct on <" ++
+                        justShow(decRel.fullRel.name.pp) ++
+                        " {ES}> outside of module introducing it")]
+          else [errorMsg("Cannot induct on extensible relations " ++
+                   " for non-extensible theorem " ++ justShow(name.pp))]
+        end
       | just(m) when top.shouldBeExtensible ->
         [errorMsg("Can only induct on extensible relations for " ++
             "extensible theorem " ++ justShow(name.pp) ++
@@ -608,6 +631,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local inductionRel::RelationEnvItem =
       case foundLabeledPremise of
       | just(relationMetaterm(rel, _, _)) ->
+        decorate rel with {relationEnv = top.relationEnv;}.fullRel
+      | just(extSizeMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
       | _ -> error("Should not access inductionRel")
       end;

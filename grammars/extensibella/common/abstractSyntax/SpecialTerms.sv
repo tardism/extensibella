@@ -413,8 +413,9 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   local unify::TypeUnify =
       if rel.relFound
       then typeUnify( --end with integer because ES adds integer
-              foldr(arrowType, integerType, rel.fullRel.types.toList),
-              foldr(arrowType, integerType, args.types.toList))
+              foldr(arrowType, arrowType(integerType, propType),
+                    init(rel.fullRel.types.toList)), --drop prop
+              foldr(arrowType, propType, args.types.toList))
       else blankUnify();
   args.downSubst = top.downSubst;
   unify.downSubst = args.upSubst;
