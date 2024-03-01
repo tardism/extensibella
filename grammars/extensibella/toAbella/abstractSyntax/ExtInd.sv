@@ -1238,6 +1238,7 @@ Metaterm ::= allRels::[QName] m::Metaterm
   1. Size is always non-negative
   2. Size is always an integer (is_integer)
   3. ExtSize version implies the relation itself
+  4. Relation itself implies the ExtSize version
   The first one is necessary for using our definition of acc.  We
   would not need it if we used nats, but that would lead to problems
   with representing them to the user and showing the difference
@@ -1287,9 +1288,21 @@ function buildExtSizeLemmas
                toTermList(map(basicNameTerm, argNames)),
                emptyRestriction())));
 
+  --add:  forall \bar{x}.  R \bar{x}  ->  exists n.  extSize \bar{x} n
+  local addExtSizeName::QName = add_ext_ind_name(rel);
+  local addExtSizeBody::Metaterm =
+      bindingMetaterm(forallBinder(), toBindings(argNames),
+         impliesMetaterm(
+            relationMetaterm(rel,
+               toTermList(map(basicNameTerm, argNames)),
+               emptyRestriction()),
+            bindingMetaterm(existsBinder(), toBindings([numName]),
+               extSize)));
+
   return [(nonNegThmName, nonNegThmBody),
           (isIntThmName, isIntThmBody),
-          (dropExtSizeName, dropExtSizeBody)];
+          (dropExtSizeName, dropExtSizeBody),
+          (addExtSizeName, addExtSizeBody)];
 }
 
 
@@ -1310,4 +1323,10 @@ QName ::= rel::QName
 {
   return
       addQNameBase(rel.moduleName, "drop_ext_ind_" ++ rel.shortName);
+}
+function add_ext_ind_name
+QName ::= rel::QName
+{
+  return
+      addQNameBase(rel.moduleName, "add_ext_ind_" ++ rel.shortName);
 }
