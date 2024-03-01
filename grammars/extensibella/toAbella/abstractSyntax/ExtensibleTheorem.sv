@@ -547,11 +547,22 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                      justShow(name.pp))]
                end ++
                --check for same module; cannot have ExtInd for ExtSize
-               if sameModule(top.currentModule, decRel.fullRel.name)
-               then []
-               else [errorMsg("Cannot induct on <" ++
-                        justShow(decRel.fullRel.name.pp) ++
-                        " {ES}> outside of module introducing it")]
+               (if sameModule(top.currentModule, decRel.fullRel.name)
+                then []
+                else [errorMsg("Cannot induct on <" ++
+                         justShow(decRel.fullRel.name.pp) ++
+                         " {ES}> outside of module introducing it")]) ++
+               --check for number being a variable
+               case last(args.toList) of
+               | nameTerm(q, _) when !q.isQualified -> [] --var
+               | _ -> --anything else is structured
+                 [errorMsg("Cannot induct on <" ++
+                     justShow(decRel.fullRel.name.pp) ++
+                     " {ES}> when size is not a variable")]
+                 --because we are checking applicability of rules for the
+                 --   underlying relation that doesn't know the size, not
+                 --   the actual relation
+               end
           else [errorMsg("Cannot induct on extensible relations " ++
                    " for non-extensible theorem " ++ justShow(name.pp))]
         end
@@ -626,6 +637,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       case foundLabeledPremise of
       | just(relationMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.relFound
+      | just(extSizeMetaterm(rel, _, _)) ->
+        decorate rel with {relationEnv = top.relationEnv;}.relFound
       | _ -> false
       end;
   local inductionRel::RelationEnvItem =
@@ -648,6 +661,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local relArgs::[Term] =
       case foundLabeledPremise of
       | just(relationMetaterm(_, a, _)) -> a.toList
+      | just(extSizeMetaterm(_, a, _)) -> init(a.toList) --drop num
       | _ -> [] --should not need in this case
       end;
 
