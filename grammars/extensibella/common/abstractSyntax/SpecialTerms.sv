@@ -789,9 +789,11 @@ nonterminal ListContents with
    substName, substTerm, subst<ListContents>,
    boundNames, usedNames,
    isConstant,
+   replaceUnknownK, unknownKReplaced,
    type, upSubst, downSubst, downVarTys, tyVars; --type is type of contents
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm, downVarTys on ListContents;
+          substName, substTerm, downVarTys,
+          replaceUnknownK, unknownKReplaced on ListContents;
 
 attribute compareTo, isEqual occurs on ListContents;
 propagate compareTo, isEqual on ListContents;
@@ -840,9 +842,11 @@ nonterminal PairContents with
    substName, substTerm, subst<PairContents>,
    boundNames, usedNames,
    isConstant,
+   replaceUnknownK, unknownKReplaced,
    type, upSubst, downSubst, downVarTys, tyVars; --type is full pair type
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm, downVarTys on PairContents;
+          substName, substTerm, downVarTys,
+          replaceUnknownK, unknownKReplaced on PairContents;
 
 attribute compareTo, isEqual occurs on PairContents;
 propagate compareTo, isEqual on PairContents;

@@ -10,7 +10,7 @@ nonterminal Metaterm with
    unknownKReplaced<Metaterm>, replaceUnknownK,
    subst<Metaterm>, substName, substTerm;
 propagate typeEnv, constructorEnv, relationEnv,
-          unknownKReplaced, replaceUnknownK, substName, substTerm
+          replaceUnknownK, unknownKReplaced, substName, substTerm
    on Metaterm;
 propagate boundNames, downVarTys on Metaterm
    excluding bindingMetaterm;
@@ -329,7 +329,7 @@ nonterminal Term with
 --note typeErrors does not include errors for not finding definitions of QNames
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
           substName, substTerm, downVarTys, replaceUnknownK on Term;
-propagate unknownKReplaced on Term excluding unknownKTerm;
+propagate unknownKReplaced on Term excluding unknownKTerm, nameTerm;
 
 attribute compareTo, isEqual occurs on Term;
 propagate compareTo, isEqual on Term
@@ -424,6 +424,11 @@ top::Term ::= name::QName mty::MaybeType
       | unknownIQName(_) when name.typeFound -> just(name.fullType.name)
       | unknownKQName(_) when name.relFound -> just(name.fullRel.name)
       | _ -> nothing()
+      end;
+  top.unknownKReplaced =
+      case name of
+      | unknownKQName(_) -> top.replaceUnknownK
+      | _ -> top
       end;
 
   top.headConstructor = name;
@@ -617,9 +622,11 @@ nonterminal TermList with
    substName, substTerm, subst<TermList>,
    unifyWith<TermList>, unifyEqs, unifySuccess,
    isStructuredList, isConstant,
+   replaceUnknownK, unknownKReplaced,
    types, downSubst, upSubst, downVarTys, tyVars;
 propagate typeEnv, constructorEnv, relationEnv, boundNames,
-          substName, substTerm, downVarTys on TermList;
+          substName, substTerm, downVarTys,
+          replaceUnknownK, unknownKReplaced on TermList;
 
 attribute compareTo, isEqual occurs on TermList;
 propagate compareTo, isEqual on TermList;

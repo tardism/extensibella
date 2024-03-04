@@ -1055,10 +1055,10 @@ function buildTransRelDef
                   let pc::Term = elemAtIndex(p.1, pcIndex)
                   in
                     !pc.isUnknownTermK ||
-                    decorate pc with {
-                       relationEnv = buildEnv([r.5]);
-                       typeEnv = error("not actually needed");
-                    }.unknownId.isJust
+                    !decorate pc with {
+                        relationEnv = buildEnv([r.5]);
+                        typeEnv = error("not actually needed");
+                     }.unknownId.isJust
                   end,
                 r.5.defsList);
   local defList::[([Term], Maybe<Metaterm>)] =
@@ -1099,18 +1099,18 @@ function buildTransRelDef
                | nothing() -> ([], nothing())
                | just(bindingMetaterm(existsBinder(), binds, body)) ->
                  (map(fst, binds.toList),
-                  just(replaceRelsTransRels(allRels,
-                          decorate body with {
-                             replaceUnknownK =
-                                nameTerm(toQName(kName), nothingType());
-                          }.unknownKReplaced)))
+                  case dropFalsePrem(body) of
+                  | just(x) ->
+                    just(replaceRelsTransRels(allRels, x))
+                  | nothing() -> nothing()
+                  end)
                | just(m) ->
                  ([],
-                  just(replaceRelsTransRels(allRels,
-                          decorate m with {
-                             replaceUnknownK =
-                                nameTerm(toQName(kName), nothingType());
-                          }.unknownKReplaced)))
+                  case dropFalsePrem(m) of
+                  | just(x) ->
+                    just(replaceRelsTransRels(allRels, x))
+                  | nothing() -> nothing()
+                  end)
                end
            in
              (newArgs, newBodyPieces)
@@ -1159,22 +1159,27 @@ function buildTransRelClauses
       | nothing() -> nothing()
       end;
 
-  --replace vars from Q rule conclusion with terms from rule
+  local pc::Term = elemAtIndex(head(defs).1, pcIndex);
+
+  --replace vars from Q rule conclusion with terms from rule and
+  --unknownK with pc
   local replacedQBody::Maybe<Metaterm> =
       case freshQBody of
-      | just(m) -> just(head(safeReplace([m], qRuleArgs, head(defs).1)))
+      | just(m) ->
+        just(decorate head(safeReplace([m], qRuleArgs,
+                                       head(defs).1)) with {
+                replaceUnknownK = pc;
+             }.unknownKReplaced)
       | nothing() -> nothing()
       end;
 
   --determine whether this is a rule needing a translation
   local isExtRule::Boolean =
-      let pc::Term = elemAtIndex(head(defs).1, pcIndex)
-      in
       let constr::QName = pc.headConstructor
       in --rules for K's getting here are instantiated default rules,
          --  which are host rules
         !pc.isUnknownTermK && !sameModule(rel.moduleName, constr)
-      end end;
+      end;
 
   --new body for the rule, with all bindings
   local modBody::Maybe<Metaterm> =
@@ -1192,7 +1197,12 @@ function buildTransRelClauses
                     toBindings(freshQBindings),
                     andMetaterm(m1, m2)))
      | just(m), nothing() -> just(m)
-     | nothing(), _ -> replacedQBody
+     | nothing(), just(m) ->
+       if null(freshQBindings)
+       then just(m)
+       else just(bindingMetaterm(existsBinder(),
+                    toBindings(freshQBindings), m))
+     | nothing(), nothing() -> nothing()
      end;
 
   local hereDef::Def =
@@ -1224,6 +1234,21 @@ Metaterm ::= allRels::[QName] m::Metaterm
             end,
           splitMetaterm(m));
   return foldr1(andMetaterm, replaced);
+}
+
+{-
+  Q rules have bodies of the form
+     exists x, m_1 /\ ... /\ m_n /\ (0 = 0 -> false)
+  This assumes the binder has been lifted from the beginning and then
+  removes the (0 = 0 -> false) assumption.
+-}
+function dropFalsePrem
+Maybe<Metaterm> ::= m::Metaterm
+{
+  return case m.splitConjunctions of
+         | x::y::r -> just(foldr1(andMetaterm, init(x::y::r)))
+         | _ -> nothing() --[_] or []
+         end;
 }
 
 
