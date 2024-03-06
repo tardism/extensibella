@@ -544,6 +544,23 @@ top::QName ::= rest::SubQName
 }
 
 
+--special definition for passing along stand-in rule
+--rest is the relation for which the stand-in rule is being defined
+abstract production standInRuleQName
+top::QName ::= rest::QName
+{
+  top.abella_pp = "$stand-in_rule__" ++ rest.abella_pp;
+  top.isStandInRuleQName = true;
+  forwards to rest;
+}
+synthesized attribute isStandInRuleQName::Boolean occurs on QName;
+aspect default production
+top::QName ::=
+{
+  top.isStandInRuleQName = false;
+}
+
+
 --anything without a prefix
 abstract production basicQName
 top::QName ::= rest::SubQName
@@ -636,5 +653,7 @@ QName ::= name::String
       then extSizeQName(buildSub(10, name))
       else if startsWith("$transRel__", name)
       then transRelQName(buildSub(11, name))
+      else if startsWith("$stand-in_rule__", name)
+      then standInRuleQName(toQName(substring(16, length(name), name)))
       else basicQName(buildSub(0, name));
 }

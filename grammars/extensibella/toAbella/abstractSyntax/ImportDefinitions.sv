@@ -165,8 +165,11 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
               preds);
   top.rels =
       --only output rels if no errors or this is a module
-      --specification, so we can avoid error checking
-      if top.ignoreDefErrors || !any(map((.isError), top.toAbellaMsgs))
+      --  specification, so we can avoid error checking
+      --also only output if this isn't a stand-in rule
+      if (top.ignoreDefErrors ||
+          !any(map((.isError), top.toAbellaMsgs))) &&
+         head(preds).1.isStandInRuleQName
       then flatMap(\ p::(QName, Type) ->
                      case p.1 of
                      | extQName(pc, s) ->

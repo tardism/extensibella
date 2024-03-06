@@ -504,7 +504,7 @@ Maybe<[QName]> ::= name::QName state::ProverState
   return case find of
          | [] -> nothing()
          | [x] -> just(x)
-         | _ -> error("findExtsizeGroup impossible")
+         | _ -> error("findExtSizeGroup impossible")
          end;
 }
 

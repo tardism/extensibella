@@ -33,6 +33,8 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
   local defEnvs::(Env<TypeEnvItem>, Env<RelationEnvItem>,
                   Env<ConstructorEnvItem>) =
       module_elements(parsedDefFile.parseTree.ast);
+  local standInRules::[(QName, Def)] =
+      parsedDefFile.parseTree.ast.standInRules;
 
   --gather modules and check the right ones are there
   local gathered::IOVal<Either<String [(QName, String, DecCmds)]>> =
@@ -54,7 +56,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
   local createComposedFile::IOVal<Integer> =
       build_composed_file(config.composeFilename, defFileContents.iovalue,
          checkMods.fromRight, outerface.iovalue.fromRight.1,
-         defEnvs.2, defEnvs.3, defEnvs.1,
+         defEnvs.2, defEnvs.3, defEnvs.1, standInRules,
          outerface.iovalue.fromRight.2, config, parsers, allThms,
          stdLibThms.io);
 
@@ -205,7 +207,8 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
                    mods::[(QName, DecCmds)] proofDefs::[DefElement]
                    defRelEnv::Env<RelationEnvItem>
                    defConstrEnv::Env<ConstructorEnvItem>
-                   defTyEnv::Env<TypeEnvItem> thms::[ThmElement]
+                   defTyEnv::Env<TypeEnvItem> standInRules::[(QName, Def)]
+                   thms::[ThmElement]
                    config::Configuration parsers::AllParsers
                    allThms::[(QName, Metaterm)] ioin::IOToken
 {
@@ -250,7 +253,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
               flatMap((.encode), proofDefs));
   local fullProofDefs::[String] =
       map((.abella_pp), encodedProofDefs) ++
-      flatMap(buildExtIndDefs(_, proverState), thms);
+      flatMap(buildExtIndDefs(_, proverState, standInRules), thms);
   local proofDefsString::String =
       if null(fullProofDefs) then ""
       else "/********************************************************************\n" ++
@@ -280,7 +283,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
   --compose the proofs and write them to the file
   local builtProps::IOToken =
       compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
-                     parsers, config, outFilename, allThms, output);
+         parsers, config, outFilename, allThms, [], output);
 
   --clean up by quitting Abella
   local quitAbella::IOToken =
@@ -294,10 +297,12 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
 --defs for R_{ES} and R_T for everything needing them
 function buildExtIndDefs
 [String] ::= thm::ThmElement proverState::ProverState
+             standInRules::[(QName, Def)]
 {
   thm.relEnv = proverState.knownRels;
   thm.constrEnv = proverState.knownConstrs;
   thm.tyEnv = proverState.knownTypes;
+  thm.standInRules_down = standInRules;
   return thm.extIndDefs;
 }
 
@@ -307,14 +312,15 @@ function compose_proofs
 IOToken ::= thms::[ThmElement] mods::[(QName, DecCmds)]
    proverState::ProverState abella::ProcessHandle
    parsers::AllParsers config::Configuration outfilename::String
-   allThms::[(QName, Metaterm)] ioin::IOToken
+   allThms::[(QName, Metaterm)] knownExtSizes::[[QName]] ioin::IOToken
 {
-  local sub::([(QName, DecCmds)], [(QName, Metaterm)], IOToken) =
+  local sub::([(QName, DecCmds)], [(QName, Metaterm)], [[QName]], IOToken) =
       handleFstThm(outfilename, mods, head(thms), proverState, abella,
-                   parsers, config, allThms, ioin);
+                   parsers, config, allThms, knownExtSizes, ioin);
   local again::IOToken =
       compose_proofs(tail(thms), sub.1, proverState, abella, parsers,
-                     config, outfilename, sub.2 ++ allThms, sub.3);
+                     config, outfilename, sub.2 ++ allThms,
+                     sub.3 ++ knownExtSizes, sub.4);
 
   return
       case thms of
@@ -329,11 +335,11 @@ IOToken ::= thms::[ThmElement] mods::[(QName, DecCmds)]
 --   and passing it up to build_composed_file, since we force the
 --   string thunk earlier
 function handleFstThm
-([(QName, DecCmds)], [(QName, Metaterm)], IOToken) ::=
+([(QName, DecCmds)], [(QName, Metaterm)], [[QName]], IOToken) ::=
    outfilename::String mods::[(QName, DecCmds)]
    fstThm::ThmElement proverState::ProverState abella::ProcessHandle
    parsers::AllParsers config::Configuration
-   allThms::[(QName, Metaterm)] ioin::IOToken
+   allThms::[(QName, Metaterm)] knownExtSizes::[[QName]] ioin::IOToken
 {
   fstThm.incomingMods = mods;
   fstThm.relEnv = proverState.knownRels;
@@ -341,6 +347,7 @@ function handleFstThm
   fstThm.tyEnv = proverState.knownTypes;
   --
   fstThm.allThms = allThms;
+  fstThm.knownExtSizes_down = knownExtSizes;
   --
   fstThm.liveAbella = abella;
   fstThm.runAbella = ioin;
@@ -352,5 +359,6 @@ function handleFstThm
                   fstThm.runAbella_out);
 
      --drop the non-proof things, like definitions, from all modules
-  return (dropNonProof(fstThm.outgoingMods), fstThm.newThms, output);
+  return (dropNonProof(fstThm.outgoingMods), fstThm.newThms,
+          fstThm.newExtSizes, output);
 }
