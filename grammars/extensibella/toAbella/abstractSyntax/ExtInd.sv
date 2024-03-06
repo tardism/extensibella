@@ -1023,27 +1023,18 @@ TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
               (rel.name, p.2, p.3, p.4, rel)
             end,
           relInfo);
-  local preds::[(QName, Type)] =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
-                RelationEnvItem) ->
-            (transRelQName(p.5.name.sub),
-             foldr1(arrowType, p.5.types.toList)),
-            fullRelInfo);
-  local defs::[Def] =
-      buildTransRelDef(fullRelInfo, map(fst, preds));
-  return definitionDeclaration(preds,
-             if null(defs)
-             then error("buildTransRel null list")
-             else foldrLastElem(consDefs, singleDefs, defs));
+  local defInfo::[(QName, ([String], [String], Maybe<Metaterm>),
+                   [([Term], Maybe<Metaterm>)], RelationEnvItem)] =
+      buildTransRelDefInfo(fullRelInfo);
+  return buildTransRelDef(defInfo);
 }
 
-{-
-  Build all the definitional clauses for the translation version of
-  the relations in relInfo
--}
-function buildTransRelDef
-[Def] ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList,
-                     RelationEnvItem)] allRels::[QName]
+--Gather up the information we need to build the R_T def clauses
+function buildTransRelDefInfo
+[(QName, ([String], [String], Maybe<Metaterm>),
+  [([Term], Maybe<Metaterm>)], RelationEnvItem)] ::=
+          relInfo::[(QName, [String], Bindings, ExtIndPremiseList,
+                     RelationEnvItem)]
 {
   local r::(QName, [String], Bindings, ExtIndPremiseList,
             RelationEnvItem) = head(relInfo);
@@ -1061,16 +1052,7 @@ function buildTransRelDef
                      }.unknownId.isJust
                   end,
                 r.5.defsList);
-  local defList::[([Term], Maybe<Metaterm>)] =
-      map(\ p::([Term], Maybe<Metaterm>) ->
-            (p.1, bind(p.2, \ m::Metaterm ->
-                              case m of
-                              | bindingMetaterm(existsBinder(), b, m) ->
-                                just(bindingMetaterm(existsBinder(), b,
-                                        replaceRelsTransRels(allRels, m)))
-                              | _ -> just(replaceRelsTransRels(allRels, m))
-                              end)),
-          split.1);
+  local defList::[([Term], Maybe<Metaterm>)] = split.1;
   --(args to conclusion, existentially-bound vars for body, binderless body)
   local qRule::([String], [String], Maybe<Metaterm>) =
       if null(split.2)
@@ -1098,30 +1080,67 @@ function buildTransRelDef
                case kClause.2 of
                | nothing() -> ([], nothing())
                | just(bindingMetaterm(existsBinder(), binds, body)) ->
-                 (map(fst, binds.toList),
-                  case dropFalsePrem(body) of
-                  | just(x) ->
-                    just(replaceRelsTransRels(allRels, x))
-                  | nothing() -> nothing()
-                  end)
-               | just(m) ->
-                 ([],
-                  case dropFalsePrem(m) of
-                  | just(x) ->
-                    just(replaceRelsTransRels(allRels, x))
-                  | nothing() -> nothing()
-                  end)
+                 (map(fst, binds.toList), dropFalsePrem(body))
+               | just(m) -> ([], dropFalsePrem(m))
                end
            in
              (newArgs, newBodyPieces)
            end end end end end;
-  local firstRel::[Def] =
-      buildTransRelClauses(r.1, defList, qRule.1, qRule.2, qRule.3,
-                           pcIndex, allRels);
+  local firstRel::(QName, ([String], [String], Maybe<Metaterm>),
+                   [([Term], Maybe<Metaterm>)], RelationEnvItem) =
+      (r.1, qRule, defList, r.5);
   return case relInfo of
          | [] -> []
-         | _::t -> firstRel ++ buildTransRelDef(t, allRels)
+         | _::t -> firstRel::buildTransRelDefInfo(t)
          end;
+}
+
+{-
+  Build all the definitional clauses for the translation version of
+  the relations in rels and turn them into a definition
+-}
+function buildTransRelDef
+TopCommand ::=
+--[(rel, Q rule: (args to conclusion, existentially-bound vars for body,
+--                binderless body), def clauses: (args, body), env item)]
+   rels::[(QName, ([String], [String], Maybe<Metaterm>),
+           [([Term], Maybe<Metaterm>)], RelationEnvItem)]
+{
+  local preds::[(QName, Type)] =
+      map(\ p::(QName, ([String], [String], Maybe<Metaterm>),
+                [([Term], Maybe<Metaterm>)], RelationEnvItem) ->
+            (transRelQName(p.1.sub),
+             foldr1(arrowType, p.4.types.toList)),
+          rels);
+  local allRels::[QName] = map(fst, rels);
+  local fullReplaceRels::(Maybe<Metaterm> ::= Maybe<Metaterm>) =
+      \ m::Maybe<Metaterm> ->
+        bind(m, \ m::Metaterm ->
+                  case m of
+                  | bindingMetaterm(existsBinder(), b, m) ->
+                    just(bindingMetaterm(existsBinder(), b,
+                            replaceRelsTransRels(allRels, m)))
+                  | _ -> just(replaceRelsTransRels(allRels, m))
+                  end);
+  local defs::[Def] =
+      flatMap(\ p::(QName, ([String], [String], Maybe<Metaterm>),
+                    [([Term], Maybe<Metaterm>)], RelationEnvItem) ->
+                let transRelledQBody::Maybe<Metaterm> =
+                    fullReplaceRels(p.2.3)
+                in
+                let transRelledDefs::[([Term], Maybe<Metaterm>)] =
+                    map(\ p::([Term], Maybe<Metaterm>) ->
+                          (p.1, fullReplaceRels(p.2)), p.3)
+                in
+                  buildTransRelClauses(p.1, transRelledDefs,
+                     p.2.1, p.2.2, transRelledQBody,
+                     p.4.pcIndex, allRels)
+                end end,
+              rels);
+  return definitionDeclaration(preds,
+            if null(defs) --check to find error loc in debugging
+            then error("buildTransRelDef null list")
+            else foldrLastElem(consDefs, singleDefs, defs));
 }
 
 {-
