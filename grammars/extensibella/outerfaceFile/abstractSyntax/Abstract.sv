@@ -130,6 +130,8 @@ function cleanModThms
         atag == btag
       | extIndElement(arelinfo, atag), extIndElement(brelinfo, btag) ->
         atag == btag
+      | extSizeElement(arels, atag), extSizeElement(brels, btag) ->
+        atag == btag
       | _, _ -> false
       end;
   return case modThms of

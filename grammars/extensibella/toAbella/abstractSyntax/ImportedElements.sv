@@ -23,7 +23,8 @@ top::ThmElement ::=
    alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
    tag::(Integer, Integer, String)
 {
-  top.pp = error("extensibleMutualTheoremGroup.pp");
+  top.pp = text("ExtThm ") ++ ppImplode(text(", "),
+                                 map((.pp), map(fst, thms)));
 
   top.encode = error("extensibleMutualTheoremGroup.encode");
   top.is_nonextensible = false;
@@ -39,7 +40,7 @@ abstract production translationConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
                     tag::(Integer, Integer, String)
 {
-  top.pp = error("translationConstraintTheorem.pp");
+  top.pp = text("TC ") ++ name.pp;
 
   top.encode = error("translationConstraintTheorem.encode");
   top.is_nonextensible = false;
@@ -104,7 +105,8 @@ top::ThmElement ::=
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
    tag::(Integer, Integer, String)
 {
-  top.pp = error("extIndElement.pp");
+  top.pp = text("ExtInd") ++ ppImplode(text(", "),
+                                map((.pp), map(fst, rels)));
 
   top.encode = error("extIndElement.encode");
   top.is_nonextensible = false;
