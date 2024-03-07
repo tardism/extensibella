@@ -35,11 +35,18 @@ global unknownMap_combine::(Maybe<Term> ::= Maybe<Term> Maybe<Term>) =
      | _, _ -> b
      end;
 
+--for finding generic cases
+--separate from mapping
+monoid attribute containsUnknownK::Boolean with false, ||;
+monoid attribute containsUnknownI::Boolean with false, ||;
+
 
 
 attribute
+   containsUnknownK, containsUnknownI,
    mapTo<ProofState>, mapSuccess, hypMap, varMap, unknownMap
 occurs on ProofState;
+propagate containsUnknownK, containsUnknownI on ProofState;
 
 aspect production proofInProgress
 top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
@@ -97,8 +104,10 @@ top::ProofState ::=
 
 
 attribute
+   containsUnknownK, containsUnknownI,
    mapTo<CurrentGoal>, mapSuccess, hypMap, varMap, unknownMap
 occurs on CurrentGoal;
+propagate containsUnknownK, containsUnknownI on CurrentGoal;
 
 aspect production currentGoal
 top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
@@ -132,6 +141,12 @@ top::CurrentGoal ::= vars::[String] ctx::Context goal::Metaterm
          | nothing() -> error("currentGoal.unknownMap")
          end);
 }
+
+
+attribute
+   containsUnknownK, containsUnknownI
+occurs on Context, Hypothesis;
+propagate containsUnknownK, containsUnknownI on Context, Hypothesis;
 
 
 
@@ -196,9 +211,10 @@ Maybe<([(String, String, Boolean)], --hypMap
 
 
 attribute
+   containsUnknownK, containsUnknownI,
    mapTo<Metaterm>, mapSuccess, varMap_in, varMap, unknownMap
 occurs on Metaterm;
-propagate unknownMap on Metaterm;
+propagate unknownMap, containsUnknownK, containsUnknownI on Metaterm;
 propagate varMap_in, varMap on Metaterm excluding bindingMetaterm;
 
 aspect production relationMetaterm
@@ -823,10 +839,12 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 
 
 attribute
+   containsUnknownK, containsUnknownI,
    mapTo<Term>, mapSuccess, varMap_in, varMap, unknownMap
 occurs on Term;
 propagate varMap_in, varMap on Term excluding nameTerm;
-propagate unknownMap on Term excluding unknownITerm;
+propagate unknownMap, containsUnknownK, containsUnknownI on
+   Term excluding unknownITerm, unknownKTerm;
 
 aspect production applicationTerm
 top::Term ::= f::Term args::TermList
@@ -923,6 +941,9 @@ top::Term ::= ty::QName
 {
   top.mapSuccess = true;
   top.unknownMap := just(top.mapTo);
+
+  top.containsUnknownK := true;
+  top.containsUnknownI := false;
 }
 
 
@@ -930,6 +951,10 @@ aspect production unknownKTerm
 top::Term ::= ty::QName
 {
   top.mapSuccess = true;
+  top.unknownMap := just(top.mapTo);
+
+  top.containsUnknownK := true;
+  top.containsUnknownI := false;
 }
 
 

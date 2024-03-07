@@ -80,21 +80,39 @@ IOVal<[String]> ::=
   local extSplitCases::([[[(ProofState, [AnyCommand])]]],
                         [[(ProofState, [AnyCommand])]]) =
       getFullRootedBySubgoal(thisMod, subgoalNum);
-  --known cases are all but last one
+  --known cases
+  local extSplitGeneric::([[[(ProofState, [AnyCommand])]]],
+                          [[[(ProofState, [AnyCommand])]]])=
+      partition(\ l::[[(ProofState, [AnyCommand])]] ->
+                  let p::ProofState = head(head(l)).1 in
+                      !p.containsUnknownK && !p.containsUnknownI
+                  end,
+                extSplitCases.1);
+  --known cases
   local extKnownCases::[[[(ProofState, [AnyCommand])]]] =
-      init(extSplitCases.1);
-  --preservability proof is the last one done
-  local extPreservabilityCase::[[(ProofState, [AnyCommand])]] =
-      last(extSplitCases.1);
+      extSplitGeneric.1;
+  --generic cases (i, k):  either (or both) may not exist
+  local extGenericCases::(Maybe<[[(ProofState, [AnyCommand])]]>,
+                          Maybe<[[(ProofState, [AnyCommand])]]>)=
+      case extSplitGeneric.2 of
+      | [] -> (nothing(), nothing())
+      | [l] -> if head(head(l)).1.containsUnknownI
+               then (just(l), nothing())
+               else (nothing(), just(l))
+      | [l1, l2] -> if head(head(l1)).1.containsUnknownI
+                    then (just(l1), just(l2)) --l2 must be k
+                    else (just(l2), just(l1))
+      | _ -> error("Cannot have more than two generic cases")
+      end;
   --proof state after thm set-up
   local initProofState::ProofState =
       fullStateProcessing(intros_case_to_abella.iovalue, typeEnv,
          relEnv, constrEnv, parsers);
   --run through the case commands, building the proof
   local extRun::IOVal<([[String]], ProofState)> =
-      buildExtensionThmProof(extKnownCases, extPreservabilityCase,
-         subgoalNum, abella, config, parsers, initProofState,
-         allThms, keyRels, typeEnv, relEnv, constrEnv,
+      buildExtensionThmProof(extKnownCases, extGenericCases.1,
+         extGenericCases.2, subgoalNum, abella, config, parsers,
+         initProofState, allThms, keyRels, typeEnv, relEnv, constrEnv,
          intros_case_to_abella.io);
   --update for use in proving the rest of the theorems
   local extUpdatedGoalInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
@@ -229,7 +247,8 @@ Eq a => [(a, b)] ::= l::[(a, b)] key::a value::b
 function buildExtensionThmProof
 IOVal<([[String]], ProofState)> ::=
    knownCases::[[[(ProofState, [AnyCommand])]]]
-   preservabilityCase::[[(ProofState, [AnyCommand])]]
+   genericCaseI::Maybe<[[(ProofState, [AnyCommand])]]>
+   genericCaseK::Maybe<[[(ProofState, [AnyCommand])]]>
    rootSubgoal::SubgoalNum abella::ProcessHandle
    config::Configuration parsers::AllParsers incomingState::ProofState
    allThms::[(QName, Metaterm)] keyRels::[QName]
@@ -242,26 +261,44 @@ IOVal<([[String]], ProofState)> ::=
   origState.relationEnv = relEnv;
   origState.constructorEnv = constrEnv;
 
+  local kState::ProofState = head(head(genericCaseK.fromJust)).1;
+  kState.mapTo = incomingState;
+  kState.typeEnv = typeEnv;
+  kState.relationEnv = relEnv;
+  kState.constructorEnv = constrEnv;
+
+  local isKnown::Boolean = !null(knownCases) && origState.mapSuccess;
+  local isK::Boolean = genericCaseK.isJust && kState.mapSuccess;
+  --if not known or K, must be I
+
   --when the current composed case is one of the known cases
   local runKnown::IOVal<([String], ProofState)> =
       runKnownCase(head(knownCases), abella, config, parsers,
          incomingState, allThms, keyRels, typeEnv, relEnv,
          constrEnv, ioin);
-  local subKnown::IOVal<([[String]], ProofState)> =
-      buildExtensionThmProof(tail(knownCases), preservabilityCase,
-         rootSubgoal, abella, config, parsers, runKnown.iovalue.2,
-         allThms, keyRels, typeEnv, relEnv, constrEnv, runKnown.io);
 
-  --when the current composed case is one of the unknown cases
-  local runPres::IOVal<([String], ProofState)> =
-      runPreservabilityCase(preservabilityCase, abella, config,
-         parsers, incomingState, allThms, keyRels, typeEnv,
-         relEnv, constrEnv, ioin);
-  local subPres::IOVal<([[String]], ProofState)> =
-      buildExtensionThmProof(knownCases, preservabilityCase,
-         rootSubgoal, abella, config, parsers,
-         runPres.iovalue.2, allThms, keyRels, typeEnv, relEnv,
-         constrEnv, runPres.io);
+  --when the current composed case is one of the K unknown cases
+  local runK::IOVal<([String], ProofState)> =
+      runPreservabilityCase(genericCaseK.fromJust, abella, config,
+         parsers, incomingState, allThms, keyRels, typeEnv, relEnv,
+         constrEnv, ioin);
+
+  --when the current composed case is one of the I unknown cases
+  --note genericCaseI must be just() if we ever access this
+  local runI::IOVal<([String], ProofState)> =
+      runPreservabilityCase(genericCaseI.fromJust, abella, config,
+         parsers, incomingState, allThms, keyRels, typeEnv, relEnv,
+         constrEnv, ioin);
+
+  --select the correct run
+  local run::IOVal<([String], ProofState)> =
+      if isKnown then runKnown else if isK then runK else runI;
+  local sub::IOVal<([[String]], ProofState)> =
+      buildExtensionThmProof(
+         if isKnown then tail(knownCases) else knownCases,
+         genericCaseI, genericCaseK, rootSubgoal, abella, config,
+         parsers, run.iovalue.2, allThms, keyRels, typeEnv, relEnv,
+         constrEnv, run.io);
 
   return
       if !subgoalStartsWith(rootSubgoal,
@@ -273,31 +310,41 @@ IOVal<([[String]], ProofState)> ::=
              can build the proof.  All the host cases come first, and
              in the same order as in the modular proofs, so we clear
              them first.
-      
+
              The remaining cases are those introduced by extensions.
              These must have a constructor for the primary component.
              Then the proof states for known extension cases can only
              unify with the composed proof states for the same cases;
              those for other extensions cannot unify because they have
              a different PC constructor.
-      
+
              Thus taking a known case whenever it unifies guarantees
              we map each of the known proofs to the correct known
              cases in the composed proof, and each known proof case is
              at the front of the list when it comes up.  Then if the
-             head of the known cases does not unify, the
-             preservability case must be applicable.
+             head of the known cases does not unify, one of the
+             generic cases must be applicable.
+
+             We try the K case first because its applicability is a
+             bit more general than the I case, as only relations
+             introduced by the module introducing the property can be
+             analyzed for <unknown K>.  Thus if both the I and K cases
+             appear applicable by mapping, the K case is guaranteed to
+             be applicable, whereas the I case might contain a case
+             analysis that wouldn't be fine in cases corresponding to
+             K directly.
+
+             An alternative approach, which we do not take here, would
+             be to check the term in kState.unknownMap to see if it
+             its head constructor is from a module building on the one
+             introducing the key relation or not to determine if it
+             should be I or K.  This would require passing around the
+             module structure, so taking K as safe in all cases where
+             it appears to apply is easier.
            -}
-           case knownCases of
-           | _::_ when origState.mapSuccess ->
-             ioval(subKnown.io,
-                   (runKnown.iovalue.1::subKnown.iovalue.1,
-                    subKnown.iovalue.2))
-           | _ ->
-             ioval(subPres.io,
-                   (runPres.iovalue.1::subPres.iovalue.1,
-                    subPres.iovalue.2))
-           end;
+           ioval(sub.io,
+                 (run.iovalue.1::sub.iovalue.1,
+                  sub.iovalue.2));
 }
 
 

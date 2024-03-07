@@ -20,6 +20,16 @@ inherited attribute knownExtSizes_down::[[QName]] occurs on ThmElement;
 --pass up new ones
 synthesized attribute newExtSizes::[[QName]] occurs on ThmElement;
 
+--pass down the ExtInd information
+--note we don't need groups in composition, unlike in proving, because
+--   we don't check for valid grouping, so we only need information
+--   about one at a time, not a full set
+inherited attribute knownExtInds_down::[(QName, [String], Bindings,
+                                         ExtIndPremiseList)] occurs on ThmElement;
+--pass up new ones
+synthesized attribute newExtInds::[(QName, [String], Bindings,
+                                    ExtIndPremiseList)] occurs on ThmElement;
+
 --pass in all thms known at this point:  theorem names and statements
 inherited attribute allThms::[(QName, Metaterm)] occurs on ThmElement;
 --gather new ones, but only ones that might be used in modular prfs
@@ -52,6 +62,7 @@ top::ThmElement ::=
       sendBlockToAbella(top.composedCmds, top.liveAbella,
                         top.runAbella, top.configuration).io;
   top.newExtSizes = [];
+  top.newExtInds = [];
 }
 
 aspect production extensibleMutualTheoremGroup
@@ -146,6 +157,19 @@ top::ThmElement ::=
       sendBlockToAbella(proofStart, top.liveAbella, top.runAbella,
                         top.configuration);
 
+  --number of theorems where we had to prove ExtInd use is valid
+  local numExtIndChecks::Integer =
+      foldr(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
+                  ExtBody, String) rest::Integer ->
+              if p.4
+              then case lookup(p.1, top.knownExtInds_down) of
+                   | just((args, binds, prems)) ->
+                     if prems.len > 0 then 1 + rest else rest
+                   | nothing() -> error("ExtInd must exist")
+                   end
+              else rest,
+            0, thmsInfo);
+
   --proof steps for thms and alsos; introducing module is first
   local basicProofInfo::[(QName, [(ProofState, [AnyCommand])])] =
       getThmProofSteps(top.incomingMods, map(fst, thms));
@@ -155,10 +179,26 @@ top::ThmElement ::=
             (p.1, splitAtAllGoals(p.2)),
           basicProofInfo);
 
+  --proof steps for ExtInd checks in order of the theorems
+  --top-level groups are for separate ExtInd checks
+  local extIndCheckProofInfo::[[(ProofState, [AnyCommand])]] =
+      case lookup(head(thmsInfo).1.moduleName, topGoalProofInfo) of
+      | just(l) -> take(numExtIndChecks, l)
+      | nothing() -> [] --I think this is actually impossible
+      end;
+
+  --update the list of proof steps to drop the ones for the ExtInd checks
+  local topGoalThmsProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
+      map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
+            if p.1 == head(thmsInfo).1.moduleName
+            then (p.1, drop(numExtIndChecks, p.2))
+            else p,
+          topGoalProofInfo);
+
   --Commands for proving thms
   local thmProofs::IOVal<[String]> =
-      --doesn't matter if alsos proof information in topGoalProofInfo
-      buildExtThmProofs(thmsInfo, topGoalProofInfo, top.allThms,
+      --doesn't matter if alsos proof information in topGoalThmsProofInfo
+      buildExtThmProofs(thmsInfo, topGoalThmsProofInfo, top.allThms,
          top.tyEnv, top.relEnv, top.constrEnv, top.liveAbella,
          top.configuration, top.allParsers,
          map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
@@ -224,9 +264,10 @@ top::ThmElement ::=
       else "\n";
   --turn all the R_T -> F thms into R -> F
   local buildFullProof::(String ::= String QName RelationEnvItem
-                                    Bindings ExtBody String) =
+                            Bindings ExtBody String [AnyCommand]) =
       \ partialName::String thmName::QName keyRel::RelationEnvItem
-        bindings::Bindings body::ExtBody keyRelName::String ->
+        bindings::Bindings body::ExtBody keyRelName::String
+        extIndPremCmds::[AnyCommand] ->
         let decBody::Decorated ExtBody with {
                relationEnv, typeEnv, constructorEnv, boundNames} =
            decorate body with {
@@ -240,34 +281,108 @@ top::ThmElement ::=
                                                  decBody.premises)),
                decBody.premises)
         in
-          "Theorem " ++ thmName.abella_pp ++ " : forall " ++
-             bindings.abella_pp ++ ", " ++
-             decBody.toAbella.abella_pp ++ ".\n" ++
-          "intros " ++ implode(" ", introsNames) ++ ". " ++
-          "$R: apply " ++ extIndThmName(keyRel.name) ++ " to " ++
-             keyRelName ++ ". " ++
-          "apply " ++ partialName ++ " to " ++
-             implode(" ", map(\ x::String -> if x == keyRelName
-                                             then "$R" else x,
-                              introsNames)) ++ ". " ++
-          "search."
-        end end;
+        let extInd::([String], Bindings, ExtIndPremiseList) =
+            lookup(keyRel.name, top.knownExtInds_down).fromJust
+        in
+        let premLen::Integer = extInd.3.len
+        in
+        let extIndValidName::String =
+            "$extIndValid_" ++ toString(genInt())
+        in
+        let extIndValidPrf::String =
+            "Theorem " ++ extIndValidName ++ " : " ++
+            generateExtIndCheck(extInd.1, extInd.2, extInd.3,
+               case lookupBy(\ a::Maybe<String> b::Maybe<String> ->
+                               a.isJust && b.isJust &&
+                               a.fromJust == b.fromJust,
+                             just(keyRelName), decBody.premises) of
+               | just(relationMetaterm(_, args, _)) -> args.toList
+               | _ -> error("Anything else impossible (extIndValidPrf)")
+               end,
+               bindings, decBody).abella_pp ++ ".\n" ++
+            "intros " ++ implode(" ", introsNames) ++ ".\n" ++
+            implode("\n", map((.abella_pp), extIndPremCmds))
+        in
+        let finalThm::String =
+            "Theorem " ++ thmName.abella_pp ++ " : forall " ++
+               bindings.abella_pp ++ ", " ++
+               decBody.toAbella.abella_pp ++ ".\n" ++
+            "intros " ++ implode(" ", introsNames) ++ ". " ++
+            --build premises for ExtInd, if necessary
+            (if premLen > 0
+             then "$A: apply " ++ extIndValidName ++ " to " ++
+                     implode(" ", introsNames) ++ ".\n" ++
+                  (if premLen > 1 then "$A: case $A (keep).\n"
+                                  else "")
+             else "") ++
+            --apply ExtInd to key rel and any other necessary args
+            "$R: apply " ++ extIndThmName(keyRel.name) ++
+               " to " ++ implode(" ",
+                            keyRelName::map(\ i::Integer ->
+                                              "$A" ++ toString(i),
+                                            range(1, premLen + 1))
+                            ) ++ ". " ++
+            --apply proven theorem using R_T to args
+            "apply " ++ partialName ++ " to " ++
+               implode(" ", map(\ x::String -> if x == keyRelName
+                                               then "$R" else x,
+                                introsNames)) ++ ". " ++
+            "search."
+        in
+          if premLen > 0
+          then extIndValidPrf ++ "\n\n" ++ finalThm
+          else finalThm
+        end end end end end end end;
   local applyExtInds::String =
       if multiple
-      then implode("\n",
-              filterMap(\ p::(String, QName, RelationEnvItem, Boolean,
-                              Boolean, Bindings, ExtBody, String) ->
-                          if p.5 --uses R_T
-                          then just(buildFullProof(p.1, p.2, p.3, p.6,
-                                                   p.7, p.8))
-                          else nothing(),
-                        zip(thmSplitNames, thmsInfo)))
+      then let lst::[(String, QName, RelationEnvItem, Boolean, Boolean,
+                      Bindings, ExtBody, String, [AnyCommand])] =
+               foldl(\ --(extInd check proofs, built so far)
+                       thusFar::([[(ProofState, [AnyCommand])]],
+                          [(String, QName, RelationEnvItem, Boolean,
+                            Boolean, Bindings, ExtBody, String,
+                            [AnyCommand])])
+                       p::(String, QName, RelationEnvItem, Boolean,
+                           Boolean, Bindings, ExtBody, String) ->
+                       let extIndPremLen::Integer =
+                           case lookup(p.3.name, top.knownExtInds_down) of
+                           | just((_, _, prems)) -> prems.len
+                           | _ -> 0
+                           end
+                       in
+                         if p.5 && extIndPremLen > 0
+                         then (tail(thusFar.1),
+                               thusFar.2 ++
+                               [(p.1, p.2, p.3, p.4, p.5, p.6, p.7, p.8,
+                                 flatMap(\ x -> x,
+                                    map(snd, head(thusFar.1))))])
+                         else (thusFar.1,
+                               thusFar.2 ++ [(p.1, p.2, p.3, p.4, p.5,
+                                              p.6, p.7, p.8, [])])
+                       end,
+                     (extIndCheckProofInfo, []),
+                     zip(thmSplitNames, thmsInfo)).2
+           in
+             implode("\n",
+               filterMap(\ p::(String, QName, RelationEnvItem, Boolean,
+                               Boolean, Bindings, ExtBody, String,
+                               [AnyCommand]) ->
+                           if p.5 --uses R_T
+                           then just(buildFullProof(p.1, p.2, p.3, p.6,
+                                                    p.7, p.8, p.9))
+                           else nothing(),
+                         lst))
+           end
       else if head(thmsInfo).4 --single thm, but uses R_T
       then let p::(QName, RelationEnvItem, Boolean, Boolean,
                    Bindings, ExtBody, String) = head(thmsInfo)
            in
              buildFullProof(extName.abella_pp,
-                            p.1, p.2, p.5, p.6, p.7)
+                p.1, p.2, p.5, p.6, p.7,
+                if null(extIndCheckProofInfo)
+                then []
+                else flatMap(\x -> x,
+                        map(snd, head(extIndCheckProofInfo))))
            end
       else ""; --single thm that doesn't use R_T
   local after::String = splitThm ++ applyExtInds;
@@ -382,6 +497,8 @@ top::ThmElement ::=
       buildTransRel_standInRules(rels, top.standInRules_down,
                                  top.relEnv).abella_pp;
   top.extIndDefs = [transRelDef];
+
+  top.newExtInds = rels;
 
 
   --get the information we need about the relation clauses to build

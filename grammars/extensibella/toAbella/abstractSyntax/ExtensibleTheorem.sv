@@ -834,41 +834,14 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            else [(top.startingGoalNum, [skipTactic()])];
 
   {-Build the metaterm for checking the ExtInd use is valid-}
-  --names left in ExtInd bindings after removing arguments to R
-  local extIndRemainingNames::[String] =
-      case thisExtInd of
-      | just((_, args, binds, _)) -> removeAll(args, binds.usedNames)
-      | nothing() -> error("extIndRemainingNames")
-      end;
-  --fresh names for those to avoid capture with args for relation here
-  local extIndUseCheckBinds::[String] =
-      let alreadyUsed::[String] = flatMap((.usedNames), relArgs)
-      in
-        foldl(\ rest::[String] x::String ->
-                if contains(x, rest ++ alreadyUsed)
-                then freshName(x, rest ++ alreadyUsed)::rest
-                else x::rest,
-              [], extIndRemainingNames)
-      end;
-  --things to go in the conclusion
-  local extIndUseCheckConcs::[Metaterm] =
-      case thisExtInd of
-      | just((_, args, _, prems)) ->
-        safeReplace(map(snd, prems.toList),
-           args ++ extIndRemainingNames,
-           relArgs ++ map(\ x::String -> nameTerm(toQName(x), nothingType()),
-                          extIndUseCheckBinds))
-      | nothing() -> error("extIndUseCheckConcs")
-      end;
   --full metaterm to prove to show this use of ExtInd is valid
   local extIndUseCheck::Metaterm =
-      bindingMetaterm(forallBinder(), bindings,
-         foldr1(impliesMetaterm,
-            metatermPremises(body.toAbella) ++
-            [if null(extIndUseCheckBinds)
-             then foldr1(andMetaterm, extIndUseCheckConcs)
-             else bindingMetaterm(existsBinder(), bindings,
-                     foldr1(andMetaterm, extIndUseCheckConcs))]));
+      case thisExtInd of
+      | just((_, args, binds, prems)) ->
+        generateExtIndCheck(args, binds, prems,
+                            relArgs, bindings, body)
+      | nothing() -> error("extIndUseCheck")
+      end;
   --
   top.extIndChecks =
       if !sameModule(top.currentModule, inductionRel.name) &&
@@ -919,6 +892,46 @@ function generateExtIntrosNames
                 [freshName("Hyp", rest ++ knownLabels)]
               end,
             [], premiseInfo);
+}
+
+--build the theorem statement for checking ExtInd use is valid
+function generateExtIndCheck
+Metaterm ::= extIndArgs::[String] extIndBinds::Bindings
+             extIndPrems::ExtIndPremiseList
+             thmRelArgs::[Term] thmBindings::Bindings
+             thmBody::Decorated ExtBody with {boundNames,
+                         relationEnv, constructorEnv, typeEnv}
+{
+  --names left in ExtInd bindings after removing arguments to R
+  local extIndRemainingNames::[String] =
+      removeAll(extIndArgs, extIndBinds.usedNames);
+  --fresh names for those to avoid capture with args for relation here
+  local extIndUseCheckBinds::[String] =
+      let alreadyUsed::[String] = flatMap((.usedNames), thmRelArgs)
+      in
+        foldl(\ rest::[String] x::String ->
+                if contains(x, rest ++ alreadyUsed)
+                then freshName(x, rest ++ alreadyUsed)::rest
+                else x::rest,
+              [], extIndRemainingNames)
+      end;
+  --things to go in the conclusion
+  local extIndUseCheckConcs::[Metaterm] =
+      safeReplace(map(snd, extIndPrems.toList),
+         extIndArgs ++ extIndRemainingNames,
+         thmRelArgs ++ map(\ x::String ->
+                             nameTerm(toQName(x), nothingType()),
+                           extIndUseCheckBinds));
+  --full metaterm to prove to show this use of ExtInd is valid
+  local extIndUseCheck::Metaterm =
+      bindingMetaterm(forallBinder(), thmBindings,
+         foldr1(impliesMetaterm,
+            metatermPremises(thmBody.toAbella) ++
+            [if null(extIndUseCheckBinds)
+             then foldr1(andMetaterm, extIndUseCheckConcs)
+             else bindingMetaterm(existsBinder(), thmBindings,
+                     foldr1(andMetaterm, extIndUseCheckConcs))]));
+  return extIndUseCheck;
 }
 
 

@@ -283,7 +283,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
   --compose the proofs and write them to the file
   local builtProps::IOToken =
       compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
-         parsers, config, outFilename, allThms, [], output);
+         parsers, config, outFilename, allThms, [], [], output);
 
   --clean up by quitting Abella
   local quitAbella::IOToken =
@@ -312,15 +312,19 @@ function compose_proofs
 IOToken ::= thms::[ThmElement] mods::[(QName, DecCmds)]
    proverState::ProverState abella::ProcessHandle
    parsers::AllParsers config::Configuration outfilename::String
-   allThms::[(QName, Metaterm)] knownExtSizes::[[QName]] ioin::IOToken
+   allThms::[(QName, Metaterm)] knownExtSizes::[[QName]]
+   knownExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
+   ioin::IOToken
 {
-  local sub::([(QName, DecCmds)], [(QName, Metaterm)], [[QName]], IOToken) =
+  local sub::([(QName, DecCmds)], [(QName, Metaterm)], [[QName]],
+              [(QName, [String], Bindings, ExtIndPremiseList)], IOToken) =
       handleFstThm(outfilename, mods, head(thms), proverState, abella,
-                   parsers, config, allThms, knownExtSizes, ioin);
+         parsers, config, allThms, knownExtSizes, knownExtInds, ioin);
   local again::IOToken =
       compose_proofs(tail(thms), sub.1, proverState, abella, parsers,
                      config, outfilename, sub.2 ++ allThms,
-                     sub.3 ++ knownExtSizes, sub.4);
+                     sub.3 ++ knownExtSizes, sub.4 ++ knownExtInds,
+                     sub.5);
 
   return
       case thms of
@@ -335,11 +339,14 @@ IOToken ::= thms::[ThmElement] mods::[(QName, DecCmds)]
 --   and passing it up to build_composed_file, since we force the
 --   string thunk earlier
 function handleFstThm
-([(QName, DecCmds)], [(QName, Metaterm)], [[QName]], IOToken) ::=
+([(QName, DecCmds)], [(QName, Metaterm)], [[QName]],
+ [(QName, [String], Bindings, ExtIndPremiseList)], IOToken) ::=
    outfilename::String mods::[(QName, DecCmds)]
    fstThm::ThmElement proverState::ProverState abella::ProcessHandle
    parsers::AllParsers config::Configuration
-   allThms::[(QName, Metaterm)] knownExtSizes::[[QName]] ioin::IOToken
+   allThms::[(QName, Metaterm)] knownExtSizes::[[QName]]
+   knownExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
+   ioin::IOToken
 {
   fstThm.incomingMods = mods;
   fstThm.relEnv = proverState.knownRels;
@@ -348,6 +355,7 @@ function handleFstThm
   --
   fstThm.allThms = allThms;
   fstThm.knownExtSizes_down = knownExtSizes;
+  fstThm.knownExtInds_down = knownExtInds;
   --
   fstThm.liveAbella = abella;
   fstThm.runAbella = ioin;
@@ -360,5 +368,5 @@ function handleFstThm
 
      --drop the non-proof things, like definitions, from all modules
   return (dropNonProof(fstThm.outgoingMods), fstThm.newThms,
-          fstThm.newExtSizes, output);
+          fstThm.newExtSizes, fstThm.newExtInds, output);
 }
