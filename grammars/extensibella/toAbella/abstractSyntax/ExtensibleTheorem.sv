@@ -477,6 +477,10 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         if inductionRelFound
         then inductionRel.name::rest.inductionRels
         else rest.inductionRels --bad rel, so just check rest
+      | just(extSizeMetaterm(r, _, _)) ->
+        if inductionRelFound
+        then inductionRel.name::rest.inductionRels
+        else rest.inductionRels --bad rel, so just check rest
       --bad form, so no relation and just check rest
       | just(_) -> rest.inductionRels
       --no such premise, so just check rest

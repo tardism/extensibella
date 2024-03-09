@@ -11,7 +11,8 @@ IOVal<[String]> ::=
    allThms::[(QName, Metaterm)] typeEnv::Env<TypeEnvItem>
    relEnv::Env<RelationEnvItem> constrEnv::Env<ConstructorEnvItem>
    abella::ProcessHandle config::Configuration
-   parsers::AllParsers keyRels::[QName] ioin::IOToken
+   parsers::AllParsers keyRels::[QName] numExtIndChecks::Integer
+   ioin::IOToken
 {
   local fstThm::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                  ExtBody, String) = head(thmsInfo);
@@ -39,8 +40,12 @@ IOVal<[String]> ::=
       lookup(fstThm.1.moduleName, topGoalProofInfo).fromJust;
   --root number for subgoal for this thm
   local subgoalNum::SubgoalNum =
-      --no empty lists in this, so head is valid
-      subgoalRoot(head(head(thisMod)).1.currentSubgoal);
+      case head(head(thisMod)).1.currentSubgoal of
+      | _::s when numExtIndChecks > 0 -> subgoalRoot(s)
+        --s1 part comes from after checking ExtInd validity
+        --without that, just 
+      | s -> subgoalRoot(s)
+      end;
 
 
   --Host Theorem Proof
@@ -73,7 +78,7 @@ IOVal<[String]> ::=
   local host_rest::IOVal<[String]> =
       buildExtThmProofs(tail(thmsInfo), host_gathering.2, allThms,
          typeEnv, relEnv, constrEnv, abella, config, parsers,
-         keyRels, host_to_abella.io);
+         keyRels, numExtIndChecks, host_to_abella.io);
 
 
   --Extension Theorem Proof
@@ -126,7 +131,7 @@ IOVal<[String]> ::=
   local ext_rest::IOVal<[String]> =
       buildExtThmProofs(tail(thmsInfo), extUpdatedGoalInfo, allThms,
          typeEnv, relEnv, constrEnv, abella, config, parsers,
-         keyRels, extRun.io);
+         keyRels, numExtIndChecks, extRun.io);
 
 
   return
@@ -286,6 +291,14 @@ IOVal<([[String]], ProofState)> ::=
   --when the current composed case is one of the I unknown cases
   --note genericCaseI must be just() if we ever access this
   local runI::IOVal<([String], ProofState)> =
+  if !genericCaseI.isJust
+  then error("Tried to run nothing I;\n" ++
+          "Initial proof state:\n" ++ justShow(incomingState.pp) ++
+          "\nOrig state:\n" ++ (if null(knownCases) then "<null>"
+                                else justShow(origState.pp)) ++
+          "\nK state:\n" ++ (if !genericCaseK.isJust then "<null>"
+                             else justShow(kState.pp)))
+  else
       runPreservabilityCase(genericCaseI.fromJust, abella, config,
          parsers, incomingState, allThms, keyRels, typeEnv, relEnv,
          constrEnv, ioin);

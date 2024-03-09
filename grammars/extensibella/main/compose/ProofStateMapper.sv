@@ -1048,9 +1048,11 @@ top::Term ::= char::String
 
 
 attribute
+   containsUnknownK, containsUnknownI,
    mapTo<TermList>, mapSuccess, varMap_in, varMap, unknownMap
 occurs on TermList;
-propagate varMap_in, varMap, unknownMap on TermList;
+propagate varMap_in, varMap, unknownMap,
+          containsUnknownK, containsUnknownI on TermList;
 
 aspect production singleTermList
 top::TermList ::= t::Term
@@ -1111,9 +1113,11 @@ top::TermList ::=
 
 
 attribute
+   containsUnknownK, containsUnknownI,
    mapTo<ListContents>, mapSuccess, varMap_in, varMap, unknownMap
 occurs on ListContents;
-propagate varMap_in, varMap, unknownMap on ListContents;
+propagate varMap_in, varMap, unknownMap,
+          containsUnknownK, containsUnknownI on ListContents;
 
 aspect production emptyListContents
 top::ListContents ::=
@@ -1152,9 +1156,11 @@ top::ListContents ::= t::Term rest::ListContents
 
 
 attribute
+   containsUnknownK, containsUnknownI,
    mapTo<PairContents>, mapSuccess, varMap_in, varMap, unknownMap
 occurs on PairContents;
-propagate varMap_in, varMap, unknownMap on PairContents;
+propagate varMap_in, varMap, unknownMap,
+          containsUnknownK, containsUnknownI on PairContents;
 
 aspect production singlePairContents
 top::PairContents ::= t::Term

@@ -48,26 +48,28 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
              --rest of ThmElements in all modules (drops first one)
                fullRestMods::[[ThmElement]]
 {
+  {-
+    We assume modThms is in the linearized order of imports, that is,
+    if module M builds on module I, the first item remaining in M's
+    order is earlier in modThms than the first item remaining in I's
+    order.  If the first items in both orders are non-extensible, the
+    one from M might depend on the one from I as the one from I was in
+    the context when it was written.  Thus we need to take the *last*
+    non-extensible thing we find, not the first.
+  -}
   return
       case modThms of
       | [] -> thusFar
-      --things without extended proofs first, but only when all
-      --   occurrences are at the beginning so we only get them once
-      | x::rest when thusFar.is_nonextensible ->
-        if !existsLater(thusFar, fullRestMods)
-        then thusFar
-        else getFirst(rest, x, fullRestMods)
       | x::rest when x.is_nonextensible ->
-        if !existsLater(x, fullRestMods)
-        then x
-        else getFirst(rest, thusFar, fullRestMods)
+        getFirst(rest, x, fullRestMods)
+      | x::rest when thusFar.is_nonextensible ->
+        getFirst(rest, thusFar, fullRestMods)
       --anything at this point is extensible, so earlier tag
       | t::r when lessTags(t.tag, thusFar.tag) ->
-        --thusFar isn't minimum, so try again
+        --thusFar isn't minimum, so start with t
         getFirst(r, t, fullRestMods)
       | t::r ->
-        --thusFar is still min seen, but keep going in case there is
-        --   something non-extensible or lower later
+        --thusFar is still minimum seen, so continue with it
         getFirst(r, thusFar, fullRestMods)
       end;
 }

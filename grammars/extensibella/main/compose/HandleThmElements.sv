@@ -96,14 +96,14 @@ top::ThmElement ::=
               sameModule(p.2.moduleName, rei.name) &&
                  sameModule(p.2.moduleName, rei.pcType.name),
               --uses R_T if thm and rel from different mods
-              !sameModule(p.2.moduleName, rei.name),
+              !sameModule(p.2.moduleName, p.1),
               p.3, p.4, p.5)
            end,
          zip(extThms.inductionRels, thms)); --cuts off the alsos part
 
   local multiple::Boolean = length(thms) + length(alsos) > 1;
   local extName::QName = --multiple theorems or the one uses R_T
-      if multiple || head(thmsInfo).4
+      if multiple || !null(thmsInfo) && head(thmsInfo).4
       then toQName("$extThm_" ++ toString(genInt()))
       else fst(head(thms));
 
@@ -162,10 +162,13 @@ top::ThmElement ::=
       foldr(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                   ExtBody, String) rest::Integer ->
               if p.4
-              then case lookup(p.1, top.knownExtInds_down) of
+              then case lookup(p.2.name, top.knownExtInds_down) of
                    | just((args, binds, prems)) ->
                      if prems.len > 0 then 1 + rest else rest
-                   | nothing() -> error("ExtInd must exist")
+                   | nothing() ->
+                     error("ExtInd must exist (" ++
+                        justShow(p.1.pp) ++ ", " ++
+                        justShow(p.2.name.pp) ++ ")")
                    end
               else rest,
             0, thmsInfo);
@@ -203,7 +206,7 @@ top::ThmElement ::=
          top.configuration, top.allParsers,
          map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                    ExtBody, String) -> p.2.name, thmsInfo),
-         proofStart_abella.io);
+         numExtIndChecks, proofStart_abella.io);
 
   --Commands for proving alsos
   local alsosIntros::[String] =
@@ -290,7 +293,7 @@ top::ThmElement ::=
             "$extIndValid_" ++ toString(genInt())
         in
         let extIndValidPrf::String =
-            "Theorem " ++ extIndValidName ++ " : " ++
+            "\nTheorem " ++ extIndValidName ++ " : " ++
             generateExtIndCheck(extInd.1, extInd.2, extInd.3,
                case lookupBy(\ a::Maybe<String> b::Maybe<String> ->
                                a.isJust && b.isJust &&
@@ -311,16 +314,16 @@ top::ThmElement ::=
             --build premises for ExtInd, if necessary
             (if premLen > 0
              then "$A: apply " ++ extIndValidName ++ " to " ++
-                     implode(" ", introsNames) ++ ".\n" ++
-                  (if premLen > 1 then "$A: case $A (keep).\n"
-                                  else "")
+                     implode(" ", introsNames) ++ ". "
              else "") ++
             --apply ExtInd to key rel and any other necessary args
             "$R: apply " ++ extIndThmName(keyRel.name) ++
                " to " ++ implode(" ",
                             keyRelName::map(\ i::Integer ->
-                                              "$A" ++ toString(i),
-                                            range(1, premLen + 1))
+                                              if i == 0
+                                              then "$A"
+                                              else "$A" ++ toString(i),
+                                            range(0, premLen))
                             ) ++ ". " ++
             --apply proven theorem using R_T to args
             "apply " ++ partialName ++ " to " ++
@@ -351,11 +354,15 @@ top::ThmElement ::=
                            end
                        in
                          if p.5 && extIndPremLen > 0
-                         then (tail(thusFar.1),
-                               thusFar.2 ++
-                               [(p.1, p.2, p.3, p.4, p.5, p.6, p.7, p.8,
-                                 flatMap(\ x -> x,
-                                    map(snd, head(thusFar.1))))])
+                         then case thusFar.1 of
+                              | [] -> error("ThusFar.1 empty; for " ++
+                                         justShow(p.2.pp))
+                              | h::t ->
+                                (t,
+                                 thusFar.2 ++
+                                 [(p.1, p.2, p.3, p.4, p.5, p.6, p.7, p.8,
+                                   flatMap(\ x -> x, map(snd, h)))])
+                              end
                          else (thusFar.1,
                                thusFar.2 ++ [(p.1, p.2, p.3, p.4, p.5,
                                               p.6, p.7, p.8, [])])
@@ -382,7 +389,14 @@ top::ThmElement ::=
                 if null(extIndCheckProofInfo)
                 then []
                 else flatMap(\x -> x,
-                        map(snd, head(extIndCheckProofInfo))))
+                        map(snd,
+                            case extIndCheckProofInfo of
+                            | h::_ -> h
+                            | [] ->
+                              error("Expected proof of ExtInd validity; " ++
+                                    justShow(p.1.pp) ++ ", " ++
+                                    justShow(p.2.name.pp))
+                            end)))
            end
       else ""; --single thm that doesn't use R_T
   local after::String = splitThm ++ applyExtInds;
@@ -394,7 +408,7 @@ top::ThmElement ::=
   top.composedCmds =
       proofStart ++ "\n " ++
       implode("\n ", thmProofs.iovalue ++ fullAlsos) ++
-      after ++ "\n";
+      after ++ "\n\n";
 
 
   top.outgoingMods =
@@ -452,11 +466,21 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
 aspect production nonextensibleTheorem
 top::ThmElement ::= name::QName params::[String] stmt::Metaterm
 {
+  --We need to decorate stmt with these inh attrs to get .toAbella
+  --as stmt is not necessarily fully Abella (e.g. there can be strings
+  --in it), but decorating stmt itself requires orphaned equations.
+  --Thus we make a copy of it here.
+  local cstmt::Metaterm = stmt;
+  cstmt.typeEnv = top.tyEnv;
+  cstmt.relationEnv = top.relEnv;
+  cstmt.constructorEnv = top.constrEnv;
+  cstmt.boundNames = [];
+
   local declaration::String =
       "Theorem " ++ name.abella_pp ++
       (if null(params) then ""
                        else "[" ++ implode(", ", params) ++ "]") ++
-      " : " ++ stmt.abella_pp ++ ".\n";
+      " : " ++ cstmt.toAbella.abella_pp ++ ".\n";
 
   local updatePair::([(QName, DecCmds)], String) =
       updateMod(top.incomingMods, name.moduleName, getProof);
@@ -602,7 +626,7 @@ top::ThmElement ::=
                 map(fromMaybe("_", _), map(fst, p.4.toList))
             in
               "intros " ++ implode(" ", names) ++ ". " ++
-              "case " ++ rName ++ "."
+              rName ++ ": case " ++ rName ++ " (keep)."
             end end end,
           rels);
   --proof information from all the modules where this occurs
@@ -670,7 +694,7 @@ top::ThmElement ::=
             in
             let introsNames::[String] =
                 map(\ i::Integer -> "A" ++ toString(i),
-                    range(1, p.4.len + 1))
+                    range(1, p.5.len + 1))
             in
             let premNames::[String] =
                 if useES then "ES"::"Acc"::introsNames
@@ -678,13 +702,14 @@ top::ThmElement ::=
             in
               "Theorem " ++ extIndThmName(p.2) ++ " : " ++
                  stmt.abella_pp ++ ".\n " ++
-              "intros R " ++ implode(" ", introsNames) ++ "." ++
+              "intros R " ++ implode(" ", introsNames) ++ ". " ++
               (if useES
                then
                  --make R_{ES}
-                 "intros R. ES: apply " ++
+                 "ES: apply " ++
                     head(tail(tail(tail(elemAtIndex(lemmaStatements,
-                                           p.1))))).1.abella_pp ++ " to R.\n" ++
+                                           p.1))))).1.abella_pp ++
+                    " to R.\n" ++
                  --make acc N
                  let lemmas::[(QName, Metaterm)] =
                      elemAtIndex(lemmaStatements, p.1)
@@ -734,10 +759,7 @@ top::ThmElement ::=
                    implode("",
                       map(\ ip::(Integer, Integer) ->
                             let rnum::String =
-                                if p.3 --host rule adds nothing
-                                then toString(ip.1 - p.1)
-                                     --ext rules add premises
-                                else toString(ip.1 - p.1 + 2)
+                                toString(ip.1 - p.1)
                             in
                               " apply IH" ++ (if ip.2 == 0 then ""
                                               else toString(ip.2)) ++
