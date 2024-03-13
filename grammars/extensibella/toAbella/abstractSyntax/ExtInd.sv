@@ -4,7 +4,7 @@ grammar extensibella:toAbella:abstractSyntax;
 abstract production extIndDeclaration
 top::TopCommand ::= body::ExtIndBody
 {
-  top.pp = text("Ext_Ind ") ++ ppImplode(realLine(),
+  top.pp = text("Ext_Ind ") ++ ppImplode(text(";") ++ realLine(),
                                   map(\ d::Document ->
                                         docGroup(nest(9, d)),
                                       body.pps)) ++
@@ -125,7 +125,7 @@ abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 {
   top.pps = e1.pps ++ e2.pps;
-  top.abella_pp = e1.abella_pp ++ ",\n        " ++ e2.abella_pp;
+  top.abella_pp = e1.abella_pp ++ ";\n        " ++ e2.abella_pp;
 
   top.len = e1.len + e2.len;
 

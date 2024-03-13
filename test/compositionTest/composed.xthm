@@ -5,6 +5,10 @@ Prove compositionTest:host:evalExpr_unique,
       compositionTest:host:evalStmt_unique.
 
 
+Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
+
+
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt.
 

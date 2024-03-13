@@ -64,6 +64,14 @@ lookup G X V
 evalExpr G name(X) V G
 
 
+Extensibella_Stand_In {
+  |{expr}- E ~~> E_T
+  evalExpr G E_T V G1
+  ------------------- [E-E-Q]
+  evalExpr G E V G1
+}
+
+
 
 
 
@@ -114,3 +122,11 @@ evalStmt G1 Body G2
 evalStmt G2 while(Cond, Body) G3
 -------------------------------- [E-While-True]
 evalStmt G while(Cond, Body) G3
+
+
+Extensibella_Stand_In {
+  |{stmt}- S ~~> S_T
+  evalStmt G S_T G1
+  ------------------ [E-S-Q]
+  evalStmt G S G1
+}

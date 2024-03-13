@@ -15,40 +15,44 @@ Prove compositionTest:host:evalExpr_unique,
  search.
 
 
+Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
+
+
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt.
 %E-Double
  unfold. exists Half = Half. exists plus E1 E1. Acc: case Acc.
- IsN2: apply ext_ind_is_int_evalExpr to Rel2.
- L: apply lt_plus_one to Rel1 _. apply ext_ind_pos_evalExpr to Rel2.
- A: apply Acc to _ L. apply IH to Rel2 A. split.
+ IsN2: apply ext_ind_is_int_evalExpr to R2.
+ L: apply lt_plus_one to R1 _. apply ext_ind_pos_evalExpr to R2.
+ A: apply Acc to _ L. case IsE. apply IH to R2 A _. split.
+   %plus
+    search.
+   %eval_T E1
+    search.
+   %Trans
+    search.
    %plus eval
     skip. %different eval ctx, so not necessarily
-   %Trans
-    search.
-   %eval_T E1
-    search.
-   %plus
-    search.
 %E-Triple
  unfold. exists plus (plus E1 E1) E1, Third, Double. split.
-   %plus eval
-    skip.
+   %eval_T E1
+    Acc: case Acc. Is: apply ext_ind_is_int_evalExpr to R2.
+    L: apply lt_plus_one to R1 _.
+    apply ext_ind_pos_evalExpr to R2. A: apply Acc to _ L.
+    case IsE. apply IH to R2 A _. search.
+   %plus
+    search.
+   %plus
+    search.
    %Trans
     search.
-   %eval_T E1
-    Acc: case Acc. Is: apply ext_ind_is_int_evalExpr to Rel2.
-    L: apply lt_plus_one to Rel1 _.
-    apply ext_ind_pos_evalExpr to Rel2. A: apply Acc to _ L.
-    apply IH to Rel2 A. search.
-   %plus
-    search.
-   %plus
-    search.
+   %plus eval
+    skip.
 %E-Seq2
  unfold. exists seq S1 S2 noop. exists G'. Acc: case Acc.
- IsN2: apply ext_ind_is_int_evalStmt to Rel3.
- IsN3: apply ext_ind_is_int_evalStmt to Rel4.
+ IsN2: apply ext_ind_is_int_evalStmt to R3.
+ IsN3: apply ext_ind_is_int_evalStmt to R4.
  skip. %this is true, but I don't want to mess with it
 
 

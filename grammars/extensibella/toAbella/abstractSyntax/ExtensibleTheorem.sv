@@ -57,10 +57,8 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
   --during commands for extIndCheck, including declaration of ExtThm
   local extIndCheckCmds::[(SubgoalNum, [ProofCommand])] =
       --intros for each check
-      foldl(\ thusFar::(Integer, [(SubgoalNum, [ProofCommand])])
-              p::(Metaterm, [ProofCommand]) ->
-              (thusFar.1 + 1, ([thusFar.1], p.2)::thusFar.2),
-            (1, []), thms.extIndChecks).2 ++
+      map(\ p::(Integer, Metaterm, [ProofCommand]) -> ([p.1], p.3),
+          enumerateFrom(1, thms.extIndChecks)) ++
       --exists to remove binding from front, then set-up for ExtThm
       [([length(thms.extIndChecks) + 1],
         existsTactic(oneEWitnesses(termEWitness(integerToIntegerTerm(0))))::
@@ -635,7 +633,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
   top.provingTheorems = (fullName, body.thm)::rest.provingTheorems;
 
-  rest.startingGoalNum = [head(top.startingGoalNum) + 1];
+  rest.startingGoalNum =
+       init(top.startingGoalNum) ++ [last(top.startingGoalNum) + 1];
 
   local inductionRelFound::Boolean =
       case foundLabeledPremise of

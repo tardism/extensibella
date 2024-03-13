@@ -6,6 +6,10 @@ Prove compositionTest:host:evalExpr_unique,
 EvB: case EvB. apply minus_integer_unique to EvA1 EvB. search.
 
 
+Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
+
+
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt.
 unfold. exists num N1. search.
