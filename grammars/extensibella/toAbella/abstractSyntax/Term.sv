@@ -41,10 +41,17 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   top.toAbellaMsgs <- rel.relErrors;
   top.toAbellaMsgs <-
       if !rel.relFound ||
-         findExtIndGroup(rel.fullRel.name, top.proverState).isJust
+         findExtIndGroup(rel.fullRel.name, top.proverState).isJust ||
+         transRelInState
       then []
       else [errorMsg("Projection version is not defined for " ++
                justShow(rel.fullRel.name.pp))];
+  --defined, but currently being proven, so not in ExtIndGroups yet
+  local transRelInState::Boolean =
+      contains(rel.fullRel.name, top.proverState.state.transRels) ||
+      contains(rel, top.proverState.state.transRels);
+
+  top.transRels := [rel];
 }
 
 
