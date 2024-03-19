@@ -1354,23 +1354,23 @@ function ext_ind_pos_name
 QName ::= rel::QName
 {
   return
-      addQNameBase(rel.moduleName, "ext_ind_pos_" ++ rel.shortName);
+      addQNameBase(rel.moduleName, "ext_size_pos_" ++ rel.shortName);
 }
 function ext_ind_is_int_name
 QName ::= rel::QName
 {
   return
-      addQNameBase(rel.moduleName, "ext_ind_is_int_" ++ rel.shortName);
+      addQNameBase(rel.moduleName, "ext_size_is_int_" ++ rel.shortName);
 }
 function drop_ext_ind_name
 QName ::= rel::QName
 {
   return
-      addQNameBase(rel.moduleName, "drop_ext_ind_" ++ rel.shortName);
+      addQNameBase(rel.moduleName, "drop_ext_size_" ++ rel.shortName);
 }
 function add_ext_ind_name
 QName ::= rel::QName
 {
   return
-      addQNameBase(rel.moduleName, "add_ext_ind_" ++ rel.shortName);
+      addQNameBase(rel.moduleName, "add_ext_size_" ++ rel.shortName);
 }
