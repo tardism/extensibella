@@ -16,6 +16,7 @@ IOVal<[String]> ::=
 {
   local fstThm::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                  ExtBody, String) = head(thmsInfo);
+  local fstThmMod::QName = fstThm.1.moduleName;
 
   local intros_case::String =
       let prems::[(Maybe<String>, Metaterm)] =
@@ -37,7 +38,7 @@ IOVal<[String]> ::=
 
   local thisMod::[[(ProofState, [AnyCommand])]] =
       --module must exist, so .fromJust is valid
-      lookup(fstThm.1.moduleName, topGoalProofInfo).fromJust;
+      lookup(fstThmMod, topGoalProofInfo).fromJust;
   --root number for subgoal for this thm
   local subgoalNum::SubgoalNum =
       case head(head(thisMod)).1.currentSubgoal of
@@ -82,20 +83,28 @@ IOVal<[String]> ::=
 
 
   --Extension Theorem Proof
-  local extSplitCases::([[[(ProofState, [AnyCommand])]]],
-                        [[(ProofState, [AnyCommand])]]) =
-      getFullRootedBySubgoal(thisMod, subgoalNum);
-  --known cases
+  local extFullSubgoal::SubgoalNum =
+      case head(head(thisMod)).1.currentSubgoal of
+      | a::s when numExtIndChecks > 0 -> a::subgoalRoot(s)
+      | s -> subgoalRoot(s)
+      end;
+  --[(module name, commands for here grouped by subgoal, rest for later)]
+  local extSplitAllCases::[(QName, [[[(ProofState, [AnyCommand])]]],
+                            [[(ProofState, [AnyCommand])]])] =
+      map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
+            (p.1, getFullRootedBySubgoal(p.2, extFullSubgoal)),
+          topGoalProofInfo);
+  --commands from introducing module (mod must exist, so .fromJust fine)
+  local extIntroModCmds::[[[(ProofState, [AnyCommand])]]] =
+      lookup(fstThmMod, extSplitAllCases).fromJust.1;
+  --split into basic and generic cases
   local extSplitGeneric::([[[(ProofState, [AnyCommand])]]],
-                          [[[(ProofState, [AnyCommand])]]])=
+                          [[[(ProofState, [AnyCommand])]]]) =
       partition(\ l::[[(ProofState, [AnyCommand])]] ->
                   let p::ProofState = head(head(l)).1 in
                       !p.containsUnknownK && !p.containsUnknownI
                   end,
-                extSplitCases.1);
-  --known cases
-  local extKnownCases::[[[(ProofState, [AnyCommand])]]] =
-      extSplitGeneric.1;
+                extIntroModCmds);
   --generic cases (i, k):  either (or both) may not exist
   local extGenericCases::(Maybe<[[(ProofState, [AnyCommand])]]>,
                           Maybe<[[(ProofState, [AnyCommand])]]>)=
@@ -109,6 +118,14 @@ IOVal<[String]> ::=
                     else (just(l2), just(l1))
       | _ -> error("Cannot have more than two generic cases")
       end;
+  --known cases for all modules; drop generic from introducing module
+  local extKnownCases::[[[(ProofState, [AnyCommand])]]] =
+      flatMap(\ p::(QName, [[[(ProofState, [AnyCommand])]]],
+                    [[(ProofState, [AnyCommand])]]) ->
+                if p.1 == fstThmMod
+                then extSplitGeneric.1
+                else p.2,
+              extSplitAllCases);
   --proof state after thm set-up
   local initProofState::ProofState =
       fullStateProcessing(intros_case_to_abella.iovalue, typeEnv,
@@ -121,8 +138,9 @@ IOVal<[String]> ::=
          intros_case_to_abella.io);
   --update for use in proving the rest of the theorems
   local extUpdatedGoalInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
-      updateAssoc(topGoalProofInfo, fstThm.1.moduleName,
-                  extSplitCases.2);
+      map(\ p::(QName, [[[(ProofState, [AnyCommand])]]],
+                [[(ProofState, [AnyCommand])]]) -> (p.1, p.3),
+          extSplitAllCases);
   --put the commands together into a single string
   local ext_string::String =
       intros_case ++ "\n  " ++

@@ -186,17 +186,42 @@ top::ThmElement ::=
   --top-level groups are for separate ExtInd checks
   local extIndCheckProofInfo::[[(ProofState, [AnyCommand])]] =
       case lookup(head(thmsInfo).1.moduleName, topGoalProofInfo) of
-      | just(l) -> take(numExtIndChecks, l)
-      | nothing() -> [] --I think this is actually impossible
+      | just(l) when numExtIndChecks > 0 ->
+        let cmds::[[(ProofState, [AnyCommand])]] =
+            takeWhile(\ x::[(ProofState, [AnyCommand])] ->
+                        head(head(x).1.currentSubgoal) <= numExtIndChecks,
+                      l)
+        in
+        let groups::[[[(ProofState, [AnyCommand])]]] =
+            groupBy(\ l1::[(ProofState, [AnyCommand])]
+                      l2::[(ProofState, [AnyCommand])] ->
+                      head(head(l1).1.currentSubgoal) ==
+                      head(head(l2).1.currentSubgoal),
+                    cmds)
+        in --flatten each group
+          map(\ l::[[(ProofState, [AnyCommand])]] ->
+                flatMap(\ x -> x, l), groups)
+        end end
+      | _ -> []
       end;
 
   --update the list of proof steps to drop the ones for the ExtInd checks
   local topGoalThmsProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
       map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
             if p.1 == head(thmsInfo).1.moduleName
-            then (p.1, drop(numExtIndChecks, p.2))
+            then (p.1,
+                  if numExtIndChecks == 0
+                  then p.2
+                  else dropWhile(\ l::[(ProofState, [AnyCommand])] ->
+                                   head(head(l).1.currentSubgoal) <=
+                                   numExtIndChecks,
+                                 p.2))
             else p,
           topGoalProofInfo);
+
+
+
+
 
   --Commands for proving thms
   local thmProofs::IOVal<[String]> =
@@ -361,7 +386,7 @@ top::ThmElement ::=
                                 (t,
                                  thusFar.2 ++
                                  [(p.1, p.2, p.3, p.4, p.5, p.6, p.7, p.8,
-                                   flatMap(\ x -> x, map(snd, h)))])
+                                   flatMap(snd, h))])
                               end
                          else (thusFar.1,
                                thusFar.2 ++ [(p.1, p.2, p.3, p.4, p.5,
@@ -388,15 +413,14 @@ top::ThmElement ::=
                 p.1, p.2, p.5, p.6, p.7,
                 if null(extIndCheckProofInfo)
                 then []
-                else flatMap(\x -> x,
-                        map(snd,
-                            case extIndCheckProofInfo of
-                            | h::_ -> h
-                            | [] ->
-                              error("Expected proof of ExtInd validity; " ++
-                                    justShow(p.1.pp) ++ ", " ++
-                                    justShow(p.2.name.pp))
-                            end)))
+                else flatMap(snd,
+                        case extIndCheckProofInfo of
+                        | h::_ -> h
+                        | [] ->
+                          error("Expected proof of ExtInd validity; " ++
+                                justShow(p.1.pp) ++ ", " ++
+                                justShow(p.2.name.pp))
+                        end))
            end
       else ""; --single thm that doesn't use R_T
   local after::String = splitThm ++ applyExtInds;
@@ -405,10 +429,14 @@ top::ThmElement ::=
       sendBlockToAbella(after, top.liveAbella, alsos_abella.io,
          top.configuration);
 
+  local names::String =
+      implode(", ", map(justShow, map((.pp), map(fst, thms) ++ map(fst, alsos))));
   top.composedCmds =
+      "/*Start Extensible_Theorem " ++ names ++ "*/\n" ++
       proofStart ++ "\n " ++
       implode("\n ", thmProofs.iovalue ++ fullAlsos) ++
-      after ++ "\n\n";
+      after ++ "\n" ++
+      "/*End " ++ names ++ "*/\n\n\n";
 
 
   top.outgoingMods =
@@ -453,7 +481,10 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
   local restPrf::String =
       implode("", map(\ p::(QName, DecCmds) -> getProof(p.2).2,
                       tail(tcMods)));
-  top.composedCmds = startPrf ++ " " ++ restPrf ++ "\n\n";
+  top.composedCmds =
+      "/*Start Translation Constraint " ++ justShow(name.pp) ++ "*/\n" ++
+      startPrf ++ " " ++ restPrf ++ "\n" ++
+      "/*End " ++ justShow(name.pp) ++ "*/\n\n\n";
 
   --took these proofs, so drop them
   top.outgoingMods = dropAllOccurrences(top.incomingMods, [name]);
@@ -486,7 +517,10 @@ top::ThmElement ::= name::QName params::[String] stmt::Metaterm
       updateMod(top.incomingMods, name.moduleName, getProof);
 
   top.outgoingMods = updatePair.1;
-  top.composedCmds = declaration ++ updatePair.2 ++ "\n\n";
+  top.composedCmds =
+      "/*Start Theorem " ++ justShow(name.pp) ++ "*/\n" ++
+      declaration ++ updatePair.2 ++ "\n" ++
+      "/*End " ++ justShow(name.pp) ++ "*/\n\n\n";
 
   top.newThms = [(name, stmt)];
 }
@@ -779,8 +813,13 @@ top::ThmElement ::=
       dropTAfter;
 
 
-  top.composedCmds = fullToTransRel ++ "\n" ++
-      implode("\n", extIndProofs) ++ "\n" ++ dropTFull ++ "\n\n\n";
+  local displayNames::String =
+      implode(", ", map(justShow, map((.pp), map(fst, rels))));
+  top.composedCmds =
+      "/*Start Ext_Ind for " ++ displayNames ++ "*/\n" ++
+      fullToTransRel ++ "\n" ++
+      implode("\n", extIndProofs) ++ "\n" ++ dropTFull ++ "\n" ++
+      "/*End Ext_Ind for " ++ displayNames ++ "*/\n\n\n";
 
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
@@ -1165,10 +1204,16 @@ top::ThmElement ::= rels::[(QName, [String])]
       afterToExtSize;
 
 
-  top.composedCmds = fullLemmas ++ "\n" ++ fullToExtSize ++ "\n\n\n";
+  local displayNames::String =
+      implode(", ", map(justShow, map((.pp), map(fst, rels))));
+  top.composedCmds =
+      "/*Start Ext_Size for " ++ displayNames ++ "*/\n" ++
+      fullLemmas ++ "\n" ++ fullToExtSize ++ "\n" ++
+      "/*End Ext_Size for " ++ displayNames ++ "*/\n\n\n";
 
   top.outgoingMods =
       dropExtSize(top.incomingMods, map(fst, rels));
+
 
   --these are the only relevant new things
   top.newThms = flatMap(\ l -> l, lemmaStatements);
@@ -1371,6 +1416,8 @@ function getExtIndProofSteps
         | addRunCommands(anyTopCommand(t), rc)
           when t.matchesRels(rels) ->
           (q, getProofSteps(rc))::getExtIndProofSteps(r, rels)
+        | addRunCommands(anyTopCommand(t), rc) ->
+          (q, getProofSteps(rc))::getExtIndProofSteps(r, rels)
         | _ -> getExtIndProofSteps(r, rels)
         end
       end;
@@ -1436,6 +1483,19 @@ function splitAtAllGoals
   return groupBy(\ p1::(ProofState, [AnyCommand])
                    p2::(ProofState, [AnyCommand]) ->
                    p1.1.currentSubgoal == p2.1.currentSubgoal,
+                 cmds);
+}
+
+--group a list of states and commands into groups with the same first
+--   n digits in the subgoal
+function groupGoals
+[[(ProofState, [AnyCommand])]] ::= cmds::[(ProofState, [AnyCommand])]
+                                   n::Integer
+{
+  return groupBy(\ p1::(ProofState, [AnyCommand])
+                   p2::(ProofState, [AnyCommand]) ->
+                    take(n, p1.1.currentSubgoal) ==
+                    take(n, p2.1.currentSubgoal),
                  cmds);
 }
 
@@ -1597,9 +1657,11 @@ top::TopCommand ::= rels::[(QName, [String])]
 {
   top.matchesNames = \ l::[QName] -> false;
 
-  top.matchesRels = \ l::[QName] -> !null(intersect(map(fst, rels), l));
+  local fullNames::[QName] = map(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                                   p.1.fullRel.name, decRels);
+  top.matchesRels = \ l::[QName] -> !null(intersect(fullNames, l));
 
-  top.isNotProof = true;
+  top.isNotProof = false;
 }
 
 
@@ -1610,7 +1672,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 
   top.matchesRels = \ l::[QName] -> !null(intersect(oldRels, l));
 
-  top.isNotProof = true;
+  top.isNotProof = false;
 }
 
 

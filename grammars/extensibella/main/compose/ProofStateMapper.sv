@@ -942,8 +942,8 @@ top::Term ::= ty::QName
   top.mapSuccess = true;
   top.unknownMap := just(top.mapTo);
 
-  top.containsUnknownK := true;
-  top.containsUnknownI := false;
+  top.containsUnknownK := false;
+  top.containsUnknownI := true;
 }
 
 

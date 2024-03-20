@@ -89,6 +89,11 @@ Extensible_Theorem
      typeE [] ZV ZTy
    on Ev as IH_E_C.
 %ExtInd valid for typePres
+ %get another subgoal number in here to check composition pulls all
+ %   commands associated with ExtInd validity
+ assert forall X, is_integer X -> 1 + X = 2 -> X = 1.
+   intros IsX P. P': assert 1 + 1 = 2.
+   apply plus_integer_unique_addend to _ _ _ P P'. search.
  search.
 %ExtInd valid for typePres_S
  search.

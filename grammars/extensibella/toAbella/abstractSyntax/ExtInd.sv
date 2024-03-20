@@ -599,7 +599,7 @@ top::TopCommand ::= rels::[(QName, [String])]
                                            else nothing()),
             just([]), decRels);
 
-  local decRels::[(Decorated QName with {relationEnv}, [String])] =
+  production decRels::[(Decorated QName with {relationEnv}, [String])] =
       map(\ p::(QName, [String]) ->
             (decorate p.1 with {
                relationEnv = top.relationEnv;
