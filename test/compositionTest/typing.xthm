@@ -1,5 +1,8 @@
 Module compositionTest:typing.
 
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+
 
 Prove compositionTest:host:evalExpr_unique,
       compositionTest:host:evalStmt_unique.
@@ -209,3 +212,17 @@ Extensible_Theorem
  %E-E-Q
   Ty: case Ty. apply expr_same to Ev1 Ty.
   apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV. skip. search.
+
+
+Ext_Size typeE G E T, typeS G S G'.
+
+
+Ext_Ind forall G E T, typeE G E T;
+        forall G S G', typeS G S G'.
+%I don't want to prove this.  I just need it for having I and K.
+%typeE
+ skip.
+%typeS
+ skip.
+
+%That should not have gone through like that.

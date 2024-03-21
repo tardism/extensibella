@@ -61,6 +61,15 @@ typeE G E_T Ty
 typeE G E Ty
 
 
+Extensibella_Stand_In {
+  |{expr}- E ~~> E_T
+  typeE G E_T Ty
+  1 + 1 = 2 /*to make it different from T-ETrans*/
+  ------------------ [T-Q]
+  typeE G E Ty
+}
+
+
 
 
 
@@ -113,3 +122,11 @@ typeS G while(Cond, Body) G
 typeS G S_T G1
 ------------------ [T-STrans]*
 typeS G S G1
+
+
+Extensibella_Stand_In {
+  |{stmt}- S ~~> S_T
+  typeS G S_T G1
+  ------------------ [T-S-Q]
+  typeS G S G1
+}

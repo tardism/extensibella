@@ -1,0 +1,29 @@
+Module compositionTest:onTyTwo
+
+Builds on compositionTest:typing
+
+expr ::= ...
+       | isZero(expr)
+
+------------------------------------ [Trans-IsZero]
+|{expr}- isZero(E) ~~> eq(E, num(0))
+
+
+
+
+evalExpr G E num(0) G1
+---------------------------- [E-IsZero-True]
+evalExpr G isZero(E) true G1
+
+
+evalExpr G E V G1
+V != num(0)
+----------------------------- [E-IsZero-False]
+evalExpr G isZero(E) false G1
+
+
+
+
+typeE G E intTy
+------------------------ [T-IsZero]
+typeE G isZero(E) boolTy

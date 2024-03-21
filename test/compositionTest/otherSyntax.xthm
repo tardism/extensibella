@@ -1,5 +1,16 @@
 Module compositionTest:otherSyntax.
 
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+%is_expr
+ %double
+  apply IH to R1. search.
+ %triple
+  apply IH to R1. search.
+%is_stmt
+ %seq2
+  apply IH1 to R1. apply IH1 to R2. search.
+
 
 Prove compositionTest:host:evalExpr_unique,
       compositionTest:host:evalStmt_unique.

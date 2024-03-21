@@ -1,5 +1,39 @@
 Module compositionTest:host.
 
+Ext_Ind forall E, is_expr E; forall S, is_stmt S.
+%is_expr
+ %num
+  search.
+ %plus
+  apply IH to R1. apply IH to R2. search.
+ %true
+  search.
+ %false
+  search.
+ %and
+  apply IH to R1. apply IH to R2. search.
+ %eq
+  apply IH to R1. apply IH to R2. search.
+ %stmtExpr
+  apply IH1 to R1. apply IH to R2. search.
+ %name
+  search.
+%is_stmt
+ %noop
+  search.
+ %seq
+  apply IH1 to R1. apply IH1 to R2. apply IH1 to R3. search.
+ %seq5
+  apply IH1 to R1. apply IH1 to R2. apply IH1 to R3. apply IH1 to R4.
+  apply IH1 to R5. search.
+ %assign
+  apply IH to R2. search.
+ %ifThenElse
+  apply IH to R1. apply IH1 to R2. apply IH1 to R3. search.
+ %while
+  apply IH to R1. apply IH1 to R2. search.
+
+
 Extensible_Theorem
   evalExpr_unique : forall G E VA VB GA GB,
     EvA : evalExpr G E VA GA ->
@@ -286,7 +320,7 @@ Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
 Translation_Constraint evalExpr_forward : forall E E' G V G',
   |{expr}- E ~~> E' -> evalExpr G E' V G' -> evalExpr G E V G'.
 Translation_Constraint evalExpr_back : forall E E' G V G',
-  |{expr}- E ~~> E' -> evalExpr G E V G' -> evalExpr G E' V G.
+  |{expr}- E ~~> E' -> evalExpr G E V G' -> evalExpr G E' V G'.
 
 Translation_Constraint evalStmt_forward : forall S S' G G',
   |{stmt}- S ~~> S' -> evalStmt G S' G' -> evalStmt G S G'.

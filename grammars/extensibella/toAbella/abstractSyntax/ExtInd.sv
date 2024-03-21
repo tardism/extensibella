@@ -61,7 +61,8 @@ top::TopCommand ::= body::ExtIndBody
 
   --definition of R_T
   local transRelDef::TopCommand =
-      buildTransRel(body.extIndInfo, top.relationEnv);
+      buildTransRel(body.extIndInfo, top.relationEnv,
+                    top.proverState.buildsOns);
 
   top.newTheorems = [];
 
@@ -531,7 +532,8 @@ top::TopCommand ::= rels::[QName]
 
   --definition of R_T
   local transRelDef::TopCommand =
-      buildTransRel(obligations, top.relationEnv);
+      buildTransRel(obligations, top.relationEnv,
+                    top.proverState.buildsOns);
 
   local body::ExtIndBody =
       foldr1(branchExtIndBody,
@@ -1013,6 +1015,8 @@ function buildExtSizeDefBody
 function buildTransRel
 TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
                relEnv::Env<RelationEnvItem>
+               --[(module, [modules on which it builds])]
+               buildsOns::[(QName, [QName])]
 {
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                        RelationEnvItem)] =
@@ -1026,7 +1030,7 @@ TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
   local defInfo::[(QName, ([String], [String], Maybe<Metaterm>),
                    [([Term], Maybe<Metaterm>)], RelationEnvItem)] =
       buildTransRelDefInfo(fullRelInfo);
-  return buildTransRelDef(defInfo);
+  return buildTransRelDef(defInfo, buildsOns);
 }
 
 --Gather up the information we need to build the R_T def clauses
@@ -1105,6 +1109,8 @@ TopCommand ::=
 --                binderless body), def clauses: (args, body), env item)]
    rels::[(QName, ([String], [String], Maybe<Metaterm>),
            [([Term], Maybe<Metaterm>)], RelationEnvItem)]
+--[(module, [modules on which it builds])]
+   buildsOns::[(QName, [QName])]
 {
   local preds::[(QName, Type)] =
       map(\ p::(QName, ([String], [String], Maybe<Metaterm>),
@@ -1134,7 +1140,7 @@ TopCommand ::=
                 in
                   buildTransRelClauses(p.1, transRelledDefs,
                      p.2.1, p.2.2, transRelledQBody,
-                     p.4.pcIndex, allRels)
+                     p.4.pcIndex, allRels, buildsOns)
                 end end,
               rels);
   return definitionDeclaration(preds,
@@ -1151,9 +1157,8 @@ function buildTransRelClauses
 [Def] ::= rel::QName defs::[([Term], Maybe<Metaterm>)]
           qRuleArgs::[String] qRuleBindings::[String]
           qRuleBody::Maybe<Metaterm>
-          --relArgs::[String] transArgs::[Term] transTy::QName
-          --original::String translated::String
           pcIndex::Integer allRels::[QName]
+          buildsOns::[(QName, [QName])]
 {
   local transRel::QName = transRelQName(rel.sub);
   local usedVars::[String] =
@@ -1196,8 +1201,11 @@ function buildTransRelClauses
   local isExtRule::Boolean =
       let constr::QName = pc.headConstructor
       in --rules for K's getting here are instantiated default rules,
-         --  which are host rules
-        !pc.isUnknownTermK && !sameModule(rel.moduleName, constr)
+         --  which are host-y rules
+         !pc.isUnknownTermK &&
+         --extension rules are the ones from modules building on rel
+         contains(rel.moduleName,
+                  lookup(constr.moduleName, buildsOns).fromJust)
       end;
 
   --new body for the rule, with all bindings
@@ -1233,7 +1241,8 @@ function buildTransRelClauses
   return case defs of
          | [] -> []
          | _::tl -> hereDef::buildTransRelClauses(rel, tl, qRuleArgs,
-                                qRuleBindings, qRuleBody, pcIndex, allRels)
+                                qRuleBindings, qRuleBody, pcIndex, allRels,
+                                buildsOns)
          end;
 }
 

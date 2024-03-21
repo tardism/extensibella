@@ -15,6 +15,9 @@ inherited attribute tyEnv::Env<TypeEnvItem> occurs on ThmElement;
 --pass in stand-in rules for building R_T definition
 inherited attribute standInRules_down::[(QName, Def)] occurs on ThmElement;
 
+--pass in module builds-on information
+inherited attribute buildsOns_down::[(QName, [QName])] occurs on ThmElement;
+
 --pass down the ExtSize groups for determining how to build R -> R_T
 inherited attribute knownExtSizes_down::[[QName]] occurs on ThmElement;
 --pass up new ones
@@ -553,7 +556,7 @@ top::ThmElement ::=
   -}
   local transRelDef::String =
       buildTransRel_standInRules(rels, top.standInRules_down,
-                                 top.relEnv).abella_pp;
+         top.relEnv, top.buildsOns_down).abella_pp;
   top.extIndDefs = [transRelDef];
 
   top.newExtInds = rels;
@@ -843,8 +846,10 @@ String ::= rel::QName
 function buildTransRel_standInRules
 TopCommand ::= rels::[(QName, [String], Bindings, ExtIndPremiseList)]
                standInRules::[(QName, Def)] env::Env<RelationEnvItem>
+               buildsOns::[(QName, [QName])]
 {
-  return buildTransRelDef(buildDefInfo(rels, standInRules, env));
+  return buildTransRelDef(buildDefInfo(rels, standInRules, env),
+                          buildsOns);
 }
 function buildDefInfo
 [(QName, ([String], [String], Maybe<Metaterm>),

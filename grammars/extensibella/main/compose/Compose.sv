@@ -16,10 +16,13 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
   local parsedMods::ParseResult<ModuleList_c> =
       parsers.interface_parse(interfaceFileContents.iovalue,
                               interfaceFileLoc.iovalue.fromJust);
+  local interface::ImportedModuleList = parsedMods.parseTree.ast;
   local expectedMods::[QName] = --reverse to put host first
-      reverse(parsedMods.parseTree.ast.mods) ++
+      reverse(interface.mods) ++
       --add because interface file doesn't include the module itself
       [composeModule];
+  local buildsOns::[(QName, [QName])] =
+      (composeModule, interface.mods)::interface.buildsOns;
 
   --definition file
   local composedDefFileLoc::IOVal<Maybe<String>> =
@@ -58,7 +61,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken
          checkMods.fromRight, outerface.iovalue.fromRight.1,
          defEnvs.2, defEnvs.3, defEnvs.1, standInRules,
          outerface.iovalue.fromRight.2, config, parsers, allThms,
-         stdLibThms.io);
+         buildsOns, stdLibThms.io);
 
   return
       --interface errors
@@ -210,7 +213,8 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
                    defTyEnv::Env<TypeEnvItem> standInRules::[(QName, Def)]
                    thms::[ThmElement]
                    config::Configuration parsers::AllParsers
-                   allThms::[(QName, Metaterm)] ioin::IOToken
+                   allThms::[(QName, Metaterm)] buildsOns::[(QName, [QName])]
+                   ioin::IOToken
 {
   --Extensibella standard library
   local stdLib::IOVal<[String]> = extensibellaStdLibAbellaCmds(ioin);
@@ -236,7 +240,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
          addEnv(defTyEnv, proofDefItems.1),
          addEnv(defRelEnv, proofDefItems.2),
          addEnv(defConstrEnv, proofDefItems.3),
-         [], error("build_composed_file.buildsOns not needed"));
+         [], buildsOns);
 
   --proof definitions
   local encodedProofDefs::[AnyCommand] =
@@ -253,7 +257,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
               flatMap((.encode), proofDefs));
   local fullProofDefs::[String] =
       map((.abella_pp), encodedProofDefs) ++
-      flatMap(buildExtIndDefs(_, proverState, standInRules), thms);
+      flatMap(buildExtIndDefs(_, proverState, standInRules, buildsOns), thms);
   local proofDefsString::String =
       if null(fullProofDefs) then ""
       else "/********************************************************************\n" ++
@@ -272,7 +276,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
       " Properties and Proofs\n" ++
       " ********************************************************************/\n";
 
-  --put it all together to print before building proofs
+  --put it all together to output before building proofs
   local fullString::String =
       stdLibString ++ langDefString ++ proofDefsString ++ propertyString;
   local output::IOToken =
@@ -297,12 +301,13 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
 --defs for R_{ES} and R_T for everything needing them
 function buildExtIndDefs
 [String] ::= thm::ThmElement proverState::ProverState
-             standInRules::[(QName, Def)]
+             standInRules::[(QName, Def)] buildsOns::[(QName, [QName])]
 {
   thm.relEnv = proverState.knownRels;
   thm.constrEnv = proverState.knownConstrs;
   thm.tyEnv = proverState.knownTypes;
   thm.standInRules_down = standInRules;
+  thm.buildsOns_down = buildsOns;
   return thm.extIndDefs;
 }
 
@@ -366,7 +371,7 @@ function handleFstThm
       appendFileT(outfilename, fstThm.composedCmds,
                   fstThm.runAbella_out);
 
-     --drop the non-proof things, like definitions, from all modules
+     --drop the non-extensible things, like definitions, from all modules
   return (dropNonProof(fstThm.outgoingMods), fstThm.newThms,
           fstThm.newExtSizes, fstThm.newExtInds, output);
 }

@@ -1,5 +1,10 @@
 Module compositionTest:moreSyntax.
 
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+M: apply minus_integer_total to _ R1 with N1 = 0.
+apply minus_integer_is_integer to _ _ M. search.
+
 
 Prove compositionTest:host:evalExpr_unique,
       compositionTest:host:evalStmt_unique.

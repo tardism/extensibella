@@ -1,0 +1,168 @@
+Module compositionTest:onTyping.
+
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+%imagInt
+ search.
+%imagPlus
+ apply IH to R1. apply IH to R2. search.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+%E-ImagInt
+ EvB: case EvB (keep). search.
+%E-ImagPlus
+ EvB: case EvB (keep). apply IH to EvA1 EvB1. apply IH to EvA2 EvB2.
+ apply plus_integer_unique to EvA3 EvB3. search.
+
+
+Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+%E-ImagInt
+ search.
+%E-ImagPlus
+ Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R3.
+ LE_N3: apply ext_ind_pos_evalExpr to R4. OrN2: apply lt_left to R2 _ _.
+ apply ext_ind_is_int_evalExpr to R4. OrN3: apply lt_right to R2 _ _ _.
+ Is: case IsE. Ev1: apply drop_ext_ind_evalExpr to R3.
+ apply ext_ind_is_int_evalExpr to R3.
+ apply plus_integer_is_integer to _ _ R2.
+ L: apply lt_plus_one to R1 _. LN2: case OrN2.
+   %N2 < N
+    LN2': apply less_integer_transitive to LN2 L.
+    A2: apply Acc' to _ LN2'. apply IH2 to R3 A2 _.
+    Ev: apply drop_ext_ind_evalExpr to R3. LN3: case OrN3.
+      %N3 < N
+       LN3': apply less_integer_transitive to LN3 L.
+       A3: apply Acc' to _ LN3'. apply IH2 to R4 A3 _. search.
+      %N3 = N
+       A3: apply Acc' to _ L. apply IH2 to R4 A3 _. search.
+   %N2 = N
+    A4: apply Acc' to _ L. apply IH2 to R3 A4 _.
+    Ev: apply drop_ext_ind_evalExpr to R3. LN3: case OrN3.
+      %N3 < N
+       LN3': apply less_integer_transitive to LN3 L.
+       A3: apply Acc' to _ LN3'. apply IH2 to R4 A3 _. search.
+      %N3 = N
+       apply IH2 to R4 A4 _. search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+%Trans-ImagInt
+ case Hyp1. search.
+%Trans-ImagPlus
+ case Hyp1. search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_back.
+%Trans-ImagInt
+ case Hyp1. search.
+%Trans-ImagPlus
+ case Hyp1. search.
+
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+Prove_Constraint compositionTest:host:evalStmt_back.
+
+
+Prove_Constraint compositionTest:host:expr_same.
+%Trans-ImagInt
+ case Hyp1. search.
+%Trans-ImagPlus
+ case Hyp1. search.
+
+
+Prove_Constraint compositionTest:host:stmt_same.
+
+
+Prove compositionTest:typing:typeS_unchanged.
+
+
+Prove compositionTest:typing:typePres,
+      compositionTest:typing:typePres_S,
+      compositionTest:typing:typePres_E_Ctx.
+%typePres
+ %E-ImagInt
+  case Ty. skip. %look, it's close enough for a test language
+ %E-ImagPlus
+  skip.
+%typePres_E_Ctx
+ %E-ImagInt
+  backchain Rel.
+ %E-ImagPlus
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
+  intros LT LV. apply IH_E_C to _ Ty Ev1 _ LT LV. search. search.
+
+
+Add_Ext_Size compositionTest:typing:typeE,
+             compositionTest:typing:typeS.
+
+
+Prove_Ext_Ind compositionTest:typing:typeE,
+              compositionTest:typing:typeS.
+%imagInt
+ unfold. exists num I. split. search. skip. search.
+%imagPlus
+ skip.
+
+
+Extensible_Theorem
+  type_is : forall G E T,
+    Ty : typeE G E T ->
+    IsG : is_list (is_pair is_string is_ty) G ->
+    is_ty T
+  on Ty,
+  typeCtx_is : forall G S G',
+    Ty : typeS G S G' ->
+    IsG : is_list (is_pair is_string is_ty) G ->
+    is_list (is_pair is_string is_ty) G'
+  on Ty.
+%type_is
+ %T-Num
+  search.
+ %T-Plus
+  search.
+ %T-True
+  search.
+ %T-False
+  search.
+ %T-And
+  search.
+ %T-Eq
+  search.
+ %T-StmtExpr
+  apply IH1 to Ty1 _. apply IH to Ty2 _. search.
+ %T-Name
+  skip.
+ %T-ImagInt
+  search.
+ %T-ImagPlus
+  search.
+ %T-Q
+  apply IH to Ty2 _. search.
+ %T-Trans
+  %no T-Trans?
+%typeCtx_is
+ %T-Noop
+  search.
+ %T-Seq
+  apply IH1 to Ty1 _. apply IH1 to Ty2 _. apply IH1 to Ty3 _. search.
+ %T-Seq5
+  skip.
+ %T-Assign-Present
+  skip.
+ %T-Assign-NotPresent
+  skip.
+ %T-IfThenElse
+  search.
+ %T-While
+  search.
+ %T-S-Q
+  apply IH1 to Ty2 _. search.
+ %T-STrans
+  %No T-STrans?

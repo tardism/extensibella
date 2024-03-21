@@ -1,0 +1,103 @@
+Module compositionTest:onTyTwo.
+
+
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+%isZero
+ apply IH to R1. search.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+%E-IsZero-True
+ EvB: case EvB.
+   %E-IsZero-True
+    apply IH to EvA1 EvB. search.
+   %E-IsZero-False
+    apply IH to EvA1 EvB. apply EvB1 to _.
+%E-IsZero-False
+ EvB: case EvB.
+   %E-IsZero-True
+    apply IH to EvA1 EvB. apply EvA2 to _.
+   %E-IsZero-False
+    apply IH to EvA1 EvB. search.
+
+
+Add_Ext_Size compositionTest:host:evalExpr,
+            compositionTest:host:evalStmt.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+%E-IsZero-True
+ apply ext_ind_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
+ apply ext_ind_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
+ case IsE. apply IH to R2 A _. search.
+%E-IsZero-False
+ apply ext_ind_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
+ apply ext_ind_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
+ case IsE. apply IH to R2 A _. search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+Ev: case Hyp1.
+  %true
+   case Ev1. search.
+  %false
+   case Ev1. search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_back.
+Ev: case Hyp1.
+  %true
+   search.
+  %false
+   search.
+
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+Prove_Constraint compositionTest:host:evalStmt_back.
+
+
+Prove_Constraint compositionTest:host:expr_same.
+case Hyp1. search.
+
+
+Prove_Constraint compositionTest:host:stmt_same.
+
+
+Prove compositionTest:typing:typeS_unchanged.
+
+
+Prove compositionTest:typing:typePres,
+      compositionTest:typing:typePres_S,
+      compositionTest:typing:typePres_E_Ctx.
+%typePres
+ %E-IsZero-True
+  case Ty. search.
+ %E-IsZero-False
+  case Ty. search.
+%typePres_E_Ctx
+ %E-IsZero-True
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV. search.
+ %E-IsZero-False
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV. search.
+
+
+Add_Ext_Size compositionTest:typing:typeE,
+             compositionTest:typing:typeS.
+
+
+Prove_Ext_Ind compositionTest:typing:typeE,
+              compositionTest:typing:typeS.
+apply ext_ind_is_int_typeE to R2. apply ext_ind_pos_typeE to R2.
+L: apply lt_plus_one to R1 _. Acc: case Acc. A: apply Acc to _ L.
+apply IH to R2 A. unfold. exists (eq E1 (num 0)). split.
+  %type E1
+   search.
+  %trans
+   search.
+  %type trans
+   search.
+  %1 + 1 = 2
+   search.

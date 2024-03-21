@@ -143,7 +143,7 @@ top::ThmElement ::= rels::[(QName, [String])]
   top.inSkeleton = true;
   top.skeletonText =
       showDoc(80, text("Add_Ext_Size ") ++
-         nest(12, ppImplode(text(",") ++ line(),
+         nest(13, ppImplode(text(",") ++ line(),
                      map((.pp), map(fst, rels)))) ++
          text("."));
 }

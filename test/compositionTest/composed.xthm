@@ -1,5 +1,8 @@
 Module compositionTest:composed.
 
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+
 
 Prove compositionTest:host:evalExpr_unique,
       compositionTest:host:evalStmt_unique.
