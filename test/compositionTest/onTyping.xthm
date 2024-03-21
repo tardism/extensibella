@@ -95,8 +95,8 @@ Prove compositionTest:typing:typePres,
  %E-ImagInt
   backchain Rel.
  %E-ImagPlus
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
-  intros LT LV. apply IH_E_C to _ Ty Ev1 _ LT LV. search. search.
+  case IsE. TyQ: case Ty. apply IH_E_C to _ TyQ1 Ev2 _ LkpTy LkpV.
+  intros LT LV. apply IH_E_C to _ TyQ Ev1 _ LT LV. search. search.
 
 
 Add_Ext_Size compositionTest:typing:typeE,
@@ -106,9 +106,9 @@ Add_Ext_Size compositionTest:typing:typeE,
 Prove_Ext_Ind compositionTest:typing:typeE,
               compositionTest:typing:typeS.
 %imagInt
- unfold. exists num I. split. search. skip. search.
+ V: assert 1 = 1. unfold. exists num I. split. search. skip. search.
 %imagPlus
- skip.
+ W: assert 1 = 1. skip.
 
 
 Extensible_Theorem
@@ -143,10 +143,10 @@ Extensible_Theorem
   search.
  %T-ImagPlus
   search.
+ %T-Trans
+  apply IH to Ty2 _. search.
  %T-Q
   apply IH to Ty2 _. search.
- %T-Trans
-  %no T-Trans?
 %typeCtx_is
  %T-Noop
   search.
@@ -162,7 +162,7 @@ Extensible_Theorem
   search.
  %T-While
   search.
+ %T-STrans
+  apply IH1 to Ty2 _. search.
  %T-S-Q
   apply IH1 to Ty2 _. search.
- %T-STrans
-  %No T-STrans?

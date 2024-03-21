@@ -92,7 +92,12 @@ IOVal<[String]> ::=
   local extSplitAllCases::[(QName, [[[(ProofState, [AnyCommand])]]],
                             [[(ProofState, [AnyCommand])]])] =
       map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
-            (p.1, getFullRootedBySubgoal(p.2, extFullSubgoal)),
+            (p.1, getFullRootedBySubgoal(p.2,
+                  --condition subgoal on whether we had ExtInd validity
+                  --   checks to drop in intro mod
+                     if p.1 == fstThmMod && numExtIndChecks > 0
+                     then extFullSubgoal
+                     else subgoalNum)),
           topGoalProofInfo);
   --commands from introducing module (mod must exist, so .fromJust fine)
   local extIntroModCmds::[[[(ProofState, [AnyCommand])]]] =

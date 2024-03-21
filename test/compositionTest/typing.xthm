@@ -122,43 +122,43 @@ Extensible_Theorem
  %E-Eq-False
   case Ty. search.
  %E-StmtExpr
-  case IsE. Ty: case Ty. apply IH_E to _ Ty1 Ev2 _. intros LkpXTy LkpXV.
-  LkpXTy': apply typeS_unchanged to Ty LkpXTy.
-  apply IH_S to _ Ty Ev1 _ LkpXTy' LkpXV. search. search.
+  case IsE. TyA: case Ty. apply IH_E to _ TyA1 Ev2 _. intros LkpXTy LkpXV.
+  LkpXTy': apply typeS_unchanged to TyA LkpXTy.
+  apply IH_S to _ TyA Ev1 _ LkpXTy' LkpXV. search. search.
  %E-Name
-  Ty: case Ty. apply Rel to Ty Ev1. search.
+  TyB: case Ty. apply Rel to TyB Ev1. search.
  %E-E-Q
-  Ty: case Ty. apply expr_same to Ev1 Ty. apply IH_E to _ Ty1 Ev2 _.
+  TyC: case Ty. apply expr_same to Ev1 TyC. apply IH_E to _ TyC1 Ev2 _.
   skip. search.
 %typePres_S
  %E-Noop
   case Ty. apply Rel to LkpTy LkpV. search.
  %E-Seq
-  case IsS. Ty: case Ty (keep). apply IH_S to _ Ty3 Ev3 _ LkpTy LkpV.
-  intros LT2 LV2. apply IH_S to _ Ty2 Ev2 _ LT2 LV2.
-  intros LT1 LV1. apply IH_S to _ Ty1 Ev1 _ LT1 LV1.
+  case IsS. TyD: case Ty (keep). apply IH_S to _ TyD2 Ev3 _ LkpTy LkpV.
+  intros LT2 LV2. apply IH_S to _ TyD1 Ev2 _ LT2 LV2.
+  intros LT1 LV1. apply IH_S to _ TyD Ev1 _ LT1 LV1.
   search. search. search.
  %E-Seq5
-  case IsS. Ty: case Ty (keep). apply IH_S to _ Ty5 Ev5 _ LkpTy LkpV.
-  intros LT4 LV4. apply IH_S to _ Ty4 Ev4 _ LT4 LV4.
-  intros LT3 LV3. apply IH_S to _ Ty3 Ev3 _ LT3 LV3.
-  intros LT2 LV2. apply IH_S to _ Ty2 Ev2 _ LT2 LV2.
-  intros LT1 LV1. apply IH_S to _ Ty1 Ev1 _ LT1 LV1.
+  case IsS. TyE: case Ty (keep). apply IH_S to _ TyE4 Ev5 _ LkpTy LkpV.
+  intros LT4 LV4. apply IH_S to _ TyE3 Ev4 _ LT4 LV4.
+  intros LT3 LV3. apply IH_S to _ TyE2 Ev3 _ LT3 LV3.
+  intros LT2 LV2. apply IH_S to _ TyE1 Ev2 _ LT2 LV2.
+  intros LT1 LV1. apply IH_S to _ TyE Ev1 _ LT1 LV1.
   search. search. search. search. search.
  %E-Assign
-  case IsS. Ty: case Ty.
+  case IsS. TyF: case Ty.
     %T-Assign-Present
-     apply IH_E to _ Ty Ev1 _. L: case LkpV.
+     apply IH_E to _ TyF Ev1 _. L: case LkpV.
        %Lkp-Here (X = Z)
-        apply lookup_unique to LkpTy Ty1. search.
+        apply lookup_unique to LkpTy TyF1. search.
        %Lkp-Later (X != Z)
-        apply IH_E_C to _ Ty Ev1 _ LkpTy L1. search.
+        apply IH_E_C to _ TyF Ev1 _ LkpTy L1. search.
     %T-Assign-NotPresent
      LT: case LkpTy.
        %Lkp-Here (X = Z)
         LV: case LkpV.
           %Lkp-Here
-           apply IH_E to _ Ty Ev1 _. search.
+           apply IH_E to _ TyF Ev1 _. search.
           %Lkp-Later
            apply LV to _.
        %Lkp-Later (X != Z)
@@ -177,41 +177,41 @@ Extensible_Theorem
  %E-While-True
   skip.
  %E-S-Q
-  Ty: case Ty. apply stmt_same to Ev1 Ty.
-  apply IH_S to _ Ty1 Ev2 _ LkpTy LkpV. skip. search.
+  TyG: case Ty. apply stmt_same to Ev1 TyG.
+  apply IH_S to _ TyG1 Ev2 _ LkpTy LkpV. skip. search.
 %typePres_E_Cxt
  %E-Num
   case Ty. apply Rel to LkpTy LkpV. search.
  %E-Plus
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
-  intros LT LV. apply IH_E_C to _ Ty Ev1 _ LT LV. search. search.
+  case IsE. TyH: case Ty. apply IH_E_C to _ TyH1 Ev2 _ LkpTy LkpV.
+  intros LT LV. apply IH_E_C to _ TyH Ev1 _ LT LV. search. search.
  %E-True
   case Ty. apply Rel to LkpTy LkpV. search.
  %E-False
   case Ty. apply Rel to LkpTy LkpV. search.
  %E-And-False1
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV. search.
+  case IsE. TyI: case Ty. apply IH_E_C to _ TyI Ev1 _ LkpTy LkpV. search.
  %E-And-False2
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
-  intros LT LV. apply IH_E_C to _ Ty Ev1 _ LT LV. search. search.
+  case IsE. TyJ: case Ty. apply IH_E_C to _ TyJ1 Ev2 _ LkpTy LkpV.
+  intros LT LV. apply IH_E_C to _ TyJ Ev1 _ LT LV. search. search.
  %E-And-True
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
-  intros LT LV. apply IH_E_C to _ Ty Ev1 _ LT LV. search. search.
+  case IsE. TyK: case Ty. apply IH_E_C to _ TyK1 Ev2 _ LkpTy LkpV.
+  intros LT LV. apply IH_E_C to _ TyK Ev1 _ LT LV. search. search.
  %E-Eq-True
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
-  intros LT LV. apply IH_E_C to _ Ty Ev1 _ LT LV. search. search.
+  case IsE. TyL: case Ty. apply IH_E_C to _ TyL1 Ev2 _ LkpTy LkpV.
+  intros LT LV. apply IH_E_C to _ TyL Ev1 _ LT LV. search. search.
  %E-Eq-False
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
-  intros LT LV. apply IH_E_C to _ Ty Ev1 _ LT LV. search. search.
+  case IsE. TyM: case Ty. apply IH_E_C to _ TyM1 Ev2 _ LkpTy LkpV.
+  intros LT LV. apply IH_E_C to _ TyM Ev1 _ LT LV. search. search.
  %E-StmtExpr
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
-  intros LT LV. LT': apply typeS_unchanged to Ty LT.
-  apply IH_S to _ Ty Ev1 _ LT' LV. search. search.
+  case IsE. TyN: case Ty. apply IH_E_C to _ TyN1 Ev2 _ LkpTy LkpV.
+  intros LT LV. LT': apply typeS_unchanged to TyN LT.
+  apply IH_S to _ TyN Ev1 _ LT' LV. search. search.
  %E-Name
-  Ty: case Ty. apply Rel to LkpTy LkpV. search.
+  TyO: case Ty. apply Rel to LkpTy LkpV. search.
  %E-E-Q
-  Ty: case Ty. apply expr_same to Ev1 Ty.
-  apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV. skip. search.
+  TyP: case Ty. apply expr_same to Ev1 TyP.
+  apply IH_E_C to _ TyP1 Ev2 _ LkpTy LkpV. skip. search.
 
 
 Ext_Size typeE G E T, typeS G S G'.
@@ -221,7 +221,23 @@ Ext_Ind forall G E T, typeE G E T;
         forall G S G', typeS G S G'.
 %I don't want to prove this.  I just need it for having I and K
 %   together in an extension property on top of this
+%Naming all of these so I can tell where errors occur in composition
 %typeE
- skip. skip. skip. skip. skip. skip. skip. skip. skip.
+ A: case Acc. skip.
+ B: case Acc. skip.
+ C: case Acc. skip.
+ D: case Acc. skip.
+ E: case Acc. skip.
+ F: case Acc. skip.
+ G: case Acc. skip.
+ H: case Acc. skip.
+ I: case Acc. skip.
 %typeS
- skip. skip. skip. skip. skip. skip. skip. skip.
+ J: case Acc. skip.
+ K: case Acc. skip.
+ L: case Acc. skip.
+ M: case Acc. skip.
+ N: case Acc. skip.
+ O: case Acc. skip.
+ P: case Acc. skip.
+ Q: case Acc. skip.

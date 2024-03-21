@@ -79,9 +79,9 @@ Prove compositionTest:typing:typePres,
   case Ty. search.
 %typePres_E_Ctx
  %E-IsZero-True
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV. search.
+  case IsE. TyR: case Ty. apply IH_E_C to _ TyR Ev1 _ LkpTy LkpV. search.
  %E-IsZero-False
-  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV. search.
+  case IsE. TyS: case Ty. apply IH_E_C to _ TyS Ev1 _ LkpTy LkpV. search.
 
 
 Add_Ext_Size compositionTest:typing:typeE,
@@ -90,6 +90,7 @@ Add_Ext_Size compositionTest:typing:typeE,
 
 Prove_Ext_Ind compositionTest:typing:typeE,
               compositionTest:typing:typeS.
+U: assert 1 = 1.
 apply ext_ind_is_int_typeE to R2. apply ext_ind_pos_typeE to R2.
 L: apply lt_plus_one to R1 _. Acc: case Acc. A: apply Acc to _ L.
 apply IH to R2 A. unfold. exists (eq E1 (num 0)). split.
