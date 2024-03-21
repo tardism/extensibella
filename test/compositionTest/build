@@ -7,6 +7,7 @@ sterling --extensibella -I .. compositionTest:otherSyntax
 sterling --extensibella -I .. compositionTest:typing
 sterling --extensibella -I .. compositionTest:moreSyntax
 sterling --extensibella -I .. compositionTest:onTyping
+sterling --extensibella -I .. compositionTest:onTyTwo
 sterling --extensibellaFull -I .. compositionTest:composed
 
 extensibella --check --compile host.xthm
@@ -14,11 +15,12 @@ extensibella --check --compile typing.xthm
 extensibella --check --compile otherSyntax.xthm
 extensibella --check --compile moreSyntax.xthm
 extensibella --check --compile onTyping.xthm
+extensibella --check --compile onTyTwo.xthm
 extensibella --check composed.xthm
 
 echo ""
 echo "===================== Starting Composition ====================="
 rm -f out.thm
-extensibella --compose out.thm compositionTest:composed composed.xthm host.xthm moreSyntax.xthm otherSyntax.xthm typing.xthm onTyping.xthm ../../../sterling/stdLib/stdLib.xthm
+extensibella --compose out.thm compositionTest:composed composed.xthm host.xthm moreSyntax.xthm otherSyntax.xthm typing.xthm onTyping.xthm onTyTwo.xthm ../../../sterling/stdLib/stdLib.xthm
 
 abella out.thm

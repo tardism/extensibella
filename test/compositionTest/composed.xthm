@@ -41,3 +41,14 @@ Prove compositionTest:typing:typePres,
       compositionTest:typing:typePres_S,
       compositionTest:typing:typePres_E_Ctx.
 
+
+Add_Ext_Size compositionTest:typing:typeE,
+             compositionTest:typing:typeS.
+
+
+Prove_Ext_Ind compositionTest:typing:typeE,
+              compositionTest:typing:typeS.
+
+
+Prove compositionTest:onTyping:type_is,
+      compositionTest:onTyping:typeCtx_is.

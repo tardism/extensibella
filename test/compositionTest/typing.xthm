@@ -219,10 +219,9 @@ Ext_Size typeE G E T, typeS G S G'.
 
 Ext_Ind forall G E T, typeE G E T;
         forall G S G', typeS G S G'.
-%I don't want to prove this.  I just need it for having I and K.
+%I don't want to prove this.  I just need it for having I and K
+%   together in an extension property on top of this
 %typeE
- skip.
+ skip. skip. skip. skip. skip. skip. skip. skip. skip.
 %typeS
- skip.
-
-%That should not have gone through like that.
+ skip. skip. skip. skip. skip. skip. skip. skip.

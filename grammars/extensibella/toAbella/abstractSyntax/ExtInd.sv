@@ -206,10 +206,18 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
                        then pc.headConstructor.moduleName
                        else fullRel.name.moduleName
                    in
+                   let shouldProve::Boolean =
+                        --prove everything known in introducing module
+                       (top.currentModule == fullRel.name.moduleName ||
+                        --prove only new things in other modules
+                        pcMod == top.currentModule) &&
+                       --but never prove for unknown K, which is only
+                       --   present as holders for other relations
+                       !pc.isUnknownTermK
+                   in
                      (thusFar.1 + 1,
-                      thusFar.2 ++ [(thusFar.1,
-                                     pcMod == top.currentModule)])
-                   end end,
+                      thusFar.2 ++ [(thusFar.1, shouldProve)])
+                   end end end,
                  (1, []), fullRel.defsList).2;
   --group consecutive skips
   local groupedExpectedSubgoals::[[(Integer, Boolean)]] =
