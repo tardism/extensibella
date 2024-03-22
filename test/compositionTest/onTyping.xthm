@@ -26,17 +26,17 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
 %E-ImagInt
  search.
 %E-ImagPlus
- Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R3.
- LE_N3: apply ext_ind_pos_evalExpr to R4. OrN2: apply lt_left to R2 _ _.
- apply ext_ind_is_int_evalExpr to R4. OrN3: apply lt_right to R2 _ _ _.
- Is: case IsE. Ev1: apply drop_ext_ind_evalExpr to R3.
- apply ext_ind_is_int_evalExpr to R3.
+ Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R3.
+ LE_N3: apply ext_size_pos_evalExpr to R4. OrN2: apply lt_left to R2 _ _.
+ apply ext_size_is_int_evalExpr to R4. OrN3: apply lt_right to R2 _ _ _.
+ Is: case IsE. Ev1: apply drop_ext_size_evalExpr to R3.
+ apply ext_size_is_int_evalExpr to R3.
  apply plus_integer_is_integer to _ _ R2.
  L: apply lt_plus_one to R1 _. LN2: case OrN2.
    %N2 < N
     LN2': apply less_integer_transitive to LN2 L.
     A2: apply Acc' to _ LN2'. apply IH2 to R3 A2 _.
-    Ev: apply drop_ext_ind_evalExpr to R3. LN3: case OrN3.
+    Ev: apply drop_ext_size_evalExpr to R3. LN3: case OrN3.
       %N3 < N
        LN3': apply less_integer_transitive to LN3 L.
        A3: apply Acc' to _ LN3'. apply IH2 to R4 A3 _. search.
@@ -44,7 +44,7 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
        A3: apply Acc' to _ L. apply IH2 to R4 A3 _. search.
    %N2 = N
     A4: apply Acc' to _ L. apply IH2 to R3 A4 _.
-    Ev: apply drop_ext_ind_evalExpr to R3. LN3: case OrN3.
+    Ev: apply drop_ext_size_evalExpr to R3. LN3: case OrN3.
       %N3 < N
        LN3': apply less_integer_transitive to LN3 L.
        A3: apply Acc' to _ LN3'. apply IH2 to R4 A3 _. search.

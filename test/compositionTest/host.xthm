@@ -142,19 +142,19 @@ Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
  %E-Num
   search.
  %E-Plus
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R2.
-  LE_N3: apply ext_ind_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsE. Ev1: apply drop_ext_ind_evalExpr to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R2.
+  LE_N3: apply ext_size_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsE. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalExpr to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
     %N2 = N
-     apply IH2 to R2 Acc _. Ev: apply drop_ext_ind_evalExpr to R2.
+     apply IH2 to R2 Acc _. Ev: apply drop_ext_size_evalExpr to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
@@ -167,95 +167,95 @@ Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
  %E-And-False1
   case IsE. apply IH2 to R1 Acc _. search.
  %E-And-False2
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R2.
-  LE_N3: apply ext_ind_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsE. Ev1: apply drop_ext_ind_evalExpr to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R2.
+  LE_N3: apply ext_size_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsE. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalExpr to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
     %N2 = N
-     apply IH2 to R2 Acc _. Ev: apply drop_ext_ind_evalExpr to R2.
+     apply IH2 to R2 Acc _. Ev: apply drop_ext_size_evalExpr to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
  %E-And-True
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R2.
-  LE_N3: apply ext_ind_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsE. Ev1: apply drop_ext_ind_evalExpr to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R2.
+  LE_N3: apply ext_size_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsE. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalExpr to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
     %N2 = N
-     apply IH2 to R2 Acc _. Ev: apply drop_ext_ind_evalExpr to R2.
+     apply IH2 to R2 Acc _. Ev: apply drop_ext_size_evalExpr to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
  %E-Eq-True
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R2.
-  LE_N3: apply ext_ind_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsE. Ev1: apply drop_ext_ind_evalExpr to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R2.
+  LE_N3: apply ext_size_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsE. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalExpr to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
     %N2 = N
-     apply IH2 to R2 Acc _. Ev: apply drop_ext_ind_evalExpr to R2.
+     apply IH2 to R2 Acc _. Ev: apply drop_ext_size_evalExpr to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
  %E-Eq-False
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R2.
-  LE_N3: apply ext_ind_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsE. Ev1: apply drop_ext_ind_evalExpr to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R2.
+  LE_N3: apply ext_size_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsE. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalExpr to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
     %N2 = N
-     apply IH2 to R2 Acc _. Ev: apply drop_ext_ind_evalExpr to R2.
+     apply IH2 to R2 Acc _. Ev: apply drop_ext_size_evalExpr to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
  %E-StmtExpr
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalStmt to R2.
-  LE_N3: apply ext_ind_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsE. Ev1: apply drop_ext_ind_evalStmt to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalStmt to R2.
+  LE_N3: apply ext_size_pos_evalExpr to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsE. Ev1: apply drop_ext_size_evalStmt to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH3 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalStmt to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalStmt to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
        %N3 = N
         apply IH2 to R3 Acc _. search.
     %N2 = N
-     apply IH3 to R2 Acc _. Ev: apply drop_ext_ind_evalStmt to R2.
+     apply IH3 to R2 Acc _. Ev: apply drop_ext_size_evalStmt to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH2 to R3 A3 _. search.
@@ -273,38 +273,38 @@ Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
  %E-Assign
   case IsS. apply IH2 to R1 Acc _. search.
  %E-IfThenElse-True
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R2.
-  LE_N3: apply ext_ind_pos_evalStmt to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalStmt to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsS. Ev1: apply drop_ext_ind_evalExpr to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R2.
+  LE_N3: apply ext_size_pos_evalStmt to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalStmt to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsS. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalExpr to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH3 to R3 A3 _. search.
        %N3 = N
         apply IH3 to R3 Acc _. search.
     %N2 = N
-     apply IH2 to R2 Acc _. Ev: apply drop_ext_ind_evalExpr to R2.
+     apply IH2 to R2 Acc _. Ev: apply drop_ext_size_evalExpr to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH3 to R3 A3 _. search.
        %N3 = N
         apply IH3 to R3 Acc _. search.
  %E-IfThenElse-False
-  Acc': case Acc (keep). LE_N2: apply ext_ind_pos_evalExpr to R2.
-  LE_N3: apply ext_ind_pos_evalStmt to R3. OrN2: apply lt_left to R1 _ _.
-  apply ext_ind_is_int_evalStmt to R3. OrN3: apply lt_right to R1 _ _ _.
-  Is: case IsS. Ev1: apply drop_ext_ind_evalExpr to R2. LN2: case OrN2.
+  Acc': case Acc (keep). LE_N2: apply ext_size_pos_evalExpr to R2.
+  LE_N3: apply ext_size_pos_evalStmt to R3. OrN2: apply lt_left to R1 _ _.
+  apply ext_size_is_int_evalStmt to R3. OrN3: apply lt_right to R1 _ _ _.
+  Is: case IsS. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
      A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
-     Ev: apply drop_ext_ind_evalExpr to R2. LN3: case OrN3.
+     Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH3 to R3 A3 _. search.
        %N3 = N
         apply IH3 to R3 Acc _. search.
     %N2 = N
-     apply IH2 to R2 Acc _. Ev: apply drop_ext_ind_evalExpr to R2.
+     apply IH2 to R2 Acc _. Ev: apply drop_ext_size_evalExpr to R2.
      LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH3 to R3 A3 _. search.

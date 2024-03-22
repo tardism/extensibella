@@ -30,12 +30,12 @@ Add_Ext_Size compositionTest:host:evalExpr,
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt.
 %E-IsZero-True
- apply ext_ind_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
- apply ext_ind_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
+ apply ext_size_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
+ apply ext_size_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
  case IsE. apply IH to R2 A _. search.
 %E-IsZero-False
- apply ext_ind_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
- apply ext_ind_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
+ apply ext_size_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
+ apply ext_size_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
  case IsE. apply IH to R2 A _. search.
 
 
@@ -91,7 +91,7 @@ Add_Ext_Size compositionTest:typing:typeE,
 Prove_Ext_Ind compositionTest:typing:typeE,
               compositionTest:typing:typeS.
 U: assert 1 = 1.
-apply ext_ind_is_int_typeE to R2. apply ext_ind_pos_typeE to R2.
+apply ext_size_is_int_typeE to R2. apply ext_size_pos_typeE to R2.
 L: apply lt_plus_one to R1 _. Acc: case Acc. A: apply Acc to _ L.
 apply IH to R2 A. unfold. exists (eq E1 (num 0)). split.
   %type E1

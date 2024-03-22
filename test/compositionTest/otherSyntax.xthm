@@ -34,8 +34,8 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt.
 %E-Double
  unfold. exists Half = Half. exists plus E1 E1. Acc: case Acc.
- IsN2: apply ext_ind_is_int_evalExpr to R2.
- L: apply lt_plus_one to R1 _. apply ext_ind_pos_evalExpr to R2.
+ IsN2: apply ext_size_is_int_evalExpr to R2.
+ L: apply lt_plus_one to R1 _. apply ext_size_pos_evalExpr to R2.
  A: apply Acc to _ L. case IsE. apply IH to R2 A _. split.
    %plus
     search.
@@ -48,9 +48,9 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
 %E-Triple
  unfold. exists plus (plus E1 E1) E1, Third, Double. split.
    %eval_T E1
-    Acc: case Acc. Is: apply ext_ind_is_int_evalExpr to R2.
+    Acc: case Acc. Is: apply ext_size_is_int_evalExpr to R2.
     L: apply lt_plus_one to R1 _.
-    apply ext_ind_pos_evalExpr to R2. A: apply Acc to _ L.
+    apply ext_size_pos_evalExpr to R2. A: apply Acc to _ L.
     case IsE. apply IH to R2 A _. search.
    %plus
     search.
@@ -62,8 +62,8 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
     skip.
 %E-Seq2
  unfold. exists seq S1 S2 noop. exists G'. Acc: case Acc.
- IsN2: apply ext_ind_is_int_evalStmt to R3.
- IsN3: apply ext_ind_is_int_evalStmt to R4.
+ IsN2: apply ext_size_is_int_evalStmt to R3.
+ IsN3: apply ext_size_is_int_evalStmt to R4.
  skip. %this is true, but I don't want to mess with it
 
 
