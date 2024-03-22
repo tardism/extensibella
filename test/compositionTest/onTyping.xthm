@@ -53,16 +53,16 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.
-%Trans-ImagInt
+%Proj-ImagInt
  case Hyp1. search.
-%Trans-ImagPlus
+%Proj-ImagPlus
  case Hyp1. search.
 
 
 Prove_Constraint compositionTest:host:evalExpr_back.
-%Trans-ImagInt
+%Proj-ImagInt
  case Hyp1. search.
-%Trans-ImagPlus
+%Proj-ImagPlus
  case Hyp1. search.
 
 
@@ -71,9 +71,9 @@ Prove_Constraint compositionTest:host:evalStmt_back.
 
 
 Prove_Constraint compositionTest:host:expr_same.
-%Trans-ImagInt
+%Proj-ImagInt
  case Hyp1. search.
-%Trans-ImagPlus
+%Proj-ImagPlus
  case Hyp1. search.
 
 
@@ -143,7 +143,7 @@ Extensible_Theorem
   search.
  %T-ImagPlus
   search.
- %T-Trans
+ %T-D
   apply IH to Ty2 _. search.
  %T-Q
   apply IH to Ty2 _. search.
@@ -162,7 +162,7 @@ Extensible_Theorem
   search.
  %T-While
   search.
- %T-STrans
+ %T-S-D
   apply IH1 to Ty2 _. search.
  %T-S-Q
   apply IH1 to Ty2 _. search.

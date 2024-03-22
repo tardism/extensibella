@@ -36,13 +36,13 @@ top::ThmElement ::=
 }
 
 
-abstract production translationConstraintTheorem
+abstract production projectionConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
                     tag::(Integer, Integer, String)
 {
-  top.pp = text("TC ") ++ name.pp;
+  top.pp = text("PC ") ++ name.pp;
 
-  top.encode = error("translationConstraintTheorem.encode");
+  top.encode = error("projectionConstraintTheorem.encode");
   top.is_nonextensible = false;
   top.tag = tag;
 

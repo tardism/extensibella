@@ -17,11 +17,11 @@ analyses.
 Extensions can add new constructors building the syntactic categories
 from the base language and define the base language's semantic
 analyses on them.  Any such new constructors are also given a
-translation to the base language.  Extensions can also introduce new
+projection to the base language.  Extensions can also introduce new
 syntactic categories and constructors of them, as well as new semantic
 analyses.  When we combine multiple extensions, these new analyses are
 defined on constructors from other extensions by using the definition
-on the translation.
+on the projection.
 
 
 ## Language Encodings

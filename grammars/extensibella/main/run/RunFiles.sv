@@ -67,8 +67,8 @@ IOToken ::= order::[ThmElement] config::Configuration ioin::IOToken
                  "ExtTheorem " ++
                  implode(", ", map(justShow,
                                    map((.pp), map(fst, thms)))) ++ "."
-               | translationConstraintTheorem(n, _, _, tag) ->
-                 "TC " ++ justShow(n.pp) ++ "."
+               | projectionConstraintTheorem(n, _, _, tag) ->
+                 "PC " ++ justShow(n.pp) ++ "."
                | extIndElement(r, tag) ->
                  "ExtInd " ++
                  implode(", ", map(justShow,

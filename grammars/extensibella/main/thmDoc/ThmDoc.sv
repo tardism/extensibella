@@ -419,7 +419,7 @@ top::TopCommand ::= names::[QName]
 }
 
 
-aspect production translationConstraint
+aspect production projectionConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.thmStrings =

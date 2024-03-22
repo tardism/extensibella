@@ -51,13 +51,13 @@ attribute name {} occurs on a => String ::= e::Env<a>
 
 
 data nonterminal TypeEnvItem with
-   name, type, transTypes, isLangType, isProofType, isLibType, kind,
+   name, type, projTypes, isLangType, isProofType, isLibType, kind,
    unknownConstrI, clauseModules;
 
 synthesized attribute isLangType::Boolean;
 synthesized attribute isProofType::Boolean;
 synthesized attribute isLibType::Boolean;
-synthesized attribute transTypes::TypeList;
+synthesized attribute projTypes::TypeList;
 synthesized attribute kind::Integer; --number of args to type
 synthesized attribute unknownConstrI::QName;
 
@@ -78,7 +78,7 @@ top::TypeEnvItem ::= name::QName kind::Integer args::TypeList
 
   top.kind = kind;
 
-  top.transTypes = args;
+  top.projTypes = args;
 
   top.unknownConstrI = unknownIQName(name);
 
@@ -99,8 +99,8 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.kind = kind;
 
-  top.transTypes =
-      error("Should not access transTypes on libTypeEnvItem");
+  top.projTypes =
+      error("Should not access projTypes on libTypeEnvItem");
 
   top.unknownConstrI =
       error("Should not access unknownConstrI on libTypeEnvItem");
@@ -123,8 +123,8 @@ top::TypeEnvItem ::= name::QName kind::Integer
 
   top.kind = kind;
 
-  top.transTypes =
-      error("Should not access transTypes on proofTypeEnvItem");
+  top.projTypes =
+      error("Should not access projTypes on proofTypeEnvItem");
 
   top.unknownConstrI =
       error("Should not access unknownConstrI on proofTypeEnvItem");
@@ -147,8 +147,8 @@ top::TypeEnvItem ::= name::String
 
   top.kind = 0;
 
-  top.transTypes =
-      error("Should not access transTypes on typeVarEnvItem");
+  top.projTypes =
+      error("Should not access projTypes on typeVarEnvItem");
 
   top.unknownConstrI =
       error("Should not access unknownConstrI on typeVarEnvItem");

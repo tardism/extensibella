@@ -36,7 +36,7 @@ Abella's response.  Alternatively, running Extensibella with the
 
 Most Extensibella commands correspond directly to a single Abella
 command, since they have the same meaning.  The commands for
-extensible theorems, translation constraints, and extension induction
+extensible theorems, projection constraints, and extension induction
 declarations are the ones with more interesting translations.
 
 
@@ -124,22 +124,22 @@ we need to put in more work.  Recall from the [encoding
 format](encoding_format.md) that the stand-in rule has the form
 ```
 rel A <unknown ty> B :=
-   exists Trans, (0 = 0 -> false) /\ rel A Trans B
+   exists Proj, (0 = 0 -> false) /\ rel A Proj B
 ```
 where the arguments to the relation are the same other than replacing
-the primary component with a variable named `Trans`.  Recall also from
+the primary component with a variable named `Proj`.  Recall also from
 the [discussion of extensibility](extensibility.md) that we need to
 have an `Ext_Ind` definition for the relation for this induction to be
 valid.  We remove the first assumption, as we don't need it and must
-not have it, then assert the translation from the `Ext_Ind` holds,
+not have it, then assert the projection from the `Ext_Ind` holds,
 skipping the proof of it:
 ```
-clear <name>. assert |{ty}- <unknown ty> ~~> Trans. skip.
+clear <name>. assert |{ty}- <unknown ty> ~~> Proj. skip.
 ```
-This adds the translation assumption we need for proving
+This adds the projection assumption we need for proving
 preservability, so the property will hold for an existing derivation
-of the relation on the translation.  Note this is also why the exact
-name needs to be `Trans`, so we can easily generate this.  This
+of the relation on the projection.  Note this is also why the exact
+name needs to be `Proj`, so we can easily generate this.  This
 assertion is generated when the extensible theorem is declared, and is
 stored along with the subgoal number for the preservability proof.  As
 with the set-up code for a second theorem, this is stored until we
@@ -161,24 +161,24 @@ are stored, along with the subgoal numbers to which they apply, as is
 done with other commands that need to occur during the proof.
 
 
-## Translation Constraints
-Translation constraints are similar to extensible properties.
-However, with a translation constraint, we do not have any induction
+## Projection Constraints
+Projection constraints are similar to extensible properties.
+However, with a projection constraint, we do not have any induction
 to declare, so our set-up only uses `intros` and `case`.  The handling
-of proving translation constraints in extensions is done in the same
+of proving projection constraints in extensions is done in the same
 way as for extensible theorems.
 
 
 ## Extension Induction Declarations
 An `Ext_Ind` declaration generates two definitions.  One is the
 extension size for the relation, `<r {ES}>`, and the other is the
-translation version of the relation, `<r {T}>`.  These are generated
+projection version of the relation, `<r {T}>`.  These are generated
 based on the original clauses in the relation as discussed in the
 [discussion of Ext_Ind](extensibility.md).
 
 `Prove_Ext_Ind` generates two definitions and a theorem.  The
 definitions are the same as for the original `Ext_Ind`, the extension
-size and the translation version.  It also generates a theorem `forall
+size and the projection version.  It also generates a theorem `forall
 x, <r {ES}> x -> <r {T}> x.` This is an extensible theorem, and the
 handling of setting it up and skipping the cases the current module
 need not prove is handled as for extensible theorems.

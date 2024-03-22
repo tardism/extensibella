@@ -6,7 +6,7 @@ expr ::= ...
        | negNum(int)
 
 0 - I = N
------------------------------ [Trans-Neg]
+----------------------------- [Proj-Neg]
 |{expr}- negNum(I) ~~> num(N)
 
 

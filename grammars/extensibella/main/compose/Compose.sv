@@ -298,7 +298,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
 }
 
 
---defs for R_{ES} and R_T for everything needing them
+--defs for R_{ES} and R_P for everything needing them
 function buildExtIndDefs
 [String] ::= thm::ThmElement proverState::ProverState
              standInRules::[(QName, Def)] buildsOns::[(QName, [QName])]

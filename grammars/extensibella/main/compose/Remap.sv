@@ -1,6 +1,6 @@
 grammar extensibella:main:compose;
 
---[(old hyp name, name hyp name, is now R_T)]
+--[(old hyp name, name hyp name, is now R_P)]
 inherited attribute mapHyps::[(String, String, Boolean)];
 --[(old var name, new term)]
 inherited attribute mapVars::[(String, Term)];
@@ -74,19 +74,19 @@ top::AnyCommand ::= msg::String
 
 
 --if a search might depend on something being found by using R
---   premises, need to use dropT(R) on all R_T premises
-function dropT_for_all
+--   premises, need to use dropP(R) on all R_P premises
+function dropP_for_all
 [ProofCommand] ::= hyps::[(String, Metaterm)]
 {
   return
       case hyps of
       | [] -> []
-      | (h, transRelMetaterm(q, _, _))::rest ->
+      | (h, projRelMetaterm(q, _, _))::rest ->
         applyTactic(noHint(), nothing(),
-           clearable(false, toQName(dropTName(q)), emptyTypeList()),
+           clearable(false, toQName(dropPName(q)), emptyTypeList()),
            addApplyArgs(hypApplyArg(h, emptyTypeList()),
-              endApplyArgs()), endWiths())::dropT_for_all(rest)
-      | _::rest -> dropT_for_all(rest)
+              endApplyArgs()), endWiths())::dropP_for_all(rest)
+      | _::rest -> dropP_for_all(rest)
       end;
 }
 
@@ -135,7 +135,7 @@ top::ProofCommand ::= depth::Maybe<Integer> theorem::Clearable
 {
   withs.mapBindingNames = theorem.hypNameMap;
 
-  top.mappedCmds = dropT_for_all(top.newHyps) ++
+  top.mappedCmds = dropP_for_all(top.newHyps) ++
       [backchainTactic(depth, theorem.mapped, withs.mapped)];
 }
 
@@ -155,7 +155,7 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
 aspect production assertTactic
 top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
 {
-  top.mappedCmds = dropT_for_all(top.newHyps) ++
+  top.mappedCmds = dropP_for_all(top.newHyps) ++
                    [assertTactic(h, depth, m.mapped)];
 }
 
@@ -177,14 +177,14 @@ top::ProofCommand ::= ew::EWitnesses
 aspect production searchTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = dropT_for_all(top.newHyps) ++ [top];
+  top.mappedCmds = dropP_for_all(top.newHyps) ++ [top];
 }
 
 
 aspect production searchDepthTactic
 top::ProofCommand ::= n::Integer
 {
-  top.mappedCmds = dropT_for_all(top.newHyps) ++ [top];
+  top.mappedCmds = dropP_for_all(top.newHyps) ++ [top];
 }
 
 
@@ -332,7 +332,7 @@ top::ProofCommand ::= hyp::String
 --e.g. `forall a b c, ...` and `forall a d e, ...` ->
 --     [(a, a), (b, d), (c, e)]
 synthesized attribute hypNameMap::[(String, String)] occurs on Clearable;
---whether each premise expects a key relation in the non-R_T style
+--whether each premise expects a key relation in the non-R_P style
 synthesized attribute expectBasicKeyRel::[Boolean] occurs on Clearable;
 
 aspect production clearable
@@ -399,7 +399,7 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 
 
 
---whether each arg is supposed to be R as opposed to R_T for some key
+--whether each arg is supposed to be R as opposed to R_P for some key
 --   relation in this group
 inherited attribute basicKeyRelExpectations::[Boolean]
    occurs on ApplyArgs;
@@ -431,11 +431,11 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
   local finalHyp::String =
       if hyp == "_" then hyp else
       case lookup(hyp, top.mapHyps) of
-      | just((x, isTrans)) ->
-        if isTrans && top.basicKeyRelExpected then genName else x
+      | just((x, isProj)) ->
+        if isProj && top.basicKeyRelExpected then genName else x
       | nothing() -> error("Looking up " ++ hyp ++ " gave nothing")
       end;
-  local newHypIsTrans::Boolean =
+  local newHypIsProj::Boolean =
       case lookup(hyp, top.mapHyps) of
       | just((_, x)) -> x
       | _ -> false
@@ -447,7 +447,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       end;
   local newHypRel::QName =
       case lookup(newHyp, top.newHyps) of
-      | just(transRelMetaterm(q, _, _)) -> q
+      | just(projRelMetaterm(q, _, _)) -> q
       | _ -> error("Should not access (hypApplyArg)")
       end;
   local genName::String = "$" ++ toString(genInt());
@@ -455,10 +455,10 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       if !top.basicKeyRelExpected
       then []
       else if hyp == "_"
-      then dropT_for_all(top.newHyps)
-      else if newHypIsTrans
+      then dropP_for_all(top.newHyps)
+      else if newHypIsProj
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, toQName(dropTName(newHypRel)),
+               clearable(false, toQName(dropPName(newHypRel)),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
@@ -474,11 +474,11 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
   local finalHyp::String =
       if hyp == "_" then hyp else
       case lookup(hyp, top.mapHyps) of
-      | just((x, isTrans)) ->
-        if isTrans && top.basicKeyRelExpected then genName else x
+      | just((x, isProj)) ->
+        if isProj && top.basicKeyRelExpected then genName else x
       | nothing() -> error("Looking up " ++ hyp ++ " gave nothing")
       end;
-  local newHypIsTrans::Boolean =
+  local newHypIsProj::Boolean =
       case lookup(hyp, top.mapHyps) of
       | just((_, x)) -> x
       | _ -> false
@@ -490,7 +490,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       end;
   local newHypRel::QName =
       case lookup(newHyp, top.newHyps) of
-      | just(transRelMetaterm(q, _, _)) -> q
+      | just(projRelMetaterm(q, _, _)) -> q
       | _ -> error("Should not access (hypApplyArg)")
       end;
   local genName::String = "$" ++ toString(genInt());
@@ -498,10 +498,10 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       if !top.basicKeyRelExpected
       then []
       else if hyp == "_"
-      then dropT_for_all(top.newHyps)
-      else if newHypIsTrans
+      then dropP_for_all(top.newHyps)
+      else if newHypIsProj
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, toQName(dropTName(newHypRel)),
+               clearable(false, toQName(dropPName(newHypRel)),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]

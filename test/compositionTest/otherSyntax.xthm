@@ -41,7 +41,7 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
     search.
    %eval_T E1
     search.
-   %Trans
+   %proj
     search.
    %plus eval
     skip. %different eval ctx, so not necessarily
@@ -56,7 +56,7 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
     search.
    %plus
     search.
-   %Trans
+   %proj
     search.
    %plus eval
     skip.

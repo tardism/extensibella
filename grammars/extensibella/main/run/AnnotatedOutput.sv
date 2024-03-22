@@ -103,7 +103,7 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
 
 
 {-
-  In the HTML output, the extension size and translation versions of a
+  In the HTML output, the extension size and projection versions of a
   relation are disappearing because they are treated as tags.  This
   replaces the literal "<" and ">" with HTML-safe versions.
 -}

@@ -2,7 +2,89 @@ Module example_calc:host.
 
 %Set debug on.
 
-Ext_Ind value EvalEnv E V with |{Expr}- E ~~> T.
+Ext_Size value EvalEnv E V.
+Ext_Ind forall EvalEnv E V, value EvalEnv E V.
+%Subgoal 1:  intConst
+ search.
+%Subgoal 2:  plus
+ Acc': case Acc (keep). LE_N2: apply ext_size_pos_value to R2.
+ LE_N3: apply ext_size_pos_value to R3. OrN2: apply lt_left to R1 _ _.
+ apply ext_size_is_int_value to R3. OrN3: apply lt_right to R1 _ _ _.
+ Ev1: apply drop_ext_size_value to R2. LN2: case OrN2.
+   %N2 < N
+    A2: apply Acc' to _ LN2. apply IH to R2 A2.
+    Ev: apply drop_ext_size_value to R2. LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+   %N2 = N
+    apply IH1 to R2 Acc. Ev: apply drop_ext_size_value to R2.
+    LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH1 to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+%Subgoal 3:  minus
+ Acc': case Acc (keep). LE_N2: apply ext_size_pos_value to R2.
+ LE_N3: apply ext_size_pos_value to R3. OrN2: apply lt_left to R1 _ _.
+ apply ext_size_is_int_value to R3. OrN3: apply lt_right to R1 _ _ _.
+ Ev1: apply drop_ext_size_value to R2. LN2: case OrN2.
+   %N2 < N
+    A2: apply Acc' to _ LN2. apply IH to R2 A2.
+    Ev: apply drop_ext_size_value to R2. LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+   %N2 = N
+    apply IH1 to R2 Acc. Ev: apply drop_ext_size_value to R2.
+    LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH1 to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+%Subgoal 4:  mult
+ Acc': case Acc (keep). LE_N2: apply ext_size_pos_value to R2.
+ LE_N3: apply ext_size_pos_value to R3. OrN2: apply lt_left to R1 _ _.
+ apply ext_size_is_int_value to R3. OrN3: apply lt_right to R1 _ _ _.
+ Ev1: apply drop_ext_size_value to R2. LN2: case OrN2.
+   %N2 < N
+    A2: apply Acc' to _ LN2. apply IH to R2 A2.
+    Ev: apply drop_ext_size_value to R2. LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+   %N2 = N
+    apply IH1 to R2 Acc. Ev: apply drop_ext_size_value to R2.
+    LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH1 to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+%Subgoal 5:  let
+ Acc': case Acc (keep). LE_N2: apply ext_size_pos_value to R2.
+ LE_N3: apply ext_size_pos_value to R3. OrN2: apply lt_left to R1 _ _.
+ apply ext_size_is_int_value to R3. OrN3: apply lt_right to R1 _ _ _.
+ Ev1: apply drop_ext_size_value to R2. LN2: case OrN2.
+   %N2 < N
+    A2: apply Acc' to _ LN2. apply IH to R2 A2.
+    Ev: apply drop_ext_size_value to R2. LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+   %N2 = N
+    apply IH1 to R2 Acc. Ev: apply drop_ext_size_value to R2.
+    LN3: case OrN3.
+      %N3 < N
+       A3: apply Acc' to _ LN3. apply IH1 to R3 A3. search.
+      %N3 = N
+       apply IH1 to R3 Acc. search.
+%Subgoal 6:  name
+ search.
+
 
 Theorem lookup_unique : forall X L V1 V2,
   lookup X L V1 -> lookup X L V2 -> V1 = V2.

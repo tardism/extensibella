@@ -5,7 +5,7 @@ Builds on compositionTest:host
 
 ty ::= intTy
      | boolTy
-Translation ty :
+Projection ty :
 
 
 
@@ -57,14 +57,14 @@ typeE G name(X) Ty
 
 |{expr}- E ~~> E_T
 typeE G E_T Ty
------------------- [T-ETrans]*
+------------------ [T-E-D]*
 typeE G E Ty
 
 
 Extensibella_Stand_In {
   |{expr}- E ~~> E_T
   typeE G E_T Ty
-  1 + 1 = 2 /*to make it different from T-ETrans*/
+  1 + 1 = 2 /*to make it different from T-E-D*/
   ------------------ [T-Q]
   typeE G E Ty
 }
@@ -120,7 +120,7 @@ typeS G while(Cond, Body) G
 
 |{stmt}- S ~~> S_T
 typeS G S_T G1
------------------- [T-STrans]*
+------------------ [T-S-D]*
 typeS G S G1
 
 

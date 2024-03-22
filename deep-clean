@@ -4,6 +4,8 @@
 find . -name "*~" -delete
 find . -name "build.xml" -delete
 find . -name "*.copperdump.html" -delete
+find . -name "Parser*.html" -delete
 
+rm -rf generated/*
 rm *.jar
 

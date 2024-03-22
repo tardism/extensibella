@@ -33,8 +33,8 @@ Define $ext__1__example_calc-$-host-$-valExists : list (list $char) -> $ty__exam
        $ext__0__example_calc-$-host-$-isExpr : $ty__example_calc-$-host-$-Expr -> prop,
        $ext__0__example_calc-$-host-$-isRoot : $ty__example_calc-$-host-$-Root -> prop,
        %
-       $trans__example_calc-$-host-$-Expr : $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr -> prop,
-       $trans__example_calc-$-host-$-Root : $ty__example_calc-$-host-$-Root -> $ty__example_calc-$-host-$-Root -> prop by
+       $proj__example_calc-$-host-$-Expr : $ty__example_calc-$-host-$-Expr -> $ty__example_calc-$-host-$-Expr -> prop,
+       $proj__example_calc-$-host-$-Root : $ty__example_calc-$-host-$-Root -> $ty__example_calc-$-host-$-Root -> prop by
 %valExists
 $ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-intConst I) $btrue;
 $ext__1__example_calc-$-host-$-valExists KnownNames (example_calc-$-host-$-plus E1 E2) $btrue :=

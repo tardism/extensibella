@@ -122,7 +122,7 @@ Host Relations
 ---------------------------------------------------------------------
 Host relations in general require nothing extra beyond what we have
 already discussed.  However, we consider two special host relations,
-the Abella `is` relation and the translation relation.
+the Abella `is` relation and the projection relation.
 
 Abella reasoning traditionally relies heavily on `is` relations
 defining the members of a type.  These are not strictly required in
@@ -130,28 +130,28 @@ definition files for Extensibella, but are probably a good idea.
 Because types can be extended, these should be introduced as host
 relations.
 
-A module `mod` must define a translation relation for each nonterminal
+A module `mod` must define a projection relation for each nonterminal
 `Nt` it introduces.  Even if none of the productions the module
-introduces translate, it must define this relation so extensions to
+introduces project, it must define this relation so extensions to
 the module may write rules for it for the constructs they introduce.
-If the translation relation for `mod:Nt` takes one argument, of type
-`a`, to define the translation, its translation relation must be
+If the projection relation for `mod:Nt` takes one argument, of type
+`a`, to define the projection, its projection relation must be
 defined as
 ```
-Define $trans__mod-$-Nt : a -> $ty__mod-$-Nt -> $ty__mod-$-Nt -> prop by
+Define $proj__mod-$-Nt : a -> $ty__mod-$-Nt -> $ty__mod-$-Nt -> prop by
 ...
 ```
-The first `mod:Nt` argument is the translating syntax and the second
-`mod:Nt` is the translated-to syntax.
+The first `mod:Nt` argument is the projecting syntax and the second
+`mod:Nt` is the projected-to syntax.
 
 
 Extension Relations
 ----------------------------------------------------------------------
 Extension relations are defined as above, but must also include a
 special clause.  Recall extension-introduced relations are defined by
-translation of the primary component.  Each extension-introduced
+projection of the primary component.  Each extension-introduced
 relation must have a clause (or several clauses, if there are multiple
-translation rules) with these rules for the required unknown
+projection rules) with these rules for the required unknown
 constructor of the primary component (e.g. `$unknown_imp-$-Nt`).
 These clauses must come after all other clauses for the relation.
 
@@ -169,18 +169,18 @@ relative to one another in the definition files for both `C` and `D`.
 It cannot be that `A`'s clauses come first in one file and `B`'s
 clauses come first in the other.
 
-We must also fill in translation clauses for extension relations with
+We must also fill in projection clauses for extension relations with
 concrete terms as we import relations into new modules.  Suppose we
 have a module `ext1` defining a relation `ext1:rel` with primary
 component `host:Nt`.  Suppose we have a module `ext2` that also
 imports `host` and has a production `ext2:prod` with two arguments.
 Finally, suppose `comp` imports both `ext1` and `ext2`.  In the
-definition file for the `comp` module, we must take the translation
-rule for `ext1:rel` and add clauses filling in the translation rules
+definition file for the `comp` module, we must take the projection
+rule for `ext1:rel` and add clauses filling in the projection rules
 with `ext2:prod A B` for the primary component.  This allows any
 reasoning in the `comp` module about `ext1:rel` to take advantage of
 the knowledge that the rule for this relation when the primary
-component is built by `ext2:prod` uses these translation rules, and is
+component is built by `ext2:prod` uses these projection rules, and is
 necessary for a correct definition and reasoning.
 
 Finally, we must fill in a placeholder rule for any imported relation
@@ -191,12 +191,12 @@ relation `mod:rel` with three arguments where the second argument is
 the primary component, this would be a definition clause as follows:
 ```
 $ext__1__mod-$-rel A $unknown_mod-$-Nt B :=
-   exists Trans, (0 = 0 -> false) /\ $ext__1__mod-$-rel A Trans B
+   exists Proj, (0 = 0 -> false) /\ $ext__1__mod-$-rel A Proj B
 ```
 Both the `0 = 0 -> false` and sub-derivation of the relation are
 required. All the arguments are the same in the case being defined and
 the sub-derivation other than the primary component being new.  Note
-that the primary component **MUST** be named `Trans` in order for
+that the primary component **MUST** be named `Proj` in order for
 Extensibella to work correctly.  This should be the last rule for the
 relation in the definition.
 

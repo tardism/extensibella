@@ -47,18 +47,18 @@ type produced being secondary.
 
 Each relation introduced by an extension where the primary component
 is a syntactic category given by the base language is given a special
-rule, called its translation rule, to define it on new syntax from
+rule, called its projection rule, to define it on new syntax from
 other extensions.  This rule is written with a variable in the place
 of the primary component.  For example, we might have an `optimize`
 relation reducing constant computations in an expression, with the
-translation rule stating optimizing an unknown expression leaves it as
+projection rule stating optimizing an unknown expression leaves it as
 it is:  `optimize E E` (a safe, if uninspiring, choice).  When a
 composed language is built, combining several extensions, the
-translation rule is replicated for each new constructor from other
+projection rule is replicated for each new constructor from other
 extensions, filling in the primary component with the new
 constructor.  For example, if other extensions introduced constructors
 `add3(expr, expr, expr)` and `negate(expr)`, we would instantiate the
-translation rule for each of these:
+projection rule for each of these:
 ```
 optimize add3(E1, E2, E3) add3(E1, E2, E3)
 optimize negate(E) negate(E)
@@ -66,16 +66,16 @@ optimize negate(E) negate(E)
 This gives the `optimize` relation a definition on any syntax, even
 that not known to it when it was introduced.
 
-Oftentimes a simple translation rule, as we saw with `optimize` above,
+Oftentimes a simple projection rule, as we saw with `optimize` above,
 is not sufficient for defining an extension-introduced relation.
-Generally what we want is to use a notion of translation of an unknown
+Generally what we want is to use a notion of projection of an unknown
 construct to a known one (hence the name of the rules).  Each
-syntactic category given by the base language has a translation
+syntactic category given by the base language has a projection
 relation, and each constructor an extension introduces must have a
-rule giving its translation to the base language.  Then the
-translation rule for a relation can be written to find the translation
-of the primary component and derive the relation on the translation.
-This essentially copies the definition from the translation, and
+rule giving its projection to the base language.  Then the
+projection rule for a relation can be written to find the projection
+of the primary component and derive the relation on the projection.
+This essentially copies the definition from the projection, and
 allows more interesting relations to be defined in extensions.
 
 ### Limitations on Extending Relations from the Base Language
@@ -114,7 +114,7 @@ constructor, rule, and relation is treated as either "base-y" or
   syntactic category if it is introduced in the same module as its
   category, or as part of an extension for its syntactic category if
   its category was introduced in a different module.  If it is part of
-  an extension for its category, it must provide a translation.
+  an extension for its category, it must provide a projection.
 * A rule is treated as part of the base language for its relation if
   it is given in the same module introducing the relation.  If it is
   part of an extension, its primary component must be built by a
@@ -122,7 +122,7 @@ constructor, rule, and relation is treated as either "base-y" or
 * A relation is treated as "base-y" if it is introduced in the same
   module introducing its primary component syntactic category.  If
   not, then it is considered part of an extension and must provide a
-  translation rule.
+  projection rule.
 
 The contraction of the base and extension classes to apply to
 individual elements of modules rather than applying to modules

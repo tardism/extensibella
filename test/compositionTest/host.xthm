@@ -137,7 +137,7 @@ Extensible_Theorem
 Ext_Size evalExpr G E V G', evalStmt G S G'.
 
 Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
-        forall G S G', evalStmt G S G'   with IsS: is_stmt S.
+        forall G S G', evalStmt G S G'     with IsS: is_stmt S.
 %evalExpr
  %E-Num
   search.
@@ -317,18 +317,18 @@ Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
 
 
 /*everything is exactly the same*/
-Translation_Constraint evalExpr_forward : forall E E' G V G',
+Projection_Constraint evalExpr_forward : forall E E' G V G',
   |{expr}- E ~~> E' -> evalExpr G E' V G' -> evalExpr G E V G'.
-Translation_Constraint evalExpr_back : forall E E' G V G',
+Projection_Constraint evalExpr_back : forall E E' G V G',
   |{expr}- E ~~> E' -> evalExpr G E V G' -> evalExpr G E' V G'.
 
-Translation_Constraint evalStmt_forward : forall S S' G G',
+Projection_Constraint evalStmt_forward : forall S S' G G',
   |{stmt}- S ~~> S' -> evalStmt G S' G' -> evalStmt G S G'.
-Translation_Constraint evalStmt_back : forall S S' G G',
+Projection_Constraint evalStmt_back : forall S S' G G',
   |{stmt}- S ~~> S' -> evalStmt G S G' -> evalStmt G S' G'.
 
 
-Translation_Constraint expr_same : forall E EA EB,
+Projection_Constraint expr_same : forall E EA EB,
   |{expr}- E ~~> EA -> |{expr}- E ~~> EB -> EA = EB.
-Translation_Constraint stmt_same : forall S SA SB,
+Projection_Constraint stmt_same : forall S SA SB,
   |{stmt}- S ~~> SA -> |{stmt}- S ~~> SB -> SA = SB.

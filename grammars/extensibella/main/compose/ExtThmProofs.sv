@@ -2,7 +2,7 @@ grammar extensibella:main:compose;
 
 function buildExtThmProofs
 IOVal<[String]> ::=
-   --[(thm name, key relation, property is host-y, property is R_T,
+   --[(thm name, key relation, property is host-y, property is R_P,
    --  bindings, body, key relation intros name)]
    thmsInfo::[(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                ExtBody, String)]

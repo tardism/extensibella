@@ -123,67 +123,67 @@ concrete productions top::Metaterm_c
 | '(' '<' rel::Qname_t '{' 'ES' '}' '>' args::ExpList_c r::Hashes_c ')'
   { top.ast = right(extSizeMetaterm(toQName(rel.lexeme), args.ast,
                                     r.ast)); }
---translation version of a relation
-| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
+--projection version of a relation
+| '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    emptyRestriction())); }
+| '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Stars_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Pluses_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Ats_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Hashes_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    emptyRestriction())); }
+| '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Stars_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Pluses_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Ats_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Hashes_c
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
                                      emptyRestriction())); }
-| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Stars_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Pluses_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Ats_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Hashes_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     emptyRestriction())); }
-| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Stars_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Pluses_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Ats_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Hashes_c
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     emptyRestriction())); }
-| '(' '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Stars_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Pluses_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Ats_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Id_t '{' 'T' '}' '>' args::ExpList_c r::Hashes_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     emptyRestriction())); }
-| '(' '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Stars_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Pluses_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Ats_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
-| '(' '<' rel::Qname_t '{' 'T' '}' '>' args::ExpList_c r::Hashes_c ')'
-  { top.ast = right(transRelMetaterm(toQName(rel.lexeme), args.ast,
-                                     r.ast)); }
+| '(' '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Stars_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Pluses_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Ats_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Id_t '{' 'P' '}' '>' args::ExpList_c r::Hashes_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    emptyRestriction())); }
+| '(' '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Stars_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Pluses_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Ats_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
+| '(' '<' rel::Qname_t '{' 'P' '}' '>' args::ExpList_c r::Hashes_c ')'
+  { top.ast = right(projRelMetaterm(toQName(rel.lexeme), args.ast,
+                                    r.ast)); }
 --something else
 | s::SubMetaterm_c
   { top.ast = s.ast; }
@@ -269,23 +269,23 @@ concrete productions top::SubMetaterm_c
         | t -> left("Cannot treat " ++ justShow(t.pp) ++
                     " as a proposition")
         end; }
---Translation
+--Projection
 | args::ExpList_c '|{' ty::Id_t '}-' o::Term_c '~~>' t::Term_c
   { top.ast =
-        right(translationMetaterm(args.ast, toQName(ty.lexeme),
-                                  o.ast, t.ast)); }
+        right(projectionMetaterm(args.ast, toQName(ty.lexeme),
+                                 o.ast, t.ast)); }
 | args::ExpList_c '|{' ty::Qname_t '}-' o::Term_c '~~>' t::Term_c
   { top.ast =
-        right(translationMetaterm(args.ast, toQName(ty.lexeme),
-                                  o.ast, t.ast)); }
+        right(projectionMetaterm(args.ast, toQName(ty.lexeme),
+                                 o.ast, t.ast)); }
 | '|{' ty::Id_t '}-' o::Term_c '~~>' t::Term_c
   { top.ast =
-        right(translationMetaterm(emptyTermList(), toQName(ty.lexeme),
-                                  o.ast, t.ast)); }
+        right(projectionMetaterm(emptyTermList(), toQName(ty.lexeme),
+                                 o.ast, t.ast)); }
 | '|{' ty::Qname_t '}-' o::Term_c '~~>' t::Term_c
   { top.ast =
-        right(translationMetaterm(emptyTermList(), toQName(ty.lexeme),
-                                  o.ast, t.ast)); }
+        right(projectionMetaterm(emptyTermList(), toQName(ty.lexeme),
+                                 o.ast, t.ast)); }
 --Special relations
 | t1::Term_c '+' t2::Term_c '=' t3::Term_c
   { top.ast = right(plusMetaterm(t1.ast, t2.ast, t3.ast)); }

@@ -105,8 +105,8 @@ Boolean ::= a::ThmElement b::ThmElement
         an == bn && alst == blst
       | extensibleMutualTheoremGroup(_, _, taga),
         extensibleMutualTheoremGroup(_, _, tagb) -> taga == tagb
-      | translationConstraintTheorem(an, _, _, taga),
-        translationConstraintTheorem(bn, _, _, tagb) -> taga == tagb
+      | projectionConstraintTheorem(an, _, _, taga),
+        projectionConstraintTheorem(bn, _, _, tagb) -> taga == tagb
       | extIndElement(ar, taga), extIndElement(br, tagb) ->
         taga == tagb
       | _, _ -> false
@@ -127,8 +127,8 @@ function cleanModThms
         aname == bname
       | extensibleMutualTheoremGroup(athms, _, atag),
         extensibleMutualTheoremGroup(bthms, _, btag) -> atag == btag
-      | translationConstraintTheorem(aname, abinds, abody, atag),
-        translationConstraintTheorem(bname, bbinds, bbody, btag) ->
+      | projectionConstraintTheorem(aname, abinds, abody, atag),
+        projectionConstraintTheorem(bname, bbinds, bbody, btag) ->
         atag == btag
       | extIndElement(arelinfo, atag), extIndElement(brelinfo, btag) ->
         atag == btag
@@ -324,11 +324,11 @@ top::TopCommand ::= names::[QName]
 }
 
 
-aspect production translationConstraint
+aspect production projectionConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.defElements = [];
-  top.thmElements = [translationConstraintTheorem(name, binds, body,
+  top.thmElements = [projectionConstraintTheorem(name, binds, body,
                         top.downTag)];
 }
 

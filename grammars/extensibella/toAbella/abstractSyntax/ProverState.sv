@@ -151,7 +151,7 @@ function removeFinishedObligation
                    map(fst, thms ++ alsos)))
         then rest
         else obligations
-      | translationConstraintTheorem(q, x, b, _)::rest ->
+      | projectionConstraintTheorem(q, x, b, _)::rest ->
         case provenThms of
         | [(q2, _)] when q == q2 -> rest
         | _ -> obligations

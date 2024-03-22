@@ -18,8 +18,8 @@ for proving the property for any composed language:
 
 We will discuss these both, assuming a single host language and
 extensions that do not build on each other.  We furthermore assume all
-relations introduced by extensions give the basic form of translation
-rule, where the relation is copied directly from the translation of
+relations introduced by extensions give the basic form of projection
+rule, where the relation is copied directly from the projection of
 its primary component.
 
 
@@ -106,19 +106,19 @@ from those rules.
 The unknown cases are grouped together as a single proof case the
 extension introducing the property must show.  This proof case is
 called *preservability*.  The idea is to show the property copies back
-from the primary component's translation, assuming a derivation of the
-relation on the translation with which we can use the inductive
+from the primary component's projection, assuming a derivation of the
+relation on the projection with which we can use the inductive
 hypothesis.
 
 If the relation is introduced by the current extension, we can see
 that the assumptions of the preservability proof match the premises of
-the translation rule that will be used to define the relation in the
+the projection rule that will be used to define the relation in the
 unknown cases.  However, this is not the case if the relation is
 introduced by the host language, as the rules for it in unknown cases
 are given by the extensions introducing those cases.  In this case,
 the host language must have introduced a property that the relation
-will hold on the translation of the primary component in cases
-introduced by an extension, and that this chain of translations
+will hold on the projection of the primary component in cases
+introduced by an extension, and that this chain of projections
 existing for the derivation ends.  Each extension proves this is true
 for its constructs.  Then, in the language composition, the unknown
 cases will satisfy the assumptions of preservability, and all the

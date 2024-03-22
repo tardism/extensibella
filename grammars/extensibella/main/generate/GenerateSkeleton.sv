@@ -97,7 +97,7 @@ top::ThmElement ::= thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
 }
 
 
-aspect production translationConstraintTheorem
+aspect production projectionConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
                     tag::(Integer, Integer, String)
 {

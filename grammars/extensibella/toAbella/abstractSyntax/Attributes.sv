@@ -58,10 +58,10 @@ inherited attribute ignoreDefErrors::Boolean;
 inherited attribute newProofState::ProofState;
 
 
---gather up the relations for which <R {T}> occurs
-monoid attribute transRels::[QName] with [], ++;
-attribute transRels occurs on
+--gather up the relations for which <R {P}> occurs
+monoid attribute projRels::[QName] with [], ++;
+attribute projRels occurs on
    ProofState, CurrentGoal, Context, Hypothesis, Metaterm;
-propagate transRels on
+propagate projRels on
    ProofState, CurrentGoal, Context, Hypothesis, Metaterm
-excluding transRelMetaterm;
+excluding projRelMetaterm;

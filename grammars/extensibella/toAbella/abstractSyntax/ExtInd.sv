@@ -22,7 +22,7 @@ top::TopCommand ::= body::ExtIndBody
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
       --relation definition
-      [anyTopCommand(transRelDef)] ++
+      [anyTopCommand(projRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella))] ++
@@ -59,10 +59,10 @@ top::TopCommand ::= body::ExtIndBody
       end;
   body.useExtSize = useExtSize;
 
-  --definition of R_T
-  local transRelDef::TopCommand =
-      buildTransRel(body.extIndInfo, top.relationEnv,
-                    top.proverState.buildsOns);
+  --definition of R_P
+  local projRelDef::TopCommand =
+      buildProjRel(body.extIndInfo, top.relationEnv,
+                   top.proverState.buildsOns);
 
   top.newTheorems = [];
 
@@ -365,7 +365,7 @@ Metaterm ::= boundVars::Bindings rel::QName relArgs::[String]
          toTermList([nameTerm(toQName(n), nothingType())]),
          emptyRestriction());
   local conc::Metaterm =
-      relationMetaterm(transRelQName(rel.sub), toTermList(args),
+      relationMetaterm(projRelQName(rel.sub), toTermList(args),
                        emptyRestriction());
   return
       bindingMetaterm(forallBinder(),
@@ -456,8 +456,8 @@ top::TopCommand ::= rels::[QName]
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
-      | translationConstraintTheorem(q, x, b, _)::_ ->
-        [errorMsg("Expected translation constraint obligation " ++
+      | projectionConstraintTheorem(q, x, b, _)::_ ->
+        [errorMsg("Expected projection constraint obligation " ++
             justShow(q.pp))]
       | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
         [errorMsg("Expected theorem obligations " ++
@@ -538,10 +538,10 @@ top::TopCommand ::= rels::[QName]
       end;
   body.useExtSize = useExtSize;
 
-  --definition of R_T
-  local transRelDef::TopCommand =
-      buildTransRel(obligations, top.relationEnv,
-                    top.proverState.buildsOns);
+  --definition of R_P
+  local projRelDef::TopCommand =
+      buildProjRel(obligations, top.relationEnv,
+                   top.proverState.buildsOns);
 
   local body::ExtIndBody =
       foldr1(branchExtIndBody,
@@ -561,7 +561,7 @@ top::TopCommand ::= rels::[QName]
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
       --relation definition
-      [anyTopCommand(transRelDef)] ++
+      [anyTopCommand(projRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella))] ++
@@ -734,8 +734,8 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
-      | translationConstraintTheorem(q, x, b, _)::_ ->
-        [errorMsg("Expected translation constraint obligation" ++
+      | projectionConstraintTheorem(q, x, b, _)::_ ->
+        [errorMsg("Expected projection constraint obligation" ++
             justShow(q.pp))]
       | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
         [errorMsg("Expected theorem obligations " ++
@@ -1015,12 +1015,12 @@ function buildExtSizeDefBody
 
 
 {--------------------------------------------------------------------
-  Translation Version of a Relation Definition
+  Projection Version of a Relation Definition
  --------------------------------------------------------------------}
 {-
-  Build the full R_T relation
+  Build the full R_P relation
 -}
-function buildTransRel
+function buildProjRel
 TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
                relEnv::Env<RelationEnvItem>
                --[(module, [modules on which it builds])]
@@ -1037,12 +1037,12 @@ TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
           relInfo);
   local defInfo::[(QName, ([String], [String], Maybe<Metaterm>),
                    [([Term], Maybe<Metaterm>)], RelationEnvItem)] =
-      buildTransRelDefInfo(fullRelInfo);
-  return buildTransRelDef(defInfo, buildsOns);
+      buildProjRelDefInfo(fullRelInfo);
+  return buildProjRelDef(defInfo, buildsOns);
 }
 
---Gather up the information we need to build the R_T def clauses
-function buildTransRelDefInfo
+--Gather up the information we need to build the R_P def clauses
+function buildProjRelDefInfo
 [(QName, ([String], [String], Maybe<Metaterm>),
   [([Term], Maybe<Metaterm>)], RelationEnvItem)] ::=
           relInfo::[(QName, [String], Bindings, ExtIndPremiseList,
@@ -1103,15 +1103,15 @@ function buildTransRelDefInfo
       (r.1, qRule, defList, r.5);
   return case relInfo of
          | [] -> []
-         | _::t -> firstRel::buildTransRelDefInfo(t)
+         | _::t -> firstRel::buildProjRelDefInfo(t)
          end;
 }
 
 {-
-  Build all the definitional clauses for the translation version of
+  Build all the definitional clauses for the projection version of
   the relations in rels and turn them into a definition
 -}
-function buildTransRelDef
+function buildProjRelDef
 TopCommand ::=
 --[(rel, Q rule: (args to conclusion, existentially-bound vars for body,
 --                binderless body), def clauses: (args, body), env item)]
@@ -1123,7 +1123,7 @@ TopCommand ::=
   local preds::[(QName, Type)] =
       map(\ p::(QName, ([String], [String], Maybe<Metaterm>),
                 [([Term], Maybe<Metaterm>)], RelationEnvItem) ->
-            (transRelQName(p.1.sub),
+            (projRelQName(p.1.sub),
              foldr1(arrowType, p.4.types.toList)),
           rels);
   local allRels::[QName] = map(fst, rels);
@@ -1133,42 +1133,42 @@ TopCommand ::=
                   case m of
                   | bindingMetaterm(existsBinder(), b, m) ->
                     just(bindingMetaterm(existsBinder(), b,
-                            replaceRelsTransRels(allRels, m)))
-                  | _ -> just(replaceRelsTransRels(allRels, m))
+                            replaceRelsProjRels(allRels, m)))
+                  | _ -> just(replaceRelsProjRels(allRels, m))
                   end);
   local defs::[Def] =
       flatMap(\ p::(QName, ([String], [String], Maybe<Metaterm>),
                     [([Term], Maybe<Metaterm>)], RelationEnvItem) ->
-                let transRelledQBody::Maybe<Metaterm> =
+                let projRelledQBody::Maybe<Metaterm> =
                     fullReplaceRels(p.2.3)
                 in
-                let transRelledDefs::[([Term], Maybe<Metaterm>)] =
+                let projRelledDefs::[([Term], Maybe<Metaterm>)] =
                     map(\ p::([Term], Maybe<Metaterm>) ->
                           (p.1, fullReplaceRels(p.2)), p.3)
                 in
-                  buildTransRelClauses(p.1, transRelledDefs,
-                     p.2.1, p.2.2, transRelledQBody,
+                  buildProjRelClauses(p.1, projRelledDefs,
+                     p.2.1, p.2.2, projRelledQBody,
                      p.4.pcIndex, allRels, buildsOns)
                 end end,
               rels);
   return definitionDeclaration(preds,
             if null(defs) --check to find error loc in debugging
-            then error("buildTransRelDef null list")
+            then error("buildProjRelDef null list")
             else foldrLastElem(consDefs, singleDefs, defs));
 }
 
 {-
-  Build the clauses for the translation version of a single relation
+  Build the clauses for the projection version of a single relation
   as part of a group of relations (allRels)
 -}
-function buildTransRelClauses
+function buildProjRelClauses
 [Def] ::= rel::QName defs::[([Term], Maybe<Metaterm>)]
           qRuleArgs::[String] qRuleBindings::[String]
           qRuleBody::Maybe<Metaterm>
           pcIndex::Integer allRels::[QName]
           buildsOns::[(QName, [QName])]
 {
-  local transRel::QName = transRelQName(rel.sub);
+  local projRel::QName = projRelQName(rel.sub);
   local usedVars::[String] =
       case head(defs) of
       | (tms, just(m)) -> m.usedNames ++ flatMap((.usedNames), tms)
@@ -1205,7 +1205,7 @@ function buildTransRelClauses
       | nothing() -> nothing()
       end;
 
-  --determine whether this is a rule needing a translation
+  --determine whether this is a rule needing a projection
   local isExtRule::Boolean =
       let constr::QName = pc.headConstructor
       in --rules for K's getting here are instantiated default rules,
@@ -1242,13 +1242,13 @@ function buildTransRelClauses
 
   local hereDef::Def =
       case modBody of
-      | just(body) -> ruleDef(transRel, toTermList(head(defs).1), body)
-      | nothing() -> factDef(transRel, toTermList(head(defs).1))
+      | just(body) -> ruleDef(projRel, toTermList(head(defs).1), body)
+      | nothing() -> factDef(projRel, toTermList(head(defs).1))
       end;
 
   return case defs of
          | [] -> []
-         | _::tl -> hereDef::buildTransRelClauses(rel, tl, qRuleArgs,
+         | _::tl -> hereDef::buildProjRelClauses(rel, tl, qRuleArgs,
                                 qRuleBindings, qRuleBody, pcIndex, allRels,
                                 buildsOns)
          end;
@@ -1256,16 +1256,16 @@ function buildTransRelClauses
 
 {-
   Replace all occurrences of relations in rels in the given metaterm with
-  their transRel versions
+  their projRel versions
 -}
-function replaceRelsTransRels
+function replaceRelsProjRels
 Metaterm ::= allRels::[QName] m::Metaterm
 {
   local replaced::[Metaterm] =
       map(\ m::Metaterm ->
             case m of
             | relationMetaterm(r, t, s) when contains(r, allRels) ->
-              relationMetaterm(transRelQName(r.sub), t, s)
+              relationMetaterm(projRelQName(r.sub), t, s)
             | _ -> m
             end,
           splitMetaterm(m));

@@ -2,42 +2,42 @@ grammar extensibella:common:abstractSyntax;
 
 
 --METATERMS
-abstract production translationMetaterm
-top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+abstract production projectionMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term proj::Term
 {
   top.pp = ppImplode(text(" "),
               args.pps ++ [ppConcat([text("|{"), ty.pp, text("}-")]),
-                           orig.pp, text("~~>"), trans.pp]);
+                           orig.pp, text("~~>"), proj.pp]);
   top.abella_pp =
       (if args.len == 0 then "" else args.abella_pp ++ " ") ++
       "|{" ++ ty.abella_pp ++ "}- " ++ orig.abella_pp ++ " ~~> " ++
-                                       trans.abella_pp;
+                                       proj.abella_pp;
   top.isAtomic = true;
 
   top.splitImplies = [top];
   top.splitConjunctions = [top];
 
-  local unifyTransTy::TypeUnify =
+  local unifyProjTy::TypeUnify =
       if ty.typeFound
       then typeUnify(nameType(ty.fullType.name), orig.type)
       else blankUnify();
-  local unifyTerms::TypeUnify = typeUnify(orig.type, trans.type);
+  local unifyTerms::TypeUnify = typeUnify(orig.type, proj.type);
   local unifyArgs::TypeUnify =
       if ty.typeFound
       then typeUnify(
               --propType is a placeholder to make this easier to write
-              foldr(arrowType, propType, ty.fullType.transTypes.toList),
+              foldr(arrowType, propType, ty.fullType.projTypes.toList),
               foldr(arrowType, propType, args.types.toList))
       else blankUnify();
   args.downSubst = top.downSubst;
   orig.downSubst = args.upSubst;
-  trans.downSubst = orig.upSubst;
-  unifyTransTy.downSubst = trans.upSubst;
-  unifyTerms.downSubst = unifyTransTy.upSubst;
+  proj.downSubst = orig.upSubst;
+  unifyProjTy.downSubst = proj.upSubst;
+  unifyTerms.downSubst = unifyProjTy.upSubst;
   unifyArgs.downSubst = unifyTerms.upSubst;
   top.upSubst = unifyArgs.upSubst;
 
-  top.subst = translationMetaterm(args.subst, ty, orig.subst, trans.subst);
+  top.subst = projectionMetaterm(args.subst, ty, orig.subst, proj.subst);
 }
 
 
@@ -396,7 +396,7 @@ top::Metaterm ::= t::Term result::Term
 }
 
 
---Special relation applications for extSize and transRel
+--Special relation applications for extSize and projRel
 abstract production extSizeMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
@@ -424,7 +424,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   top.subst = extSizeMetaterm(rel, args.subst, r);
 }
 
-abstract production transRelMetaterm
+abstract production projRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
   top.pp = cat(ppImplode(text(" "),
@@ -447,7 +447,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   unify.downSubst = args.upSubst;
   top.upSubst = unify.upSubst;
 
-  top.subst = transRelMetaterm(rel, args.subst, r);
+  top.subst = projRelMetaterm(rel, args.subst, r);
 }
 
 

@@ -4,9 +4,9 @@ attribute
    fromAbella<QName>, relFromAbella, tyFromAbella, constrFromAbella
 occurs on SubQName, QName;
 
-synthesized attribute isTranslation::Boolean occurs on QName;
+synthesized attribute isProjection::Boolean occurs on QName;
 
-synthesized attribute transFromAbella::QName occurs on QName;
+synthesized attribute projFromAbella::QName occurs on QName;
 synthesized attribute relFromAbella::QName;
 synthesized attribute tyFromAbella::QName;
 synthesized attribute constrFromAbella::QName;
@@ -76,8 +76,8 @@ top::SubQName ::= name::String rest::SubQName
 aspect production fixQName
 top::QName ::= rest::SubQName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = rest.fromAbella;
 
@@ -90,8 +90,8 @@ top::QName ::= rest::SubQName
 aspect production extQName
 top::QName ::= pc::Integer rest::SubQName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = rest.fromAbella;
 
@@ -101,16 +101,16 @@ top::QName ::= pc::Integer rest::SubQName
 }
 
 
-aspect production transQName
+aspect production projQName
 top::QName ::= rest::SubQName
 {
-  top.isTranslation = true;
-  top.transFromAbella =
+  top.isProjection = true;
+  top.projFromAbella =
       case rest.tyFromAbella of
-      | tyQName(s) -> transQName(s)
-      | basicQName(s) -> transQName(s) --shortened name for display
+      | tyQName(s) -> projQName(s)
+      | basicQName(s) -> projQName(s) --shortened name for display
       | _ ->
-        error("Cannot have translation for this (" ++
+        error("Cannot have projection for this (" ++
               rest.tyFromAbella.abella_pp ++ ")")
       end;
 
@@ -125,8 +125,8 @@ top::QName ::= rest::SubQName
 aspect production tyQName
 top::QName ::= rest::SubQName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = rest.fromAbella;
 
@@ -139,8 +139,8 @@ top::QName ::= rest::SubQName
 aspect production unknownIQName
 top::QName ::= rest::QName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = rest.fromAbella;
 
@@ -153,8 +153,8 @@ top::QName ::= rest::QName
 aspect production unknownKQName
 top::QName ::= rest::QName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = rest.fromAbella;
 
@@ -167,8 +167,8 @@ top::QName ::= rest::QName
 aspect production extSizeQName
 top::QName ::= rest::SubQName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = extSizeQName(rest.fromAbella.sub);
 
@@ -178,15 +178,15 @@ top::QName ::= rest::SubQName
 }
 
 
-aspect production transRelQName
+aspect production projRelQName
 top::QName ::= rest::SubQName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
-  top.fromAbella = transRelQName(rest.fromAbella.sub);
+  top.fromAbella = projRelQName(rest.fromAbella.sub);
 
-  top.relFromAbella = transRelQName(rest.relFromAbella.sub);
+  top.relFromAbella = projRelQName(rest.relFromAbella.sub);
   top.tyFromAbella = rest.tyFromAbella;
   top.constrFromAbella = rest.constrFromAbella;
 }
@@ -195,8 +195,8 @@ top::QName ::= rest::SubQName
 aspect production libQName
 top::QName ::= rest::SubQName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = rest.fromAbella;
 
@@ -209,8 +209,8 @@ top::QName ::= rest::SubQName
 aspect production basicQName
 top::QName ::= rest::SubQName
 {
-  top.isTranslation = false;
-  top.transFromAbella = error("Not a translation");
+  top.isProjection = false;
+  top.projFromAbella = error("Not a projection");
 
   top.fromAbella = rest.fromAbella;
 

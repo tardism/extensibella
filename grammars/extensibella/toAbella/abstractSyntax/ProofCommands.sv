@@ -64,7 +64,7 @@ top::ProofCommand ::= h::HHint nl::[Integer]
                    decorate rel with {
                      relationEnv = top.relationEnv;}.relFound -> []
                  | extSizeMetaterm(rel, args, r) -> []
-                 | transRelMetaterm(rel, args, r) -> []
+                 | projRelMetaterm(rel, args, r) -> []
                  | appendMetaterm(t1, t2, res, r) -> []
                  --Disallowed induction
                  | relationMetaterm(rel, args, r) ->
@@ -527,7 +527,7 @@ top::ProofCommand ::= all::Boolean
             else [errorMsg("Cannot unfold conclusion of extensible " ++
                      "relation with unfilled primary component")]
           end
-        | transRelMetaterm(r, a, _) ->
+        | projRelMetaterm(r, a, _) ->
           let rel::RelationEnvItem = --r must be qualified, so only one
               head(lookupEnv(r, top.proverState.knownRels))
           in
@@ -555,10 +555,10 @@ top::ProofCommand ::= all::Boolean
             else [errorMsg("Cannot unfold conclusion of extensible " ++
                      "relation with unfilled primary component")]
           end
-        | translationMetaterm(a, ty, orig, trans) ->
+        | projectionMetaterm(a, ty, orig, proj) ->
           if orig.isStructured
           then [] --no new rules can be added, so fine
-          else [errorMsg("Cannot unfold conclusion of translation " ++
+          else [errorMsg("Cannot unfold conclusion of projection " ++
                    "with unfilled primary component")]
         | _ -> [errorMsg("Cannot unfold conclusion of this form")]
         end;

@@ -50,12 +50,12 @@ syntax:
   | `t1 \|\| t2 = t3`            | Boolean or                        |
   | `t1 && t2 = t3`              | Boolean and                       |
   | `!t1 = t2`                   | Boolean negation                  |
-  | `t1, t2, t3 |{ty}- t ~~> t'` | translation of a term             |
+  | `t1, t2, t3 |{ty}- t ~~> t'` | projection of a term              |
   | `<rel {ES}> t1 t2 t3`        | extension size of a derivation    |
-  | `<rel {T}> t1 t2 t3`         | translation version of a relation |
+  | `<rel {P}> t1 t2 t3`         | projection version of a relation  |
 
 Using three terms for relations, including the extension size and
-translation version, and for the arguments to translation, is just a
+projection version, and for the arguments to projection, is just a
 placeholder.  These can take an arbitrary number of arguments.  The
 same is true for bindings, which make take an arbitrary number of
 bound variables.  Variables may also be annotated with their types in
@@ -172,16 +172,16 @@ We also have commands for working with extensible languages:
     the `on` clause)
   + The details of extensible theorems are discussed in the [document
     about extensibility in Extensibella](extensibility.md)
-* Translation constraint declaration:  `Translation_Constraint
+* Projection constraint declaration:  `Projection_Constraint
   <name> : forall <bindings>, <hyp name> : <args> |{<ty>}- <original>
-  ~~> <translation> -> <hyp name> : <formula> -> ... <conclusion>.`
-  + Declares a translation constraint to be proven using case analysis
-    on the translation
-  + The details of translation constraints are discussed in the
+  ~~> <projection> -> <hyp name> : <formula> -> ... <conclusion>.`
+  + Declares a projection constraint to be proven using case analysis
+    on the projection
+  + The details of projection constraints are discussed in the
     [document about extensibility in Extensibella](extensibility.md)
 * Extension induction declaration:  `Ext_Ind <rel> <rel args> with
-  forall <bindings>, <trans args> |{<ty>}- <original> ~~>
-  <translation>.`
+  forall <bindings>, <proj args> |{<ty>}- <original> ~~>
+  <projection>.`
   + Declares a requirement for modules to show extensions can build
     arguments for new properties using the extensible relation `<rel>`
     for induction

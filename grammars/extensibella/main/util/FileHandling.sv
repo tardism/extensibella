@@ -123,7 +123,7 @@ top::QName ::= pc::Integer rest::SubQName
 }
 
 
-aspect production transQName
+aspect production projQName
 top::QName ::= rest::SubQName
 {
   top.interfaceFileName = rest.interfaceFileName;
@@ -173,7 +173,7 @@ top::QName ::= rest::SubQName
 }
 
 
-aspect production transRelQName
+aspect production projRelQName
 top::QName ::= rest::SubQName
 {
   top.interfaceFileName = rest.interfaceFileName;

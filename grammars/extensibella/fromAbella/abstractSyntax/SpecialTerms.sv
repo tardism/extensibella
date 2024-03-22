@@ -10,10 +10,10 @@ grammar extensibella:fromAbella:abstractSyntax;
 -}
 
 
-aspect production translationMetaterm
-top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+aspect production projectionMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term proj::Term
 {
-  top.fromAbella = error("Should never be translating a translationMetaterm");
+  top.fromAbella = error("Should never be translating a projectionMetaterm");
 }
 
 
@@ -134,7 +134,7 @@ top::Metaterm ::= arg::Term result::Term
 
 
 {-
-  EXTENSION SIZE AND TRANSLATION VERSION OF RELATIONS
+  EXTENSION SIZE AND PROJECTION VERSION OF RELATIONS
 -}
 
 aspect production extSizeMetaterm
@@ -144,10 +144,10 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 }
 
 
-aspect production transRelMetaterm
+aspect production projRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.fromAbella = error("Should never be translating a transRelMetaterm");
+  top.fromAbella = error("Should never be translating a projRelMetaterm");
 }
 
 

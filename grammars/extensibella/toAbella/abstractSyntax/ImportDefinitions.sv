@@ -151,7 +151,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
   top.tys =
       flatMap(\ p::(QName, Type) ->
                 case p.1 of
-                | transQName(s) ->
+                | projQName(s) ->
                   [langTypeEnvItem(tyQName(s), 0,
                       foldr(addTypeList, emptyTypeList(),
                         --drop `ty -> ty -> prop` from end to get args
@@ -185,7 +185,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                                         }.defRel == p.1
                                      then [d.defTuple] else [],
                                    defs.toList))]
-                     | transQName(_) -> []
+                     | projQName(_) -> []
                      | _ ->
                        [fixedRelationEnvItem(p.1,
                            foldr(addTypeList, emptyTypeList(), p.2.toList))]
@@ -211,7 +211,7 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                            foldr(addTypeList, emptyTypeList(), p.2.toList),
                            pc, error("codefinitionDeclarationClauseModules"),
                            error("codefinitionDeclarationDefs"))]
-                     | transQName(_) -> []
+                     | projQName(_) -> []
                      | _ ->
                        [fixedRelationEnvItem(p.1,
                            foldr(addTypeList, emptyTypeList(), p.2.toList))]
@@ -258,7 +258,7 @@ top::TopCommand ::= names::[QName] k::Kind
       if top.ignoreDefErrors || !any(map((.isError), top.toAbellaMsgs))
       then flatMap(\ q::QName ->
                      case q of
-                     --get these from translation definitions
+                     --get these from projection definitions
                      | tyQName(s) -> []
                      | _ -> [proofTypeEnvItem(q, k.len)]
                      end,
@@ -314,7 +314,7 @@ top::TopCommand ::= names::[QName]
 }
 
 
-aspect production translationConstraint
+aspect production projectionConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.tys = [];

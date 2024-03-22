@@ -210,11 +210,11 @@ top::Def ::= defRel::QName args::TermList
                | nothing() -> []
                end
         end
-      | [(transQName(sub), ty)] ->
+      | [(projQName(sub), ty)] ->
         let fullList::[Term] = args.full.toList
         in
           case elemAtIndex(fullList, length(fullList) - 2).headRel of
-          | just(x) -> [(transQName(sub), x.moduleName)]
+          | just(x) -> [(projQName(sub), x.moduleName)]
           | nothing() -> []
           end
         end
@@ -278,7 +278,7 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
                | nothing() -> []
                end
         end
-      | [(transQName(sub), ty)] ->
+      | [(projQName(sub), ty)] ->
         let fullList::[Term] = args.full.toList
         in
           case elemAtIndex(fullList, length(fullList) - 2).headRel,
@@ -286,7 +286,7 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
           | _, falseMetaterm() ->
             --placeholder clause because we can't have empty relations
             []
-          | just(x), _ -> [(transQName(sub), x.moduleName)]
+          | just(x), _ -> [(projQName(sub), x.moduleName)]
           | nothing(), _ -> []
           end
         end

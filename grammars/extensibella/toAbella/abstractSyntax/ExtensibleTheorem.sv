@@ -202,8 +202,8 @@ top::TopCommand ::= names::[QName]
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | [] -> [errorMsg("No obligations left to prove")]
-      | translationConstraintTheorem(q, x, b, _)::_ ->
-        [errorMsg("Expected translation constraint obligation " ++
+      | projectionConstraintTheorem(q, x, b, _)::_ ->
+        [errorMsg("Expected projection constraint obligation " ++
             justShow(q.pp))]
       | extIndElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext_Ind obligation for " ++

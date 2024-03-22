@@ -96,14 +96,14 @@ Term ::= i::Integer
 
 
 
-function transName
+function projName
 QName ::= ty::QName
 {
-  --need to add "$trans__" to first module portion
+  --need to add "$proj__" to first module portion
   return case ty of
-         | basicQName(s) -> transQName(s)
-         | tyQName(s) -> transQName(s)
-         | _ -> error("Translating types cannot have other prefixes")
+         | basicQName(s) -> projQName(s)
+         | tyQName(s) -> projQName(s)
+         | _ -> error("Projecting types cannot have other prefixes")
          end;
 }
 

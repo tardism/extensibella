@@ -69,8 +69,6 @@ abstract production abbreviatedHyp
 top::Hypothesis ::= name::String body::String
 {
   top.pp = name ++ " : " ++ body;
-
-  top.translation = abbreviatedHyp(name, body);
 }-}
 
 

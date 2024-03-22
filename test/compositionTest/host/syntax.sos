@@ -8,7 +8,7 @@ expr ::= num(int)
        | eq(expr, expr)
        | stmtExpr(stmt, expr)
        | name(string)
-Translation expr :
+Projection expr :
 
 
 stmt ::= noop
@@ -17,4 +17,4 @@ stmt ::= noop
        | assign(string, expr)
        | ifThenElse(expr, stmt, stmt)
        | while(expr, stmt)
-Translation stmt :
+Projection stmt :

@@ -5,7 +5,7 @@ Builds on compositionTest:typing
 expr ::= ...
        | isZero(expr)
 
------------------------------------- [Trans-IsZero]
+------------------------------------ [Proj-IsZero]
 |{expr}- isZero(E) ~~> eq(E, num(0))
 
 

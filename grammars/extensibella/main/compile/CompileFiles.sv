@@ -358,11 +358,11 @@ top::TopCommand ::= names::[QName]
 }
 
 
-aspect production translationConstraint
+aspect production projectionConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.compiled =
-      just(translationConstraint(fullName, binds, body.full));
+      just(projectionConstraint(fullName, binds, body.full));
   top.maybeTag = nothing();
 }
 
@@ -374,15 +374,15 @@ top::TopCommand ::= name::QName
       filter(
          \ t::ThmElement ->
            case t of
-           | translationConstraintTheorem(transName, binds, body, _) ->
-             name == transName
+           | projectionConstraintTheorem(projName, binds, body, _) ->
+             name == projName
            | _ -> false
            end,
          top.proverState.remainingObligations);
   top.compiled =
       case foundThm of
-      | [translationConstraintTheorem(name, binds, body, _)] ->
-        just(translationConstraint(name, binds, body))
+      | [projectionConstraintTheorem(name, binds, body, _)] ->
+        just(projectionConstraint(name, binds, body))
       | _ ->
         error("Could not identify constraint when compiling " ++
               "Prove_Constraint; file must be checkable before " ++

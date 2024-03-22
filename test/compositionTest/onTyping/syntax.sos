@@ -6,17 +6,17 @@ expr ::= ...
        | imagInt(int)
        | imagPlus(expr, expr)
 
------------------------------- [Trans-ImagInt]
+------------------------------ [Proj-ImagInt]
 |{expr}- imagInt(I) ~~> num(I)
 
------------------------------------------- [Trans-ImagPlus]
+------------------------------------------ [Proj-ImagPlus]
 |{expr}- imagPlus(E1, E2) ~~> plus(E1, E2)
 
 
 ty ::= ...
      | imagIntTy
 
-------------------------- [Trans-ImagIntTy]
+------------------------- [Proj-ImagIntTy]
 |{ty}- imagIntTy ~~> intTy
 
 

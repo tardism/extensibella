@@ -51,7 +51,7 @@ Extensible_Theorem
  search.
 %T-While
  search.
-%T-STrans
+%T-S-D
  apply IH to Ty2 Lkp. search.
 
 

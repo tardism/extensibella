@@ -1,13 +1,13 @@
 grammar extensibella:toAbella:abstractSyntax;
 
-abstract production translationConstraint
+abstract production projectionConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
-  top.pp = text("Translation_Constraint ") ++ name.pp ++ text(" :") ++
+  top.pp = text("Projection_Constraint ") ++ name.pp ++ text(" :") ++
       line() ++ text("forall ") ++ ppImplode(text(" "), binds.pps) ++
       text(",") ++ line() ++ body.pp ++ text(".") ++ realLine();
   top.abella_pp =
-      "Translation_Constraint " ++ name.abella_pp ++ " : " ++
+      "Projection_Constraint " ++ name.abella_pp ++ " : " ++
       "forall " ++ binds.abella_pp ++ ", " ++ body.abella_pp ++ ".\n";
 
   production fullName::QName =
@@ -30,34 +30,34 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
                 end,
               [], body.premises);
 
-  local transTy::QName =
+  local projTy::QName =
       case body.premises of
-      | (_, translationMetaterm(_, ty, _, _))::_ -> ty
-      | _ -> error("Should not access transTy")
+      | (_, projectionMetaterm(_, ty, _, _))::_ -> ty
+      | _ -> error("Should not access projTy")
       end;
-  transTy.typeEnv = top.typeEnv;
-  local fullType::TypeEnvItem = transTy.fullType;
+  projTy.typeEnv = top.typeEnv;
+  local fullType::TypeEnvItem = projTy.fullType;
 
   --check name is qualified with appropriate module
   top.toAbellaMsgs <-
       if name.isQualified
       then if name.moduleName == top.currentModule
            then []
-           else [errorMsg("Declared translation constraint name " ++
+           else [errorMsg("Declared projection constraint name " ++
                     justShow(name.pp) ++ " does not have correct " ++
                     "module (expected " ++
                     justShow(top.currentModule.pp) ++ ")")]
       else [];
-  --check there are premises and the first premise is a translation
+  --check there are premises and the first premise is a projection
   top.toAbellaMsgs <-
       case body.premises of
-      | [] -> [errorMsg("Translation constraint " ++
+      | [] -> [errorMsg("Projection constraint " ++
                   justShow(name.pp) ++ " must have premises")]
-      | (_, translationMetaterm(_, _, _, _))::_ ->
+      | (_, projectionMetaterm(_, _, _, _))::_ ->
         [] --any type errors are already identified
       | (_, m)::_ ->
-        [errorMsg("First premise in translation constraint " ++
-            justShow(name.pp) ++ " must be a translation; found " ++
+        [errorMsg("First premise in projection constraint " ++
+            justShow(name.pp) ++ " must be a projection; found " ++
             justShow(m.pp))]
       end;
   --check there are no existing theorems with this full name
@@ -66,13 +66,13 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       then []
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
-  --check this is for a translation type from the same module
+  --check this is for a projection type from the same module
   top.toAbellaMsgs <-
       case body.toAbella of
-      | impliesMetaterm(translationMetaterm(_, q, _, _), _) ->
+      | impliesMetaterm(projectionMetaterm(_, q, _, _), _) ->
         if sameModule(top.currentModule, q)
         then []
-        else [errorMsg("New translation constraints must be for " ++
+        else [errorMsg("New projection constraints must be for " ++
                  "new types; " ++ justShow(q.pp) ++ " is imported")]
       | _ -> []
       end;
@@ -131,10 +131,10 @@ top::TopCommand ::= name::QName
             if null(alsos) then ""
             else " also " ++
                  implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
-      | translationConstraintTheorem(q, x, b, _)::_ ->
+      | projectionConstraintTheorem(q, x, b, _)::_ ->
         if name == q
         then []
-        else [errorMsg("Expected translation constraint obligation" ++
+        else [errorMsg("Expected projection constraint obligation" ++
                  " " ++ justShow(q.pp))]
       | extIndElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext_Ind obligation for " ++
@@ -154,7 +154,7 @@ top::TopCommand ::= name::QName
 
   local obligation::(QName, Bindings, ExtBody) =
       case head(top.proverState.remainingObligations) of
-      | translationConstraintTheorem(q, x, b, _) -> (q, x, b)
+      | projectionConstraintTheorem(q, x, b, _) -> (q, x, b)
       | _ -> error("Not possible (length top.toAbellaMsgs = " ++
                    toString(length(top.toAbellaMsgs)) ++ ")")
       end;
@@ -177,13 +177,13 @@ top::TopCommand ::= name::QName
                 end,
               [], body.premises);
 
-  local transTy::QName =
+  local projTy::QName =
       case body.premises of
-      | (_, translationMetaterm(_, ty, _, _))::_ -> ty
-      | _ -> error("Should not access transTy")
+      | (_, projectionMetaterm(_, ty, _, _))::_ -> ty
+      | _ -> error("Should not access projTy")
       end;
-  transTy.typeEnv = top.typeEnv;
-  local fullType::TypeEnvItem = transTy.fullType;
+  projTy.typeEnv = top.typeEnv;
+  local fullType::TypeEnvItem = projTy.fullType;
 
   top.provingTheorems =
       [(obligation.1,

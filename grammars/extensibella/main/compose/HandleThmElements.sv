@@ -12,13 +12,13 @@ inherited attribute relEnv::Env<RelationEnvItem> occurs on ThmElement;
 inherited attribute constrEnv::Env<ConstructorEnvItem> occurs on ThmElement;
 inherited attribute tyEnv::Env<TypeEnvItem> occurs on ThmElement;
 
---pass in stand-in rules for building R_T definition
+--pass in stand-in rules for building R_P definition
 inherited attribute standInRules_down::[(QName, Def)] occurs on ThmElement;
 
 --pass in module builds-on information
 inherited attribute buildsOns_down::[(QName, [QName])] occurs on ThmElement;
 
---pass down the ExtSize groups for determining how to build R -> R_T
+--pass down the ExtSize groups for determining how to build R -> R_P
 inherited attribute knownExtSizes_down::[[QName]] occurs on ThmElement;
 --pass up new ones
 synthesized attribute newExtSizes::[[QName]] occurs on ThmElement;
@@ -52,7 +52,7 @@ inherited attribute allParsers::AllParsers occurs on ThmElement;
 inherited attribute configuration::Configuration occurs on ThmElement;
 synthesized attribute runAbella_out::IOToken occurs on ThmElement;
 
---build the definitions for R_ES and R_T
+--build the definitions for R_ES and R_P
 synthesized attribute extIndDefs::[String] occurs on ThmElement;
 
 
@@ -85,7 +85,7 @@ top::ThmElement ::=
   extThms.typeEnv = top.tyEnv;
   extThms.expectedIHNum = 0;
 
-  --[(thm name, key relation, is host-y or not, uses R_T or not,
+  --[(thm name, key relation, is host-y or not, uses R_P or not,
   --  bindings, body, intros name for key relation)] for thms
   local thmsInfo::[(QName, RelationEnvItem, Boolean, Boolean,
                     Bindings, ExtBody, String)] =
@@ -98,14 +98,14 @@ top::ThmElement ::=
               --host-y if thm, rel, and pc all from same mod
               sameModule(p.2.moduleName, rei.name) &&
                  sameModule(p.2.moduleName, rei.pcType.name),
-              --uses R_T if thm and rel from different mods
+              --uses R_P if thm and rel from different mods
               !sameModule(p.2.moduleName, p.1),
               p.3, p.4, p.5)
            end,
          zip(extThms.inductionRels, thms)); --cuts off the alsos part
 
   local multiple::Boolean = length(thms) + length(alsos) > 1;
-  local extName::QName = --multiple theorems or the one uses R_T
+  local extName::QName = --multiple theorems or the one uses R_P
       if multiple || !null(thmsInfo) && head(thmsInfo).4
       then toQName("$extThm_" ++ toString(genInt()))
       else fst(head(thms));
@@ -118,8 +118,8 @@ top::ThmElement ::=
             bindingMetaterm(forallBinder(), p.5,
                decorate if p.4
                         then decorate p.6 with {
-                                makeTransRel = p.7;
-                             }.transRelMade
+                                makeProjRel = p.7;
+                             }.projRelMade
                         else p.6 with {
                   relationEnv = top.relEnv;
                   constructorEnv = top.constrEnv;
@@ -283,7 +283,7 @@ top::ThmElement ::=
   local thmSplitNames::[String] =
       map(\ p::(QName, RelationEnvItem, Boolean, Boolean,
                 Bindings, ExtBody, String) ->
-            if p.4 --uses R_T
+            if p.4 --uses R_P
             then "$extSplit" ++ toString(genInt())
             else p.1.abella_pp,
           thmsInfo);
@@ -293,7 +293,7 @@ top::ThmElement ::=
            implode(", ", thmSplitNames ++
                    map((.abella_pp), map(fst, alsos))) ++ ".\n"
       else "\n";
-  --turn all the R_T -> F thms into R -> F
+  --turn all the R_P -> F thms into R -> F
   local buildFullProof::(String ::= String QName RelationEnvItem
                             Bindings ExtBody String [AnyCommand]) =
       \ partialName::String thmName::QName keyRel::RelationEnvItem
@@ -353,7 +353,7 @@ top::ThmElement ::=
                                               else "$A" ++ toString(i),
                                             range(0, premLen))
                             ) ++ ". " ++
-            --apply proven theorem using R_T to args
+            --apply proven theorem using R_P to args
             "apply " ++ partialName ++ " to " ++
                implode(" ", map(\ x::String -> if x == keyRelName
                                                then "$R" else x,
@@ -402,13 +402,13 @@ top::ThmElement ::=
                filterMap(\ p::(String, QName, RelationEnvItem, Boolean,
                                Boolean, Bindings, ExtBody, String,
                                [AnyCommand]) ->
-                           if p.5 --uses R_T
+                           if p.5 --uses R_P
                            then just(buildFullProof(p.1, p.2, p.3, p.6,
                                                     p.7, p.8, p.9))
                            else nothing(),
                          lst))
            end
-      else if head(thmsInfo).4 --single thm, but uses R_T
+      else if head(thmsInfo).4 --single thm, but uses R_P
       then let p::(QName, RelationEnvItem, Boolean, Boolean,
                    Bindings, ExtBody, String) = head(thmsInfo)
            in
@@ -425,7 +425,7 @@ top::ThmElement ::=
                                 justShow(p.2.name.pp))
                         end))
            end
-      else ""; --single thm that doesn't use R_T
+      else ""; --single thm that doesn't use R_P
   local after::String = splitThm ++ applyExtInds;
   --send after to Abella
   local after_abella::IOVal<String> =
@@ -459,7 +459,7 @@ top::ThmElement ::=
 }
 
 
-aspect production translationConstraintTheorem
+aspect production projectionConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
                     tag::(Integer, Integer, String)
 {
@@ -476,16 +476,16 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
   local startPrf::String =
       case head(tcMods).2 of
       | addRunCommands(c, _) ->
-        --set-up for translation constraint, including declaration
+        --set-up for projection constraint, including declaration
         implode("", map((.abella_pp), c.toAbella))
-      | _ -> error("Must be translationConstraint first")
+      | _ -> error("Must be projectionConstraint first")
       end;
   --rest of list provides the rest of the proof
   local restPrf::String =
       implode("", map(\ p::(QName, DecCmds) -> getProof(p.2).2,
                       tail(tcMods)));
   top.composedCmds =
-      "/*Start Translation Constraint " ++ justShow(name.pp) ++ "*/\n" ++
+      "/*Start Projection Constraint " ++ justShow(name.pp) ++ "*/\n" ++
       startPrf ++ " " ++ restPrf ++ "\n" ++
       "/*End " ++ justShow(name.pp) ++ "*/\n\n\n";
 
@@ -552,12 +552,12 @@ top::ThmElement ::=
    tag::(Integer, Integer, String)
 {
   {-
-    Definition of R_T relation
+    Definition of R_P relation
   -}
-  local transRelDef::String =
-      buildTransRel_standInRules(rels, top.standInRules_down,
+  local projRelDef::String =
+      buildProjRel_standInRules(rels, top.standInRules_down,
          top.relEnv, top.buildsOns_down).abella_pp;
-  top.extIndDefs = [transRelDef];
+  top.extIndDefs = [projRelDef];
 
   top.newExtInds = rels;
 
@@ -623,29 +623,29 @@ top::ThmElement ::=
           rels);
 
   {-
-    R_T to R proof
+    R_P to R proof
   -}
-  local dropTThmName::String =
+  local dropPThmName::String =
       if length(rels) == 1
-      then dropTName(head(rels).1)
-      else "$dropT_" ++ toString(genInt());
-  local dropTStmt::Metaterm =
+      then dropPName(head(rels).1)
+      else "$dropP_" ++ toString(genInt());
+  local dropPStmt::Metaterm =
       foldr1(andMetaterm,
          map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
                bindingMetaterm(forallBinder(),
                   toBindings(p.2),
                   impliesMetaterm(
-                     relationMetaterm(transRelQName(p.1.sub),
+                     relationMetaterm(projRelQName(p.1.sub),
                         toTermList(map(basicNameTerm, p.2)),
                         emptyRestriction()),
                      relationMetaterm(p.1,
                         toTermList(map(basicNameTerm, p.2)),
                         emptyRestriction()))),
             rels));
-  local dropTProofStart::String =
+  local dropPProofStart::String =
       "induction on " ++ implode(" ", repeat("1", length(rels))) ++
       "." ++ if length(rels) == 1 then "\n" else " split.\n ";
-  local dropTProofs::[String] =
+  local dropPProofs::[String] =
       map(--[(plus count, [(ES premise, IH num)], is host)]
         \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
           "intros R. R: case R (keep).\n " ++
@@ -663,42 +663,42 @@ top::ThmElement ::=
                           p.2)) ++ " search.",
                  l)),
         clauseInfo);
-  local dropTAfter::String =
+  local dropPAfter::String =
       if length(rels) == 1 then ""
-      else "Split " ++ dropTThmName ++ " as " ++
-           implode(", ", map(dropTName, map(fst, rels))) ++ ".\n";
-  local dropTFull::String =
-      "Theorem " ++ dropTThmName ++ " : " ++ dropTStmt.abella_pp ++
-          ".\n" ++ dropTProofStart ++
-      implode("\n ", dropTProofs) ++ "\n" ++
-      dropTAfter;
+      else "Split " ++ dropPThmName ++ " as " ++
+           implode(", ", map(dropPName, map(fst, rels))) ++ ".\n";
+  local dropPFull::String =
+      "Theorem " ++ dropPThmName ++ " : " ++ dropPStmt.abella_pp ++
+          ".\n" ++ dropPProofStart ++
+      implode("\n ", dropPProofs) ++ "\n" ++
+      dropPAfter;
 
-  local dropT_abella::IOVal<String> =
-      sendBlockToAbella(dropTFull, top.liveAbella, top.runAbella,
+  local dropP_abella::IOVal<String> =
+      sendBlockToAbella(dropPFull, top.liveAbella, top.runAbella,
                         top.configuration);
 
 
 
   --whether or not this should use the extension size version of the
-  --relation as a step between R and R_T
+  --relation as a step between R and R_P
   local useES::Boolean =
       !null(filter(contains(head(rels).1, _), top.knownExtSizes_down));
 
   {-
-    R_{ES} to R_T proof
+    R_{ES} to R_P proof
   -}
-  local toTransRelStatements::[Metaterm] =
+  local toProjRelStatements::[Metaterm] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             buildExtIndThm(p.3, p.1, p.2, p.4.toList, useES),
           rels);
-  local toTransRelStatement::Metaterm =
-     foldr1(andMetaterm, toTransRelStatements);
-  local toTransRelNames::[String] =
+  local toProjRelStatement::Metaterm =
+     foldr1(andMetaterm, toProjRelStatements);
+  local toProjRelNames::[String] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
-            "$toTransRel__" ++ p.1.abella_pp,
+            "$toProjRel__" ++ p.1.abella_pp,
           rels);
-  local toTransRelInfo::[(QName, RelationEnvItem, Boolean, Boolean,
-                          Bindings, ExtBody, String)] =
+  local toProjRelInfo::[(QName, RelationEnvItem, Boolean, Boolean,
+                         Bindings, ExtBody, String)] =
       map(\ p::(String, QName, [String], Bindings, ExtIndPremiseList) ->
             let rei::RelationEnvItem =
                 decorate p.2 with {relationEnv = top.relEnv;}.fullRel
@@ -715,19 +715,19 @@ top::ThmElement ::=
                sameModule(rei.name, rei.pcType.name),
                false, p.4, body, relName)
             end end end,
-          zip(toTransRelNames, rels));
-  local toTransRelProveName::String =
-      if length(toTransRelNames) == 1
-      then head(toTransRelNames)
-      else "$toTransRel_" ++ toString(genInt());
-  local toTransRelProofStart::String =
+          zip(toProjRelNames, rels));
+  local toProjRelProveName::String =
+      if length(toProjRelNames) == 1
+      then head(toProjRelNames)
+      else "$toProjRel_" ++ toString(genInt());
+  local toProjRelProofStart::String =
       (if useES
        then "induction on " ++
             implode(" ", repeat("2", length(rels))) ++ ". "
        else "") ++
       "induction on " ++ implode(" ", repeat("1", length(rels))) ++
       "." ++ if length(rels) > 1 then " split.\n" else "\n";
-  local toTransRelSetups::[String] =
+  local toProjRelSetups::[String] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             let givenLabels::[String] = filterMap(fst, p.4.toList)
             in
@@ -745,20 +745,20 @@ top::ThmElement ::=
           rels);
   --proof information from all the modules where this occurs
   --filter out the ones where there are no proofs
-  local toTransRelProofInfo::[(QName, [(ProofState, [AnyCommand])])] =
+  local toProjRelProofInfo::[(QName, [(ProofState, [AnyCommand])])] =
       filter(\ p::(QName, [(ProofState, [AnyCommand])]) -> !null(p.2),
              getExtIndProofSteps(top.incomingMods, map(fst, rels)));
-  local toTransRelSplitProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
+  local toProjRelSplitProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
       if length(rels) == 1
          --only one proof, so all go together
       then map(\ p::(QName, [(ProofState, [AnyCommand])]) -> (p.1, [p.2]),
-               toTransRelProofInfo)
+               toProjRelProofInfo)
          --multiple proofs, so top-level goals are the splits
       else map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
                  (p.1, splitAtTopGoals(p.2)),
-               toTransRelProofInfo);
+               toProjRelProofInfo);
   --proofs for each module, in each top goal
-  local toTransRelJoinProofs::[(QName, [String])] =
+  local toProjRelJoinProofs::[(QName, [String])] =
       map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
            (p.1,
             map(\ l::[(ProofState, [AnyCommand])] ->
@@ -768,39 +768,39 @@ top::ThmElement ::=
                               map((.abella_pp), pr.2)),
                          l)),
                 p.2)),
-          toTransRelSplitProofInfo);
+          toProjRelSplitProofInfo);
   --
-  local toTransRelProofInit::String =
-      "Theorem " ++ toTransRelProveName ++ " : " ++
-      toTransRelStatement.abella_pp ++ ".\n" ++
-      toTransRelProofStart;
-  local toTransRelProofInit_abella::IOVal<String> =
-      sendBlockToAbella(toTransRelProofInit, top.liveAbella,
-                        dropT_abella.io, top.configuration);
+  local toProjRelProofInit::String =
+      "Theorem " ++ toProjRelProveName ++ " : " ++
+      toProjRelStatement.abella_pp ++ ".\n" ++
+      toProjRelProofStart;
+  local toProjRelProofInit_abella::IOVal<String> =
+      sendBlockToAbella(toProjRelProofInit, top.liveAbella,
+                        dropP_abella.io, top.configuration);
   --joining the set-up and proofs into one
-  local toTransRelProofContents::IOVal<[String]> =
-      buildExtThmProofs(toTransRelInfo,
+  local toProjRelProofContents::IOVal<[String]> =
+      buildExtThmProofs(toProjRelInfo,
          map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
                (p.1, splitAtAllGoals(p.2)),
-             toTransRelProofInfo),
+             toProjRelProofInfo),
          top.allThms, top.tyEnv, top.relEnv, top.constrEnv,
          top.liveAbella, top.configuration, top.allParsers,
-         map(fst, rels), 0, toTransRelProofInit_abella.io);
-  local afterToTransRel::String =
-      if length(toTransRelNames) == 1
+         map(fst, rels), 0, toProjRelProofInit_abella.io);
+  local afterToProjRel::String =
+      if length(toProjRelNames) == 1
       then "" --nothing to split
-      else "Split " ++ toTransRelProveName ++ " as " ++
-           implode(", ", toTransRelNames) ++ ".\n";
-  local toTransRelAfter_abella::IOVal<String> =
-      sendBlockToAbella(afterToTransRel, top.liveAbella,
-         toTransRelProofContents.io, top.configuration);
-  local fullToTransRel::String =
-      toTransRelProofInit ++
-      implode(" ", toTransRelProofContents.iovalue) ++ "\n" ++
-      afterToTransRel;
+      else "Split " ++ toProjRelProveName ++ " as " ++
+           implode(", ", toProjRelNames) ++ ".\n";
+  local toProjRelAfter_abella::IOVal<String> =
+      sendBlockToAbella(afterToProjRel, top.liveAbella,
+         toProjRelProofContents.io, top.configuration);
+  local fullToProjRel::String =
+      toProjRelProofInit ++
+      implode(" ", toProjRelProofContents.iovalue) ++ "\n" ++
+      afterToProjRel;
 
   {-
-    R to R_T proof
+    R to R_P proof
   -}
   --Note that if we don't use R_ES, this is exactly the same as what
   --was proved modularly; however, it is easier to use that here than
@@ -811,8 +811,8 @@ top::ThmElement ::=
                 bindingMetaterm(forallBinder(),
                    toBindings(p.3),
                    foldr(impliesMetaterm,
-                      --end:  R_T(args)
-                      relationMetaterm(transRelQName(p.2.sub),
+                      --end:  R_P(args)
+                      relationMetaterm(projRelQName(p.2.sub),
                          toTermList(map(basicNameTerm, p.3)),
                          emptyRestriction()),
                       --premises:  R(args)::other premises
@@ -849,8 +849,8 @@ top::ThmElement ::=
                    "Acc: apply extensibella-$-stdLib-$-all_acc to Is P.\n"
                  end
                else "") ++
-              --make R_T
-              "apply " ++ elemAtIndex(toTransRelNames, p.1) ++
+              --make R_P
+              "apply " ++ elemAtIndex(toProjRelNames, p.1) ++
                  " to " ++ implode(" ", premNames) ++ ". search."
             end end end,
           enumerate(rels));
@@ -860,13 +860,13 @@ top::ThmElement ::=
       implode(", ", map(justShow, map((.pp), map(fst, rels))));
   top.composedCmds =
       "/*Start Ext_Ind for " ++ displayNames ++ "*/\n" ++
-      dropTFull ++ "\n\n" ++ fullToTransRel ++ "\n" ++
+      dropPFull ++ "\n\n" ++ fullToProjRel ++ "\n" ++
       implode("\n", extIndProofs) ++ "\n" ++
       "/*End Ext_Ind for " ++ displayNames ++ "*/\n\n\n";
 
   top.runAbella_out =
       sendBlockToAbella(implode("\n", extIndProofs), top.liveAbella,
-         toTransRelAfter_abella.io, top.configuration).io;
+         toProjRelAfter_abella.io, top.configuration).io;
 
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
@@ -881,10 +881,10 @@ String ::= rel::QName
 {
   return "$extInd_" ++ rel.abella_pp;
 }
-function dropTName
+function dropPName
 String ::= rel::QName
 {
-  return "$dropT_" ++ rel.abella_pp;
+  return "$dropP_" ++ rel.abella_pp;
 }
 
 function buildExtIndThmExtBody
@@ -916,7 +916,7 @@ ExtBody ::= boundVars::Bindings rel::QName relArgs::[String]
          toTermList([nameTerm(toQName(n), nothingType())]),
          emptyRestriction());
   local conc::Metaterm =
-      relationMetaterm(transRelQName(rel.sub), toTermList(args),
+      relationMetaterm(projRelQName(rel.sub), toTermList(args),
                        emptyRestriction());
   local base::ExtBody =
       foldr(\ p::(Maybe<String>, Metaterm) rest::ExtBody ->
@@ -933,13 +933,13 @@ ExtBody ::= boundVars::Bindings rel::QName relArgs::[String]
       else addLabelExtBody(relPremName, relPrem, base);
 }
 
-function buildTransRel_standInRules
+function buildProjRel_standInRules
 TopCommand ::= rels::[(QName, [String], Bindings, ExtIndPremiseList)]
                standInRules::[(QName, Def)] env::Env<RelationEnvItem>
                buildsOns::[(QName, [QName])]
 {
-  return buildTransRelDef(buildDefInfo(rels, standInRules, env),
-                          buildsOns);
+  return buildProjRelDef(buildDefInfo(rels, standInRules, env),
+                         buildsOns);
 }
 function buildDefInfo
 [(QName, ([String], [String], Maybe<Metaterm>),
@@ -1129,7 +1129,7 @@ top::ThmElement ::= rels::[(QName, [String])]
                          "plus_integer_is_integer to _ _ ES" ++
                          toString(i) ++ ".", "",
                        r) ++ " search.\n",
-                 --dropT
+                 --dropP
                  basicPrf ++ " search.\n")
                 end end,
             l),
@@ -1625,38 +1625,38 @@ String ::= prfs::[(QName, [String])]
 
 
 
---make the appropriate premise into the R_T version
-inherited attribute makeTransRel::String occurs on ExtBody;
-synthesized attribute transRelMade::ExtBody occurs on ExtBody;
+--make the appropriate premise into the R_P version
+inherited attribute makeProjRel::String occurs on ExtBody;
+synthesized attribute projRelMade::ExtBody occurs on ExtBody;
 
 aspect production endExtBody
 top::ExtBody ::= conc::Metaterm
 {
-  top.transRelMade =
-      error("Should not access endExtBody.transRelMade");
+  top.projRelMade =
+      error("Should not access endExtBody.projRelMade");
 }
 
 
 aspect production addLabelExtBody
 top::ExtBody ::= label::String m::Metaterm rest::ExtBody
 {
-  rest.makeTransRel = top.makeTransRel;
-  top.transRelMade =
-      if label == top.makeTransRel
+  rest.makeProjRel = top.makeProjRel;
+  top.projRelMade =
+      if label == top.makeProjRel
       then case m of
            | relationMetaterm(q, a, r) ->
-             addLabelExtBody(label, transRelMetaterm(q, a, r), rest)
-           | _ -> error("Should not access transRelMade")
+             addLabelExtBody(label, projRelMetaterm(q, a, r), rest)
+           | _ -> error("Should not access projRelMade")
            end
-      else addLabelExtBody(label, m, rest.transRelMade);
+      else addLabelExtBody(label, m, rest.projRelMade);
 }
 
 
 aspect production addBasicExtBody
 top::ExtBody ::= m::Metaterm rest::ExtBody
 {
-  rest.makeTransRel = top.makeTransRel;
-  top.transRelMade = addBasicExtBody(m, rest.transRelMade);
+  rest.makeProjRel = top.makeProjRel;
+  top.projRelMade = addBasicExtBody(m, rest.projRelMade);
 }
 
 
@@ -1706,7 +1706,7 @@ top::TopCommand ::= names::[QName]
 }
 
 
-aspect production translationConstraint
+aspect production projectionConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
   top.matchesNames = \ l::[QName] -> head(l) == fullName;

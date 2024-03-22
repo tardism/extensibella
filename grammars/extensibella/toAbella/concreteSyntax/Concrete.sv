@@ -233,25 +233,25 @@ concrete productions top::PureTopCommand_c
         | left(msg) -> anyParseFailure(msg)
         | right(lst) -> todoError("Adding extensible theorems to groups not done yet")
         end; }
-| 'Translation_Constraint' name::Id_t ':'
+| 'Projection_Constraint' name::Id_t ':'
   'forall' binds::BindingList_c ',' body::ExtBody_c '.'
   { top.ast =
         case body.ast of
         | left(msg) -> anyParseFailure(msg)
         | right(b) ->
           anyTopCommand(
-                 translationConstraint(toQName(name.lexeme),
-                                       binds.ast, b))
+                 projectionConstraint(toQName(name.lexeme),
+                                      binds.ast, b))
         end; }
-| 'Translation_Constraint' name::Qname_t ':'
+| 'Projection_Constraint' name::Qname_t ':'
   'forall' binds::BindingList_c ',' body::ExtBody_c '.'
   { top.ast =
         case body.ast of
         | left(msg) -> anyParseFailure(msg)
         | right(b) ->
           anyTopCommand(
-                 translationConstraint(toQName(name.lexeme),
-                                       binds.ast, b))
+                 projectionConstraint(toQName(name.lexeme),
+                                      binds.ast, b))
         end; }
 | 'Prove_Constraint' tc::Qname_t '.'
   { top.ast = anyTopCommand(proveConstraint(toQName(tc.lexeme))); }

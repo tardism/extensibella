@@ -65,14 +65,14 @@ terminal BoolAnd_t    '&&'   lexer classes {TOKEN}, precedence=4, association=le
 terminal BoolNot_t    '!'    lexer classes {TOKEN}, precedence=5;
 terminal Tilde_t      '~'    lexer classes {TOKEN};
 
-terminal TransTurnstyleStart_t   '|{'    lexer classes {TOKEN};
-terminal TransTurnstyleEnd_t     '}-'    lexer classes {TOKEN};
-terminal TransArrow_t            '~~>'   lexer classes {TOKEN};
+terminal ProjTurnstyleStart_t   '|{'    lexer classes {TOKEN};
+terminal ProjTurnstyleEnd_t     '}-'    lexer classes {TOKEN};
+terminal ProjArrow_t            '~~>'   lexer classes {TOKEN};
 
 
 --For extension size and translation version of a relation
 terminal ExtSize_t    'ES';
-terminal TransRel_t   'T';
+terminal ProjRel_t    'P';
 terminal LCurly_t     '{'    lexer classes {TOKEN};
 terminal RCurly_t     '}'    lexer classes {TOKEN};
 

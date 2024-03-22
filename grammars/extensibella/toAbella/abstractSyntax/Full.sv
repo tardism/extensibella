@@ -110,10 +110,10 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 }
 
 
-aspect production transRelMetaterm
+aspect production projRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.full = transRelMetaterm(rel.fullRel.name, args.full, r);
+  top.full = projRelMetaterm(rel.fullRel.name, args.full, r);
 }
 
 
@@ -166,11 +166,11 @@ top::Metaterm ::= b::Binder bindings::Bindings body::Metaterm
 }
 
 
-aspect production translationMetaterm
-top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+aspect production projectionMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term proj::Term
 {
-  top.full = translationMetaterm(args.full, ty.fullType.name,
-                                 orig.full, trans.full);
+  top.full = projectionMetaterm(args.full, ty.fullType.name,
+                                orig.full, proj.full);
 }
 
 

@@ -32,26 +32,26 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 }
 
 
-aspect production transRelMetaterm
+aspect production projRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.toAbella = relationMetaterm(transRelQName(rel.fullRel.name.sub),
+  top.toAbella = relationMetaterm(projRelQName(rel.fullRel.name.sub),
                                   args.toAbella, r);
 
   top.toAbellaMsgs <- rel.relErrors;
   top.toAbellaMsgs <-
       if !rel.relFound ||
          findExtIndGroup(rel.fullRel.name, top.proverState).isJust ||
-         transRelInState
+         projRelInState
       then []
       else [errorMsg("Projection version is not defined for " ++
                justShow(rel.fullRel.name.pp))];
   --defined, but currently being proven, so not in ExtIndGroups yet
-  local transRelInState::Boolean =
-      contains(rel.fullRel.name, top.proverState.state.transRels) ||
-      contains(rel, top.proverState.state.transRels);
+  local projRelInState::Boolean =
+      contains(rel.fullRel.name, top.proverState.state.projRels) ||
+      contains(rel, top.proverState.state.projRels);
 
-  top.transRels := [rel];
+  top.projRels := [rel];
 }
 
 
@@ -104,14 +104,14 @@ top::Metaterm ::= b::Binder bindings::Bindings body::Metaterm
 }
 
 
-aspect production translationMetaterm
-top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+aspect production projectionMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term proj::Term
 {
   top.toAbella =
       relationMetaterm(
-         transName(ty.fullType.name),
+         projName(ty.fullType.name),
          buildApplicationArgs(args.toAbella.toList ++
-                              [orig.toAbella, trans.toAbella]),
+                              [orig.toAbella, proj.toAbella]),
          emptyRestriction());
 
   top.toAbellaMsgs <- ty.typeErrors;
@@ -119,9 +119,9 @@ top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
       if !ty.typeFound
       then [] --covered by ty.typeErrors
       else if ty.fullType.isLangType
-      then [] --translatable
+      then [] --projectable
       else [errorMsg("Type " ++ justShow(ty.fullType.name.pp) ++
-               " is not part of the language and cannot be translated")];
+               " is not part of the language and cannot be projected")];
 }
 
 

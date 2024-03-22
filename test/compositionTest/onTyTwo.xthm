@@ -96,9 +96,9 @@ L: apply lt_plus_one to R1 _. Acc: case Acc. A: apply Acc to _ L.
 apply IH to R2 A. unfold. exists (eq E1 (num 0)). split.
   %type E1
    search.
-  %trans
+  %proj
    search.
-  %type trans
+  %type proj
    search.
   %1 + 1 = 2
    search.

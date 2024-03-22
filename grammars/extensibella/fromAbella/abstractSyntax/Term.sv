@@ -10,14 +10,14 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
   top.fromAbella =
       case rel, args.fromAbella.toList of
-      --translation
-      | _, transArgs when rel.isTranslation ->
-        translationMetaterm(
+      --projection
+      | _, projArgs when rel.isProjection ->
+        projectionMetaterm(
            foldr(consTermList, emptyTermList(),
-                 take(length(transArgs) - 2, transArgs)),
-           rel.transFromAbella,
-           head(drop(length(transArgs) - 2, transArgs)),
-           head(drop(length(transArgs) - 1, transArgs)))
+                 take(length(projArgs) - 2, projArgs)),
+           rel.projFromAbella,
+           head(drop(length(projArgs) - 2, projArgs)),
+           head(drop(length(projArgs) - 1, projArgs)))
       --special relations with three arguments
       | basicQName(baseName(relName)), [a, b, c] ->
         if relName == integerAdditionName
@@ -52,11 +52,11 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
         else if relName == notName
         then notBoolMetaterm(a, b)
         else relationMetaterm(rel.relFromAbella, args.fromAbella, r)
-      --extSize and transRel relations
+      --extSize and projRel relations
       | extSizeQName(_), _ ->
         extSizeMetaterm(rel.relFromAbella, args.fromAbella, r)
-      | transRelQName(_), _ ->
-        transRelMetaterm(rel.relFromAbella, args.fromAbella, r)
+      | projRelQName(_), _ ->
+        projRelMetaterm(rel.relFromAbella, args.fromAbella, r)
       --nothing special
       | _, _ ->
         relationMetaterm(rel.relFromAbella, args.fromAbella, r)

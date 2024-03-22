@@ -3,7 +3,7 @@ grammar extensibella:main:compose;
 {-
   The purpose here is to map from modular proof states to composed
   ones.  The changes with which we are concerned are
-  * Hypotheses changing from R to R_T
+  * Hypotheses changing from R to R_P
   * Adding extra hypotheses
   * Hypothesis names changing
   * The unknown/generic term changing to a real term
@@ -19,7 +19,7 @@ grammar extensibella:main:compose;
 inherited attribute mapTo<a>::a;
 --whether it succeeds or not
 synthesized attribute mapSuccess::Boolean;
---hyp info:  [(old hyp name, new hyp name, is now R_T)]
+--hyp info:  [(old hyp name, new hyp name, is now R_P)]
 synthesized attribute hypMap::[(String, String, Boolean)];
 --threading:  [(old var name, new corresponding term)]
 threaded attribute varMap_in, varMap::[(String, Term)];
@@ -190,7 +190,7 @@ Maybe<([(String, String, Boolean)], --hypMap
                let addT::Boolean =
                    case ob, nb of
                    | relationMetaterm(_, _, _),
-                     transRelMetaterm(_, _, _) -> true
+                     projRelMetaterm(_, _, _) -> true
                    | _, _ -> false
                    end
                in
@@ -223,7 +223,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   args.mapTo =
       case top.mapTo of
       | relationMetaterm(_, x, _) -> x
-      | transRelMetaterm(_, x, _) -> x
+      | projRelMetaterm(_, x, _) -> x
       | _ -> error("Should not access (relationMetaterm)")
       end;
 
@@ -231,7 +231,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
       case top.mapTo of
       | relationMetaterm(rel2, _, r2) ->
         args.mapSuccess && rel2 == rel && r2 == r
-      | transRelMetaterm(rel2, _, r2) ->
+      | projRelMetaterm(rel2, _, r2) ->
         args.mapSuccess && rel2 == rel && r2 == r
       | _ -> false
       end;
@@ -408,29 +408,29 @@ function removeOne
 }
 
 
-aspect production translationMetaterm
-top::Metaterm ::= args::TermList ty::QName orig::Term trans::Term
+aspect production projectionMetaterm
+top::Metaterm ::= args::TermList ty::QName orig::Term proj::Term
 {
   args.mapTo =
       case top.mapTo of
-      | translationMetaterm(a, _, _, _) -> a
-      | _ -> error("Should not access (translationMetaterm)")
+      | projectionMetaterm(a, _, _, _) -> a
+      | _ -> error("Should not access (projectionMetaterm)")
       end;
   orig.mapTo =
       case top.mapTo of
-      | translationMetaterm(_, _, o, _) -> o
-      | _ -> error("Should not access (translationMetaterm)")
+      | projectionMetaterm(_, _, o, _) -> o
+      | _ -> error("Should not access (projectionMetaterm)")
       end;
-  trans.mapTo =
+  proj.mapTo =
       case top.mapTo of
-      | translationMetaterm(_, _, _, t) -> t
-      | _ -> error("Should not access (translationMetaterm)")
+      | projectionMetaterm(_, _, _, t) -> t
+      | _ -> error("Should not access (projectionMetaterm)")
       end;
 
   top.mapSuccess =
       case top.mapTo of
-      | translationMetaterm(a, t, o, r) ->
-        args.mapSuccess && orig.mapSuccess && trans.mapSuccess &&
+      | projectionMetaterm(a, t, o, r) ->
+        args.mapSuccess && orig.mapSuccess && proj.mapSuccess &&
         ty == t --no mapping types, only equality
       | _ -> false
       end;
@@ -817,18 +817,18 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
 }
 
 
-aspect production transRelMetaterm
+aspect production projRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
   args.mapTo =
       case top.mapTo of
-      | transRelMetaterm(_, a, _) -> a
-      | _ -> error("Should not access (transRelMetaterm)")
+      | projRelMetaterm(_, a, _) -> a
+      | _ -> error("Should not access (projRelMetaterm)")
       end;
 
   top.mapSuccess =
       case top.mapTo of
-      | transRelMetaterm(rel2, _, r2) ->
+      | projRelMetaterm(rel2, _, r2) ->
         rel == rel2 && args.mapSuccess && r == r2
       | _ -> false
       end;

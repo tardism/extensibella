@@ -48,7 +48,7 @@ Reasoning in Extensibella is made up of extensible and non-extensible
 elements.  Extensible elements prove things about extensible
 relations, with proof work that is potentially distributed across
 multiple modules.  These are declared using the `Extensible_Theorem`,
-`Translation_Constraint`, and `Ext_Ind` top-level commands.
+`Projection_Constraint`, and `Ext_Ind` top-level commands.
 
 Non-extensible elements do not have work that might need to be
 extended; any work associated with it is constant and can be done in a
@@ -102,29 +102,29 @@ non-extensible, between the extensible obligations from imported
 elements.  These may use any earlier imported elements, and may be
 used to write modular proof work for any later imported elements.
 
-### Translation Constraints
-Translation constraints declare how we expect the semantics of a new
-construct to relate to its translation's semantics.  Their purpose is
+### Projection Constraints
+Projection constraints declare how we expect the semantics of a new
+construct to relate to its projection's semantics.  Their purpose is
 to inform the authors of extension modules what they may expect from
 the constructs introduced by other extensions.  For example, an
 extension introducing a new static analysis, which will be defined on
-the constructs from other translations via copying from the
-translation, will want to know how evaluation is related between an
-unknown construct and its translation, to know whether the definition
+the constructs from other projections via copying from the
+projection, will want to know how evaluation is related between an
+unknown construct and its projection, to know whether the definition
 by copying will be a sensible one.
 
-Translation constraints are defined thus:
+Projection constraints are defined thus:
 ```
-Translation_Constraint <name> : forall <binds>,
-   <hyp name> : <trans args> |{<ty>}- <original> ~~> <translation> ->
+Projection_Constraint <name> : forall <binds>,
+   <hyp name> : <proj args> |{<ty>}- <original> ~~> <projection> ->
    <hyp name> : <formula> ->
    ...
    <conclusion>.
 ```
-Translation constraints are proven by considering the rules defining
-the translation.  Because translations are schematic and are not
+Projection constraints are proven by considering the rules defining
+the projection.  Because projections are schematic and are not
 inductive, no induction is used to build the argument.  If a user
-finds he needs induction to argue for a particular translation case,
+finds he needs induction to argue for a particular projection case,
 he can generally accomplish this by declaring a non-extensible theorem
 for his particular case and proving that using induction.
 
@@ -199,20 +199,20 @@ command for this theorem.
 A declaration of `Ext_Ind` has the form
 ```
 Ext_Ind <rel> <rel args> with
-   forall <binds>, <trans args> |{ty}- <original> ~~> <translation>.
+   forall <binds>, <proj args> |{ty}- <original> ~~> <projection>.
 ```
 Here the `forall` and bindings are optional, as there may be no new
-variables to bind for the translation arguments.  This is declaring
+variables to bind for the projection arguments.  This is declaring
 that, whenever the relation `<rel>` holds, it will also hold on a
-translation of the primary component with the same other arguments to
+projection of the primary component with the same other arguments to
 the relation.  For example, if we have a relation `eval` evaluating a
-`tm` that takes no arguments to its translation and a declaration
+`tm` that takes no arguments to its projection and a declaration
 ```
-Ext_Ind eval G T V with |{tm} T ~~> Trans.
+Ext_Ind eval G T V with |{tm}- T ~~> Proj.
 ```
-we are requiring `eval G Trans V` to hold whenever `eval G T V` holds
-and `T` translates to `Trans`, regardless of what `T` is, and that
-this chain of translations does not go on forever.  This is a property
+we are requiring `eval G Proj V` to hold whenever `eval G T V` holds
+and `T` projects to `Proj`, regardless of what `T` is, and that
+this chain of projections does not go on forever.  This is a property
 the user will be required to show.
 
 The declaration of `Ext_Ind` must be given by the module writer
@@ -220,13 +220,13 @@ introducing the relation, and it comes with no work for that module
 writer.  The issuing of the `Prove_Ext_Ind` command does come with
 work.  First, for `Prove_Ext_Ind rel`, Extensibella creates relations
 `<rel {ES}>` and `<rel {T}>`.  These are the extension size and
-translation version of `rel`, respectively.  The extension size has
+projection version of `rel`, respectively.  The extension size has
 the same rules, other than adding a new integer argument that is
 summed up for the sub-derivations in each rule, with the sum
 incremented additionally if the rule is introduced by an extension.
-The translation version of the relation has the same rules as the
-original other than adding the translation assumption and relation
-holding for the translation when the rule is introduced by an
+The projection version of the relation has the same rules as the
+original other than adding the projection assumption and relation
+holding for the projection when the rule is introduced by an
 extension.
 
 To make this more concrete, consider a rule
@@ -236,7 +236,7 @@ rel A   rel B
  rel (c A B)
 ```
 If this rule is introduced by the host language, we will introduced
-these rules for the extension size and translation version:
+these rules for the extension size and projection version:
 ```
 <rel {ES}> A N1   <rel {ES}> B N2   N1 + N2 = N
 -----------------------------------------------
@@ -269,19 +269,19 @@ the reasoning, found in the examples linked [here](../README.md),
 rather than by an explanation.
 
 When an extensible theorem is declared that uses `Ext_Ind`, the case
-for the explicitly unknown constructs assumes the translation as given
+for the explicitly unknown constructs assumes the projection as given
 by the `Ext_Ind` declaration and that the relation holds on it.  For
 example, for
 ```
-Ext_Ind eval G T V with |{tm}- T ~~> Trans
+Ext_Ind eval G T V with |{tm}- T ~~> Proj
 ```
 will start with the assumptions
 ```
-|{tm}- <unknown tm> ~~> Trans
+|{tm}- <unknown tm> ~~> Proj
 ```
 and
 ```
-eval G Trans V
+eval G Proj V
 ```
 to prove the property holds with an initial derivation of
 `eval G <unknown tm> V`.

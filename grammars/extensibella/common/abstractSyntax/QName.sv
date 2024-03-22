@@ -308,19 +308,19 @@ top::QName ::= pc::Integer rest::SubQName
 }
 
 
---translation relations
-abstract production transQName
+--projection relations
+abstract production projQName
 top::QName ::= rest::SubQName
 {
   top.pp = rest.pp;
-  top.abella_pp = "$trans__" ++ rest.abella_pp;
+  top.abella_pp = "$proj__" ++ rest.abella_pp;
 
   top.isQualified = rest.isQualified;
   top.shortName = rest.shortName;
   top.moduleName = basicQName(rest.moduleName);
 
   rest.addBase = top.addBase;
-  top.baseAdded = transQName(rest.baseAdded);
+  top.baseAdded = projQName(rest.baseAdded);
 
   top.typeErrors = rest.typeErrors;
   top.typeFound = rest.typeFound;
@@ -478,19 +478,19 @@ top::QName ::= rest::SubQName
 }
 
 
---translation version of relation rest
-abstract production transRelQName
+--projection version of relation rest
+abstract production projRelQName
 top::QName ::= rest::SubQName
 {
   top.pp = rest.pp;
-  top.abella_pp = "$transRel__" ++ rest.abella_pp;
+  top.abella_pp = "$projRel__" ++ rest.abella_pp;
 
   top.isQualified = rest.isQualified;
   top.shortName = rest.shortName;
   top.moduleName = basicQName(rest.moduleName);
 
   rest.addBase = top.addBase;
-  top.baseAdded = transRelQName(rest.baseAdded);
+  top.baseAdded = projRelQName(rest.baseAdded);
 
   top.typeErrors = rest.typeErrors;
   top.typeFound = rest.typeFound;
@@ -639,8 +639,8 @@ QName ::= name::String
            in
              extQName(pc, buildSub(stop + 2, shortened))
            end end end
-      else if startsWith("$trans__", name)
-      then transQName(buildSub(8, name))
+      else if startsWith("$proj__", name)
+      then projQName(buildSub(7, name))
       else if startsWith("$ty__", name)
       then tyQName(buildSub(5, name))
       else if startsWith("$lib__", name)
@@ -651,8 +651,8 @@ QName ::= name::String
       then unknownKQName(toQName(substring(11, length(name), name)))
       else if startsWith("$extSize__", name)
       then extSizeQName(buildSub(10, name))
-      else if startsWith("$transRel__", name)
-      then transRelQName(buildSub(11, name))
+      else if startsWith("$projRel__", name)
+      then projRelQName(buildSub(10, name))
       else if startsWith("$stand-in_rule__", name)
       then standInRuleQName(toQName(substring(16, length(name), name)))
       else basicQName(buildSub(0, name));
