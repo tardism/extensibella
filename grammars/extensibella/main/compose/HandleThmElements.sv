@@ -622,6 +622,63 @@ top::ThmElement ::=
             buildExtSizeLemmas(p.1, p.2),
           rels);
 
+  {-
+    R_T to R proof
+  -}
+  local dropTThmName::String =
+      if length(rels) == 1
+      then dropTName(head(rels).1)
+      else "$dropT_" ++ toString(genInt());
+  local dropTStmt::Metaterm =
+      foldr1(andMetaterm,
+         map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+               bindingMetaterm(forallBinder(),
+                  toBindings(p.2),
+                  impliesMetaterm(
+                     relationMetaterm(transRelQName(p.1.sub),
+                        toTermList(map(basicNameTerm, p.2)),
+                        emptyRestriction()),
+                     relationMetaterm(p.1,
+                        toTermList(map(basicNameTerm, p.2)),
+                        emptyRestriction()))),
+            rels));
+  local dropTProofStart::String =
+      "induction on " ++ implode(" ", repeat("1", length(rels))) ++
+      "." ++ if length(rels) == 1 then "\n" else " split.\n ";
+  local dropTProofs::[String] =
+      map(--[(plus count, [(ES premise, IH num)], is host)]
+        \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
+          "intros R. R: case R (keep).\n " ++
+          implode("\n ",
+             map(\ p::(Integer, [(Integer, Integer)], Boolean) ->
+                   implode("",
+                      map(\ ip::(Integer, Integer) ->
+                            let rnum::String =
+                                toString(ip.1 - p.1)
+                            in
+                              " apply IH" ++ (if ip.2 == 0 then ""
+                                              else toString(ip.2)) ++
+                                 " to R" ++ rnum ++ "."
+                            end,
+                          p.2)) ++ " search.",
+                 l)),
+        clauseInfo);
+  local dropTAfter::String =
+      if length(rels) == 1 then ""
+      else "Split " ++ dropTThmName ++ " as " ++
+           implode(", ", map(dropTName, map(fst, rels))) ++ ".\n";
+  local dropTFull::String =
+      "Theorem " ++ dropTThmName ++ " : " ++ dropTStmt.abella_pp ++
+          ".\n" ++ dropTProofStart ++
+      implode("\n ", dropTProofs) ++ "\n" ++
+      dropTAfter;
+
+  local dropT_abella::IOVal<String> =
+      sendBlockToAbella(dropTFull, top.liveAbella, top.runAbella,
+                        top.configuration);
+
+
+
   --whether or not this should use the extension size version of the
   --relation as a step between R and R_T
   local useES::Boolean =
@@ -630,15 +687,35 @@ top::ThmElement ::=
   {-
     R_{ES} to R_T proof
   -}
+  local toTransRelStatements::[Metaterm] =
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+            buildExtIndThm(p.3, p.1, p.2, p.4.toList, useES),
+          rels);
   local toTransRelStatement::Metaterm =
-     foldr1(andMetaterm,
-        map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
-              buildExtIndThm(p.3, p.1, p.2, p.4.toList, useES),
-            rels));
+     foldr1(andMetaterm, toTransRelStatements);
   local toTransRelNames::[String] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             "$toTransRel__" ++ p.1.abella_pp,
           rels);
+  local toTransRelInfo::[(QName, RelationEnvItem, Boolean, Boolean,
+                          Bindings, ExtBody, String)] =
+      map(\ p::(String, QName, [String], Bindings, ExtIndPremiseList) ->
+            let rei::RelationEnvItem =
+                decorate p.2 with {relationEnv = top.relEnv;}.fullRel
+            in
+            let relName::String =
+                freshName("R", filterMap(fst, p.5.toList))
+            in
+            let body::ExtBody =
+                buildExtIndThmExtBody(p.4, p.2, p.3, p.5.toList,
+                                      useES, relName)
+            in --thm name is used only for the module, so rel name works
+              (p.2, rei,
+               --thm and rel always from same mod in ExtInd, so only check pc
+               sameModule(rei.name, rei.pcType.name),
+               false, p.4, body, relName)
+            end end end,
+          zip(toTransRelNames, rels));
   local toTransRelProveName::String =
       if length(toTransRelNames) == 1
       then head(toTransRelNames)
@@ -692,20 +769,34 @@ top::ThmElement ::=
                          l)),
                 p.2)),
           toTransRelSplitProofInfo);
+  --
+  local toTransRelProofInit::String =
+      "Theorem " ++ toTransRelProveName ++ " : " ++
+      toTransRelStatement.abella_pp ++ ".\n" ++
+      toTransRelProofStart;
+  local toTransRelProofInit_abella::IOVal<String> =
+      sendBlockToAbella(toTransRelProofInit, top.liveAbella,
+                        dropT_abella.io, top.configuration);
   --joining the set-up and proofs into one
-  local toTransRelProofContents::String =
-      joinProofGroups((toQName("host"),
-                       toTransRelSetups)::toTransRelJoinProofs);
+  local toTransRelProofContents::IOVal<[String]> =
+      buildExtThmProofs(toTransRelInfo,
+         map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
+               (p.1, splitAtAllGoals(p.2)),
+             toTransRelProofInfo),
+         top.allThms, top.tyEnv, top.relEnv, top.constrEnv,
+         top.liveAbella, top.configuration, top.allParsers,
+         map(fst, rels), 0, toTransRelProofInit_abella.io);
   local afterToTransRel::String =
       if length(toTransRelNames) == 1
       then "" --nothing to split
       else "Split " ++ toTransRelProveName ++ " as " ++
            implode(", ", toTransRelNames) ++ ".\n";
+  local toTransRelAfter_abella::IOVal<String> =
+      sendBlockToAbella(afterToTransRel, top.liveAbella,
+         toTransRelProofContents.io, top.configuration);
   local fullToTransRel::String =
-      "Theorem " ++ toTransRelProveName ++ " : " ++
-      toTransRelStatement.abella_pp ++ ".\n" ++
-      toTransRelProofStart ++
-      toTransRelProofContents ++ "\n" ++
+      toTransRelProofInit ++
+      implode(" ", toTransRelProofContents.iovalue) ++ "\n" ++
       afterToTransRel;
 
   {-
@@ -764,65 +855,18 @@ top::ThmElement ::=
             end end end,
           enumerate(rels));
 
-  {-
-    R_T to R proof
-  -}
-  local dropTThmName::String =
-      if length(rels) == 1
-      then dropTName(head(rels).1)
-      else "$dropT_" ++ toString(genInt());
-  local dropTStmt::Metaterm =
-      foldr1(andMetaterm,
-         map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
-               bindingMetaterm(forallBinder(),
-                  toBindings(p.2),
-                  impliesMetaterm(
-                     relationMetaterm(transRelQName(p.1.sub),
-                        toTermList(map(basicNameTerm, p.2)),
-                        emptyRestriction()),
-                     relationMetaterm(p.1,
-                        toTermList(map(basicNameTerm, p.2)),
-                        emptyRestriction()))),
-            rels));
-  local dropTProofStart::String =
-      "induction on " ++ implode(" ", repeat("1", length(rels))) ++
-      "." ++ if length(rels) == 1 then "\n" else " split.\n ";
-  local dropTProofs::[String] =
-      map(--[(plus count, [(ES premise, IH num)], is host)]
-        \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
-          "intros R. R: case R (keep).\n " ++
-          implode("\n ",
-             map(\ p::(Integer, [(Integer, Integer)], Boolean) ->
-                   implode("",
-                      map(\ ip::(Integer, Integer) ->
-                            let rnum::String =
-                                toString(ip.1 - p.1)
-                            in
-                              " apply IH" ++ (if ip.2 == 0 then ""
-                                              else toString(ip.2)) ++
-                                 " to R" ++ rnum ++ "."
-                            end,
-                          p.2)) ++ " search.",
-                 l)),
-        clauseInfo);
-  local dropTAfter::String =
-      if length(rels) == 1 then ""
-      else "Split " ++ dropTThmName ++ " as " ++
-           implode(", ", map(dropTName, map(fst, rels))) ++ ".\n";
-  local dropTFull::String =
-      "Theorem " ++ dropTThmName ++ " : " ++ dropTStmt.abella_pp ++
-          ".\n" ++ dropTProofStart ++
-      implode("\n ", dropTProofs) ++ "\n" ++
-      dropTAfter;
-
 
   local displayNames::String =
       implode(", ", map(justShow, map((.pp), map(fst, rels))));
   top.composedCmds =
       "/*Start Ext_Ind for " ++ displayNames ++ "*/\n" ++
-      fullToTransRel ++ "\n" ++
-      implode("\n", extIndProofs) ++ "\n" ++ dropTFull ++ "\n" ++
+      dropTFull ++ "\n\n" ++ fullToTransRel ++ "\n" ++
+      implode("\n", extIndProofs) ++ "\n" ++
       "/*End Ext_Ind for " ++ displayNames ++ "*/\n\n\n";
+
+  top.runAbella_out =
+      sendBlockToAbella(implode("\n", extIndProofs), top.liveAbella,
+         toTransRelAfter_abella.io, top.configuration).io;
 
   top.outgoingMods =
       dropExtInd(top.incomingMods, map(fst, rels));
@@ -841,6 +885,52 @@ function dropTName
 String ::= rel::QName
 {
   return "$dropT_" ++ rel.abella_pp;
+}
+
+function buildExtIndThmExtBody
+ExtBody ::= boundVars::Bindings rel::QName relArgs::[String]
+            premises::[(Maybe<String>, Metaterm)] useExtSize::Boolean
+            relPremName::String
+{
+  local args::[Term] =
+      map(\ x::String -> nameTerm(toQName(x), nothingType()), relArgs);
+  local n::String = freshName("N", boundVars.usedNames);
+  local relPrem::Metaterm =
+      relationMetaterm(rel,
+         toTermList(args ++
+            if useExtSize
+            then [nameTerm(toQName(n), nothingType())]
+            else []),
+         emptyRestriction());
+  local extSize::Metaterm =
+      relationMetaterm(extSizeQName(rel.sub),
+         toTermList(args ++
+            if useExtSize
+            then [nameTerm(toQName(n), nothingType())]
+            else []),
+         emptyRestriction());
+  local accPremName::String =
+      freshName("Acc", filterMap(fst, premises));
+  local acc::Metaterm =
+      relationMetaterm(toQName("acc"),
+         toTermList([nameTerm(toQName(n), nothingType())]),
+         emptyRestriction());
+  local conc::Metaterm =
+      relationMetaterm(transRelQName(rel.sub), toTermList(args),
+                       emptyRestriction());
+  local base::ExtBody =
+      foldr(\ p::(Maybe<String>, Metaterm) rest::ExtBody ->
+              addLabelExtBody(
+                 case p.1 of
+                 | just(n) -> n
+                 | nothing() -> "_"
+                 end, p.2, rest),
+            endExtBody(conc), premises);
+  return
+      if useExtSize
+      then addLabelExtBody(relPremName, relPrem,
+              addLabelExtBody(accPremName, acc, base))
+      else addLabelExtBody(relPremName, relPrem, base);
 }
 
 function buildTransRel_standInRules

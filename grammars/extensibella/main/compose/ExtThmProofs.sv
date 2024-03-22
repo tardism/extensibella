@@ -37,8 +37,10 @@ IOVal<[String]> ::=
       sendBlockToAbella(intros_case, abella, ioin, config);
 
   local thisMod::[[(ProofState, [AnyCommand])]] =
-      --module must exist, so .fromJust is valid
-      lookup(fstThmMod, topGoalProofInfo).fromJust;
+      case lookup(fstThmMod, topGoalProofInfo) of
+      | just(x) -> x
+      | nothing() -> error("buildExtThmProofs.thisMod")
+      end;
   --root number for subgoal for this thm
   local subgoalNum::SubgoalNum =
       case head(head(thisMod)).1.currentSubgoal of
@@ -99,9 +101,12 @@ IOVal<[String]> ::=
                      then extFullSubgoal
                      else subgoalNum)),
           topGoalProofInfo);
-  --commands from introducing module (mod must exist, so .fromJust fine)
+  --commands from introducing module
   local extIntroModCmds::[[[(ProofState, [AnyCommand])]]] =
-      lookup(fstThmMod, extSplitAllCases).fromJust.1;
+      case lookup(fstThmMod, extSplitAllCases) of
+      | just((a, _)) -> a
+      | nothing() -> error("buildExtThmProofs.extIntroModCmds")
+      end;
   --split into basic and generic cases
   local extSplitGeneric::([[[(ProofState, [AnyCommand])]]],
                           [[[(ProofState, [AnyCommand])]]]) =
