@@ -56,3 +56,12 @@ inherited attribute ignoreDefErrors::Boolean;
 
 --proof state produced after a command
 inherited attribute newProofState::ProofState;
+
+
+--gather up the relations for which <R {T}> occurs
+monoid attribute transRels::[QName] with [], ++;
+attribute transRels occurs on
+   ProofState, CurrentGoal, Context, Hypothesis, Metaterm;
+propagate transRels on
+   ProofState, CurrentGoal, Context, Hypothesis, Metaterm
+excluding transRelMetaterm;
