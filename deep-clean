@@ -6,6 +6,8 @@ find . -name "build.xml" -delete
 find . -name "*.copperdump.html" -delete
 find . -name "Parser*.html" -delete
 
-rm -rf generated/*
-rm *.jar
+#remove everything in generated but README.md
+find generated/* -not -name 'README.md' -delete
+
+rm -f *.jar
 
