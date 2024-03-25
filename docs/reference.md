@@ -68,19 +68,21 @@ equals sign (e.g. `t3 = t1 + t2` is equivalent to `t1 + t2 = t3`).
 The syntax of terms includes the same constructs as Abella, which are
 constants, applications of constants, and abstractions, but it also
 adds syntax for other useful constructs:
-   | Term Syntax        | Meaning                 |
-   |--------------------|-------------------------|
-   | `<var>`            | variable                |
-   | `c t2 ... tn`      | constructor application |
-   | `t1::t2`           | cons list               |
-   | `nil`              | empty list              |
-   | `[]`               | empty list              |
-   | `[t1, t2, ... tn]` | list literal            |
-   | `(t1, t2, ... tn)` | tuple literal           |
-   | `"<contents>"`     | string literal          |
-   | `<integer>`        | integer literal         |
-   | `true`             | Boolean true            |
-   | `false`            | Boolean false           |
+   | Term Syntax        | Meaning                              |
+   |--------------------|--------------------------------------|
+   | `<var>`            | variable                             |
+   | `c t2 ... tn`      | constructor application              |
+   | `t1::t2`           | cons list                            |
+   | `nil`              | empty list                           |
+   | `[]`               | empty list                           |
+   | `[t1, t2, ... tn]` | list literal                         |
+   | `(t1, t2, ... tn)` | tuple literal                        |
+   | `"<contents>"`     | string literal                       |
+   | `<integer>`        | integer literal                      |
+   | `true`             | Boolean true                         |
+   | `false`            | Boolean false                        |
+   | `<unknown I ty>`   | generic constructor for type ty      |
+   | `<unknown K rel>`  | generic constructor for relation rel |
 
 ### Names and Comments
 Identifiers (variables, theorem names, etc.) may begin with a letter
@@ -179,14 +181,13 @@ We also have commands for working with extensible languages:
     on the projection
   + The details of projection constraints are discussed in the
     [document about extensibility in Extensibella](extensibility.md)
-* Extension induction declaration:  `Ext_Ind <rel> <rel args> with
-  forall <bindings>, <proj args> |{<ty>}- <original> ~~>
-  <projection>.`
+* Extension induction declaration:  `Ext_Ind forall <rel args>, <rel>
+  <rel args> with <hyp name> : <formula>, ..., <hyp name> : <formula>.`
   + Declares a requirement for modules to show extensions can build
     arguments for new properties using the extensible relation `<rel>`
-    for induction
+    for induction if they also show the extra requirements
   + Multiple relations can be combined by repeating the declaration
-    portion (the relation to the end)
+    portion
   + The need for this and details about it are discussed in the
     [document about extensibility in Extensibella](extensibility.md)
 
@@ -271,12 +272,15 @@ because we are reasoning in an extensible setting:
   + If `<hyp>` has the form `rel t1 ... tn` and `rel` is an extensible
     relation in the language, then
     - Its primary component `ti` must be built by a known constructor
-      (not a variable or the explicit unknown constructor, discussed
+      (not a variable or an explicit generic constructor, discussed
       [elsewhere](extensibility.md)), or
-    - Its primary component can be built by the explicit unknown
+    - Its primary component can be built by an explicit generic K
       constructor if the relation is introduced by the current
       extension
-  + If `<hyp>` is not a built by a relation or the relation is a fixed
+    - Its primary component can be built by an explicit generic I
+      constructor if the relation is introduced by a module building
+      on the one introducing the relation
+  + If `<hyp>` is not built by a relation or the relation is a fixed
     relation, either as part of the language or introduced as a proof
     relation, case analysis has no extra restrictions
 * Unfold tactic:  `unfold.`
@@ -289,7 +293,8 @@ because we are reasoning in an extensible setting:
 
 The preceding tactics may be prefaced with a name for Extensibella to
 try to use for the hypotheses produced by it.  For example, the tactic
-`N: case H1.` will have any hypotheses it produces starting with `N`.
+`N: case H1.` will have any hypotheses it produces starting with `N`
+(i.e. `N`, `N1`, `N2`, etc.).
 
 There are also tactics that don't move the proof forward, but may be
 useful:

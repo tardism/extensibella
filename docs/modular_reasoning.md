@@ -18,7 +18,7 @@ for proving the property for any composed language:
 
 We will discuss these both, assuming a single host language and
 extensions that do not build on each other.  We furthermore assume all
-relations introduced by extensions give the basic form of projection
+relations introduced by extensions give the basic form of default
 rule, where the relation is copied directly from the projection of
 its primary component.
 
@@ -62,12 +62,14 @@ when we move to the context of a composed language.
 Language properties are generally proven using induction and case
 analysis in a central way, and we adopt this approach for our
 properties as well.  Properties are proven arguing by induction and
-case analysis on the derivation of a relation.  The cases arising from
+case analysis on the derivation of a relation.  We call this relation
+the *key relation* for the property.  The cases arising from
 this case analysis are distributed across the modules that know the
 property, with how they are distributed depending on whether the
 property is introduced by the host language or an extension, and, for
 extension-introduced properties, whether the primary component of the
-relation is introduced by that extension or the same host language.
+key relation is introduced by that extension or the same host
+language.
 
 ### Host Language Property
 If the property is introduced by the host language, all modules will
@@ -83,14 +85,14 @@ is proven in the composed language.  Then the composed language has a
 full proof of the property.
 
 ### Extension Property with Extension Primary Component
-If the primary component of the relation is introduced by the
+If the primary component of the key relation is introduced by the
 extension introducing the property, the extension knows all the rules
 defining the relation.  Then it can fully prove the property by itself
 without considering extensibility, other than the restrictions on case
 analysis mentioned above.
 
 ### Extension Property with Host Primary Component
-If the relation's primary component is introduced by the host language
+If the key relation's primary component is introduced by the host language
 and the property is introduced by an extension, there can be other
 extensions introducing new constructors of the primary component that
 do not know the property to prove any portion of it.  Instead, the
@@ -103,23 +105,55 @@ both defined in that extension and any imported.  It provides modular
 proof work showing the property will hold in the proof cases arising
 from those rules.
 
-The unknown cases are grouped together as a single proof case the
-extension introducing the property must show.  This proof case is
-called *preservability*.  The idea is to show the property copies back
-from the primary component's projection, assuming a derivation of the
-relation on the projection with which we can use the inductive
-hypothesis.
+The unknown cases are grouped together and treated generically.  If
+the key relation is introduced by the extension introducing the property,
+we know it will be defined for any constructs that may be added by
+other extensions using the default rule instantiated for the new
+constructs.  Thus we can prove the property assuming this is how the
+relation was defined.  If the key relation is introduced by the host
+language, it will be defined by new rules given by the extension
+introducing the property.  In this case, the host language must have
+given a rule, called the stand-in rule, and introduced a property
+showing the stand-in rule is a valid way to view the rules introduced
+by any extension.  In proving the new property, we can then write a
+generic proof as if the key relation were derived using the stand-in rule
+and have it apply to the real rules that will be introduced by other
+extensions.
 
-If the relation is introduced by the current extension, we can see
-that the assumptions of the preservability proof match the premises of
-the projection rule that will be used to define the relation in the
-unknown cases.  However, this is not the case if the relation is
-introduced by the host language, as the rules for it in unknown cases
-are given by the extensions introducing those cases.  In this case,
-the host language must have introduced a property that the relation
-will hold on the projection of the primary component in cases
-introduced by an extension, and that this chain of projections
-existing for the derivation ends.  Each extension proves this is true
-for its constructs.  Then, in the language composition, the unknown
-cases will satisfy the assumptions of preservability, and all the
-cases will have proofs.
+
+## Expanding the Idea of Extensible Languages
+We can also reason modularly about extensible languages with a more
+general structure, rather than a host language and extensions that
+build on it independently of each other.  To wit, we can have a set of
+modules that freely build on each other in any acyclic structure.  In
+this model, modules are developed independently of all other modules
+other than the ones on which they build, giving freedom to add new
+modules any time, but also freedom to rely on other modules as
+desired.
+
+As discussed in [extensible_languages.md](), moving to such a
+structure means full modules are not exactly host languages or
+extensions with no additions to them possible; rather, the constructs
+within them are "host-y" or "extension-y".  This also applies to
+properties.  If a property, its key relation, and its key relation's
+primary component are all introduced by the same module, the property
+is "host-y" and the above discussion of properties introduced by the
+host language applies.
+
+If some of these elements are introduced in different modules, the
+property has more of a mixed nature.  It is still somewhat "host-y" in
+that new extensions may build on it, but it is "extension-y" in that
+other modules may introduce new constructors of its key relation's
+primary component or new rules defining its key relation.  The proof
+cases for extensions adding onto the one introducing the property may
+be handled in the same way as for properties introduced by a host
+language, with the new extensions proving the properties for their new
+cases.  The extension nature means there may be constructs, and
+possibly rules, introduced by other extensions.  As with basic
+extension properties, these may be proven generically.  However, we
+may now have two generic proof cases instead of one, if there may be
+both extensions introducing constructs that do not know the key
+relation and for which it will be defined using the default rule and
+extensions introducing new rules for the key relation.  In either
+case, the generic proof may be written in the same way as in the more
+limited setting.

@@ -5,7 +5,7 @@ relations, new rules defining semantic relations, and new functions
 for running the language.  Each module has its own proof file, which
 can also introduce new properties and proof-level definitions.  All
 modules are treated the same, whether they conceptually represent a
-base (host) language or extension, as the distinction is not clear in
+host language or extension, as the distinction is not clear in
 Extensibella.
 
 

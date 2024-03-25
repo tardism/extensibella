@@ -107,47 +107,37 @@ it once Abella tells it the proof of the original, combined theorem it
 entered is complete.  Then the theorems are both known by the names
 the user gave, and ready to be used in further proofs.
 
-### Preservability
-The preservability case ends up being mostly built into Extensibella
+### Generic Proof Cases
+The generic cases end up being mostly built into Extensibella
 through the encoding of the language, as described in the [discussion
-of the encoding format](encoding_format.md).  It corresponds to the
-rule for the explicit unknown constructor, either the copy rule or the
-rule standing in for rules introduced by other extensions.
+of the encoding format](encoding_format.md).  They correspond to the
+rules for the explicit generic constructors, either the default rule
+or the stand-in rule.
 
-If it is the copy rule, the preservability proof is just to prove it
+For the case using the default rule, the generic proof is just to prove it
 will hold in the case where that rule is how the relation is defined.
 This means the only assumptions we need are those included in the rule
 itself, so the proof case is exactly what Abella presents already.
 
-If it is a rule standing in for rules introduced by other extensions,
+For the stand-in rule,
 we need to put in more work.  Recall from the [encoding
 format](encoding_format.md) that the stand-in rule has the form
 ```
-rel A <unknown ty> B :=
-   exists Proj, (0 = 0 -> false) /\ rel A Proj B
+rel A <unknown ty> B := <def> /\ (0 = 0 -> false)
 ```
-where the arguments to the relation are the same other than replacing
-the primary component with a variable named `Proj`.  Recall also from
+Recall also from
 the [discussion of extensibility](extensibility.md) that we need to
 have an `Ext_Ind` definition for the relation for this induction to be
-valid.  We remove the first assumption, as we don't need it and must
-not have it, then assert the projection from the `Ext_Ind` holds,
-skipping the proof of it:
-```
-clear <name>. assert |{ty}- <unknown ty> ~~> Proj. skip.
-```
-This adds the projection assumption we need for proving
-preservability, so the property will hold for an existing derivation
-of the relation on the projection.  Note this is also why the exact
-name needs to be `Proj`, so we can easily generate this.  This
-assertion is generated when the extensible theorem is declared, and is
-stored along with the subgoal number for the preservability proof.  As
-with the set-up code for a second theorem, this is stored until we
-reach the subgoal where it is expected, then it is issued.
+valid.  We remove the `0 = 0 -> false` assumption, as we don't need it
+and must not have it for proof validity.  The command for clearing
+this assumption is generated when the extensible theorem is declared,
+and is stored along with the subgoal number for the when we reach this
+case.  As with the set-up code for a second theorem, this is stored
+until we reach the subgoal where it is expected, then it is issued.
 
 ### Proving in Further Extensions
 A `Prove` command for adding to the proof of a theorem in an
-extension, looks up the theorems it is to prove in the set of
+extension looks up the theorems it is to prove in the set of
 obligations imposed on the current module by those it imports.  It
 then uses the same set-up code as the original declaration based on
 the theorem statements it finds, and adds the same commands to occur
@@ -169,16 +159,24 @@ of proving projection constraints in extensions is done in the same
 way as for extensible theorems.
 
 
-## Extension Induction Declarations
-An `Ext_Ind` declaration generates two definitions.  One is the
-extension size for the relation, `<r {ES}>`, and the other is the
-projection version of the relation, `<r {T}>`.  These are generated
-based on the original clauses in the relation as discussed in the
-[discussion of Ext_Ind](extensibility.md).
+## Extension Size Declarations
+An `Ext_Size` declaration generates the definition of the extension
+size for the relation, `<r {ES}>`, as well as some lemmas relating `r`
+and `<r {ES}>` that it proves automatically.  The relation is
+generated based on the original clauses in the relation as discussed
+in the [discussion of Ext Ind](extensibility.md).  `Add_Ext_Size` does
+the same thing, but in extensions.
 
-`Prove_Ext_Ind` generates two definitions and a theorem.  The
-definitions are the same as for the original `Ext_Ind`, the extension
-size and the projection version.  It also generates a theorem `forall
-x, <r {ES}> x -> <r {T}> x.` This is an extensible theorem, and the
-handling of setting it up and skipping the cases the current module
-need not prove is handled as for extensible theorems.
+
+## Extension Induction Declarations
+An `Ext_Ind` declaration generates a definition for the projection
+version of the relation, `<r {T}>`.  This is generated based on the
+original clauses in the relation as discussed in the [discussion of
+Ext_Ind](extensibility.md).
+
+`Prove_Ext_Ind` generates a definition and a theorem to prove.  The
+definition is the same as for the original `Ext_Ind`, the projection
+version of the relation.  It also generates a theorem `forall x, <r
+{ES}> x -> <r {T}> x.` This is an extensible theorem, and the handling
+of setting it up and skipping the cases the current module need not
+prove is handled as for extensible theorems.

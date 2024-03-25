@@ -1,7 +1,7 @@
 
 In order for Extensibella to read encoded language specifications, the
 specifications must follow an expected format.  This format gives
-Extensibella the information it needs to handle properly
+Extensibella the information it needs properly to handle
 extensibility.
 
 All definitions are put into a single definition file.  This
@@ -19,11 +19,12 @@ Names are qualified by the module in which they occur, as discussed in
 separators, with modules also possibly being qualified.
 
 In the encoding into Abella, such qualified names have the colons
-replaced by `-$-`, so we get `mod-$-du-$-le-$-name` for our example
-above.  This is used in the encoded Abella definitions whenever we
+replaced by `-$-`, so we get `mod-$-du-$-le-$-name`.
+This is used in the encoded Abella definitions whenever we
 want to refer to the item with this name.
 
-Because we can use the short name alone, in order to distinguish
+Because we can use the short name alone in Extensibella, in order to
+distinguish
 between meta-variables and short names, all short names should be
 lowercase.
 
@@ -61,15 +62,25 @@ and builds a `mod:C`, we encode it as
 Type mod-$-prod   $ty__mod1-$-A -> $ty__mod2-$-B -> $ty__mod-$-C.
 ```
 
-Suppose we are defining a module `mod` that imports a module `imp`.
-Further suppose `imp` introduces a nonterminal `imp:Nt`.  Then the
-definition must include a new production as
+Module definition files must also include appropriate generic
+constructors.  If a module `mod` imports a module `imp` introducing a
+nonterminal `imp:Nt`, the definition must include a new production as
 ```
-Type $unknown_imp-$-Nt   $ty__imp-$-Nt.
+Type $unknownI__imp-$-Nt   $ty__imp-$-Nt.
 ```
 This is a placeholder for productions of the `imp:Nt` nonterminal
 introduced by other modules not known to the current module and will
-be used in defining extensible relations.
+be used in defining and reasoning about extensible relations.
+
+If a module `mod` imports a module `imp` introducing an extensible
+relation `imp:rel` with primary component `imp:Nt`, the definition
+must include a new production as
+```
+Type $unknownK__imp-$-rel   $ty__imp-$-Nt.
+```
+This is also a placeholder for productions of the `imp:Nt` nonterminal
+introduced by other modules, but specifically for those where the
+`imp:rel` relation is defined for them by the module introducing them.
 
 
 
@@ -149,11 +160,11 @@ Extension Relations
 ----------------------------------------------------------------------
 Extension relations are defined as above, but must also include a
 special clause.  Recall extension-introduced relations are defined by
-projection of the primary component.  Each extension-introduced
-relation must have a clause (or several clauses, if there are multiple
-projection rules) with these rules for the required unknown
-constructor of the primary component (e.g. `$unknown_imp-$-Nt`).
-These clauses must come after all other clauses for the relation.
+a default rule for constructors of the primary component from other
+extensions.  Each extension-introduced relation must have a clause for
+the generic constructor (e.g. `$unknownI__imp-$-Nt`).  These clauses
+are expected to be at the end of the definition, after all other
+clauses for the relation.
 
 
 Importing Relations
@@ -183,30 +194,27 @@ the knowledge that the rule for this relation when the primary
 component is built by `ext2:prod` uses these projection rules, and is
 necessary for a correct definition and reasoning.
 
-Finally, we must fill in a placeholder rule for any imported relation
+Finally, we must fill in a stand-in rule for any imported relation
 standing in for the rules introduced by unknown extensions to be used
-in the preservability case when using a declaration of `Ext_Ind` to
-allow induction on an imported relation for a new property.  For a
-relation `mod:rel` with three arguments where the second argument is
-the primary component, this would be a definition clause as follows:
+to show the property will hold for them when using a declaration of
+`Ext_Ind` to allow induction on an imported relation for a new
+property.  For a relation `mod:rel` with three arguments where the
+second one is the primary component, this would be a definition clause
+as follows:
 ```
-$ext__1__mod-$-rel A $unknown_mod-$-Nt B :=
-   exists Proj, (0 = 0 -> false) /\ $ext__1__mod-$-rel A Proj B
+$ext__1__mod-$-rel A $unknownK__mod-$-Nt B :=
+   exists <vars>, <def> /\ (($posInt $zero = $posInt $zero) -> false).
 ```
-Both the `0 = 0 -> false` and sub-derivation of the relation are
-required. All the arguments are the same in the case being defined and
-the sub-derivation other than the primary component being new.  Note
-that the primary component **MUST** be named `Proj` in order for
-Extensibella to work correctly.  This should be the last rule for the
-relation in the definition.
-
-The reason we include the `0 = 0 -> false` requirement is to prevent
-Abella from using this rule to show the relation holds for the unknown
-constructor.  Without this, Abella might use this rule to show the
-relation holds for the unknown constructor; since the rules given by
-the other extensions for which this rule is standing in will not have
-this form, that would be invalid.  Adding this impossible assumption
-prevents Abella from doing so.
+Here `<def>` stands for the premises of the stand-in rule, and
+`<vars>` includes any bindings needed for those premises.  The reason
+we include the `($posInt $zero = $posInt $zero) -> false` premise
+(`0 = 0 -> false`) is to prevent Abella from using this rule to show
+the relation holds for the generic constructor.  Without this, Abella
+might use this rule to show the relation holds for the generic
+constructor; since the rules given by the other extensions for which
+this rule is standing in will not have this form, that would be
+invalid.  Adding this impossible assumption prevents Abella from doing
+so.
 
 
 
@@ -225,3 +233,23 @@ Define $fix__mod-$-rel : a -> b -> c -> prop by
 ...
 ```
 where we fill in the clauses as appropriate.
+
+
+
+
+Encodings for Full Languages
+======================================================================
+If we want to build a composed proof for the language of a module,
+Extensibella requires a full language encoding.  This is nearly the
+same as the encoding discussed thus far.  However, it does not include
+the generic constructors or rules for them.
+
+It adds one feature, a definition with the sole purpose of passing
+along information about the stand-in rule (i.e. the one used for the
+generic `$unknownK__mod:rel` constructor).  This has the form
+```
+Define $stand-in_rule__mod-$-rel : a -> b -> c -> prop by
+$stand-in_rule__mod-$-rel A B C := <def>.
+```
+for a relation `mod:rel` with argument types `a`, `b`, and `c` and a
+stand-in rule defined by premises given by `<def>`.

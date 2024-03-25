@@ -109,3 +109,19 @@ new properties.
 Note that this asks the user before overwriting an existing file.
 Since proof files represent a great deal of work, adding a safeguard
 for overwriting them seemed a wise precaution.
+
+
+## Composing Files
+Extensibella can combine the proofs written for multiple modules into
+a single, non-extensible Abella proof.  To build a full proof for a
+module `mo:du:le` and place it in `out.thm`, where the proof files for
+it and the modules on which it builds on are `file_1.xthm`,
+`file_2.xthm`, ..., `file_n.xthm`, we can run
+```
+extensibella --compose out.thm mo:du:le file_1.xthm file_2.xthm ... file_n.xthm
+```
+The `out.thm` file written by this process will be a nearly-standalone
+file (it still imports the Extensibella standard library) with full
+proofs for all properties introduced by all included modules.  Note
+the produced file is an *Abella* file, not an Extensibella file, so
+its name should end in `.thm` instead of `.xthm`.
