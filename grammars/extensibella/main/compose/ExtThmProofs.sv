@@ -342,9 +342,9 @@ IOVal<([[String]], ProofState)> ::=
          constrEnv, run.io);
 
   return
-      if !subgoalStartsWith(rootSubgoal,
-                            incomingState.currentSubgoal) ||
-         !incomingState.inProof
+      if !incomingState.inProof ||
+         !subgoalStartsWith(rootSubgoal,
+                            incomingState.currentSubgoal)
       then ioval(ioin, ([], incomingState))
       else {-
              Taking known proof cases whenever they fit guarantees we
@@ -536,7 +536,11 @@ IOVal<([String], ProofState)> ::= cmd::(ProofState, [AnyCommand])
       fullStateProcessing(abellaOutput.iovalue, typeEnv,
          relEnv, constrEnv, parsers);
 
-  return ioval(abellaOutput.io, (cmdStrings, newState));
+  --condition this on cmds being null because passing null cmds gives
+  --   blank output back, interpreted as proof being done
+  return if null(cmds)
+         then ioval(ioin, ([], incomingState))
+         else ioval(abellaOutput.io, (cmdStrings, newState));
 }
 
 

@@ -45,7 +45,9 @@ Extensible_Theorem
 %T-Assign-Present
  search.
 %T-Assign-NotPresent
- assert X1 = X -> false. intros E. case E. apply no_lookup to Ty2 Lkp.
+ rename X1 to Y. %rename to test composition mapping works
+ assert Y = X -> false. intros E. case E. apply no_lookup to Ty2 Lkp.
+ assert no_lookup G Y. %mapping test for args
  search.
 %T-IfThenElse
  search.

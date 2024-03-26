@@ -1040,7 +1040,10 @@ aspect production charTerm
 top::Term ::= char::String
 {
   top.mapSuccess =
-      error("Should not have charTerm in proof state mapping");
+      case top.mapTo of
+      | charTerm(x) -> x == char
+      | _ -> false
+      end;
 }
 
 

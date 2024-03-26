@@ -23,8 +23,8 @@ attribute
 occurs on Metaterm;
 attribute
    mapVars, mapped
-occurs on Term, Withs, EWitnesses, EWitness,
-   SearchWitness;
+occurs on Term, Withs, EWitnesses, EWitness, SearchWitness,
+   ListContents, PairContents, TermList;
 attribute
    mapHyps, mapped, keyRels, allThms, oldHyps, newHyps
 occurs on Clearable;
@@ -37,9 +37,11 @@ propagate allThms, oldHyps, newHyps, keyRels on
 propagate mapHyps on AnyCommand, ProofCommand, Metaterm, Clearable,
    ApplyArgs, ApplyArg;
 propagate mapVars on AnyCommand, ProofCommand, Metaterm, Term,
-   Withs, ApplyArgs, ApplyArg, EWitnesses, EWitness, SearchWitness;
+   Withs, ApplyArgs, ApplyArg, EWitnesses, EWitness, SearchWitness,
+   ListContents, PairContents, TermList;
 propagate mapped on Metaterm, Term, ApplyArgs, EWitnesses, EWitness,
-   SearchWitness excluding applyTactic, caseTactic, nameTerm;
+   SearchWitness, ListContents, PairContents, TermList
+      excluding applyTactic, caseTactic, nameTerm;
 
 
 aspect production anyTopCommand
@@ -147,7 +149,10 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
       case lookup(hyp, top.mapHyps) of
       | just((newHyp, _)) ->
         [caseTactic(h, newHyp, keep)]
-      | nothing() -> error("Could not find " ++ hyp ++ " (case)")
+      | nothing() ->
+        --if not found, it must result from a case within a single command
+        --   translation (e.g. compute), so the name must be there
+        [caseTactic(h, hyp, keep)]
       end;
 }
 
