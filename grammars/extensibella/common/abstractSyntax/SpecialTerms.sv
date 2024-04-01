@@ -428,9 +428,9 @@ abstract production projRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
   top.pp = cat(ppImplode(text(" "),
-                  ppConcat([text("<"), rel.pp, text(" {T}>")]
+                  ppConcat([text("<"), rel.pp, text(" {P}>")]
                           )::args.pps), r.pp);
-  top.abella_pp = "<" ++ rel.abella_pp ++ " {T}> " ++
+  top.abella_pp = "<" ++ rel.abella_pp ++ " {P}> " ++
                   args.abella_pp ++ r.abella_pp;
   top.isAtomic = true;
 
