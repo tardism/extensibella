@@ -242,6 +242,13 @@ top::ProofCommand ::=
 }
 
 
+aspect production admitTactic
+top::ProofCommand ::=
+{
+  top.mappedCmds = error("admitTactic should not be present");
+}
+
+
 aspect production abortCommand
 top::ProofCommand ::=
 {

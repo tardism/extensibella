@@ -68,6 +68,7 @@ terminal Witness_t      'witness'      lexer classes {TACTIC};
 
 --New for convenience
 terminal Compute_t      'compute'      lexer classes {TACTIC};
+terminal Admit_t        'admit'        lexer classes {TACTIC};
 
 --To show the current state for PG
 terminal ShowCurrent_t  'Show $$current.'  lexer classes {COMMAND};

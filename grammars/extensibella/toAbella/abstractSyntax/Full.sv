@@ -740,6 +740,13 @@ top::ProofCommand ::=
 }
 
 
+aspect production admitTactic
+top::ProofCommand ::=
+{
+  top.full = top;
+}
+
+
 aspect production abortCommand
 top::ProofCommand ::=
 {

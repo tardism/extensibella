@@ -369,6 +369,22 @@ top::ProofCommand ::=
 }
 
 
+--skip all remaining subgoals
+abstract production admitTactic
+top::ProofCommand ::=
+{
+  top.pp = cat(text("admit."), line());
+  top.abella_pp = "admit.  "; --probably not needed
+
+  top.toAbella =
+      case top.proverState.state of
+      | proofInProgress(_, _, futureGoals) ->
+        repeat(skipTactic(), length(futureGoals) + 1)
+      | _ -> error("admitTactic:  must be in proof")
+      end;
+}
+
+
 abstract production abortCommand
 top::ProofCommand ::=
 {

@@ -151,6 +151,8 @@ concrete productions top::PureCommand_c
   { top.ast = anyProofCommand(permuteTactic(p.ast, just(h.ast))); }
 | 'compute' hyp::Id_t '.'
   { top.ast = anyProofCommand(computeTactic(hyp.lexeme)); }
+| 'admit' '.'
+  { top.ast = anyProofCommand(admitTactic()); }
 
 concrete productions top::PureTopCommand_c
 | 'Theorem' name::Id_t params::TheoremTyparams_c ':' body::Metaterm_c '.'

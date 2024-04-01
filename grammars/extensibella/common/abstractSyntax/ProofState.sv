@@ -25,8 +25,13 @@ top::ProofState ::= subgoalNum::SubgoalNum currGoal::CurrentGoal
                     ":"), realLine())
       else text("");
   top.pp = ppConcat([subgoalPP, realLine(), currGoal.pp, realLine(),
-                     ppImplode(cat(realLine(), realLine()),
-                               map((.pp), futureGoals))]);
+              ppImplode(cat(realLine(), realLine()),
+                 --only display future goals if in Abella form
+                 --hide them in Extensibella form because there might
+                 --   be some that are automatically cleared
+                 if top.isAbellaForm
+                 then map((.pp), futureGoals)
+                 else [text("")])]);
 
   top.hypList = currGoal.hypList;
 

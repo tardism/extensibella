@@ -13,8 +13,14 @@ top::ProofState ::= subgoalNum::[Integer] currGoal::CurrentGoal
 {
   top.fromAbella =
       if top.isAbellaForm
-      then proofInProgress(subgoalNum, currGoal.fromAbella, [],
-                           isAbellaForm=false) --now translated
+      then proofInProgress(subgoalNum, currGoal.fromAbella,
+              map(\ s::Subgoal ->
+                    decorate s with {
+                       typeEnv = top.typeEnv;
+                       relationEnv = top.relationEnv;
+                       constructorEnv = top.constructorEnv;
+                    }.fromAbella,
+                  futureGoals), isAbellaForm=false) --now translated
       else top; --already translated
 
   top.hypList = currGoal.hypList;
