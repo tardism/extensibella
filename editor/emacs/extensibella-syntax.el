@@ -33,7 +33,7 @@
     ;; apply | assert | backchain | case | clear | induction | intros | left |
     ;; rename | right | search | split | split* | unfold |
     ;; witness | in | with | compute
-    ("\\<\\(\\(apply\\)\\|\\(assert\\)\\|\\(backchain\\)\\|\\(case\\)\\|\\(clear\\)\\|\\(induction\\)\\|\\(intros\\)\\|\\(left\\)\\|\\(rename\\)\\|\\(right\\)\\|\\(search\\)\\|\\(split\\)\\|\\(split*\\)\\|\\(unfold\\)\\|\\(witness\\)\\|\\(in\\)\\|\\(with\\)\\)\\|\\(compute\\)\\)\\>"
+    ("\\<\\(\\(apply\\)\\|\\(assert\\)\\|\\(backchain\\)\\|\\(case\\)\\|\\(clear\\)\\|\\(induction\\)\\|\\(intros\\)\\|\\(left\\)\\|\\(rename\\)\\|\\(right\\)\\|\\(search\\)\\|\\(split\\)\\|\\(split*\\)\\|\\(unfold\\)\\|\\(witness\\)\\|\\(in\\)\\|\\(with\\)\\|\\(compute\\)\\)\\>"
      . font-lock-function-name-face)
     ;;Auxiliary words to go with them
     ;; keep | on | to
@@ -41,7 +41,7 @@
      . font-lock-function-name-face)
     ;;Commands which we don't want to have appear
     ;; skip | abort | #back | #reset | undo | admit
-    ("\\<\\(\\(skip\\)\\|\\(abort\\)\\|\\(#back\\)\\|\\(#reset\\)\\|\\(undo\\)\\)\\|\\(admit\\)\\)\\>"
+    ("\\<\\(\\(skip\\)\\|\\(abort\\)\\|\\(#back\\)\\|\\(#reset\\)\\|\\(undo\\)\\|\\(admit\\)\\)\\>"
      . font-lock-warning-face)
     )
   )
