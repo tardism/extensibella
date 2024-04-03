@@ -338,6 +338,8 @@ concrete productions top::ProcessingErrorMessage_c
   { top.ast = appliedStructure(); }
 | 'Inductive restriction violated'
   { top.ast = inductiveRestrictionViolated(); }
+| 'No matching clauses'
+  { top.ast = noMatchingClauses(); }
 
 
 concrete productions top::TypingErrorMessage_c

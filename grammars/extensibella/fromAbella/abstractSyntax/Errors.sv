@@ -478,6 +478,15 @@ top::ProcessingErrorMessage ::=
 }
 
 
+abstract production noMatchingClauses
+top::ProcessingErrorMessage ::=
+{
+  top.pp = text("No matching clauses");
+
+  top.fromAbella = noMatchingClauses();
+}
+
+
 
 
 

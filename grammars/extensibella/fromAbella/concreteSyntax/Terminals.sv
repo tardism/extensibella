@@ -101,6 +101,7 @@ terminal LongFoundLogic2_t   'This usually means that the `search` tactic could 
 terminal LongFoundLogic3_t   'Note: the `search` tactic may have been invoked implicitly by `apply`,'
                                                                                                     lexer classes {ERROR};
 terminal LongFoundLogic4_t   '`backchain`, etc. with unknown arguments.'                            lexer classes {ERROR};
+terminal NoMatching_t        'No matching clauses'                                                  lexer classes {ERROR};
 
 
 terminal Type_t         'type'         lexer classes {LOGIC};
