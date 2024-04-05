@@ -296,7 +296,7 @@ IOVal<String> ::= filename::String
   --to get the basic, initial envs
   local basicProverState::ProverState =
       defaultProverState([], buildEnv([]), buildEnv([]),
-                         buildEnv([]), []);
+                         buildEnv([]), [], []);
   local ast::ListOfCommands = parsed.parseTree.ast;
   ast.typeEnv = basicProverState.knownTypes;
   ast.constructorEnv = basicProverState.knownConstrs;
@@ -599,6 +599,20 @@ top::TopCommand ::= body::ExtIndBody
 
 aspect production proveExtInd
 top::TopCommand ::= rels::[QName]
+{
+  top.docString = error("Should not occur");
+}
+
+
+aspect production extSizeDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.docString = error("Should not occur");
+}
+
+
+aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 {
   top.docString = error("Should not occur");
 }
