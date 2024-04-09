@@ -91,6 +91,7 @@ function formatHtmlDef
 String ::= preds::[(QName, Type)] defs::Defs isNotCo::Boolean
 {
   local startString::String =
+      "<li>" ++
       (if isNotCo
        then "Predicate"
        else "Co-Defined Predicate") ++
