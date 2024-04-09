@@ -80,7 +80,7 @@ String ::= name::QName params::[String] body::Metaterm
       then ""
       else " [" ++ implode(", ", params) ++ "]";
   local startString::String =
-      "\n<li> <code>" ++ name.shortName ++ pString ++ "</code>";
+      "\n<li><code>" ++ name.shortName ++ pString ++ "</code>";
   local bodyString::String =
       "<pre class=\"code extensibella\">" ++ show(100, body.pp) ++
       "</pre>";
@@ -91,7 +91,7 @@ function formatHtmlDef
 String ::= preds::[(QName, Type)] defs::Defs isNotCo::Boolean
 {
   local startString::String =
-      "<li>" ++
+      "\n<li>" ++
       (if isNotCo
        then "Predicate"
        else "Co-Defined Predicate") ++
@@ -108,7 +108,7 @@ String ::= preds::[(QName, Type)] defs::Defs isNotCo::Boolean
       if length(preds) == 1
       then head(formattedPreds)
       else "<ul>\n" ++
-           implode("\n<li> ", formattedPreds) ++
+           implode("\n<li>", formattedPreds) ++
            "\n</ul>";
 
   local defsString::String =
@@ -127,13 +127,13 @@ String ::= names::[QName] kind_ty::Either<Kind Type>
       | left(k) ->
         implode("",
            map(\ q::QName ->
-                 "\n<li> Type <code>" ++ justShow(q.pp) ++
+                 "\n<li>Type <code>" ++ justShow(q.pp) ++
                  "</code> : <code class=\"extensibella\">" ++
                  justShow(k.pp) ++ "</code>", names))
       | right(t) ->
         implode("",
            map(\ q::QName ->
-                 "\n<li> Constructor <code>" ++ justShow(q.pp) ++
+                 "\n<li>Constructor <code>" ++ justShow(q.pp) ++
                  "</code> : <code class=\"extensibella\">" ++
                  justShow(t.pp) ++ "</code>", names))
       end;
@@ -146,7 +146,7 @@ String ::= elements::[String]
   return if null(elements)
          then ""
          else "<h3>Properties</h3>\n<ul>" ++
-              implode("", elements) ++ "</ul>\n";
+              implode("", elements) ++ "\n</ul>\n";
 }
 
 function combineHtmlDefs
@@ -156,7 +156,7 @@ String ::= elements::[String]
   return if null(elements)
          then ""
          else "<h3>Definitions</h3>\n<ul>" ++
-              implode("", elements) ++ "</ul>\n";
+              implode("", elements) ++ "\n</ul>\n";
 }
 
 
