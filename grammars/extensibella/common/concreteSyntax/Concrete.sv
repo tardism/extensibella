@@ -404,9 +404,9 @@ concrete productions top::PairBody_c
 
 
 concrete productions top::ListBody_c
-| t::Exp_c
+| t::Term_c
   { top.ast = addListContents(t.ast, emptyListContents()); }
-| t::Exp_c ',' rest::ListBody_c
+| t::Term_c ',' rest::ListBody_c
   { top.ast = addListContents(t.ast, rest.ast); }
 
 
