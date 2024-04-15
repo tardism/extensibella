@@ -342,13 +342,13 @@ top::TopCommand ::= names::[QName]
       | [extensibleMutualTheoremGroup(thms, alsos, _)] ->
         just(
            extensibleTheoremDeclaration(
-              foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>)
+              foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
                       rest::ExtThms ->
-                      addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
+                      addExtThms(p.1, p.2, p.3, p.4, rest),
                     endExtThms(), thms),
-              foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>)
+              foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
                       rest::ExtThms ->
-                      addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
+                      addExtThms(p.1, p.2, p.3, p.4, rest),
                     endExtThms(), alsos)))
       | _ ->
         error("Could not identify theorems when compiling prove; " ++

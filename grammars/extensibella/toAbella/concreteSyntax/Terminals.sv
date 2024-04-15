@@ -5,6 +5,9 @@ imports extensibella:toAbella:abstractSyntax;
 imports extensibella:common:abstractSyntax;
 imports extensibella:common:concreteSyntax;
 
+imports silver:langutil:pp;
+imports silver:langutil only pp, pps;
+
 
 lexer class COMMAND dominates Id_t;
 

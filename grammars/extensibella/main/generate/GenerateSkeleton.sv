@@ -85,8 +85,8 @@ synthesized attribute inSkeleton::Boolean;
 synthesized attribute skeletonText::String;
 
 aspect production extensibleMutualTheoremGroup
-top::ThmElement ::= thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
-                    alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
+top::ThmElement ::= thms::[(QName, Bindings, ExtBody, InductionOns)]
+                    alsos::[(QName, Bindings, ExtBody, InductionOns)]
                     tag::(Integer, Integer, String)
 {
   top.inSkeleton = true;

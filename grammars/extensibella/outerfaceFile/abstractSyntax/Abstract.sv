@@ -386,7 +386,7 @@ attribute
    thmInfo
 occurs on ExtThms;
 
-synthesized attribute thmInfo::[(QName, Bindings, ExtBody, String, Maybe<String>)];
+synthesized attribute thmInfo::[(QName, Bindings, ExtBody, InductionOns)];
 
 aspect production endExtThms
 top::ExtThms ::=
@@ -397,9 +397,9 @@ top::ExtThms ::=
 
 aspect production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
-                 onLabel::String asName::Maybe<String> rest::ExtThms
+                 ons::InductionOns rest::ExtThms
 {
-  top.thmInfo = (name, bindings, body, onLabel, asName)::rest.thmInfo;
+  top.thmInfo = (name, bindings, body, ons)::rest.thmInfo;
 }
 
 
