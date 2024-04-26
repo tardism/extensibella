@@ -197,6 +197,32 @@ induction on 1. intros L. L: case L.
    apply IH to L.
 
 
+Theorem extensibella-$-stdLib-$-less_integer_between_false :
+  forall A B C,
+    $plus_integer ($posInt ($succ $zero)) A B ->
+    $less_integer A C -> $less_integer C B -> false.
+induction on 2. intros P LAC LCB. LAC: case LAC.
+  %Subgoal 1
+   P: case P. case P. LCB: case LCB. case LCB.
+  %Subgoal 2
+   P': case P (keep). case P'. LCB: case LCB.
+   apply IH to _ LAC LCB.
+  %Subgoal 3
+   P': case P.
+     %Subgoal 3.1
+      case LCB.
+     %Subgoal 3.2
+      P': case P'. case LCB.
+  %Subgoal 4
+   P: case P. case P. case LCB.
+  %Subgoal 5
+   P': case P (keep). case P'. LCB: case LCB.
+     %Subgoal 5.1
+      case LAC.
+     %Subgoal 5.2
+      apply IH to _ LAC LCB.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                               LESSEQ                               %
@@ -265,6 +291,31 @@ induction on 1. intros L. L: case L.
    search.
   %Subgoal 5
    apply IH to L. search.
+
+Theorem extensibella-$-stdLib-$-less_integer_step_lesseq :
+  forall A B C,
+    is_integer A -> is_integer B ->
+    $less_integer B A -> $plus_integer ($posInt ($succ $zero)) B C ->
+    $lesseq_integer C A.
+induction on 3. intros IsA IsB L P. L: case L.
+  %Subgoal 1
+   P: case P. case P. IsA: case IsA. IsA: case IsA. search. search.
+  %Subgoal 2
+   P: case P. case P. case IsA. case IsB. apply IH to _ _ L _. search.
+  %Subgoal 3
+   P: case P.
+     %Subgoal 3.1
+      case IsA. search. search.
+     %Subgoal 3.2
+      case P. search.
+  %Subgoal 4
+   P: case P. case P. IsB: case IsB. case IsB. search. search.
+  %Subgoal 5
+   P: case P. case P. IsA: case IsA. IsB: case IsB. IsB: case IsB.
+     %Subgoal 5.1
+      LEq: apply IH to _ _ L _. case LEq.
+     %Subgoal 5.2
+      apply IH to _ _ L _. search.
 
 Theorem extensibella-$-stdLib-$-is_integer_lesseq : forall A,
   is_integer A -> $lesseq_integer A A.
@@ -988,6 +1039,15 @@ Theorem extensibella-$-stdLib-$-greater_integer_greatereq : forall A B,
   $greater_integer A B -> $greatereq_integer A B.
 intros G. L: case G.
 apply extensibella-$-stdLib-$-less_integer_lesseq to L. search.
+
+Theorem extensibella-$-stdLib-$-greater_integer_step_greatereq :
+  forall A B C,
+    is_integer A -> is_integer B -> $greater_integer A B ->
+    $plus_integer ($posInt ($succ $zero)) B C ->
+    $greatereq_integer A C.
+intros IsA IsB G P. L: case G.
+apply extensibella-$-stdLib-$-less_integer_step_lesseq to _ _ L P.
+search.
 
 Theorem extensibella-$-stdLib-$-is_integer_greatereq : forall A,
   is_integer A -> $greatereq_integer A A.
