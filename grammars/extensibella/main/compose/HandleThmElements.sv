@@ -150,7 +150,7 @@ top::ThmElement ::=
       implode("",
          map(\ l::[Integer] ->
                "induction on " ++ implode(" ", map(toString, l)) ++
-               ". ", extThms.inductionNums));
+               ". ", transpose(extThms.inductionNums)));
   local renames::String =
       implode(" ",
          map(\ p::(String, String, String) ->
