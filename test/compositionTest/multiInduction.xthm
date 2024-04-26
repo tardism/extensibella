@@ -1,0 +1,50 @@
+Module compositionTest:multiInduction.
+
+
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+apply IH to R1. search.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+%E-DoubleEval-End
+ EvB: case EvB.
+   %E-DoubleEval-End
+    apply IH to EvA1 EvB. search.
+   %E-DoubleEval-Step
+    %this is the only thing we really care about here:  using the second IH
+    apply IH_EB to EvA EvB. search.
+%E-DoubleEval-Step
+ apply IH to EvA1 EvB. search.
+
+
+Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+skip. skip.
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_back.
+skip.
+
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+
+
+Prove_Constraint compositionTest:host:evalStmt_back.
+
+
+Prove_Constraint compositionTest:host:expr_same.
+case Hyp1. search.
+
+
+Prove_Constraint compositionTest:host:stmt_same.
+
