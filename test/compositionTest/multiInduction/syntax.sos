@@ -1,0 +1,20 @@
+Module compositionTest:multiInduction
+
+Builds on compositionTest:host
+
+expr ::= ...
+       | doubleEval(expr)
+
+---------------------------- [Proj-DoubleEval]
+|{expr}- doubleEval(E) ~~> E
+
+
+
+evalExpr G E V G1
+----------------------------- [E-DoubleEval-End]
+evalExpr G doubleEval(E) V G1
+
+
+evalExpr G doubleEval(E) V G1
+----------------------------- [E-DoubleEval-Step]
+evalExpr G doubleEval(E) V G1
