@@ -1014,14 +1014,14 @@ top::InductionOns ::=
         rest::InductionOns
 {
   top.pp =
-      text(label) ++ (if isKeyRel then text("*") else text("")) ++
+      text(label) ++ (if isKeyRel then text(" *") else text("")) ++
       (case asName of
        | nothing() -> text("")
        | just(ih) -> text(" as " ++ ih)
        end) ++
       (if rest.len == 0 then text("") else text(", ") ++ rest.pp);
   top.abella_pp =
-      label ++ (if isKeyRel then "*" else "") ++
+      label ++ (if isKeyRel then " *" else "") ++
       (case asName of
        | nothing() -> ""
        | just(ih) -> " as " ++ ih
@@ -1036,7 +1036,7 @@ top::InductionOns ::=
       then label::rest.keyRelLabelCandidates
       else rest.keyRelLabelCandidates;
 
-  --only correct if label exists, but it had better if we use this
+  --only correct if label exists, but it had better if we access this
   top.premiseNums =  --(index,   already found)
       foldl(\ thusFar::(Integer, Boolean)
               here::(Maybe<String>, Metaterm) ->
