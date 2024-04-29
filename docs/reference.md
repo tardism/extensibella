@@ -172,6 +172,16 @@ We also have commands for working with extensible languages:
   + Multiple mutually-inductive theorems can be declared together by
     repeating the theorem declaration part (the theorem name through
     the `on` clause)
+  + Multiple inductions can be declared for proving a theorem by
+    repeating the part after the `on` clause, marking one as the key
+    relation for the top-level case analysis with `*` (e.g. `on A, B
+    *, C`).  The key relation is the only one requiring the form `rel
+    t1 ... tn`.  All mutually-inductive theorems must have the same
+    number of inductions.
+  + Each induction hypothesis can be named by adding `as <name>` to
+    the premise label in the `on` clause (e.g. `on A as IH_A, on B *
+    as IH_B, on C as IH_C`).  Each induction hypothesis name must be
+    unique in the group of theorems being declared.
   + The details of extensible theorems are discussed in the [document
     about extensibility in Extensibella](extensibility.md)
 * Projection constraint declaration:  `Projection_Constraint
