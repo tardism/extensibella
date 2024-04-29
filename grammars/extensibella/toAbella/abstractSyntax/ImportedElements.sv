@@ -18,9 +18,9 @@ inherited attribute knownThms::[(QName, Metaterm)];
 
 abstract production extensibleMutualTheoremGroup
 top::ThmElement ::=
-   --[(thm name, var bindings, thm statement, induction measure, IH name)]
-   thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
-   alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
+   --[(thm name, var bindings, thm statement, induction info)]
+   thms::[(QName, Bindings, ExtBody, InductionOns)]
+   alsos::[(QName, Bindings, ExtBody, InductionOns)]
    tag::(Integer, Integer, String)
 {
   top.pp = text("ExtThm ") ++ ppImplode(text(", "),
@@ -31,7 +31,7 @@ top::ThmElement ::=
   top.tag = tag;
 
   top.thms =
-      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+      map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
             (p.1, p.3.thm), thms ++ alsos);
 }
 

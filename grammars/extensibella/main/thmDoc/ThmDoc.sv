@@ -500,7 +500,7 @@ top::ExtThms ::=
 
 aspect production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
-                 onLabel::String asName::Maybe<String> rest::ExtThms
+                 ons::InductionOns rest::ExtThms
 {
   top.thmStrings =
       top.formatThm(name, [], bindingMetaterm(forallBinder(),

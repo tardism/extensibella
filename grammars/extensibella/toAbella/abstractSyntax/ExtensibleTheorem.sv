@@ -29,10 +29,11 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 
   local extThmCmds::[AnyCommand] =
       --declare theorems
-      [anyTopCommand(theoremDeclaration(extName, [], fullThms)),
+      [anyTopCommand(theoremDeclaration(extName, [], fullThms))] ++
       --declare inductions
-       anyProofCommand(inductionTactic(noHint(),
-                          thms.inductionNums ++ alsos.inductionNums))] ++
+      map(\ l::[Integer] ->
+            anyProofCommand(inductionTactic(noHint(), l)),
+          transpose(thms.inductionNums ++ alsos.inductionNums)) ++
       --rename IH's
       map(\ p::(String, String, String) ->
             anyProofCommand(renameTactic(p.1, p.2)),
@@ -110,35 +111,35 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
   --find extInd if needed for the relations
   local extIndGroup::Maybe<[(QName, [String], Bindings,
                              ExtIndPremiseList)]> =
-      findExtIndGroup(head(thms.inductionRels), top.proverState);
+      findExtIndGroup(head(thms.keyRels), top.proverState);
   --need extInd for all if any relations are imported
-  local importedIndRels::[QName] =
+  local importedKeyRels::[QName] =
       filter(\ r::QName -> !sameModule(top.currentModule, r),
-             thms.inductionRels);
+             thms.keyRels);
   top.toAbellaMsgs <-
-      if null(importedIndRels)
+      if null(importedKeyRels)
       then []
       else if !extIndGroup.isJust
       then [errorMsg("Did not find Ext_Ind required for induction " ++
                      "on relations " ++
                      implode(", ",
-                        map(justShow, map((.pp), importedIndRels))))]
+                        map(justShow, map((.pp), importedKeyRels))))]
       else let missing::[QName] =
                case extIndGroup of
                | just(eg) ->
-                 removeAll(map(fst, eg), thms.inductionRels)
+                 removeAll(map(fst, eg), thms.keyRels)
                | nothing() -> error("toAbellaMsgs:  let missing")
                end
            in
              if null(missing)
              then []
              else [errorMsg("Ext_Ind group does not include " ++
-                            "induction relations " ++
+                            "key relations " ++
                             implode(", ",
                                map(justShow, map((.pp), missing))))]
            end;
   top.toAbellaMsgs <-
-      if null(importedIndRels)
+      if null(importedKeyRels)
       then []
       else if alsos.len > 0
       then [errorMsg("Cannot have also theorems when using Ext_Ind")]
@@ -169,7 +170,17 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
                   else (rest.1, q::rest.2),
                 ([], []), thms.thmNames ++ alsos.thmNames).2);
 
-  thms.useExtInd = if null(importedIndRels) || !extIndGroup.isJust
+  --check all use the same number of inductions
+  top.toAbellaMsgs <-
+      case nub(thms.numsInductions ++ alsos.numsInductions) of
+      | [_] -> [] --all are the same
+      | _ -> --must have been at least one number, so this is at least
+             --   two different numbers of inductions
+        [errorMsg("Not all mutual theorems declare the same number" ++
+                  " of inductions")]
+      end;
+
+  thms.useExtInd = if null(importedKeyRels) || !extIndGroup.isJust
                    then []
                    else case extIndGroup of
                         | just(eg) -> eg
@@ -179,6 +190,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
   thms.followingCommands = alsos.duringCommands;
   thms.expectedIHNum = 0;
   thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  thms.numMutualThms = thms.len + alsos.len;
 
   alsos.shouldBeExtensible = false;
   alsos.followingCommands = [];
@@ -186,6 +198,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
   alsos.useExtInd = []; --don't need anything here
   alsos.expectedIHNum = thms.len;
   alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  alsos.numMutualThms = thms.len + alsos.len;
 }
 
 
@@ -255,20 +268,20 @@ top::TopCommand ::= names::[QName]
               "splitElement)")
       end;
 
-  local obligations::[(QName, Bindings, ExtBody, String, Maybe<String>)] =
+  local obligations::[(QName, Bindings, ExtBody, InductionOns)] =
       case head(top.proverState.remainingObligations) of
       | extensibleMutualTheoremGroup(x, _, _) -> x
       | _ -> error("Not possible (proveObligations.obligations)")
       end;
-  local alsosInfo::[(QName, Bindings, ExtBody, String, Maybe<String>)] =
+  local alsosInfo::[(QName, Bindings, ExtBody, InductionOns)] =
       case head(top.proverState.remainingObligations) of
       | extensibleMutualTheoremGroup(_, x, _) -> x
       | _ -> error("Not possible (proveObligations.alsos)")
       end;
 
   local thms::ExtThms =
-      foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) rest::ExtThms ->
-              addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
+      foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, rest),
             endExtThms(), obligations);
   thms.startingGoalNum =
        if length(obligations) + length(alsosInfo) > 1
@@ -283,9 +296,10 @@ top::TopCommand ::= names::[QName]
   thms.followingCommands = alsos.duringCommands;
   thms.expectedIHNum = 0;
   thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  thms.numMutualThms = thms.len + alsos.len;
   local alsos::ExtThms =
-      foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) rest::ExtThms ->
-              addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
+      foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, rest),
             endExtThms(), alsosInfo);
   alsos.startingGoalNum = thms.nextGoalNum;
   alsos.typeEnv = top.typeEnv;
@@ -297,6 +311,7 @@ top::TopCommand ::= names::[QName]
   alsos.followingCommands = [];
   alsos.expectedIHNum = thms.len; --because they start with 0
   alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  alsos.numMutualThms = thms.len + alsos.len;
 
   production extName::QName =
       if length(names) + alsos.len > 1
@@ -305,10 +320,11 @@ top::TopCommand ::= names::[QName]
 
   top.toAbella =
       --declare theorems
-      [anyTopCommand(theoremDeclaration(extName, [], fullThms)),
+      [anyTopCommand(theoremDeclaration(extName, [], fullThms))] ++
       --declare inductions
-       anyProofCommand(inductionTactic(noHint(),
-                          thms.inductionNums ++ alsos.inductionNums))] ++
+      map(\ l::[Integer] ->
+            anyProofCommand(inductionTactic(noHint(), l)),
+          transpose(thms.inductionNums ++ alsos.inductionNums)) ++
       --rename IH's
       map(\ p::(String, String, String) ->
             anyProofCommand(renameTactic(p.1, p.2)),
@@ -327,7 +343,7 @@ top::TopCommand ::= names::[QName]
       else thms.toAbella;
 
   top.provingTheorems =
-      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+      map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
             (p.1, p.3.thm), obligations ++ alsosInfo);
 
   top.duringCommands =
@@ -348,6 +364,21 @@ top::TopCommand ::= names::[QName]
 }
 
 
+--matrix transpose to turn rows into columns
+--used for re-grouping induction nums from per-thm to per-induction
+function transpose
+[[a]] ::= l::[[a]]
+{
+  local firstNewRow::[a] = map(head, l);
+  local newRest::[[a]] = transpose(map(tail, l));
+  return case l of
+         | [] -> [] --shouldn't see this, really
+         | []::_ -> [] --assume all empty
+         | _ -> firstNewRow::newRest
+         end;
+}
+
+
 
 
 
@@ -355,24 +386,27 @@ nonterminal ExtThms with
    pps, abella_pp, len,
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
-   inductionNums, inductionRels,
+   inductionNums, keyRels,
    useExtInd, shouldBeExtensible,
    expectedIHNum, renamedIHs, specialIHNames, thmNames,
    startingGoalNum, nextGoalNum, followingCommands, duringCommands,
+   numMutualThms,
+   numsInductions,
    keyRelModules, extIndChecks,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
           proverState, toAbellaMsgs, useExtInd, shouldBeExtensible,
-          followingCommands, specialIHNames on ExtThms;
+          followingCommands, specialIHNames, numMutualThms on ExtThms;
 
 --prefix for the subgoals arising from a theorem
 inherited attribute startingGoalNum::SubgoalNum;
 --next one afterward
 synthesized attribute nextGoalNum::SubgoalNum;
---gather indices for induction
-synthesized attribute inductionNums::[Integer];
---Relations on which we are doing induction
-synthesized attribute inductionRels::[QName];
+--gather indices for induction, grouped by thm
+--e.g. [[1, 3], [2, 1]] -> induction on 1 2. induction on 3 1.
+synthesized attribute inductionNums::[[Integer]];
+--Key relations for all thms
+synthesized attribute keyRels::[QName];
 --Ext_Ind definition to use if needed
 inherited attribute useExtInd::[(QName, [String], Bindings,
                                  ExtIndPremiseList)];
@@ -390,6 +424,10 @@ inherited attribute specialIHNames::[(String, String, String)];
 synthesized attribute thmNames::[QName];
 --statements and initial commands for showing ExtInd use is valid
 synthesized attribute extIndChecks::[(Metaterm, [ProofCommand])];
+--total number of thms being proved together
+inherited attribute numMutualThms::Integer;
+--numbers of inductions for each thm
+synthesized attribute numsInductions::[Integer];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -404,7 +442,7 @@ top::ExtThms ::=
   top.provingTheorems = [];
 
   top.inductionNums = [];
-  top.inductionRels = [];
+  top.keyRels = [];
 
   top.duringCommands = top.followingCommands;
 
@@ -417,23 +455,22 @@ top::ExtThms ::=
   top.nextGoalNum = top.startingGoalNum;
 
   top.thmNames = [];
+
+  top.numsInductions = [];
 }
 
 
 abstract production addExtThms
 top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
-                 onLabel::String asName::Maybe<String> rest::ExtThms
+                 ons::InductionOns rest::ExtThms
 {
   top.pps = (name.pp ++ text(" : forall ") ++
              ppImplode(text(" "), bindings.pps) ++ text(",") ++
              nest(3, realLine() ++ body.pp) ++ realLine() ++
-             text("on " ++ onLabel) ++
-             if asName.isJust then text(" as " ++ asName.fromJust)
-                              else text(""))::rest.pps;
+             text("on ") ++ ons.pp)::rest.pps;
   top.abella_pp =
       name.abella_pp ++ " : forall " ++ bindings.abella_pp ++ ", " ++
-      body.abella_pp ++ " on " ++ onLabel ++
-      (if asName.isJust then " as " ++ asName.fromJust else "") ++
+      body.abella_pp ++ " on " ++ ons.abella_pp ++
       if rest.abella_pp == "" then "" else ", " ++ rest.abella_pp;
 
   top.len = 1 + rest.len;
@@ -460,41 +497,51 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local introsNames::[String] =
       generateExtIntrosNames(labels, body.premises);
 
-  top.inductionNums =
-      case lookup(onLabel, zip(introsNames,
-                              range(1, length(introsNames) + 1))) of
-      | just(x) -> x::rest.inductionNums
-      | nothing() ->
-        error("Induction nums:  Did not find " ++ onLabel ++ " in " ++
-           "intros names [" ++ implode(", ", introsNames) ++ "]")
-      end;
-  top.inductionRels =
-      case lookup(onLabel, zip(introsNames,
-                                   map(snd, body.premises))) of
-      | just(relationMetaterm(r, _, _)) ->
-        if inductionRelFound
-        then inductionRel.name::rest.inductionRels
-        else rest.inductionRels --bad rel, so just check rest
-      | just(extSizeMetaterm(r, _, _)) ->
-        if inductionRelFound
-        then inductionRel.name::rest.inductionRels
-        else rest.inductionRels --bad rel, so just check rest
-      --bad form, so no relation and just check rest
-      | just(_) -> rest.inductionRels
-      --no such premise, so just check rest
-      | nothing() -> rest.inductionRels
-      end;
+  top.inductionNums = ons.premiseNums::rest.inductionNums;
+  top.keyRels =
+      if keyRelFound
+      then keyRel.name::rest.keyRels
+      else rest.keyRels;
+  top.numsInductions = ons.len::rest.numsInductions;
 
-  --the premise we declared for induction
-  local foundLabeledPremise::Maybe<Metaterm> =
-      lookupBy(\ a::Maybe<String> b::Maybe<String> ->
-                 a.isJust && b.isJust && a.fromJust == b.fromJust,
-               just(onLabel), body.premises);
+  ons.thmPremises = body.premises;
+  ons.thmName = name;
+
+  --the premise we declared for the key relation
+  local keyRelPremiseName::String =
+      case ons.keyRelLabelCandidates of
+      | lbl::_ -> lbl
+      | [] when ons.len == 1 -> head(ons.toList).1
+      | [] -> "" --won't actually use; just a crash-safe filler
+      end;
+  local foundKeyRelPremise::Maybe<Metaterm> =
+      case ons.keyRelLabelCandidates of
+      | [lbl] ->
+        lookupBy(\ a::Maybe<String> b::Maybe<String> ->
+                   a.isJust && b.isJust && a.fromJust == b.fromJust,
+                 just(lbl), body.premises)
+      | [] when ons.len == 1 -> --first one
+        lookupBy(\ a::Maybe<String> b::Maybe<String> ->
+                   a.isJust && b.isJust && a.fromJust == b.fromJust,
+                 just(head(ons.toList).1), body.premises)
+      | _ -> nothing()
+      end;
+  --errors around key relation
   top.toAbellaMsgs <-
-      case foundLabeledPremise of
+      case foundKeyRelPremise of
+      | _ when !top.shouldBeExtensible ->
+        [] --only check for key rel errors for extensible thms
       | nothing() ->
-        [errorMsg("Unknown label " ++ onLabel ++ " in extensible " ++
-                  "theorem " ++ justShow(name.pp))]
+        --check why it wasn't found
+        case ons.keyRelLabelCandidates of
+        | [] when ons.len != 1 -> --none chosen, multiple inductions
+          [errorMsg("No key relation indicated for extensible " ++
+                    "theorem " ++ justShow(name.pp))]
+        | _::_::_ ->
+          [errorMsg("Multiple key relations indicated for " ++
+                    "extensible theorem " ++ justShow(name.pp))]
+        | _ -> [] --premise not known; error generated by ons
+        end
       | just(relationMetaterm(rel, args, r)) ->
         --need to check the metaterm is built by an extensible relation
         let decRel::Decorated QName with {relationEnv} =
@@ -502,37 +549,30 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         in
           if !decRel.relFound
           then [] --covered by other errors
-          else if top.shouldBeExtensible
-             --should be an extensible theorem
-          then if !inductionRel.isExtensible
-               then [errorMsg("Can only induct on extensible relations " ++
-                        "for extensible theorem " ++ justShow(name.pp) ++
-                        "; " ++ justShow(inductionRel.name.pp) ++
-                        " is not extensible")]
-               else case head(drop(inductionRel.pcIndex, args.toList)) of
+          else if !keyRel.isExtensible
+               then [errorMsg("Key relation for extensible theorem " ++
+                        justShow(name.pp) ++ " must be extensible; " ++
+                        justShow(keyRel.name.pp) ++ " is not")]
+               else case head(drop(keyRel.pcIndex, args.toList)) of
                     | nameTerm(q, _) when !q.isQualified -> [] --var
                     | _ -> --anything else is structured
-                      [errorMsg("Primary component of induction " ++
-                          "relation cannot be filled but is in theorem " ++
-                          justShow(name.pp))]
+                      [errorMsg("Primary component of key " ++
+                          "relation cannot be structured but is " ++
+                          "in theorem " ++ justShow(name.pp))]
+                      --ban structured PC for key rel because it can't
+                      --   actually be extended, so it can be a
+                      --   non-extensible theorem
                     end ++
                     --check for ExtInd
-                    if sameModule(top.currentModule, inductionRel.name)
+                    if sameModule(top.currentModule, keyRel.name)
                     then [] --don't need one
                     else case thisExtInd of
                          | just(_) -> [] --found
                          | nothing() ->
                            [errorMsg("Cannot find ExtInd for relation " ++
-                               justShow(inductionRel.name.pp) ++
+                               justShow(keyRel.name.pp) ++
                                " for extensible theorem " ++ justShow(name.pp))]
                          end
-             --should NOT be an extensible theorem
-          else if inductionRel.isExtensible
-               then [errorMsg("Cannot induct on extensible relations " ++
-                        "for non-extensible theorem " ++ justShow(name.pp) ++
-                        "; " ++ justShow(inductionRel.name.pp) ++
-                        " is extensible")]
-               else []
         end
       | just(extSizeMetaterm(rel, args, r)) ->
         let decRel::Decorated QName with {relationEnv} =
@@ -540,39 +580,42 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         in
           if !decRel.relFound
           then [] --covered by other errors
-          else if top.shouldBeExtensible
-          then case head(drop(inductionRel.pcIndex, args.toList)) of
+          else case head(drop(keyRel.pcIndex, args.toList)) of
                | nameTerm(q, _) when !q.isQualified -> [] --var
                | _ -> --anything else is structured
-                 [errorMsg("Primary component of induction " ++
-                     "relation cannot be filled but is in theorem " ++
-                     justShow(name.pp))]
+                 [errorMsg("Primary component of key " ++
+                     "relation cannot be structured but is in " ++
+                     "theorem " ++ justShow(name.pp))]
+                 --ban structured PC for key rel because it can't
+                 --   actually be extended, so it can be a
+                 --   non-extensible theorem
                end ++
                --check for same module; cannot have ExtInd for ExtSize
                (if sameModule(top.currentModule, decRel.fullRel.name)
                 then []
-                else [errorMsg("Cannot induct on <" ++
+                else [errorMsg("Cannot have <" ++
                          justShow(decRel.fullRel.name.pp) ++
-                         " {ES}> outside of module introducing it")]) ++
+                         " {ES}> as key relation outside of " ++
+                         "module introducing it")]) ++
                --check for number being a variable
                case last(args.toList) of
                | nameTerm(q, _) when !q.isQualified -> [] --var
                | _ -> --anything else is structured
-                 [errorMsg("Cannot induct on <" ++
-                     justShow(decRel.fullRel.name.pp) ++
-                     " {ES}> when size is not a variable")]
+                 [errorMsg("Cannot have <" ++
+                     justShow(decRel.fullRel.name.pp) ++ " {ES}> " ++
+                     "as key relation when size is not a variable")]
                  --because we are checking applicability of rules for the
                  --   underlying relation that doesn't know the size, not
-                 --   the actual relation
+                 --   the actual relation (so we don't know the subgoals
+                 --   where we need skips); otherwise it would be fine
+                 --I can't imagine any reason to have a specific number
+                 --   other than maybe 0 (only host rules)
                end
-          else [errorMsg("Cannot induct on extensible relations " ++
-                   " for non-extensible theorem " ++ justShow(name.pp))]
         end
-      | just(m) when top.shouldBeExtensible ->
+      | just(m) ->
         [errorMsg("Can only induct on extensible relations for " ++
             "extensible theorem " ++ justShow(name.pp) ++
             ", not " ++ justShow(m.pp))]
-      | _ -> [] --not extensible, so whatever is allowable
       end;
 
   --check name is qualified with appropriate module
@@ -636,33 +679,33 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   rest.startingGoalNum =
        init(top.startingGoalNum) ++ [last(top.startingGoalNum) + 1];
 
-  local inductionRelFound::Boolean =
-      case foundLabeledPremise of
+  local keyRelFound::Boolean =
+      case foundKeyRelPremise of
       | just(relationMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.relFound
       | just(extSizeMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.relFound
       | _ -> false
       end;
-  local inductionRel::RelationEnvItem =
-      case foundLabeledPremise of
+  local keyRel::RelationEnvItem =
+      case foundKeyRelPremise of
       | just(relationMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
       | just(extSizeMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
-      | _ -> error("Should not access inductionRel")
+      | _ -> error("Should not access keyRel")
       end;
 
   local thisExtInd::Maybe<(QName, [String], Bindings, ExtIndPremiseList)> =
-      if inductionRelFound --guard against out-of-order access
-      then case lookup(inductionRel.name, top.useExtInd) of
-           | just(p) -> just((inductionRel.name, p))
+      if keyRelFound --guard against out-of-order access
+      then case lookup(keyRel.name, top.useExtInd) of
+           | just(p) -> just((keyRel.name, p))
            | nothing() -> nothing()
            end
       else nothing();
   --
   local relArgs::[Term] =
-      case foundLabeledPremise of
+      case foundKeyRelPremise of
       | just(relationMetaterm(_, a, _)) -> a.toList
       | just(extSizeMetaterm(_, a, _)) -> init(a.toList) --drop num
       | _ -> [] --should not need in this case
@@ -673,14 +716,14 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   --number, whether we need to prove it, name to clear for unknownTermK
   --for DefR preventer ("" if nothing to clear)
   local expectedSubgoals::[(Integer, Boolean, String)] =
-      if !inductionRelFound then [] --guard against out-of-order access
+      if !keyRelFound then [] --guard against out-of-order access
       else
       foldl(
          \ thusFar::(Integer, [(Integer, Boolean, String)])
            now::([Term], Maybe<Metaterm>) ->
            let pc::Decorated Term with {relationEnv, constructorEnv,
                                         typeEnv} =
-               decorate elemAtIndex(now.1, inductionRel.pcIndex) with {
+               decorate elemAtIndex(now.1, keyRel.pcIndex) with {
                   relationEnv = top.relationEnv;
                   constructorEnv = top.constructorEnv;
                   typeEnv = top.typeEnv;
@@ -689,16 +732,16 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            let pcMod::QName =
                if pc.isStructured
                then pc.headConstructor.moduleName
-               else inductionRel.name.moduleName
+               else keyRel.name.moduleName
            in
            let pcThisK::Boolean =
                pc.isUnknownTermK &&                --unknownTermK
                case pc.unknownId of
-               | just(i) -> i == inductionRel.name --for this rel
+               | just(i) -> i == keyRel.name --for this rel
                | nothing() -> error("pcThisK")
                end
            in
-           let premBaseName::String = dropNums(onLabel)
+           let premBaseName::String = dropNums(keyRelPremiseName)
            in
            let prems::[Metaterm] =
                case now.2 of
@@ -749,7 +792,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                (!pc.isUnknownTermK || --not unknownTermK
                 case pc.unknownId of
                 | just(i) -> i == --for this relation
-                             inductionRel.name
+                             keyRel.name
                 | nothing() -> error("needToProve")
                 end)
            in
@@ -759,7 +802,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                                   if pcThisK then falsePremName else "")])
              else thusFar --doesn't apply:  just continue with next
            end end end end end end end end end end end end,
-         (1, []), inductionRel.defsList).2;
+         (1, []), keyRel.defsList).2;
   --group consecutive skips; leave non-skips alone
   local groupedExpectedSubgoals::[[(Integer, Boolean, String)]] =
       foldr(\ p::(Integer, Boolean, String)
@@ -813,7 +856,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       --intros and case immediately
       [(top.startingGoalNum,
         [introsTactic(introsNames),
-         caseTactic(nameHint(onLabel), onLabel, true)] ++
+         caseTactic(nameHint(keyRelPremiseName), keyRelPremiseName,
+                    true)] ++
          --add first group of skips if they happen right away
          (if !null(combinedCommands) && !null(subgoalDurings) &&
              head(subgoalDurings).1 == 1
@@ -847,30 +891,17 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       end;
   --
   top.extIndChecks =
-      if !sameModule(top.currentModule, inductionRel.name) &&
+      if !sameModule(top.currentModule, keyRel.name) &&
          --if premises are empty, nothing to show
          thisExtInd.isJust && thisExtInd.fromJust.4.len != 0
       then (extIndUseCheck, [introsTactic(introsNames)])::rest.extIndChecks
       else rest.extIndChecks;
 
   top.keyRelModules =
-      (top.startingGoalNum, inductionRel.name.moduleName)::rest.keyRelModules;
+      (top.startingGoalNum, keyRel.name.moduleName)::rest.keyRelModules;
 
-  --can't name IH to something that might be an Abella-generated IH name
-  top.toAbellaMsgs <-
-      case asName of
-      | nothing() -> []
-      | just(n) ->
-        if matches_IH_form(n)
-        then [errorMsg("Cannot have IH name in as clause of form \"IH<num>\"")]
-        else []
-      end;
-  top.renamedIHs =
-      case asName of
-      | nothing() -> []
-      | just(n) when top.expectedIHNum == 0 -> [("IH", n, name.shortName)]
-      | just(n) -> [("IH" ++ toString(top.expectedIHNum), n, name.shortName)]
-      end ++ rest.renamedIHs;
+  ons.expectedIHNum = top.expectedIHNum;
+  top.renamedIHs = ons.renamedIHs ++ rest.renamedIHs;
 
   --next number
   rest.expectedIHNum = top.expectedIHNum + 1;
@@ -935,6 +966,111 @@ Metaterm ::= extIndArgs::[String] extIndBinds::Bindings
              else bindingMetaterm(existsBinder(), thmBindings,
                      foldr1(andMetaterm, extIndUseCheckConcs))]));
   return extIndUseCheck;
+}
+
+
+
+
+
+nonterminal InductionOns with
+   pp, abella_pp,
+   len, toList<(String, Boolean, Maybe<String>)>,
+   toAbellaMsgs,
+   keyRelLabelCandidates,
+   premiseNums,
+   expectedIHNum, numMutualThms, renamedIHs,
+   thmPremises, thmName;
+propagate toAbellaMsgs, thmPremises, thmName, numMutualThms
+   on InductionOns;
+
+--things claiming to be the key relation label
+synthesized attribute keyRelLabelCandidates::[String];
+--1-indexed premise numbers for induction
+synthesized attribute premiseNums::[Integer];
+
+inherited attribute thmPremises::[(Maybe<String>, Metaterm)];
+inherited attribute thmName::QName;
+
+abstract production endInductionOns
+top::InductionOns ::=
+{
+  top.pp = text("");
+  top.abella_pp = "";
+
+  top.len = 0;
+  top.toList = [];
+
+  top.keyRelLabelCandidates = [];
+
+  top.premiseNums = [];
+
+  top.renamedIHs = [];
+}
+
+
+abstract production addInductionOns
+top::InductionOns ::=
+        label::String isKeyRel::Boolean asName::Maybe<String>
+        rest::InductionOns
+{
+  top.pp =
+      text(label) ++ (if isKeyRel then text(" *") else text("")) ++
+      (case asName of
+       | nothing() -> text("")
+       | just(ih) -> text(" as " ++ ih)
+       end) ++
+      (if rest.len == 0 then text("") else text(", ") ++ rest.pp);
+  top.abella_pp =
+      label ++ (if isKeyRel then " *" else "") ++
+      (case asName of
+       | nothing() -> ""
+       | just(ih) -> " as " ++ ih
+       end) ++
+      (if rest.len == 0 then "" else ", " ++ rest.abella_pp);
+
+  top.len = 1 + rest.len;
+  top.toList = (label, isKeyRel, asName)::rest.toList;
+
+  top.keyRelLabelCandidates =
+      if isKeyRel
+      then label::rest.keyRelLabelCandidates
+      else rest.keyRelLabelCandidates;
+
+  --only correct if label exists, but it had better if we access this
+  top.premiseNums =  --(index,   already found)
+      foldl(\ thusFar::(Integer, Boolean)
+              here::(Maybe<String>, Metaterm) ->
+              if thusFar.2
+              then thusFar
+              else case here.1 of
+                   | just(x) when x == label -> (thusFar.1, true)
+                   | _ -> (thusFar.1 + 1, false)
+                   end,
+            (1, false), top.thmPremises).1::rest.premiseNums;
+
+  top.renamedIHs =
+      case asName of
+      | nothing() -> []
+      | just(n) when top.expectedIHNum == 0 ->
+        [("IH", n, top.thmName.shortName)]
+      | just(n) ->
+        [("IH" ++ toString(top.expectedIHNum), n, top.thmName.shortName)]
+      end ++ rest.renamedIHs;
+  rest.expectedIHNum = top.expectedIHNum + top.numMutualThms;
+
+  --can't name IH to something that might be an Abella-generated IH name
+  top.toAbellaMsgs <-
+      case asName of
+      | just(n) when matches_IH_form(n) ->
+        [errorMsg("Cannot have IH name in as clause of form \"IH<num>\"")]
+      | _ -> []
+      end;
+  --check label is declared as a premise
+  top.toAbellaMsgs <-
+      if contains(label, filterMap(\ a -> a, map(fst, top.thmPremises)))
+      then []
+      else [errorMsg("Unknown label " ++ label ++ " for theorem " ++
+                     top.thmName.shortName)];
 }
 
 

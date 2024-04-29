@@ -70,27 +70,28 @@ top::ThmElement ::=
 
 aspect production extensibleMutualTheoremGroup
 top::ThmElement ::=
-   --[(thm name, var bindings, thm statement, induction measure, IH name)]
-   thms::[(QName, Bindings, ExtBody, String, Maybe<String>)]
-   alsos::[(QName, Bindings, ExtBody, String, Maybe<String>)]
+   --[(thm name, var bindings, thm statement, induction info)]
+   thms::[(QName, Bindings, ExtBody, InductionOns)]
+   alsos::[(QName, Bindings, ExtBody, InductionOns)]
    tag::(Integer, Integer, String)
 {
   local extThms::ExtThms =
-      foldr(\ p::(QName, Bindings, ExtBody, String, Maybe<String>)
+      foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
               rest::ExtThms ->
-              addExtThms(p.1, p.2, p.3, p.4, p.5, rest),
+              addExtThms(p.1, p.2, p.3, p.4, rest),
             endExtThms(), thms ++ alsos);
   extThms.relationEnv = top.relEnv;
   extThms.constructorEnv = top.constrEnv;
   extThms.typeEnv = top.tyEnv;
   extThms.expectedIHNum = 0;
+  extThms.numMutualThms = length(thms) + length(alsos);
 
   --[(thm name, key relation, is host-y or not, uses R_P or not,
   --  bindings, body, intros name for key relation)] for thms
   local thmsInfo::[(QName, RelationEnvItem, Boolean, Boolean,
                     Bindings, ExtBody, String)] =
       map(--(induction rel, thm name, ...)
-         \ p::(QName, QName, Bindings, ExtBody, String, Maybe<String>) ->
+         \ p::(QName, QName, Bindings, ExtBody, InductionOns) ->
            let rei::RelationEnvItem =
                decorate p.1 with {relationEnv=top.relEnv;}.fullRel
            in
@@ -100,9 +101,13 @@ top::ThmElement ::=
                  sameModule(p.2.moduleName, rei.pcType.name),
               --uses R_P if thm and rel from different mods
               !sameModule(p.2.moduleName, p.1),
-              p.3, p.4, p.5)
+              p.3, p.4,
+              case p.5.keyRelLabelCandidates of
+              | lbl::_ -> lbl
+              | [] -> head(p.5.toList).1 --must be only one premise
+              end)
            end,
-         zip(extThms.inductionRels, thms)); --cuts off the alsos part
+         zip(extThms.keyRels, thms)); --cuts off the alsos part
 
   local multiple::Boolean = length(thms) + length(alsos) > 1;
   local extName::QName = --multiple theorems or the one uses R_P
@@ -128,7 +133,7 @@ top::ThmElement ::=
                }.toAbella),
           thmsInfo) ++
       --alsos
-      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+      map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
             bindingMetaterm(forallBinder(), p.2,
                decorate p.3 with {
                   relationEnv = top.relEnv;
@@ -142,8 +147,10 @@ top::ThmElement ::=
       "Theorem " ++ extName.abella_pp ++ " : " ++
       foldr1(andMetaterm, proveThmStmts).abella_pp ++ ".\n";
   local inductions::String =
-      "induction on " ++
-      implode(" ", map(toString, extThms.inductionNums)) ++ ". ";
+      implode("",
+         map(\ l::[Integer] ->
+               "induction on " ++ implode(" ", map(toString, l)) ++
+               ". ", transpose(extThms.inductionNums)));
   local renames::String =
       implode(" ",
          map(\ p::(String, String, String) ->
@@ -238,7 +245,7 @@ top::ThmElement ::=
 
   --Commands for proving alsos
   local alsosIntros::[String] =
-      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+      map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
             let prems::[(Maybe<String>, Metaterm)] =
                 decorate p.3 with {
                   typeEnv = top.tyEnv; relationEnv = top.relEnv;
@@ -449,7 +456,7 @@ top::ThmElement ::=
   top.runAbella_out = after_abella.io;
 
   top.newThms =
-      map(\ p::(QName, Bindings, ExtBody, String, Maybe<String>) ->
+      map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
             (p.1, bindingMetaterm(forallBinder(), p.2,
              decorate p.3 with {
                 relationEnv = top.relEnv; boundNames = p.2.usedNames;

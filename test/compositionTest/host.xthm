@@ -39,12 +39,12 @@ Extensible_Theorem
     EvA : evalExpr G E VA GA ->
     EvB : evalExpr G E VB GB ->
     VA = VB /\ GA = GB
-  on EvA,
+  on EvA *, EvB as IH_EB,
   evalStmt_unique : forall G S GA GB,
     EvA : evalStmt G S GA ->
     EvB : evalStmt G S GB ->
     GA = GB
-  on EvA as IH_S.
+  on EvA * as IH_S, EvB as IH_SB.
 %evalExpr_unique
  %E-Num
   case EvB. search.
