@@ -79,6 +79,13 @@ top::ProverState ::=
 {
   top.pp = ppConcat([text("Prover State{"), realLine(),
       text("  Debug Mode:  "), text(toString(top.debug)), realLine(),
+      --during commands
+      text("  During Commands:  [") ++ realLine() ++ text("   "),
+         ppImplode(realLine() ++ text("   "),
+            map(\ p::(SubgoalNum, [ProofCommand]) ->
+                  text(subgoalNumToString(p.1) ++ ":  ") ++
+                  nest(6, ppImplode(text(""), map((.pp), p.2))), duringCommands)),
+         text("]"), realLine(),
       --types
       text("  Type Env:  ["), ppImplode(text(", "), map((.pp),
                                  map((.name), top.knownTypes))), text("]"), realLine(),

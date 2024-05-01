@@ -706,8 +706,22 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   --
   local relArgs::[Term] =
       case foundKeyRelPremise of
-      | just(relationMetaterm(_, a, _)) -> a.toList
-      | just(extSizeMetaterm(_, a, _)) -> init(a.toList) --drop num
+      --take full of these to turn constructor names into constructor
+      --   terms, not vars that will unify with anything
+      | just(relationMetaterm(_, a, _)) ->
+        decorate a with {
+          typeEnv = top.typeEnv;
+          relationEnv = top.relationEnv;
+          constructorEnv = top.constructorEnv;
+          boundNames = bindings.usedNames;
+        }.full.toList
+      | just(extSizeMetaterm(_, a, _)) ->
+        init(decorate a with {
+               typeEnv = top.typeEnv;
+               relationEnv = top.relationEnv;
+               constructorEnv = top.constructorEnv;
+               boundNames = bindings.usedNames;
+             }.full.toList) --drop num
       | _ -> [] --should not need in this case
       end;
 
