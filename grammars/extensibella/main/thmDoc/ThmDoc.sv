@@ -411,9 +411,9 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 
 
 aspect production proveObligations
-top::TopCommand ::= names::[QName]
+top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
 {
-  top.thmStrings = [];
+  top.thmStrings = newThms.thmStrings ++ newAlsos.thmStrings;
   top.defStrings = [];
 
   top.newThms = [];
@@ -454,7 +454,7 @@ top::TopCommand ::= body::ExtIndBody
 
 
 aspect production proveExtInd
-top::TopCommand ::= rels::[QName]
+top::TopCommand ::= rels::[QName] newRels::ExtIndBody
 {
   top.thmStrings = [];
   top.defStrings = [];

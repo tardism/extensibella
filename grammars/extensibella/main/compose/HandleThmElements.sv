@@ -1705,9 +1705,10 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 
 
 aspect production proveObligations
-top::TopCommand ::= names::[QName]
+top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
 {
-  top.matchesNames = \ l::[QName] -> !null(intersect(l, names));
+  top.matchesNames =
+      \ l::[QName] -> !null(intersect(l, names ++ map(fst, newThms.provingTheorems)));
 
   top.isNotProof = false;
 }
@@ -1744,11 +1745,11 @@ top::TopCommand ::= body::ExtIndBody
 
 
 aspect production proveExtInd
-top::TopCommand ::= rels::[QName]
+top::TopCommand ::= rels::[QName] newRels::ExtIndBody
 {
   top.matchesNames = \ l::[QName] -> false;
 
-  top.matchesRels = \ l::[QName] -> !null(intersect(rels, l));
+  top.matchesRels = \ l::[QName] -> !null(intersect(l, rels ++ newRels.relations));
 
   top.isNotProof = false;
 }

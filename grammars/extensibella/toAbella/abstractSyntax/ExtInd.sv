@@ -126,7 +126,11 @@ abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 {
   top.pps = e1.pps ++ e2.pps;
-  top.abella_pp = e1.abella_pp ++ ";\n        " ++ e2.abella_pp;
+  top.abella_pp = if e1.len == 0
+                  then e2.abella_pp
+                  else if e2.len == 0
+                  then e1.abella_pp
+                  else e1.abella_pp ++ ";\n        " ++ e2.abella_pp;
 
   top.len = e1.len + e2.len;
 
@@ -144,7 +148,29 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
   e1.downDuringCommands = e2.duringCommands;
   top.duringCommands = e1.duringCommands;
 
-  top.toAbella = andMetaterm(e1.toAbella, e2.toAbella);
+  top.toAbella = if e1.len == 0
+                 then e2.toAbella
+                 else if e2.len == 0
+                 then e1.toAbella
+                 else andMetaterm(e1.toAbella, e2.toAbella);
+}
+
+
+abstract production emptyExtIndBody
+top::ExtIndBody ::=
+{
+  top.pps = [];
+  top.abella_pp = "";
+
+  top.len = 0;
+
+  top.relations = [];
+  top.extIndInfo = [];
+  top.relationEnvItems = [];
+
+  top.nextGoalNum = top.startingGoalNum;
+  top.duringCommands = top.downDuringCommands;
+  top.toAbella = error("Should not access (emptyExtIndBody.toAbella)");
 }
 
 
@@ -444,10 +470,16 @@ top::ExtIndPremiseList ::= m::Metaterm rest::ExtIndPremiseList
 
 
 abstract production proveExtInd
-top::TopCommand ::= rels::[QName]
+top::TopCommand ::= rels::[QName] newRels::ExtIndBody
 {
   top.pp = text("Prove_Ext_Ind ") ++ ppImplode(text(",") ++ line(),
                                         map((.pp), rels)) ++
+           (if newRels.len > 0
+            then realLine() ++ text("with") ++
+                 ppImplode(text(";") ++ realLine(),
+                    map(\ d::Document -> docGroup(nest(9, d)),
+                        newRels.pps))
+            else text("")) ++
            text(".") ++ realLine();
   top.abella_pp =
       error("proveExtInd.abella_pp should not be accessed");
@@ -499,6 +531,48 @@ top::TopCommand ::= rels::[QName]
         error("Should be impossible (proveExtInd.toAbellaMsgs " ++
               "splitElement)")
       end;
+  --Check each relation occurs at most once
+  top.toAbellaMsgs <- --([duplicated], [seen])
+      let split::([QName], [QName]) =
+          foldr(\ q::QName rest::([QName], [QName]) ->
+                  if contains(q, rest.2) && !contains(q, rest.1)
+                  then (q::rest.1, rest.2)
+                  else (rest.1, q::rest.2),
+                ([], []), newRels.relations)
+      in
+        map(\ q::QName ->
+              errorMsg("Duplicate definitions of extension " ++
+                 "induction for relation " ++ justShow(q.pp)), split.1)
+      end;
+  --Check no relation has a pre-existing ExtInd
+  top.toAbellaMsgs <-
+      flatMap(\ q::QName ->
+                case findExtIndGroup(q, top.proverState) of
+                | just(_) ->
+                  [errorMsg("Pre-existing ExtInd for " ++
+                      justShow(q.pp) ++ "; cannot redefine it")]
+                | nothing() -> []
+                end,
+              newRels.relations);
+  --Check if the relations have ExtSize and have it together
+  --Not an error, but something possibly unintended, so warn
+  top.toAbellaMsgs <-
+      if useExtSize --existing ones use Ext Size
+      then case fullRelInfo of
+           | (q, _, _, _, _)::rest ->
+             case findExtSizeGroup(q, top.proverState) of
+             | just(g) when !subset(map(fst, rest), g) ->
+               --found group and it does not include all new rels
+               [errorMsg("Existing relations use Ext Size for " ++
+                   "proving Ext Ind; must include new relations " ++
+                   "in same Ext Size declaration")]
+             | _ -> []
+             end
+           | _ -> []
+           end
+      else [warningMsg("No definition of Ext Size for all " ++
+               "relations in Ext Ind; defaulting to proving " ++
+               "Ext Ind without Ext Size")];
 
   local obligations::[(QName, [String], Bindings, ExtIndPremiseList)] =
       case head(top.proverState.remainingObligations) of
@@ -516,13 +590,10 @@ top::TopCommand ::= rels::[QName]
   --get the environment entry for the relation as well
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                        RelationEnvItem)] =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
-            let rel::RelationEnvItem =
-                decorate p.1 with {relationEnv=top.relationEnv;}.fullRel
-            in
-              (rel.name, p.2, p.3, p.4, rel)
-            end,
-          obligations);
+      zipWith(\ p::(QName, [String], Bindings, ExtIndPremiseList)
+                e::RelationEnvItem ->
+                (e.name, p.2, p.3, p.4, e),
+              body.extIndInfo, body.relationEnvItems);
 
   --whether or not to use ExtSize for the proof, or just the relation
   --because new ExtSize can only be declared for new relations, this
@@ -544,7 +615,7 @@ top::TopCommand ::= rels::[QName]
                    top.proverState.buildsOns);
 
   local body::ExtIndBody =
-      foldr1(branchExtIndBody,
+      foldr(branchExtIndBody, newRels,
          map(\ here::(QName, [String], Bindings, ExtIndPremiseList) ->
                oneExtIndBody(here.3, here.1, here.2, here.4),
              obligations));

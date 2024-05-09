@@ -307,6 +307,13 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
 }
 
 
+aspect production emptyExtIndBody
+top::ExtIndBody ::=
+{
+  top.full = emptyExtIndBody();
+}
+
+
 aspect production oneExtIndBody
 top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
                     premises::ExtIndPremiseList

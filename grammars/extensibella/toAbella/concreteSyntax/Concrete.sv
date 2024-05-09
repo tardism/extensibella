@@ -229,12 +229,32 @@ concrete productions top::PureTopCommand_c
           anyTopCommand(extensibleTheoremDeclaration(lstT, lstA))
         end; }
 | 'Prove' thms::QnameList_c '.'
-  { top.ast = anyTopCommand(proveObligations(thms.ast)); }
-| 'Extensible_Theorem' newthms::TheoremStmts_c 'with' oldthms::QnameList_c '.'
+  { top.ast = anyTopCommand(proveObligations(thms.ast, endExtThms(),
+                                             endExtThms())); }
+| 'Prove' oldthms::QnameList_c 'with' newthms::TheoremStmts_c '.'
   { top.ast =
         case newthms.ast of
         | left(msg) -> anyParseFailure(msg)
-        | right(lst) -> todoError("Adding extensible theorems to groups not done yet")
+        | right(lst) -> anyTopCommand(proveObligations(oldthms.ast,
+                                         lst, endExtThms()))
+        end; }
+| 'Prove' oldthms::QnameList_c 'also' newalsos::TheoremStmts_c '.'
+  { top.ast =
+        case newalsos.ast of
+        | left(msg) -> anyParseFailure(msg)
+        | right(lst) -> anyTopCommand(proveObligations(oldthms.ast,
+                                         endExtThms(), lst))
+        end; }
+| 'Prove' oldthms::QnameList_c 'with' newthms::TheoremStmts_c
+                               'also' newalsos::TheoremStmts_c '.'
+  { top.ast =
+        case newthms.ast, newalsos.ast of
+        | left(msg1), left(msg2) ->
+          anyParseFailure(msg1 ++ "\n" ++ msg2)
+        | left(msg), _ -> anyParseFailure(msg)
+        | _, left(msg) -> anyParseFailure(msg)
+        | right(t), right(a) ->
+          anyTopCommand(proveObligations(oldthms.ast, t, a))
         end; }
 | 'Projection_Constraint' name::Id_t ':'
   'forall' binds::BindingList_c ',' body::ExtBody_c '.'
@@ -266,10 +286,13 @@ concrete productions top::PureTopCommand_c
         | right(a) -> anyTopCommand(extIndDeclaration(a))
         end; }
 | 'Prove_Ext_Ind' rels::QnameList_c '.'
-  { top.ast = anyTopCommand(proveExtInd(rels.ast)); }
+  { top.ast = anyTopCommand(proveExtInd(rels.ast, emptyExtIndBody())); }
 | 'Prove_Ext_Ind' oldRels::QnameList_c 'with' e::ExtIndBodies_c '.'
   { top.ast =
-        todoError("Adding new relations to ExtInd groups not done yet"); }
+        case e.ast of
+        | left(err) -> anyParseFailure(err)
+        | right(a) -> anyTopCommand(proveExtInd(oldRels.ast, a))
+        end; }
 | 'Ext_Size' rels::ExtSizeBodies_c '.'
   { top.ast = anyTopCommand(extSizeDeclaration(rels.ast)); }
 | 'Add_Ext_Size' oldRels::QnameList_c '.'
