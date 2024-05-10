@@ -611,7 +611,7 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
 
   --definition of R_P
   local projRelDef::TopCommand =
-      buildProjRel(obligations, top.relationEnv,
+      buildProjRel(obligations ++ body.extIndInfo, top.relationEnv,
                    top.proverState.buildsOns);
 
   local body::ExtIndBody =
