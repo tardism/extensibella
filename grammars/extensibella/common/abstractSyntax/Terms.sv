@@ -368,7 +368,7 @@ top::Term ::= f::Term args::TermList
   top.unifySuccess =
       case top.unifyWith of
       | applicationTerm(_, _) -> true
-      | nameTerm(q, _) when !q.isQualified -> true
+      | nameTerm(q, _) when !isConstantName(q) -> true
       | _ -> false
       end;
   top.unifyEqs =
@@ -444,16 +444,16 @@ top::Term ::= name::QName mty::MaybeType
       else top;
 
   top.unifySuccess =
-      if name.isQualified
+      if isConstantName(name)
       then case top.unifyWith of
-           | nameTerm(q, _) when q.isQualified -> q == name
+           | nameTerm(q, _) when isConstantName(q) -> q == name
            | nameTerm(x, _) -> true
            | _ -> false
            end
       else true;
   top.unifyEqs = []; --nothing more to unify here
   top.unifySubst =
-      if name.isQualified
+      if isConstantName(name)
       then case top.unifyWith of
            | nameTerm(x, _) -> [(x.shortName, top)]
            | _ -> []
@@ -509,7 +509,7 @@ top::Term ::= t1::Term t2::Term
       case top.unifyWith of
       | consTerm(_, _) -> true
       | listTerm(c) -> c.len > 0
-      | nameTerm(q, _) when !q.isQualified -> true
+      | nameTerm(q, _) when !isConstantName(q) -> true
       | _ -> false
       end;
   top.unifyEqs =
@@ -555,7 +555,7 @@ top::Term ::=
       case top.unifyWith of
       | nilTerm() -> true
       | listTerm(c) -> c.len == 0
-      | nameTerm(q, _) when !q.isQualified -> true
+      | nameTerm(q, _) when !isConstantName(q) -> true
       | _ -> false
       end;
   top.unifyEqs = [];

@@ -61,3 +61,14 @@ Boolean ::= eqs::[(Term, Term)]
         else unifyTermsStep(substed)
       end;
 }
+
+
+
+--true if q is actually a constant and cannot unify as a variable
+function isConstantName
+Boolean ::= q::QName
+{      --some constructor or relation
+  return q.isQualified ||
+       --some constant from the standard library
+         startsWith("$", q.shortName);
+}

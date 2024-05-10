@@ -286,11 +286,9 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       findExtIndGroup(head(thms.keyRels), top.proverState);
   --need ExtInd for all if any relations are imported
   local newImportedKeyRels::[QName] =
-      if obligationFound
-      then filterMap(\ p::(QName, QName) ->
-                       if !sameModule(p.1, p.2) then just(p.2) else nothing(),
-              zip(newThms.thmNames, newThms.keyRels))
-      else [];
+      filterMap(\ p::(QName, QName) ->
+                  if !sameModule(p.1.moduleName, p.2) then just(p.2) else nothing(),
+         zip(newThms.thmNames, newThms.keyRels));
   local oldImportedKeyRels::[QName] =
       if obligationFound
       then filterMap(\ p::(QName, QName) ->
@@ -506,12 +504,9 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
   top.provingTheorems = thms.provingTheorems ++ alsos.provingTheorems;
 
   top.duringCommands =
-      case head(top.proverState.remainingObligations) of
-      | extensibleMutualTheoremGroup(_, _, _) ->
-        tail(thms.duringCommands)
-      | _ -> [] --shouldn't really be accessed
-      end;
-
+      if null(neededExtIndChecks)
+      then tail(thms.duringCommands)
+      else tail(extIndCheckCmds) ++ tail(thms.duringCommands);
   top.afterCommands =
       if thms.len + alsos.len > 1
       then [anyTopCommand(splitTheorem(extName,
@@ -908,7 +903,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                else keyRel.name.moduleName
            in
            let pcThisK::Boolean =
-               pc.isUnknownTermK &&                --unknownTermK
+               pc.isUnknownTermK &&          --unknownTermK
                case pc.unknownId of
                | just(i) -> i == keyRel.name --for this rel
                | nothing() -> error("pcThisK")
