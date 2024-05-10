@@ -794,7 +794,11 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                    top.relationEnv);
   local extSizeLemmas::[(QName, Metaterm)] =
       flatMap(\ p::(QName, [String]) ->
-                buildExtSizeLemmas(p.1, p.2), obligations ++ newRels);
+                buildExtSizeLemmas(p.1, p.2),
+         obligations ++
+         map(\ p::(Decorated QName with {relationEnv}, [String]) ->
+               (p.1.fullRel.name, p.2),
+             decNewRels));
 
   local obligations::[(QName, [String])] =
       case head(top.proverState.remainingObligations) of
@@ -860,7 +864,8 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                                    "declaration must be capitalized, but " ++
                                    x ++ " is not")]
                           else [], nub(p.2)) ++
-                (if p.1.relFound && length(p.2) != p.1.fullRel.types.len
+                (if p.1.relFound &&  --len - 1 to drop prop
+                    length(p.2) != p.1.fullRel.types.len - 1
                  then [errorMsg("Expected " ++
                           toString(p.1.fullRel.types.len) ++
                           " arguments to " ++ justShow(p.1.pp) ++
