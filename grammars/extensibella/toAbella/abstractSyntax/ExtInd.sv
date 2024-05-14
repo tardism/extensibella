@@ -232,6 +232,29 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
                        then pc.headConstructor.moduleName
                        else fullRel.name.moduleName
                    in
+                   let prems::[Metaterm] =
+                       case now.2 of
+                       | nothing() -> []
+                       | just(bindingMetaterm(existsBinder(), _, m)) ->
+                         splitMetaterm(m)
+                       | just(m) -> splitMetaterm(m)
+                       end
+                   in
+                   --we know the rule's conclusion unifies with the
+                   --derivation in the property because that is just
+                   --variables, so we only need to check the rule's
+                   --premises
+                   let unifySides::([Term], [Term]) =
+                       foldr(\ m::Metaterm rest::([Term], [Term]) ->
+                               case m of
+                               | eqMetaterm(a, b) -> (a::rest.1, b::rest.2)
+                               | _ -> rest
+                               end,
+                             ([], []), prems)
+                   in
+                   let unifies::Boolean =
+                       unifyTermsSuccess(unifySides.1, unifySides.2)
+                   in
                    let shouldProve::Boolean =
                         --prove everything known in introducing module
                        (top.currentModule == fullRel.name.moduleName ||
@@ -241,9 +264,11 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
                        --   present as holders for other relations
                        !pc.isUnknownTermK
                    in
-                     (thusFar.1 + 1,
-                      thusFar.2 ++ [(thusFar.1, shouldProve)])
-                   end end end,
+                     if unifies --rule isn't cleared automatically by Abella
+                     then (thusFar.1 + 1,
+                           thusFar.2 ++ [(thusFar.1, shouldProve)])
+                     else thusFar --cleared automatically
+                   end end end end end end,
                  (1, []), fullRel.defsList).2;
   --group consecutive skips
   local groupedExpectedSubgoals::[[(Integer, Boolean)]] =
