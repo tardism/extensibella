@@ -5,11 +5,13 @@ Prove_Ext_Ind compositionTest:host:is_expr,
 
 
 Prove compositionTest:host:evalExpr_unique,
-      compositionTest:host:evalStmt_unique.
+      compositionTest:host:evalStmt_unique,
+      compositionTest:list:listIterate_unique.
 
 
 Add_Ext_Size compositionTest:host:evalExpr,
-             compositionTest:host:evalStmt.
+             compositionTest:host:evalStmt,
+             listIterate.
 
 
 Prove_Ext_Ind compositionTest:host:evalExpr,

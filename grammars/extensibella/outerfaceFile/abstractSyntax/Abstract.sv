@@ -30,9 +30,8 @@ function combineAllThms
 [ThmElement] ::= modThms::[[ThmElement]]
 {
   local firsts::[ThmElement] = map(head, modThms);
-  local rests::[[ThmElement]] = map(tail, modThms);
   local first::ThmElement =
-      getFirst(tail(firsts), head(firsts), rests);
+      getFirst(tail(firsts), head(firsts));
   local cleaned::[[ThmElement]] = cleanModThms(first, modThms);
   return
      case modThms of
@@ -45,8 +44,6 @@ function combineAllThms
 
 function getFirst
 ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
-             --rest of ThmElements in all modules (drops first one)
-               fullRestMods::[[ThmElement]]
 {
   {-
     We assume modThms is in the linearized order of imports, that is,
@@ -61,16 +58,19 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
       case modThms of
       | [] -> thusFar
       | x::rest when x.is_nonextensible ->
-        getFirst(rest, x, fullRestMods)
+        getFirst(rest, x)
       | x::rest when thusFar.is_nonextensible ->
-        getFirst(rest, thusFar, fullRestMods)
+        getFirst(rest, thusFar)
       --anything at this point is extensible, so earlier tag
       | t::r when lessTags(t.tag, thusFar.tag) ->
         --thusFar isn't minimum, so start with t
-        getFirst(r, t, fullRestMods)
+        getFirst(r, t)
+      --same tags, so unify the two before continuing
+      | t::r when equalTags(t.tag, thusFar.tag) ->
+        getFirst(r, unionThmElements(t, thusFar))
       | t::r ->
         --thusFar is still minimum seen, so continue with it
-        getFirst(r, thusFar, fullRestMods)
+        getFirst(r, thusFar)
       end;
 }
 
@@ -86,31 +86,74 @@ Boolean ::= ta::(Integer, Integer, String)
           ta.3 < tb.3);
 }
 
---check if t is anywhere in rest
-function existsLater
-Boolean ::= t::ThmElement rest::[[ThmElement]]
+function equalTags
+Boolean ::= ta::(Integer, Integer, String)
+            tb::(Integer, Integer, String)
 {
-  return any(map(containsBy(equalish, t, _), rest));
+       --same number and same name
+  return (ta.1 * tb.2 == tb.1 * ta.2 &&
+          ta.3 == tb.3);
 }
 
---test if two ThmElements are for the same thing
-function equalish
-Boolean ::= a::ThmElement b::ThmElement
+
+--take two things with the same tag and combine them
+--e.g. extensible theorem groups where some module adds new ones
+function unionThmElements
+ThmElement ::= a::ThmElement b::ThmElement
 {
-  return
-      case a, b of
-      | nonextensibleTheorem(na, _, _),
-        nonextensibleTheorem(nb, _, _) -> na == nb
-      | splitElement(an, alst), splitElement(bn, blst) ->
-        an == bn && alst == blst
-      | extensibleMutualTheoremGroup(_, _, taga),
-        extensibleMutualTheoremGroup(_, _, tagb) -> taga == tagb
-      | projectionConstraintTheorem(an, _, _, taga),
-        projectionConstraintTheorem(bn, _, _, tagb) -> taga == tagb
-      | extIndElement(ar, taga), extIndElement(br, tagb) ->
-        taga == tagb
-      | _, _ -> false
-      end;
+  return case a, b of
+         | extensibleMutualTheoremGroup(athms, aalsos, atag),
+           extensibleMutualTheoremGroup(bthms, balsos, btag) ->
+           let addthms::[(QName, Bindings, ExtBody, InductionOns)] =
+               filter(\ p::(QName, Bindings, ExtBody, InductionOns) ->
+                        !containsBy(
+                            \ p1::(QName, Bindings, ExtBody, InductionOns)
+                              p2::(QName, Bindings, ExtBody, InductionOns) ->
+                              p1.1 == p2.1,
+                            p, athms),
+                      bthms)
+           in
+           let addalsos::[(QName, Bindings, ExtBody, InductionOns)] =
+               filter(\ p::(QName, Bindings, ExtBody, InductionOns) ->
+                        !containsBy(
+                            \ p1::(QName, Bindings, ExtBody, InductionOns)
+                              p2::(QName, Bindings, ExtBody, InductionOns) ->
+                              p1.1 == p2.1,
+                            p, aalsos),
+                      balsos)
+           in
+             extensibleMutualTheoremGroup(athms ++ addthms,
+                aalsos ++ addalsos, atag)
+           end end
+         | extIndElement(arelinfo, atag),
+           extIndElement(brelinfo, btag) ->
+           let addrels::[(QName, [String], Bindings, ExtIndPremiseList)] =
+               filter(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+                        !containsBy(
+                            \ p1::(QName, [String], Bindings, ExtIndPremiseList)
+                              p2::(QName, [String], Bindings, ExtIndPremiseList) ->
+                              p1.1 == p2.1,
+                            p, arelinfo),
+                      brelinfo)
+           in
+             extIndElement(arelinfo ++ addrels, atag)
+           end
+         | extSizeElement(arels, atag), extSizeElement(brels, btag) ->
+           let addrels::[(QName, [String])] =
+               filter(\ p::(QName, [String]) ->
+                        !containsBy(\ p1::(QName, [String])
+                                      p2::(QName, [String]) -> p1.1 == p2.1,
+                            p, arels),
+                      brels)
+           in
+             extSizeElement(arels ++ addrels, atag)
+           end
+         | projectionConstraintTheorem(_, _, _, _),
+           projectionConstraintTheorem(_, _, _, _) ->
+           a --can't extend with new, but is still labeled extensible
+         | _, _ ->
+           error("unionThmElements with mismatch or nonextensible")
+         end;
 }
 
 

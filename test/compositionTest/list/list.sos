@@ -1,0 +1,143 @@
+Module compositionTest:list
+
+Builds on compositionTest:typing
+
+expr ::= ...
+       | nil
+       | cons(expr, expr)
+       | head(expr)
+       | tail(expr)
+       | null(expr)
+
+----------------------- [P-Nil]
+|{expr}- nil ~~> num(0)
+
+
+------------------------------------ [P-Cons]
+|{expr}- cons(E1, E2) ~~> eq(E1, E2)
+
+
+---------------------- [P-Head]
+|{expr}- head(E) ~~> E
+
+
+---------------------- [P-Tail]
+|{expr}- tail(E) ~~> E
+
+
+---------------------- [P-Null]
+|{expr}- null(E) ~~> E
+
+
+
+stmt ::= ...
+       | listForeach(string, expr, stmt)
+
+/*useless, but simple, projection*/
+----------------------------------------- [P-Foreach]
+|{stmt}- listForeach(X, L, Body) ~~> Body
+
+
+
+ty ::= ...
+     | listTy(ty)
+
+---------------------- [P-ListTy]
+|{ty}- listTy(T) ~~> T
+
+
+
+
+
+/****************************** Typing ******************************/
+
+---------------------- [T-Nil]
+typeE G nil listTy(Ty)
+
+
+typeE G E1 Ty
+typeE G E2 listTy(Ty)
+------------------------------- [T-Cons]
+typeE G cons(E1, E2) listTy(Ty)
+
+
+typeE G E listTy(Ty)
+-------------------- [T-Head]
+typeE G head(E) Ty
+
+
+typeE G E listTy(Ty)
+-------------------------- [T-Tail]
+typeE G tail(E) listTy(Ty)
+
+
+typeE G E listTy(Ty)
+---------------------- [T-Null]
+typeE G null(E) boolTy
+
+
+
+typeE G L listTy(Ty)
+typeS (X, Ty)::G Body G1
+--------------------------------- [T-Foreach]
+typeS G listForeach(X, L, Body) G
+
+
+
+
+
+/**************************** Evaluation ****************************/
+
+-------------------- [E-Nil]
+evalExpr G nil nil G
+
+
+evalExpr G E1 V1 G1
+evalExpr G1 E2 V2 G2
+--------------------------------------- [E-Cons]
+evalExpr G cons(E1, E2) cons(V1, V2) G2
+
+
+evalExpr G E cons(V1, V2) G1
+---------------------------- [E-Head]
+evalExpr G head(E) V1 G1
+
+
+evalExpr G E cons(V1, V2) G1
+---------------------------- [E-Tail]
+evalExpr G tail(E) V2 G1
+
+
+evalExpr G E nil G1
+-------------------------- [E-Null-True]
+evalExpr G null(E) true G1
+
+
+evalExpr G E cons(V1, V2) G1
+---------------------------- [E-Null-False]
+evalExpr G null(E) false G1
+
+
+
+evalExpr G L LV G1
+listIterate G1 LV X Body G2
+------------------------------------- [E-Foreach]
+evalStmt G listForeach(X, L, Body) G2
+
+
+Judgment listIterate : {
+             [(string, expr)] expr* string stmt [(string, expr)]}
+
+-------------------------- [LI-Nil]
+listIterate G nil X Body G
+
+
+evalStmt (X, V1)::G Body G1
+listIterate G1 V2 X Body G2
+------------------------------------ [LI-Cons]
+listIterate G cons(V1, V2) X Body G2
+
+
+1 = 0
+------------------------ [LI-Default]*
+listIterate G E X Body G

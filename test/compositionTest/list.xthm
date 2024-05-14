@@ -1,0 +1,249 @@
+Module compositionTest:list.
+
+
+Prove_Ext_Ind compositionTest:host:is_expr,
+              compositionTest:host:is_stmt.
+%is_expr
+ %nil
+  search.
+ %cons
+  apply IH to R1. apply IH to R2. search.
+ %head
+  apply IH to R1. search.
+ %tail
+  apply IH to R1. search.
+ %null
+  apply IH to R1. search.
+%is_stmt
+ %listForeach
+  apply IH to R2. apply IH1 to R3. search.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique
+with
+  listIterate_unique : forall G V X Body GA GB,
+    LIA : listIterate G V X Body GA ->
+    LIB : listIterate G V X Body GB ->
+    GA = GB
+  on LIA * as IH_LI, LIB as IH_LIB.
+%evalExpr_unique
+ %E-Nil
+  case EvB. search.
+ %E-Cons
+  EvB: case EvB. apply IH to EvA1 EvB. apply IH to EvA2 EvB1. search.
+ %E-Head
+  EvB: case EvB. apply IH_EB to EvA1 EvB. search.
+ %E-Tail
+  EvB: case EvB. apply IH_EB to EvA1 EvB. search.
+ %E-Null-True
+  EvB: case EvB.
+    %E-Null-True
+     apply IH to EvA1 EvB. search.
+    %E-Null-False
+     apply IH to EvA1 EvB.
+ %E-Null-False
+  EvB: case EvB.
+    %E-Null-True
+     apply IH to EvA1 EvB.
+    %E-Null-False
+     apply IH to EvA1 EvB. search.
+%evalStmt_unique
+ %E-Foreach
+  EvB: case EvB. apply IH to EvA1 EvB. apply IH_LIB to EvA2 EvB1.
+  search.
+%listIterate_unique
+ %IL-Nil
+  case LIB. search.
+ %IL-Cons
+  LIB: case LIB. apply IH_S to LIA1 LIB. apply IH_LI to LIA2 LIB1.
+  search.
+
+
+Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt
+        with listIterate G V X Body G'.
+
+
+/*
+  We don't obey any of the projection expectations, which is fine for
+  testing the composition, but we get a lot of skips that way.
+*/
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt
+with forall G V X Body G',
+       listIterate G V X Body G' with IsV: is_expr V.
+%evalExpr
+ %E-Nil
+  skip.
+ %E-Cons
+  skip.
+ %E-Head
+  skip.
+ %E-Tail
+  skip.
+ %E-Null-True
+  skip.
+ %E-Null-False
+  skip.
+%evalStmt
+ %E-Foreach
+  case IsS. apply ext_size_is_int_evalExpr to R3.
+  apply ext_size_is_int_listIterate to R4.
+  apply ext_size_pos_evalExpr to R3.
+  apply ext_size_pos_listIterate to R4.
+  apply plus_integer_is_integer to _ _ R2.
+  L4: apply lt_plus_one to R1 _. Acc: case Acc.
+  L2: assert N2 < N.
+    Or: apply lt_left to R2 _ _. L': case Or.
+      %N2 < N4
+       apply less_integer_transitive to L' L4. search.
+      %N2 = N4
+       search.
+  L3: assert N3 < N.
+    Or: apply lt_right to R2 _ _ _. L': case Or.
+      %N3 < N4
+       apply less_integer_transitive to L' L4. search.
+      %N3 = N4
+       search.
+  A2: apply Acc to _ L2. apply IH to R3 A2 _.
+  A3: apply Acc to _ L3. LIP: apply IH5 to R4 A3 _. skip.
+  skip.
+%listIterate
+ %LI-Nil
+  search.
+ %LI-Cons
+  case IsV. Acc': case Acc (keep).
+  apply ext_size_is_int_evalStmt to R2.
+  apply ext_size_is_int_listIterate to R3.
+  apply ext_size_pos_evalStmt to R2.
+  apply ext_size_pos_listIterate to R3.
+  assert <evalStmt {P}> ((X, V1)::G) Body G3.
+    Or: apply lt_left to R1 _ _. L: case Or.
+      %N2 < N
+       A2: apply Acc' to _ L. apply IH1 to R2 A2 _. skip. search.
+      %N2 = N
+       apply IH4 to R2 Acc _. skip. search.
+  assert <listIterate {P}> G3 V2 X Body G'.
+    Or: apply lt_right to R1 _ _ _. L: case Or.
+      %N3 < N
+       A3: apply Acc' to _ L. apply IH2 to R3 A3 _. search.
+      %N3 = N
+       apply IH5 to R3 Acc _. search.
+  search.
+
+
+Prove_Constraint compositionTest:host:evalExpr_forward.
+skip. skip. skip. skip. skip.
+
+Prove_Constraint compositionTest:host:evalExpr_back.
+skip. skip. skip. skip. skip.
+
+Prove_Constraint compositionTest:host:evalStmt_forward.
+skip.
+
+Prove_Constraint compositionTest:host:evalStmt_back.
+skip.
+
+Prove_Constraint compositionTest:host:expr_same.
+case Hyp1. search.
+case Hyp1. search.
+case Hyp1. search.
+case Hyp1. search.
+case Hyp1. search.
+
+Prove_Constraint compositionTest:host:stmt_same.
+case Hyp1. search.
+
+
+Prove compositionTest:typing:typeS_unchanged.
+%T-Foreach
+ search.
+
+
+Prove compositionTest:typing:typePres,
+      compositionTest:typing:typePres_S,
+      compositionTest:typing:typePres_E_Ctx
+with
+   typePres_IL : forall V Ty G_T G_T' G_E X Body G_E' Z ZTy ZV,
+     IsV : is_expr V ->
+     VTy : typeE [] V (listTy Ty) ->
+     Ty : typeS ((X, Ty)::G_T) Body G_T' ->
+     LI : listIterate G_E V X Body G_E' ->
+     Rel : (forall X XTy XV, lookup G_T X XTy -> lookup G_E X XV ->
+               typeE [] XV XTy) ->
+     LkpTy : lookup G_T Z ZTy ->
+     LkpV : lookup G_E' Z ZV ->
+     typeE [] ZV ZTy
+   on LI as IH_LI.
+%Ext_Ind validity for typePres_IL
+ search.
+%typePres
+ %E-Nil
+  case Ty. search.
+ %E-Cons
+  case IsE. Ty: case Ty. apply IH_E to _ Ty Ev1 _.
+  apply IH_E to _ Ty1 Ev2 _. intros LXT LXV.
+  apply IH_E_C to _ Ty Ev1 _ LXT LXV. search. search.
+ %E-Head
+  case IsE. Ty: case Ty. VTy: apply IH_E to _ Ty Ev1 _. case VTy.
+  search.
+ %E-Tail
+  case IsE. Ty: case Ty. VTy: apply IH_E to _ Ty Ev1 _. case VTy.
+  search.
+ %E-Null-True
+  case Ty. search.
+ %E-Null-False
+  case Ty. search.
+%typePresS
+ %E-Foreach
+  case IsS. Ty: case Ty. VTy: apply IH_E to _ Ty Ev1 _.
+  assert is_expr LV. skip.
+  apply IH_LI to _ VTy Ty1 Ev2 _ LkpTy LkpV.
+  intros LXT LXV. apply IH_E_C to _ Ty Ev1 _ LXT LXV. search. search.
+%typePres_E_Ctx
+ %E-Nil
+  backchain Rel.
+ %E-Cons
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty1 Ev2 _ LkpTy LkpV.
+  intros LXT LXV. apply IH_E_C to _ Ty Ev1 _ LXT LXV. search. search.
+ %E-Head
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV.
+  search.
+ %E-Tail
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV.
+  search.
+ %E-Null-True
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV.
+  search.
+ %E-Null-False
+  case IsE. Ty: case Ty. apply IH_E_C to _ Ty Ev1 _ LkpTy LkpV.
+  search.
+%typePres_IL
+ %IL-Nil
+  backchain Rel.
+ %IL-Cons
+  case IsV. VTy: case VTy. apply IH_LI to _ VTy1  Ty LI2 _ LkpTy LkpV.
+  intros LXT LXV. skip. search.
+
+
+Add_Ext_Size compositionTest:typing:typeE,
+             compositionTest:typing:typeS.
+
+
+Prove_Ext_Ind compositionTest:typing:typeE,
+              compositionTest:typing:typeS.
+%typeE
+ %T-Nil
+  skip.
+ %T-Cons
+  skip.
+ %T-Head
+  skip.
+ %T-Tail
+  skip.
+ %T-Null
+  skip.
+%typeS
+ %T-Foreach
+  skip.
