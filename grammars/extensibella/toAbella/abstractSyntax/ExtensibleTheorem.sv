@@ -384,9 +384,14 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
               addExtThms(p.1, p.2, p.3, p.4, rest),
             newThms, obligations);
   thms.startingGoalNum =
-       if length(obligations) + length(alsosInfo) > 1
-       then [1]
-       else []; --only one thm, so subgoals for it are 1, 2, ...
+       if null(neededExtIndChecks)
+       then if thms.len + alsos.len > 1
+            then [1]
+            else [] --only one thm, so subgoals for it are 1, 2, ...
+       else if thms.len + alsos.len > 1
+            --same, but under subgoal after ExtInd validity check
+            then [length(neededExtIndChecks) + 1, 1]
+            else [length(neededExtIndChecks) + 1];
   thms.typeEnv = top.typeEnv;
   thms.relationEnv = top.relationEnv;
   thms.constructorEnv = top.constructorEnv;
@@ -1059,7 +1064,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       end;
   --
   top.extIndChecks =
-      if !sameModule(top.currentModule, keyRel.name) &&
+      if !null(top.useExtInd) && --sameModule(top.currentModule, keyRel.name) &&
          --if premises are empty, nothing to show
          thisExtInd.isJust && thisExtInd.fromJust.4.len != 0
       then (extIndUseCheck, [introsTactic(introsNames)])::rest.extIndChecks

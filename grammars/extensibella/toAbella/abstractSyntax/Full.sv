@@ -99,21 +99,27 @@ occurs on Metaterm;
 aspect production relationMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.full = relationMetaterm(rel.fullRel.name, args.full, r);
+  top.full =
+      relationMetaterm(if rel.relFound then rel.fullRel.name else rel,
+                       args.full, r);
 }
 
 
 aspect production extSizeMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.full = extSizeMetaterm(rel.fullRel.name, args.full, r);
+  top.full =
+      extSizeMetaterm(if rel.relFound then rel.fullRel.name else rel,
+                      args.full, r);
 }
 
 
 aspect production projRelMetaterm
 top::Metaterm ::= rel::QName args::TermList r::Restriction
 {
-  top.full = projRelMetaterm(rel.fullRel.name, args.full, r);
+  top.full =
+      projRelMetaterm(if rel.relFound then rel.fullRel.name else rel,
+                      args.full, r);
 }
 
 
@@ -370,7 +376,8 @@ aspect production nameTerm
 top::Term ::= name::QName mty::MaybeType
 {
   top.full =
-      if !name.isQualified && contains(name.shortName, top.boundNames)
+      if !name.isQualified && (contains(name.shortName, top.boundNames) ||
+                               !name.constrFound)
       then nameTerm(name, mty.full)
       else case name.fullConstr of
            | left(x) -> nameTerm(x.name, mty.full)

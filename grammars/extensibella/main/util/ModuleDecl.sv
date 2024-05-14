@@ -212,6 +212,10 @@ IOVal<Either<String [(QName, Metaterm)]>> ::=
   local ast::ListOfCommands = parsed.parseTree.ast;
   ast.currentModule = toQName("extensibella:stdLib");
   ast.proverState = error("proverState not needed");
+  ast.ignoreDefErrors = true;
+  ast.typeEnv = error("typeEnv not needed");
+  ast.relationEnv = error("relationEnv not needed");
+  ast.constructorEnv = error("constructorEnv not needed");
   local again::IOVal<Either<String [(QName, Metaterm)]>> =
       readStdLibThms(tail(filenames), parsers, contents.io);
   return

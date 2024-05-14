@@ -201,7 +201,7 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
   top.relations = if rel.relFound then [fullRel.name] else [];
 
   top.extIndInfo = [(if rel.relFound then fullRel.name else rel,
-                     relArgs, boundVars, premises)];
+                     relArgs, boundVars, premises.full)];
 
   top.relationEnvItems = if rel.relFound then [fullRel] else [];
 
@@ -580,12 +580,12 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
       | _ -> error("Not possible (proveExtInd.obligations)")
       end;
   --This should only be accessed if there are no errors
-  top.provingExtInds = obligations;
+  top.provingExtInds = obligations ++ newRels.extIndInfo;
   top.provingTheorems =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             --don't need the actual metaterm, only the name
             (extIndThmName(p.1), trueMetaterm()),
-          obligations);
+          obligations ++ newRels.extIndInfo);
 
   --get the environment entry for the relation as well
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,

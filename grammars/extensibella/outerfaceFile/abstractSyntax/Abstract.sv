@@ -190,12 +190,14 @@ top::TopCommands ::= tag::(Integer, Integer, String)
 
   t.downTag = tag;
 
-  --We don't actually need the environment here, since everything is
+  --We don't actually need the environments here, since everything is
   --fully qualified.  However, we use extIndInfo for ExtInd, which we
-  --also use for processing during proving, and this uses the relation
-  --env for getting the full relation there.  Thus this can be empty
-  --here and it is fine, but it needs to be here for MWDA.
+  --also use for processing during proving, and this uses the
+  --environments for getting the full names there.  Thus they can be
+  --empty here and it is fine, but they need to be here for MWDA.
   t.relationEnv = buildEnv([]);
+  t.typeEnv = buildEnv([]);
+  t.constructorEnv = buildEnv([]);
 
   top.defElements = t.defElements ++ rest.defElements;
   top.thmElements = t.thmElements ++ rest.thmElements;
@@ -210,12 +212,14 @@ top::TopCommands ::= t::TopCommand rest::TopCommands
 
   t.downTag = error("Down tag not needed if not in outerface file");
 
-  --We don't actually need the environment here, since everything is
+  --We don't actually need the environments here, since everything is
   --fully qualified.  However, we use extIndInfo for ExtInd, which we
-  --also use for processing during proving, and this uses the relation
-  --env for getting the full relation there.  Thus this can be empty
-  --here and it is fine, but it needs to be here for MWDA.
+  --also use for processing during proving, and this uses the
+  --environments for getting the full names there.  Thus they can be
+  --empty here and it is fine, but they need to be here for MWDA.
   t.relationEnv = buildEnv([]);
+  t.typeEnv = buildEnv([]);
+  t.constructorEnv = buildEnv([]);
 
   top.defElements = t.defElements ++ rest.defElements;
   top.thmElements = t.thmElements ++ rest.thmElements;
