@@ -419,7 +419,7 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
       | [extIndElement(relInfo, _)] ->
         just(extIndDeclaration(
                 branchExtIndBody(extIndInfo_to_extIndBody(relInfo),
-                                 newRels)))
+                                 newRels.full)))
       | _ ->
         error("Could not identify Ext_Ind when compiling " ++
               "Prove_Ext_Ind; file must be checkable before " ++
@@ -460,7 +460,12 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
   top.compiled =
       case foundExtSize of
       | [extSizeElement(relInfo, _)] ->
-        just(extSizeDeclaration(relInfo ++ newRels))
+        just(extSizeDeclaration(relInfo ++
+                map(\ p::(QName, [String]) ->
+                      (decorate p.1 with {
+                          relationEnv = top.relationEnv;}.fullRel.name,
+                       p.2),
+                    newRels)))
       | _ ->
         error("Could not identify Ext_Size when compiling " ++
               "Add_Ext_Size; file must be checkable before " ++

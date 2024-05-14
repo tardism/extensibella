@@ -11,11 +11,12 @@ Prove compositionTest:host:evalExpr_unique,
 
 Add_Ext_Size compositionTest:host:evalExpr,
              compositionTest:host:evalStmt,
-             listIterate.
+             compositionTest:list:listIterate.
 
 
 Prove_Ext_Ind compositionTest:host:evalExpr,
-              compositionTest:host:evalStmt.
+              compositionTest:host:evalStmt,
+              compositionTest:list:listIterate.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.
