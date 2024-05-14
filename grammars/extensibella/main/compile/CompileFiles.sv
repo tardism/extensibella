@@ -345,11 +345,11 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
               foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
                       rest::ExtThms ->
                       addExtThms(p.1, p.2, p.3, p.4, rest),
-                    newThms, thms),
+                    newThms.full, thms),
               foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
                       rest::ExtThms ->
                       addExtThms(p.1, p.2, p.3, p.4, rest),
-                    newAlsos, alsos)))
+                    newAlsos.full, alsos)))
       | _ ->
         error("Could not identify theorems when compiling prove; " ++
               "file must be checkable before compilation")

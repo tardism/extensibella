@@ -39,7 +39,8 @@ Prove compositionTest:typing:typeS_unchanged.
 
 Prove compositionTest:typing:typePres,
       compositionTest:typing:typePres_S,
-      compositionTest:typing:typePres_E_Ctx.
+      compositionTest:typing:typePres_E_Ctx,
+      compositionTest:list:typePres_IL.
 
 
 Add_Ext_Size compositionTest:typing:typeE,
