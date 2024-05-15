@@ -221,8 +221,7 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
       then [] --no cases without known relation
       else foldl(\ thusFar::(Integer, [(Integer, Boolean)])
                    now::([Term], Maybe<Metaterm>) ->
-                   let pc::Term =
-                       elemAtIndex(now.1, fullRel.pcIndex)
+                   let pc::Term = rulePrimaryComponent(now, fullRel)
                    in
                    let pcMod::QName =
                        if decorate pc with {
@@ -232,25 +231,14 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
                        then pc.headConstructor.moduleName
                        else fullRel.name.moduleName
                    in
-                   let prems::[Metaterm] =
-                       case now.2 of
-                       | nothing() -> []
-                       | just(bindingMetaterm(existsBinder(), _, m)) ->
-                         splitMetaterm(m)
-                       | just(m) -> splitMetaterm(m)
-                       end
+                   let prems::[Metaterm] = splitRulePrems(now.2)
                    in
                    --we know the rule's conclusion unifies with the
                    --derivation in the property because that is just
                    --variables, so we only need to check the rule's
                    --premises
                    let unifySides::([Term], [Term]) =
-                       foldr(\ m::Metaterm rest::([Term], [Term]) ->
-                               case m of
-                               | eqMetaterm(a, b) -> (a::rest.1, b::rest.2)
-                               | _ -> rest
-                               end,
-                             ([], []), prems)
+                       premiseUnificationPairs(prems)
                    in
                    let unifies::Boolean =
                        unifyTermsSuccess(unifySides.1, unifySides.2)

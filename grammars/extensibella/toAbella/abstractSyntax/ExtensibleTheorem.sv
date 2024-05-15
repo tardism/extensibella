@@ -896,7 +896,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            now::([Term], Maybe<Metaterm>) ->
            let pc::Decorated Term with {relationEnv, constructorEnv,
                                         typeEnv} =
-               decorate elemAtIndex(now.1, keyRel.pcIndex) with {
+               decorate rulePrimaryComponent(now, keyRel) with {
                   relationEnv = top.relationEnv;
                   constructorEnv = top.constructorEnv;
                   typeEnv = top.typeEnv;
@@ -916,13 +916,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
            in
            let premBaseName::String = dropNums(keyRelPremiseName)
            in
-           let prems::[Metaterm] =
-               case now.2 of
-               | nothing() -> []
-               | just(bindingMetaterm(existsBinder(), _, m)) ->
-                 splitMetaterm(m)
-               | just(m) -> splitMetaterm(m)
-               end
+           let prems::[Metaterm] = splitRulePrems(now.2)
            in
            let falsePremName::String =
                head(foldr(\ m::Metaterm rest::[String] ->
@@ -947,14 +941,13 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                map(\ x::String -> nameTerm(toQName(x), nothingType()),
                    freshVars)
            in
+           let premUnifyPairs::([Term], [Term]) =
+               premiseUnificationPairs(
+                  safeReplace(prems, existingVars, newTerms))
+           in
            let unifySides::([Term], [Term]) =
-               foldr(\ m::Metaterm rest::([Term], [Term]) ->
-                       case m of
-                       | eqMetaterm(a, b) -> (a::rest.1, b::rest.2)
-                       | _ -> rest
-                       end,
-                     (safeReplace(now.1, existingVars, newTerms), relArgs),
-                     safeReplace(prems, existingVars, newTerms))
+               (premUnifyPairs.1 ++ safeReplace(now.1, existingVars, newTerms),
+                premUnifyPairs.2 ++ relArgs)
            in
            let unifies::Boolean =
                unifyTermsSuccess(unifySides.1, unifySides.2)
@@ -974,7 +967,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                    thusFar.2 ++ [(thusFar.1, needToProve,
                                   if pcThisK then falsePremName else "")])
              else thusFar --doesn't apply:  just continue with next
-           end end end end end end end end end end end end,
+           end end end end end end end end end end end end end,
          (1, []), keyRel.defsList).2;
   --group consecutive skips; leave non-skips alone
   local groupedExpectedSubgoals::[[(Integer, Boolean, String)]] =

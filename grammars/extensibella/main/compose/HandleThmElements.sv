@@ -581,16 +581,24 @@ top::ThmElement ::=
                 decorate q with {relationEnv=top.relEnv;}.fullRel
             in --[(extension clause or not, split-up body)]
             let splits::[(Boolean, [Metaterm])] =
-                map(\ d::([Term], Maybe<Metaterm>) ->
-                      (!sameModule(q.moduleName,
-                           elemAtIndex(d.1, rel.pcIndex
-                                      ).headConstructor),
-                       case d.2 of
-                       | nothing() -> []
-                       | just(bindingMetaterm(_, _, m)) ->
-                         m.splitConjunctions
-                       | just(m) -> m.splitConjunctions
-                       end),
+                filterMap(
+                    \ d::([Term], Maybe<Metaterm>) ->
+                      let prems::[Metaterm] = splitRulePrems(d.2)
+                      in
+                      --check the rule isn't impossible
+                      let unifyPrems::([Term], [Term]) =
+                          premiseUnificationPairs(prems)
+                      in
+                      let unifies::Boolean =
+                          unifyTermsSuccess(unifyPrems.1, unifyPrems.2)
+                      in
+                        if unifies
+                        then just((!sameModule(q.moduleName,
+                                      elemAtIndex(d.1, rel.pcIndex
+                                                 ).headConstructor),
+                                   prems))
+                        else nothing()
+                      end end end,
                     rel.defsList)
             in --premises that are part of this group of rels
             let hereRels::[(Boolean, [Integer])] =
@@ -1021,16 +1029,24 @@ top::ThmElement ::= rels::[(QName, [String])]
                 decorate q with {relationEnv=top.relEnv;}.fullRel
             in --[(extension clause or not, split-up body)]
             let splits::[(Boolean, [Metaterm])] =
-                map(\ d::([Term], Maybe<Metaterm>) ->
-                      (!sameModule(q.moduleName,
-                           elemAtIndex(d.1, rel.pcIndex
-                                      ).headConstructor),
-                       case d.2 of
-                       | nothing() -> []
-                       | just(bindingMetaterm(_, _, m)) ->
-                         m.splitConjunctions
-                       | just(m) -> m.splitConjunctions
-                       end),
+                filterMap(
+                    \ d::([Term], Maybe<Metaterm>) ->
+                      let prems::[Metaterm] = splitRulePrems(d.2)
+                      in
+                      --check the rule isn't impossible
+                      let unifyPrems::([Term], [Term]) =
+                          premiseUnificationPairs(prems)
+                      in
+                      let unifies::Boolean =
+                          unifyTermsSuccess(unifyPrems.1, unifyPrems.2)
+                      in
+                        if unifies
+                        then just((!sameModule(q.moduleName,
+                                      elemAtIndex(d.1, rel.pcIndex
+                                                 ).headConstructor),
+                                   prems))
+                        else nothing()
+                      end end end,
                     rel.defsList)
             in --premises that are part of this group of rels
             let hereRels::[(Boolean, [Integer])] =
