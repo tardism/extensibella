@@ -6,6 +6,15 @@ Prove_Ext_Ind compositionTest:host:is_expr,
 apply IH to R1. search.
 
 
+Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
+
+
+Prove_Ext_Ind compositionTest:host:evalExpr,
+              compositionTest:host:evalStmt.
+skip. skip.
+
+
 Prove compositionTest:host:evalExpr_unique,
       compositionTest:host:evalStmt_unique.
 %E-DoubleEval-End
@@ -17,15 +26,6 @@ Prove compositionTest:host:evalExpr_unique,
     apply IH_EB to EvA EvB. search.
 %E-DoubleEval-Step
  apply IH to EvA1 EvB. search.
-
-
-Add_Ext_Size compositionTest:host:evalExpr,
-             compositionTest:host:evalStmt.
-
-
-Prove_Ext_Ind compositionTest:host:evalExpr,
-              compositionTest:host:evalStmt.
-skip. skip.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.

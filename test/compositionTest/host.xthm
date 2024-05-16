@@ -33,107 +33,6 @@ Ext_Ind forall E, is_expr E; forall S, is_stmt S.
  %while
   apply IH to R1. apply IH1 to R2. search.
 
-
-Extensible_Theorem
-  evalExpr_unique : forall G E VA VB GA GB,
-    EvA : evalExpr G E VA GA ->
-    EvB : evalExpr G E VB GB ->
-    VA = VB /\ GA = GB
-  on EvA *, EvB as IH_EB,
-  evalStmt_unique : forall G S GA GB,
-    EvA : evalStmt G S GA ->
-    EvB : evalStmt G S GB ->
-    GA = GB
-  on EvA * as IH_S, EvB as IH_SB.
-%evalExpr_unique
- %E-Num
-  case EvB. search.
- %E-Plus
-  EvB: case EvB (keep). apply IH to EvA1 EvB1. apply IH to EvA2 EvB2.
-  apply plus_integer_unique to EvA3 EvB3. search.
- %E-True
-  case EvB. search.
- %E-False
-  case EvB. search.
- %E-And-False1
-  EvB: case EvB.
-    %E-And-False1
-     apply IH to EvA1 EvB. search.
-    %E-And-False2
-     apply IH to EvA1 EvB.
-    %E-And-True
-     apply IH to EvA1 EvB.
- %E-And-False2
-  EvB: case EvB.
-    %E-And-False1
-     apply IH to EvA1 EvB.
-    %E-And-False2
-     apply IH to EvA1 EvB. apply IH to EvA2 EvB1. search.
-    %E-And-True
-     apply IH to EvA1 EvB. apply IH to EvA2 EvB1.
- %E-And-True
-  EvB: case EvB.
-    %E-And-False1
-     apply IH to EvA1 EvB.
-    %E-And-False2
-     apply IH to EvA1 EvB. apply IH to EvA2 EvB1.
-    %E-And-True
-     apply IH to EvA1 EvB. apply IH to EvA2 EvB1. search.
- %E-Eq-True
-  EvB: case EvB (keep).
-    %E-Eq-True
-     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. search.
-    %E-Eq-False
-     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. apply EvB3 to _.
- %E-Eq-False
-  EvB: case EvB (keep).
-    %E-Eq-True
-     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. apply EvA3 to _.
-    %E-Eq-False
-     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. search.
- %E-StmtExpr
-  EvB: case EvB. apply IH_S to EvA1 EvB. apply IH to EvA2 EvB1.
-  search.
- %E-Name
-  EvB: case EvB. apply lookup_unique to EvA1 EvB. search.
-%evalStmt_unique
- %E-Noop
-  case EvB. search.
- %E-Seq
-  EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
-  apply IH_S to EvA3 EvB2. search.
- %E-Seq5
-  EvB: case EvB (keep). apply IH_S to EvA1 EvB1.
-  apply IH_S to EvA2 EvB2. apply IH_S to EvA3 EvB3.
-  apply IH_S to EvA4 EvB4. apply IH_S to EvA5 EvB5. search.
- %E-Assign
-  EvB: case EvB. apply IH to EvA1 EvB. search.
- %E-IfThenElse-True
-  EvB: case EvB (keep).
-    %E-IfThenElse-True
-     apply IH to EvA1 EvB1. apply IH_S to EvA2 EvB2. search.
-    %E-IfThenElse-False
-     apply IH to EvA1 EvB1.
- %E-IfThenElse-False
-  EvB: case EvB (keep).
-    %E-IfThenElse-True
-     apply IH to EvA1 EvB1.
-    %E-IfThenElse-False
-     apply IH to EvA1 EvB1. apply IH_S to EvA2 EvB2. search.
- %E-While-False
-  EvB: case EvB (keep).
-    %E-While-False
-     apply IH to EvA1 EvB1. search.
-    %E-While-True
-     apply IH to EvA1 EvB1.
- %E-While-True
-  EvB: case EvB (keep).
-    %E-While-False
-     apply IH to EvA1 EvB1.
-    %E-While-True
-     apply IH to EvA1 EvB1. apply IH_S to EvA2 EvB2.
-     apply IH_S to EvA3 EvB3. search.
-
 Ext_Size evalExpr G E V G', evalStmt G S G'.
 
 Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
@@ -314,6 +213,107 @@ Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
   case IsS. apply IH2 to R1 Acc _. search.
  %E-While-True
   skip.
+
+
+Extensible_Theorem
+  evalExpr_unique : forall G E VA VB GA GB,
+    EvA : evalExpr G E VA GA ->
+    EvB : evalExpr G E VB GB ->
+    VA = VB /\ GA = GB
+  on EvA *, EvB as IH_EB,
+  evalStmt_unique : forall G S GA GB,
+    EvA : evalStmt G S GA ->
+    EvB : evalStmt G S GB ->
+    GA = GB
+  on EvA * as IH_S, EvB as IH_SB.
+%evalExpr_unique
+ %E-Num
+  case EvB. search.
+ %E-Plus
+  EvB: case EvB (keep). apply IH to EvA1 EvB1. apply IH to EvA2 EvB2.
+  apply plus_integer_unique to EvA3 EvB3. search.
+ %E-True
+  case EvB. search.
+ %E-False
+  case EvB. search.
+ %E-And-False1
+  EvB: case EvB.
+    %E-And-False1
+     apply IH to EvA1 EvB. search.
+    %E-And-False2
+     apply IH to EvA1 EvB.
+    %E-And-True
+     apply IH to EvA1 EvB.
+ %E-And-False2
+  EvB: case EvB.
+    %E-And-False1
+     apply IH to EvA1 EvB.
+    %E-And-False2
+     apply IH to EvA1 EvB. apply IH to EvA2 EvB1. search.
+    %E-And-True
+     apply IH to EvA1 EvB. apply IH to EvA2 EvB1.
+ %E-And-True
+  EvB: case EvB.
+    %E-And-False1
+     apply IH to EvA1 EvB.
+    %E-And-False2
+     apply IH to EvA1 EvB. apply IH to EvA2 EvB1.
+    %E-And-True
+     apply IH to EvA1 EvB. apply IH to EvA2 EvB1. search.
+ %E-Eq-True
+  EvB: case EvB (keep).
+    %E-Eq-True
+     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. search.
+    %E-Eq-False
+     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. apply EvB3 to _.
+ %E-Eq-False
+  EvB: case EvB (keep).
+    %E-Eq-True
+     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. apply EvA3 to _.
+    %E-Eq-False
+     apply IH to EvA1 EvB1. apply IH to EvA2 EvB2. search.
+ %E-StmtExpr
+  EvB: case EvB. apply IH_S to EvA1 EvB. apply IH to EvA2 EvB1.
+  search.
+ %E-Name
+  EvB: case EvB. apply lookup_unique to EvA1 EvB. search.
+%evalStmt_unique
+ %E-Noop
+  case EvB. search.
+ %E-Seq
+  EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
+  apply IH_S to EvA3 EvB2. search.
+ %E-Seq5
+  EvB: case EvB (keep). apply IH_S to EvA1 EvB1.
+  apply IH_S to EvA2 EvB2. apply IH_S to EvA3 EvB3.
+  apply IH_S to EvA4 EvB4. apply IH_S to EvA5 EvB5. search.
+ %E-Assign
+  EvB: case EvB. apply IH to EvA1 EvB. search.
+ %E-IfThenElse-True
+  EvB: case EvB (keep).
+    %E-IfThenElse-True
+     apply IH to EvA1 EvB1. apply IH_S to EvA2 EvB2. search.
+    %E-IfThenElse-False
+     apply IH to EvA1 EvB1.
+ %E-IfThenElse-False
+  EvB: case EvB (keep).
+    %E-IfThenElse-True
+     apply IH to EvA1 EvB1.
+    %E-IfThenElse-False
+     apply IH to EvA1 EvB1. apply IH_S to EvA2 EvB2. search.
+ %E-While-False
+  EvB: case EvB (keep).
+    %E-While-False
+     apply IH to EvA1 EvB1. search.
+    %E-While-True
+     apply IH to EvA1 EvB1.
+ %E-While-True
+  EvB: case EvB (keep).
+    %E-While-False
+     apply IH to EvA1 EvB1.
+    %E-While-True
+     apply IH to EvA1 EvB1. apply IH_S to EvA2 EvB2.
+     apply IH_S to EvA3 EvB3. search.
 
 
 /*everything is exactly the same*/

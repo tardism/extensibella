@@ -8,15 +8,6 @@ Prove_Ext_Ind compositionTest:host:is_expr,
  apply IH to R1. apply IH to R2. search.
 
 
-Prove compositionTest:host:evalExpr_unique,
-      compositionTest:host:evalStmt_unique.
-%E-ImagInt
- EvB: case EvB (keep). search.
-%E-ImagPlus
- EvB: case EvB (keep). apply IH to EvA1 EvB1. apply IH to EvA2 EvB2.
- apply plus_integer_unique to EvA3 EvB3. search.
-
-
 Add_Ext_Size compositionTest:host:evalExpr,
              compositionTest:host:evalStmt.
 
@@ -50,6 +41,15 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
        A3: apply Acc' to _ LN3'. apply IH2 to R4 A3 _. search.
       %N3 = N
        apply IH2 to R4 A4 _. search.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+%E-ImagInt
+ EvB: case EvB (keep). search.
+%E-ImagPlus
+ EvB: case EvB (keep). apply IH to EvA1 EvB1. apply IH to EvA2 EvB2.
+ apply plus_integer_unique to EvA3 EvB3. search.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.

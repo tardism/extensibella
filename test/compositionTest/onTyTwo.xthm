@@ -7,22 +7,6 @@ Prove_Ext_Ind compositionTest:host:is_expr,
  apply IH to R1. search.
 
 
-Prove compositionTest:host:evalExpr_unique,
-      compositionTest:host:evalStmt_unique.
-%E-IsZero-True
- EvB: case EvB.
-   %E-IsZero-True
-    apply IH to EvA1 EvB. search.
-   %E-IsZero-False
-    apply IH to EvA1 EvB. apply EvB1 to _.
-%E-IsZero-False
- EvB: case EvB.
-   %E-IsZero-True
-    apply IH to EvA1 EvB. apply EvA2 to _.
-   %E-IsZero-False
-    apply IH to EvA1 EvB. search.
-
-
 Add_Ext_Size compositionTest:host:evalExpr,
             compositionTest:host:evalStmt.
 
@@ -37,6 +21,22 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
  apply ext_size_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
  apply ext_size_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
  case IsE. apply IH to R2 A _. search.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+%E-IsZero-True
+ EvB: case EvB.
+   %E-IsZero-True
+    apply IH to EvA1 EvB. search.
+   %E-IsZero-False
+    apply IH to EvA1 EvB. apply EvB1 to _.
+%E-IsZero-False
+ EvB: case EvB.
+   %E-IsZero-True
+    apply IH to EvA1 EvB. apply EvA2 to _.
+   %E-IsZero-False
+    apply IH to EvA1 EvB. search.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.

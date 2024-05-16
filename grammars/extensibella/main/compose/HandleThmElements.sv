@@ -180,7 +180,6 @@ top::ThmElement ::=
                          Bindings, ExtBody, String) ->
                   if contains(prop.1.moduleName, p.1::p.2)
                   then just((prop.1, prop.4, --known in p.1
-                             prop.4 &&
                              case lookup(prop.2.name, top.knownExtInds_down) of
                              | just((args, binds, prems)) -> prems.len > 0
                              | nothing() -> error("ExtInd must exist")
@@ -212,7 +211,7 @@ top::ThmElement ::=
               else --need for all but nothing checked already
                    (p.1,
                     filterMap(\ prop::(QName, Boolean, Boolean) ->
-                                if prop.3 --requires check
+                                if prop.3 --requires check for using ExtInd
                                 then just(prop.1) else nothing(), p.2))
             end end,
           knownPropsByModule);

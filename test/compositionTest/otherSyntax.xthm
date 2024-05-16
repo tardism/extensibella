@@ -12,20 +12,6 @@ Prove_Ext_Ind compositionTest:host:is_expr,
   apply IH1 to R1. apply IH1 to R2. search.
 
 
-Prove compositionTest:host:evalExpr_unique,
-      compositionTest:host:evalStmt_unique.
-%E-Double
- EvB: case EvB. apply IH to EvA1 EvB.
- apply plus_integer_unique to EvA2 EvB1. search.
-%E-Triple
- EvB: case EvB. apply IH to EvA1 EvB.
- apply plus_integer_unique to EvA2 EvB1.
- apply plus_integer_unique to EvA3 EvB2. search.
-%E-Seq2
- EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
- search.
-
-
 Add_Ext_Size compositionTest:host:evalExpr,
              compositionTest:host:evalStmt.
 
@@ -65,6 +51,20 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
  IsN2: apply ext_size_is_int_evalStmt to R3.
  IsN3: apply ext_size_is_int_evalStmt to R4.
  skip. %this is true, but I don't want to mess with it
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique.
+%E-Double
+ EvB: case EvB. apply IH to EvA1 EvB.
+ apply plus_integer_unique to EvA2 EvB1. search.
+%E-Triple
+ EvB: case EvB. apply IH to EvA1 EvB.
+ apply plus_integer_unique to EvA2 EvB1.
+ apply plus_integer_unique to EvA3 EvB2. search.
+%E-Seq2
+ EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
+ search.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.

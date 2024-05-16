@@ -284,7 +284,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
   local extIndGroup::Maybe<[(QName, [String], Bindings,
                              ExtIndPremiseList)]> =
       findExtIndGroup(head(thms.keyRels), top.proverState);
-  --need ExtInd for all if any relations are imported
+  --need ExtInd for all if any key relations are imported in their properties's modules
   local newImportedKeyRels::[QName] =
       filterMap(\ p::(QName, QName) ->
                   if !sameModule(p.1.moduleName, p.2) then just(p.2) else nothing(),
@@ -292,7 +292,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
   local oldImportedKeyRels::[QName] =
       if obligationFound
       then filterMap(\ p::(QName, QName) ->
-                       if !sameModule(p.1, p.2) then just(p.2) else nothing(),
+                       if !sameModule(p.1.moduleName, p.2) then just(p.2) else nothing(),
               take(length(names), zip(thms.thmNames, thms.keyRels)))
       else [];
   local importedKeyRels::[QName] =

@@ -4,11 +4,6 @@ Prove_Ext_Ind compositionTest:host:is_expr,
               compositionTest:host:is_stmt.
 
 
-Prove compositionTest:host:evalExpr_unique,
-      compositionTest:host:evalStmt_unique,
-      compositionTest:list:listIterate_unique.
-
-
 Add_Ext_Size compositionTest:host:evalExpr,
              compositionTest:host:evalStmt,
              compositionTest:list:listIterate.
@@ -17,6 +12,15 @@ Add_Ext_Size compositionTest:host:evalExpr,
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt,
               compositionTest:list:listIterate.
+
+
+Prove compositionTest:host:evalExpr_unique,
+      compositionTest:host:evalStmt_unique,
+      compositionTest:list:listIterate_unique,
+      compositionTest:list:evalExpr_isValue,
+      compositionTest:list:evalExpr_isCtx,
+      compositionTest:list:evalStmt_isCtx,
+      compositionTest:list:listIterate_isCtx.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.
