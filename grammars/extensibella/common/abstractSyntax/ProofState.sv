@@ -307,3 +307,11 @@ SubgoalNum ::= num::SubgoalNum
 {
   return init(num);
 }
+
+
+--increment the last digit in the number
+function incrementSubgoalNum
+SubgoalNum ::= num::SubgoalNum
+{
+  return init(num) ++ [last(num) + 1];
+}

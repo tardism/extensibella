@@ -287,7 +287,7 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
   --compose the proofs and write them to the file
   local builtProps::IOToken =
       compose_proofs(thms, mods, proverState, abella.iovalue.fromRight,
-         parsers, config, outFilename, allThms, [], [], output);
+         parsers, config, outFilename, allThms, [], [], buildsOns, output);
 
   --clean up by quitting Abella
   local quitAbella::IOToken =
@@ -319,17 +319,18 @@ IOToken ::= thms::[ThmElement] mods::[(QName, DecCmds)]
    parsers::AllParsers config::Configuration outfilename::String
    allThms::[(QName, Metaterm)] knownExtSizes::[[QName]]
    knownExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
-   ioin::IOToken
+   buildsOns::[(QName, [QName])] ioin::IOToken
 {
   local sub::([(QName, DecCmds)], [(QName, Metaterm)], [[QName]],
               [(QName, [String], Bindings, ExtIndPremiseList)], IOToken) =
       handleFstThm(outfilename, mods, head(thms), proverState, abella,
-         parsers, config, allThms, knownExtSizes, knownExtInds, ioin);
+         parsers, config, allThms, knownExtSizes, knownExtInds, buildsOns,
+         ioin);
   local again::IOToken =
       compose_proofs(tail(thms), sub.1, proverState, abella, parsers,
                      config, outfilename, sub.2 ++ allThms,
                      sub.3 ++ knownExtSizes, sub.4 ++ knownExtInds,
-                     sub.5);
+                     buildsOns, sub.5);
 
   return
       case thms of
@@ -351,7 +352,7 @@ function handleFstThm
    parsers::AllParsers config::Configuration
    allThms::[(QName, Metaterm)] knownExtSizes::[[QName]]
    knownExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
-   ioin::IOToken
+   buildsOns::[(QName, [QName])] ioin::IOToken
 {
   fstThm.incomingMods = mods;
   fstThm.relEnv = proverState.knownRels;
@@ -361,6 +362,7 @@ function handleFstThm
   fstThm.allThms = allThms;
   fstThm.knownExtSizes_down = knownExtSizes;
   fstThm.knownExtInds_down = knownExtInds;
+  fstThm.buildsOns_down = buildsOns;
   --
   fstThm.liveAbella = abella;
   fstThm.runAbella = ioin;

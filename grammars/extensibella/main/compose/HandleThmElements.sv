@@ -86,7 +86,7 @@ top::ThmElement ::=
   extThms.expectedIHNum = 0;
   extThms.numMutualThms = length(thms) + length(alsos);
 
-  --[(thm name, key relation, is host-y or not, uses R_P or not,
+  --[(thm name, key relation, is host-y or not, requires R_P or not,
   --  bindings, body, intros name for key relation)] for thms
   local thmsInfo::[(QName, RelationEnvItem, Boolean, Boolean,
                     Bindings, ExtBody, String)] =
@@ -121,7 +121,7 @@ top::ThmElement ::=
       map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                 ExtBody, String) ->
             bindingMetaterm(forallBinder(), p.5,
-               decorate if p.4
+               decorate if useR_P --everything uses it if anything does
                         then decorate p.6 with {
                                 makeProjRel = p.7;
                              }.projRelMade
@@ -167,21 +167,68 @@ top::ThmElement ::=
       sendBlockToAbella(proofStart, top.liveAbella, top.runAbella,
                         top.configuration);
 
-  --number of theorems where we had to prove ExtInd use is valid
-  local numExtIndChecks::Integer =
-      foldr(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
-                  ExtBody, String) rest::Integer ->
-              if p.4
-              then case lookup(p.2.name, top.knownExtInds_down) of
-                   | just((args, binds, prems)) ->
-                     if prems.len > 0 then 1 + rest else rest
-                   | nothing() ->
-                     error("ExtInd must exist (" ++
-                        justShow(p.1.pp) ++ ", " ++
-                        justShow(p.2.name.pp) ++ ")")
-                   end
-              else rest,
-            0, thmsInfo);
+
+  --[(module name, [(property in group known in module,
+  --                 R_P needed for property regardless of others,
+  --                 using R_P requires a check)])]
+  local knownPropsByModule::[(QName, [(QName, Boolean, Boolean)])] =
+             --(module name, [builds ons])
+      map(\ p::(QName, [QName]) ->
+            (p.1,
+             filterMap(
+                \ prop::(QName, RelationEnvItem, Boolean, Boolean,
+                         Bindings, ExtBody, String) ->
+                  if contains(prop.1.moduleName, p.1::p.2)
+                  then just((prop.1, prop.4, --known in p.1
+                             prop.4 &&
+                             case lookup(prop.2.name, top.knownExtInds_down) of
+                             | just((args, binds, prems)) -> prems.len > 0
+                             | nothing() -> error("ExtInd must exist")
+                             end))
+                  else nothing(), --not known there
+                thmsInfo)),
+          top.buildsOns_down);
+  --the ExtInd validity checks given by each module
+  --[(module name, [properties given checks in it])]
+  local extIndsProvenByModule::[(QName, [QName])] =
+               --(module, [(property, needed ExtInd when introduced,
+               --           ExtInd use requires check)])
+      map(\ p::(QName, [(QName, Boolean, Boolean)]) ->
+              --anything requires R_P
+            let extIndNeeded::Boolean = any(map(fst, map(snd, p.2)))
+            in --anything old required R_P
+            let importedNeededExtInd::Boolean =
+                any(map(\ prop::(QName, Boolean, Boolean) ->
+                          !sameModule(p.1, prop.1) && prop.2, p.2))
+            in
+              if !extIndNeeded
+              then (p.1, []) --no ExtInd checks based on these properties
+              else if importedNeededExtInd
+              then (p.1,
+                    --imported already checked ExtInd, so just new checks
+                    filterMap(\ prop::(QName, Boolean, Boolean) ->
+                                if sameModule(p.1, prop.1) --new prop
+                                then just(prop.1) else nothing(), p.2))
+              else --need for all but nothing checked already
+                   (p.1,
+                    filterMap(\ prop::(QName, Boolean, Boolean) ->
+                                if prop.3 --requires check
+                                then just(prop.1) else nothing(), p.2))
+            end end,
+          knownPropsByModule);
+
+  --[(module name, [properties in group known],
+  --  count of ext ind checks proven)]
+  local moduleThmInfo::[(QName, [QName], Integer)] =
+     map(\ p::(QName, [(QName, Boolean, Boolean)]) ->
+           (p.1, map(fst, p.2),
+            length(lookup(p.1, extIndsProvenByModule).fromJust)),
+         knownPropsByModule);
+
+  --whether some property forces us to use ExtInd and R_P
+  local useR_P::Boolean =
+      any(map(\ p::(QName, RelationEnvItem, Boolean, Boolean,
+                    Bindings, ExtBody, String) -> p.4, thmsInfo));
 
   --proof steps for thms and alsos; introducing module is first
   local basicProofInfo::[(QName, [(ProofState, [AnyCommand])])] =
@@ -192,41 +239,55 @@ top::ThmElement ::=
             (p.1, splitAtAllGoals(p.2)),
           basicProofInfo);
 
+  --proof steps for ExtInd checks by name
+  --                               [(prop name, proof stuff)]
+  local extIndCheckProofInfoNames::[(QName, [(ProofState, [AnyCommand])])] =
+      flatMap(     --(module name, proof states and commands)
+          \ modInfo::(QName, [[(ProofState, [AnyCommand])]]) ->
+            let extIndChecks::[QName] = --must exist, even if empty
+                lookup(modInfo.1, extIndsProvenByModule).fromJust
+            in
+            let numChecks::Integer = length(extIndChecks)
+            in
+            let cmds::[[(ProofState, [AnyCommand])]] =
+                takeWhile(\ x::[(ProofState, [AnyCommand])] ->
+                            head(head(x).1.currentSubgoal) <= numChecks,
+                          modInfo.2)
+            in
+            let groups::[[[(ProofState, [AnyCommand])]]] =
+                groupBy(\ l1::[(ProofState, [AnyCommand])]
+                          l2::[(ProofState, [AnyCommand])] ->
+                          head(head(l1).1.currentSubgoal) ==
+                          head(head(l2).1.currentSubgoal),
+                        cmds)
+            in
+              zip(extIndChecks,
+                  --flatten each group
+                  map(\ l::[[(ProofState, [AnyCommand])]] ->
+                        flatMap(\ x -> x, l), groups))
+            end end end end,
+          topGoalProofInfo);
   --proof steps for ExtInd checks in order of the theorems
   --top-level groups are for separate ExtInd checks
   local extIndCheckProofInfo::[[(ProofState, [AnyCommand])]] =
-      case lookup(head(thmsInfo).1.moduleName, topGoalProofInfo) of
-      | just(l) when numExtIndChecks > 0 ->
-        let cmds::[[(ProofState, [AnyCommand])]] =
-            takeWhile(\ x::[(ProofState, [AnyCommand])] ->
-                        head(head(x).1.currentSubgoal) <= numExtIndChecks,
-                      l)
-        in
-        let groups::[[[(ProofState, [AnyCommand])]]] =
-            groupBy(\ l1::[(ProofState, [AnyCommand])]
-                      l2::[(ProofState, [AnyCommand])] ->
-                      head(head(l1).1.currentSubgoal) ==
-                      head(head(l2).1.currentSubgoal),
-                    cmds)
-        in --flatten each group
-          map(\ l::[[(ProofState, [AnyCommand])]] ->
-                flatMap(\ x -> x, l), groups)
-        end end
-      | _ -> []
-      end;
+      filterMap(lookup(_, extIndCheckProofInfoNames),
+                map(fst, thmsInfo));
 
   --update the list of proof steps to drop the ones for the ExtInd checks
   local topGoalThmsProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
-      map(\ p::(QName, [[(ProofState, [AnyCommand])]]) ->
-            if p.1 == head(thmsInfo).1.moduleName
-            then (p.1,
-                  if numExtIndChecks == 0
-                  then p.2
-                  else dropWhile(\ l::[(ProofState, [AnyCommand])] ->
-                                   head(head(l).1.currentSubgoal) <=
-                                   numExtIndChecks,
-                                 p.2))
-            else p,
+      map(\ modInfo::(QName, [[(ProofState, [AnyCommand])]]) ->
+            let extIndChecks::[QName] = --must exist, even if empty
+                lookup(modInfo.1, extIndsProvenByModule).fromJust
+            in
+            let numChecks::Integer = length(extIndChecks)
+            in
+            let remainingCmds::[[(ProofState, [AnyCommand])]] =
+                dropWhile(\ x::[(ProofState, [AnyCommand])] ->
+                            head(head(x).1.currentSubgoal) <= numChecks,
+                          modInfo.2)
+            in
+              (modInfo.1, remainingCmds)
+            end end end,
           topGoalProofInfo);
 
 
@@ -236,12 +297,13 @@ top::ThmElement ::=
   --Commands for proving thms
   local thmProofs::IOVal<[String]> =
       --doesn't matter if alsos proof information in topGoalThmsProofInfo
-      buildExtThmProofs(thmsInfo, topGoalThmsProofInfo, top.allThms,
-         top.tyEnv, top.relEnv, top.constrEnv, top.liveAbella,
-         top.configuration, top.allParsers,
+      buildExtThmProofs(thmsInfo, topGoalThmsProofInfo,
+         if length(thms ++ alsos) == 1 then [] else [1], useR_P,
+         top.allThms, top.tyEnv, top.relEnv, top.constrEnv,
+         top.liveAbella, top.configuration, top.allParsers,
          map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                    ExtBody, String) -> p.2.name, thmsInfo),
-         numExtIndChecks, proofStart_abella.io);
+         moduleThmInfo, proofStart_abella.io);
 
   --Commands for proving alsos
   local alsosIntros::[String] =
@@ -792,15 +854,27 @@ top::ThmElement ::=
   local toProjRelProofInit_abella::IOVal<String> =
       sendBlockToAbella(toProjRelProofInit, top.liveAbella,
                         dropP_abella.io, top.configuration);
+  --information about which relations are proven in which modules
+  local toProjRelModuleThmInfo::[(QName, [QName], Integer)] =
+      map(\ modInfo::(QName, [QName]) ->
+            (modInfo.1,
+             filter(\ rel::QName ->
+                      --modInfo.1::modInfo.2 to include current one
+                      contains(rel.moduleName, modInfo.1::modInfo.2),
+                    map(fst, rels)),
+             0),
+          top.buildsOns_down);
   --joining the set-up and proofs into one
   local toProjRelProofContents::IOVal<[String]> =
       buildExtThmProofs(toProjRelInfo,
          map(\ p::(QName, [(ProofState, [AnyCommand])]) ->
                (p.1, splitAtAllGoals(p.2)),
              toProjRelProofInfo),
+         if length(rels) == 1 then [] else [1], false,
          top.allThms, top.tyEnv, top.relEnv, top.constrEnv,
          top.liveAbella, top.configuration, top.allParsers,
-         map(fst, rels), 0, toProjRelProofInit_abella.io);
+         map(fst, rels), toProjRelModuleThmInfo,
+         toProjRelProofInit_abella.io);
   local afterToProjRel::String =
       if length(toProjRelNames) == 1
       then "" --nothing to split
