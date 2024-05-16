@@ -20,7 +20,8 @@ Prove compositionTest:host:evalExpr_unique,
       compositionTest:list:evalExpr_isValue,
       compositionTest:list:evalExpr_isCtx,
       compositionTest:list:evalStmt_isCtx,
-      compositionTest:list:listIterate_isCtx.
+      compositionTest:list:listIterate_isCtx,
+      compositionTest:moreSyntax:evalStmt_lookup_unique.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.
