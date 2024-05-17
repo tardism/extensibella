@@ -41,8 +41,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   top.toAbellaMsgs <- rel.relErrors;
   top.toAbellaMsgs <-
       if !rel.relFound ||
-         findExtIndGroup(rel.fullRel.name, top.proverState).isJust ||
-         projRelInState
+         findProjRelGroup(rel.fullRel.name, top.proverState).isJust
       then []
       else [errorMsg("Projection version is not defined for " ++
                justShow(rel.fullRel.name.pp))];

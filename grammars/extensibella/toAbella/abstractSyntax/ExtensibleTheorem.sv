@@ -774,6 +774,30 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                  --   other than maybe 0 (only host rules)
                end
         end
+      | just(projRelMetaterm(rel, args, r)) ->
+        let decRel::Decorated QName with {relationEnv} =
+            decorate rel with {relationEnv = top.relationEnv;}
+        in
+          if !decRel.relFound
+          then [] --covered by other errors
+          else case head(drop(keyRel.pcIndex, args.toList)) of
+               | nameTerm(q, _) when !q.isQualified -> [] --var
+               | _ -> --anything else is structured
+                 [errorMsg("Primary component of key " ++
+                     "relation cannot be structured but is in " ++
+                     "theorem " ++ justShow(name.pp))]
+                 --ban structured PC for key rel because it can't
+                 --   actually be extended, so it can be a
+                 --   non-extensible theorem
+               end ++
+               --check for same module; cannot have ExtInd for ProjRel
+               (if sameModule(top.currentModule, decRel.fullRel.name)
+                then []
+                else [errorMsg("Cannot have <" ++
+                         justShow(decRel.fullRel.name.pp) ++
+                         " {P}> as key relation outside of " ++
+                         "module introducing it")])
+        end
       | just(m) ->
         [errorMsg("Can only induct on extensible relations for " ++
             "extensible theorem " ++ justShow(name.pp) ++
@@ -847,6 +871,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         decorate rel with {relationEnv = top.relationEnv;}.relFound
       | just(extSizeMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.relFound
+      | just(projRelMetaterm(rel, _, _)) ->
+        decorate rel with {relationEnv = top.relationEnv;}.relFound
       | _ -> false
       end;
   local keyRel::RelationEnvItem =
@@ -854,6 +880,8 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | just(relationMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
       | just(extSizeMetaterm(rel, _, _)) ->
+        decorate rel with {relationEnv = top.relationEnv;}.fullRel
+      | just(projRelMetaterm(rel, _, _)) ->
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
       | _ -> error("Should not access keyRel")
       end;
@@ -884,6 +912,13 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                constructorEnv = top.constructorEnv;
                boundNames = bindings.usedNames;
              }.full.toList) --drop num
+      | just(projRelMetaterm(_, a, _)) ->
+        decorate a with {
+          typeEnv = top.typeEnv;
+          relationEnv = top.relationEnv;
+          constructorEnv = top.constructorEnv;
+          boundNames = bindings.usedNames;
+        }.full.toList
       | _ -> [] --should not need in this case
       end;
 
