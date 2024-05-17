@@ -1,5 +1,7 @@
 Module compositionTest:onTyTwo.
 
+Add_Proj_Rel compositionTest:host:is_expr,
+             compositionTest:host:is_stmt.
 
 Prove_Ext_Ind compositionTest:host:is_expr,
               compositionTest:host:is_stmt.
@@ -8,7 +10,9 @@ Prove_Ext_Ind compositionTest:host:is_expr,
 
 
 Add_Ext_Size compositionTest:host:evalExpr,
-            compositionTest:host:evalStmt.
+             compositionTest:host:evalStmt.
+Add_Proj_Rel compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
 
 
 Prove_Ext_Ind compositionTest:host:evalExpr,
@@ -85,6 +89,8 @@ Prove compositionTest:typing:typePres,
 
 
 Add_Ext_Size compositionTest:typing:typeE,
+             compositionTest:typing:typeS.
+Add_Proj_Rel compositionTest:typing:typeE,
              compositionTest:typing:typeS.
 
 

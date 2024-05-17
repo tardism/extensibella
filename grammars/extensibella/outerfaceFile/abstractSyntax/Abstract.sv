@@ -148,6 +148,16 @@ ThmElement ::= a::ThmElement b::ThmElement
            in
              extSizeElement(arels ++ addrels, atag)
            end
+         | projRelElement(arels, atag), projRelElement(brels, btag) ->
+           let addrels::[(QName, [String])] =
+               filter(\ p::(QName, [String]) ->
+                        !containsBy(\ p1::(QName, [String])
+                                      p2::(QName, [String]) -> p1.1 == p2.1,
+                            p, arels),
+                      brels)
+           in
+             projRelElement(arels ++ addrels, atag)
+           end
          | projectionConstraintTheorem(_, _, _, _),
            projectionConstraintTheorem(_, _, _, _) ->
            a --can't extend with new, but is still labeled extensible
@@ -176,6 +186,8 @@ function cleanModThms
       | extIndElement(arelinfo, atag), extIndElement(brelinfo, btag) ->
         atag == btag
       | extSizeElement(arels, atag), extSizeElement(brels, btag) ->
+        atag == btag
+      | projRelElement(arels, atag), projRelElement(brels, btag) ->
         atag == btag
       | _, _ -> false
       end;
@@ -423,6 +435,24 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
       error("Should not have addExtSize in interface file");
   top.thmElements =
       error("Should not have addExtSize in interface file");
+}
+
+
+aspect production projRelDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.defElements = [];
+  top.thmElements = [projRelElement(rels, top.downTag)];
+}
+
+
+aspect production addProjRel
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.defElements =
+      error("Should not have addProjRel in interface file");
+  top.thmElements =
+      error("Should not have addProjRel in interface file");
 }
 
 

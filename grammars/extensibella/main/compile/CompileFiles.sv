@@ -473,3 +473,49 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
       end;
   top.maybeTag = just(head(foundExtSize).tag);
 }
+
+
+aspect production projRelDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.compiled =
+      just(projRelDeclaration(
+              map(\ p::(QName, [String]) ->
+                    (decorate p.1 with {
+                        relationEnv = top.relationEnv;}.fullRel.name,
+                     p.2),
+                  rels)));
+  top.maybeTag = nothing();
+}
+
+
+aspect production addProjRel
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  local foundProjRel::[ThmElement] =
+      filter(\ t::ThmElement ->
+               case t of
+               | projRelElement(relInfo, _) ->
+                 let l::[QName] = map(fst, relInfo)
+                 in --equal by mutual subsets
+                   subset(l, oldRels) && subset(oldRels, l)
+                 end
+               | _ -> false
+               end,
+             top.proverState.remainingObligations);
+  top.compiled =
+      case foundProjRel of
+      | [projRelElement(relInfo, _)] ->
+        just(projRelDeclaration(relInfo ++
+                map(\ p::(QName, [String]) ->
+                      (decorate p.1 with {
+                          relationEnv = top.relationEnv;}.fullRel.name,
+                       p.2),
+                    newRels)))
+      | _ ->
+        error("Could not identify Proj_Rel when compiling " ++
+              "Add_Proj_Rel; file must be checkable before " ++
+              "compilation")
+      end;
+  top.maybeTag = just(head(foundProjRel).tag);
+}

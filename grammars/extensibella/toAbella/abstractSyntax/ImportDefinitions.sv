@@ -366,3 +366,21 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
   top.rels = [];
   top.constrs = [];
 }
+
+
+aspect production projRelDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}
+
+
+aspect production addProjRel
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.tys = [];
+  top.rels = [];
+  top.constrs = [];
+}

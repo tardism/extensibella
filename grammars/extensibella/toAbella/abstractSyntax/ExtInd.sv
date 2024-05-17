@@ -21,8 +21,6 @@ top::TopCommand ::= body::ExtIndBody
 
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
-      --relation definition
-      [anyTopCommand(projRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella))] ++
@@ -59,12 +57,18 @@ top::TopCommand ::= body::ExtIndBody
       end;
   body.useExtSize = useExtSize;
 
-  --definition of R_P
-  local projRelDef::TopCommand =
-      buildProjRel(body.extIndInfo, top.relationEnv,
-                   top.proverState.buildsOns);
+  top.newTheorems = addPLemmas;
+  top.afterCommands =
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              addPLemmas);
 
-  top.newTheorems = [];
+  local addPLemmas::[(QName, Metaterm)] =
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
+                RelationEnvItem) ->
+            buildExtIndLemma(p.1, p.2),
+          fullRelInfo);
 
   --Check each relation occurs at most once
   top.toAbellaMsgs <- --([duplicated], [seen])
@@ -84,11 +88,27 @@ top::TopCommand ::= body::ExtIndBody
       flatMap(\ q::QName ->
                 case findExtIndGroup(q, top.proverState) of
                 | just(_) ->
-                  [errorMsg("Pre-existing ExtInd for " ++
+                  [errorMsg("Pre-existing Ext Ind for " ++
                       justShow(q.pp) ++ "; cannot redefine it")]
                 | nothing() -> []
                 end,
               body.relations);
+  --Check all the relations have R_P declared together
+  top.toAbellaMsgs <-
+      case body.extIndInfo of
+      | [] ->
+        [errorMsg("Must have some relations for Ext Ind declaration")]
+      | (q, _, _, _)::rest ->
+        case findProjRelGroup(q, top.proverState) of
+        | nothing() -> [errorMsg("No definition of Proj Rel for " ++
+                           "all relations in Ext Ind")]
+        | just(g) ->
+          if subset(map(fst, rest), g)
+          then [] --everything is included
+          else [errorMsg("No definition of Proj Rel for all " ++
+                   "relations in Ext Ind")]
+        end
+      end;
   --Check if the relations have ExtSize and have it together
   --Not an error, but something possibly unintended, so warn
   top.toAbellaMsgs <-
@@ -513,6 +533,9 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
       | extSizeElement(rels, _)::_ ->
         [errorMsg("Expected Ext Size addition for " ++
             implode(", ", map(justShow, map((.pp), map(fst, rels)))))]
+      | projRelElement(relInfo, _)::_ ->
+        [errorMsg("Expected Proj_Rel addition for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | extIndElement(relInfo, _)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -567,10 +590,33 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
                 | nothing() -> []
                 end,
               newRels.relations);
+  --Check all the relations have R_P declared together
+  top.toAbellaMsgs <-
+      if !obligationsFound
+      then []
+      else case head(top.proverState.remainingObligations) of
+           | extIndElement(_, _) ->
+             case fullRelInfo of
+             | (q, _, _, _)::rest ->
+               case findProjRelGroup(q, top.proverState) of
+               | nothing() -> [errorMsg("No definition of Proj Rel" ++
+                                  " for all relations in Ext Ind")]
+               | just(g) ->
+                 if subset(map(fst, rest), g)
+                 then [] --everything is included
+                 else [errorMsg("No definition of Proj Rel for all" ++
+                          " relations in Ext Ind")]
+               end
+             | [] -> [] --not actually possible
+             end
+           | _ -> [] --error given elsewhere
+           end;
   --Check if the relations have ExtSize and have it together
   --Not an error, but something possibly unintended, so warn
   top.toAbellaMsgs <-
-      if useExtSize --existing ones use Ext Size
+      if !obligationsFound
+      then []
+      else if useExtSize --existing ones use Ext Size
       then case fullRelInfo of
            | (q, _, _, _, _)::rest ->
              case findExtSizeGroup(q, top.proverState) of
@@ -587,6 +633,11 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
                "relations in Ext Ind; defaulting to proving " ++
                "Ext Ind without Ext Size")];
 
+  local obligationsFound::Boolean =
+      case top.proverState.remainingObligations of
+      | extIndElement(relInfo, _)::_ -> setEq(rels, map(fst, relInfo))
+      | _ -> false
+      end;
   local obligations::[(QName, [String], Bindings, ExtIndPremiseList)] =
       case head(top.proverState.remainingObligations) of
       | extIndElement(r, _) -> r
@@ -622,11 +673,6 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
       end;
   body.useExtSize = useExtSize;
 
-  --definition of R_P
-  local projRelDef::TopCommand =
-      buildProjRel(obligations ++ body.extIndInfo, top.relationEnv,
-                   top.proverState.buildsOns);
-
   local body::ExtIndBody =
       foldr(branchExtIndBody, newRels,
          map(\ here::(QName, [String], Bindings, ExtIndPremiseList) ->
@@ -640,12 +686,21 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
   body.constructorEnv = top.constructorEnv;
   body.downDuringCommands = [];
 
-  top.newTheorems = [];
+  top.newTheorems = addPLemmas;
+  top.afterCommands =
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              addPLemmas);
+
+  local addPLemmas::[(QName, Metaterm)] =
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
+                RelationEnvItem) ->
+            buildExtIndLemma(p.1, p.2),
+          fullRelInfo);
 
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
   top.toAbella =
-      --relation definition
-      [anyTopCommand(projRelDef)] ++
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
                         body.toAbella))] ++
@@ -744,7 +799,7 @@ top::TopCommand ::= rels::[(QName, [String])]
                             top.proverState).isJust
                       then [errorMsg("Relation " ++
                               justShow(p.1.fullRel.name.pp) ++
-                              " already has ExtSize defined for it")]
+                              " already has Ext Size defined for it")]
                       else []), decRels);
 }
 
@@ -834,6 +889,9 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
       | extIndElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext Ind for " ++
             implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
+      | projRelElement(relInfo, _)::_ ->
+        [errorMsg("Expected Proj_Rel addition for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | extSizeElement(relInfo, _)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -896,7 +954,247 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                             top.proverState).isJust
                       then [errorMsg("Relation " ++
                               justShow(p.1.fullRel.name.pp) ++
-                              " already has ExtSize defined for it")]
+                              " already has Ext Size defined for it")]
+                      else []), decNewRels);
+}
+
+
+
+abstract production projRelDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.pp = text("Proj_Rel ") ++
+           ppImplode(text(",") ++ line(),
+              map(\ p::(QName, [String]) ->
+                    nest(9, ppImplode(text(" "), p.1.pp::map(text, p.2))),
+                  rels)) ++ text(".");
+  top.abella_pp =
+      "Proj_Rel " ++
+      implode(", ",
+         map(\ p::(QName, [String]) ->
+               implode(" ", p.1.abella_pp::p.2), rels)) ++ ".";
+
+  top.provingTheorems = [];
+  top.duringCommands = [];
+  top.afterCommands = [];
+  top.keyRelModules = [];
+  top.newTheorems = projRelLemmas;
+
+  top.newProjRelGroup =
+      foldr(\ p::(Decorated QName with {relationEnv}, [String])
+              rest::Maybe<[QName]> ->
+              bind(rest, \ r::[QName] ->
+                           if p.1.relFound then just(p.1.fullRel.name::r)
+                                           else nothing()),
+            just([]), decRels);
+
+  production decRels::[(Decorated QName with {relationEnv}, [String])] =
+      map(\ p::(QName, [String]) ->
+            (decorate p.1 with {
+               relationEnv = top.relationEnv;
+             }, p.2), rels);
+
+  top.toAbella =
+      anyTopCommand(projRelDef)::
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              projRelLemmas);
+  local projRelDef::TopCommand =
+      buildProjRel(map(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                         (p.1.fullRel.name, p.2), decRels),
+                   top.relationEnv, top.proverState.buildsOns);
+  local projRelLemmas::[(QName, Metaterm)] =
+      flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                buildProjRelLemmas(p.1.fullRel.name, p.2), decRels);
+
+  top.toAbellaMsgs <-
+      flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                (if length(nub(p.2)) != length(p.2)
+                 then [errorMsg("Repeated arguments in Proj Rel for " ++
+                          justShow(p.1.pp))]
+                 else []) ++
+                flatMap(\ x::String ->
+                          if !isCapitalized(x)
+                          then [errorMsg("Arguments in Proj Rel " ++
+                                   "declaration must be capitalized, but " ++
+                                   x ++ " is not")]
+                          else [], nub(p.2)) ++
+                (if p.1.relFound &&  --len - 1 to drop prop
+                    length(p.2) != p.1.fullRel.types.len - 1
+                 then [errorMsg("Expected " ++
+                          toString(p.1.fullRel.types.len - 1) ++
+                          " arguments to " ++ justShow(p.1.pp) ++
+                          " but found " ++ toString(length(p.2)))]
+                 else []) ++
+                p.1.relErrors ++
+                if !p.1.relFound
+                then []
+                else (if !sameModule(top.currentModule, p.1.fullRel.name)
+                      then [errorMsg("Relation " ++
+                               justShow(p.1.fullRel.name.pp) ++
+                               " is not from this module")]
+                      else []) ++
+                     (if findProjRelGroup(p.1.fullRel.name,
+                            top.proverState).isJust
+                      then [errorMsg("Relation " ++
+                              justShow(p.1.fullRel.name.pp) ++
+                              " already has Proj Rel defined for it")]
+                      else []), decRels);
+}
+
+
+abstract production addProjRel
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.pp = text("Add_Proj_Rel ") ++
+           ppImplode(text(",") ++ line(), map((.pp), oldRels)) ++
+           (if null(newRels)
+            then text("")
+            else line() ++ text("with ") ++
+                 ppImplode(text(",") ++ line(),
+                    map(\ p::(QName, [String]) ->
+                          nest(9, ppImplode(text(" "),
+                                     p.1.pp::map(text, p.2))),
+                        newRels))) ++ text(".");
+  top.abella_pp =
+      "Add_Proj_Rel " ++
+      implode(", ", map(justShow, map((.pp), oldRels))) ++
+      (if null(newRels)
+       then ""
+       else " with " ++ implode(", ",
+                           map(\ p::(QName, [String]) ->
+                                 implode(" ", p.1.abella_pp::p.2),
+                               newRels))) ++ ".";
+
+  top.provingTheorems = [];
+  top.duringCommands = [];
+  top.afterCommands = [];
+  top.keyRelModules = [];
+  top.newTheorems = projRelLemmas;
+
+  top.newProjRelGroup =
+      bind(
+         foldr(\ p::(Decorated QName with {relationEnv}, [String])
+                 rest::Maybe<[QName]> ->
+                 bind(rest, \ r::[QName] ->
+                              if p.1.relFound then just(p.1.fullRel.name::r)
+                                              else nothing()),
+               just([]), decNewRels),
+         \ r::[QName] -> just(oldRels ++ r));
+
+  local decNewRels::[(Decorated QName with {relationEnv}, [String])] =
+      map(\ p::(QName, [String]) ->
+            (decorate p.1 with {
+               relationEnv = top.relationEnv;
+             }, p.2), newRels);
+
+  top.toAbella =
+      anyTopCommand(projRelDef)::
+      flatMap(\ p::(QName, Metaterm) ->
+                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                 anyProofCommand(skipTactic())],
+              projRelLemmas);
+  local projRelDef::TopCommand =
+      buildProjRel(obligations ++
+                   map(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                         (p.1.fullRel.name, p.2), decNewRels),
+                   top.relationEnv, top.proverState.buildsOns);
+  local projRelLemmas::[(QName, Metaterm)] =
+      flatMap(\ p::(QName, [String]) ->
+                buildProjRelLemmas(p.1, p.2),
+         obligations ++
+         map(\ p::(Decorated QName with {relationEnv}, [String]) ->
+               (p.1.fullRel.name, p.2),
+             decNewRels));
+
+  local obligations::[(QName, [String])] =
+      case head(top.proverState.remainingObligations) of
+      | projRelElement(r, _) -> r
+      | _ -> error("Not possible (addProjRel.obligations)")
+      end;
+
+  top.toAbellaMsgs <-
+      case top.proverState.remainingObligations of
+      | [] -> [errorMsg("No obligations left to prove")]
+      | projectionConstraintTheorem(q, x, b, _)::_ ->
+        [errorMsg("Expected projection constraint obligation" ++
+            justShow(q.pp))]
+      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
+        [errorMsg("Expected theorem obligations " ++
+            implode(", ", map(justShow, map((.pp), map(fst, thms)))) ++
+            if null(alsos) then ""
+            else " also " ++
+                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
+      | extIndElement(relInfo, _)::_ ->
+        [errorMsg("Expected Ext Ind for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
+      | extSizeElement(relInfo, _)::_ ->
+        [errorMsg("Expected Ext Size for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
+      | projRelElement(relInfo, _)::_ ->
+        let expectedNames::[QName] = map(fst, relInfo)
+        in
+          if setEq(oldRels, expectedNames)
+          then []
+          else if subset(oldRels, expectedNames)
+          then let missing::[QName] = removeAll(oldRels, expectedNames)
+               in
+                 [errorMsg("Missing relation" ++
+                     (if length(missing) == 1 then " " else "s ") ++
+                     implode(", ", map(justShow,
+                        map((.pp), removeAll(oldRels, expectedNames)))))]
+               end
+          else if subset(expectedNames, oldRels)
+          then [errorMsg("Too many relations; should not have " ++
+                   implode(", ", map(justShow,
+                      map((.pp), removeAll(expectedNames, oldRels)))))]
+          else [errorMsg("Expected ExtSize addition" ++
+                   (if length(expectedNames) == 1 then "" else "s") ++
+                   " " ++ implode(", ",
+                             map(justShow, map((.pp), expectedNames))))]
+        end
+      --split these out explicitly for better errors/catching if a
+      --new constructor is added
+      | nonextensibleTheorem(_, _, _)::_ ->
+        error("Should be impossible (addProjRel.toAbellaMsgs " ++
+              "nonextensibleTheorem)")
+      | splitElement(_, _)::_ ->
+        error("Should be impossible (addProjRel.toAbellaMsgs " ++
+              "splitElement)")
+      end;
+  top.toAbellaMsgs <-
+      flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                (if length(nub(p.2)) != length(p.2)
+                 then [errorMsg("Repeated arguments in Proj Rel for " ++
+                          justShow(p.1.pp))]
+                 else []) ++
+                flatMap(\ x::String ->
+                          if !isCapitalized(x)
+                          then [errorMsg("Arguments in Proj Rel " ++
+                                   "declaration must be capitalized, but " ++
+                                   x ++ " is not")]
+                          else [], nub(p.2)) ++
+                (if p.1.relFound &&  --len - 1 to drop prop
+                    length(p.2) != p.1.fullRel.types.len - 1
+                 then [errorMsg("Expected " ++
+                          toString(p.1.fullRel.types.len) ++
+                          " arguments to " ++ justShow(p.1.pp) ++
+                          " but found " ++ toString(length(p.2)))]
+                 else []) ++
+                p.1.relErrors ++
+                if !p.1.relFound
+                then []
+                else (if !sameModule(top.currentModule, p.1.fullRel.name)
+                      then [errorMsg("Relation " ++
+                               justShow(p.1.fullRel.name.pp) ++
+                               " is not from this module")]
+                      else []) ++
+                     (if findProjRelGroup(p.1.fullRel.name,
+                            top.proverState).isJust
+                      then [errorMsg("Relation " ++
+                              justShow(p.1.fullRel.name.pp) ++
+                              " already has Proj Rel defined for it")]
                       else []), decNewRels);
 }
 
@@ -1110,18 +1408,17 @@ function buildExtSizeDefBody
   Build the full R_P relation
 -}
 function buildProjRel
-TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
+TopCommand ::= relInfo::[(QName, [String])]
                relEnv::Env<RelationEnvItem>
                --[(module, [modules on which it builds])]
                buildsOns::[(QName, [QName])]
 {
-  local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
-                       RelationEnvItem)] =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+  local fullRelInfo::[(QName, [String], RelationEnvItem)] =
+      map(\ p::(QName, [String]) ->
             let rel::RelationEnvItem =
                 decorate p.1 with {relationEnv=relEnv;}.fullRel
             in
-              (rel.name, p.2, p.3, p.4, rel)
+              (rel.name, p.2, rel)
             end,
           relInfo);
   local defInfo::[(QName, ([String], [String], Maybe<Metaterm>),
@@ -1134,12 +1431,10 @@ TopCommand ::= relInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
 function buildProjRelDefInfo
 [(QName, ([String], [String], Maybe<Metaterm>),
   [([Term], Maybe<Metaterm>)], RelationEnvItem)] ::=
-          relInfo::[(QName, [String], Bindings, ExtIndPremiseList,
-                     RelationEnvItem)]
+          relInfo::[(QName, [String], RelationEnvItem)]
 {
-  local r::(QName, [String], Bindings, ExtIndPremiseList,
-            RelationEnvItem) = head(relInfo);
-  local pcIndex::Integer = r.5.pcIndex;
+  local r::(QName, [String], RelationEnvItem) = head(relInfo);
+  local pcIndex::Integer = r.3.pcIndex;
   --split out clauses for non-unknownK and unknownK for this relation,
   --   of which there is <= 1
   local split::([([Term], Maybe<Metaterm>)], [([Term], Maybe<Metaterm>)]) =
@@ -1148,11 +1443,11 @@ function buildProjRelDefInfo
                   in
                     !pc.isUnknownTermK ||
                     !decorate pc with {
-                        relationEnv = buildEnv([r.5]);
+                        relationEnv = buildEnv([r.3]);
                         typeEnv = error("not actually needed");
                      }.unknownId.isJust
                   end,
-                r.5.defsList);
+                r.3.defsList);
   local defList::[([Term], Maybe<Metaterm>)] = split.1;
   --(args to conclusion, existentially-bound vars for body, binderless body)
   local qRule::([String], [String], Maybe<Metaterm>) =
@@ -1189,7 +1484,7 @@ function buildProjRelDefInfo
            end end end end end;
   local firstRel::(QName, ([String], [String], Maybe<Metaterm>),
                    [([Term], Maybe<Metaterm>)], RelationEnvItem) =
-      (r.1, qRule, defList, r.5);
+      (r.1, qRule, defList, r.3);
   return case relInfo of
          | [] -> []
          | _::t -> firstRel::buildProjRelDefInfo(t)
@@ -1479,4 +1774,97 @@ QName ::= rel::QName
 {
   return
       addQNameBase(rel.moduleName, "add_ext_size_" ++ rel.shortName);
+}
+
+
+
+
+
+{--------------------------------------------------------------------
+  Projection Version Lemmas
+ --------------------------------------------------------------------}
+{-
+  Build the lemmas for using the projection version:
+  1. Projection version of the relation implies the relation itself
+  This is the only immediately obvious one, but we make this general
+  in case another one pops up sometime.
+
+  - rel is the relation for which we are defining the projection version
+  - argNames is the list of (unique) names for the relation arguments
+-}
+function buildProjRelLemmas
+[(QName, Metaterm)] ::= rel::QName argNames::[String]
+{
+  local binds::Bindings = toBindings(argNames);
+  local projRel::Metaterm =
+      relationMetaterm(projRelQName(rel.sub),
+         toTermList(map(basicNameTerm, argNames)),
+         emptyRestriction());
+
+  --dropP:  forall \bar{x}.  projRel \bar{X}  ->  R \bar{x}
+  local dropPName::QName = dropP_name(rel);
+  local dropPBody::Metaterm =
+      bindingMetaterm(forallBinder(), binds,
+         impliesMetaterm(projRel,
+            relationMetaterm(rel,
+               toTermList(map(basicNameTerm, argNames)),
+               emptyRestriction())));
+
+  return [(dropPName, dropPBody)];
+}
+
+
+function dropP_name
+QName ::= rel::QName
+{
+  return
+      addQNameBase(rel.moduleName, "drop_proj_rel_" ++ rel.shortName);
+}
+
+
+
+
+
+{--------------------------------------------------------------------
+  Ext Ind Lemmas
+ --------------------------------------------------------------------}
+{-
+  Build the lemma we know after proving Ext_Ind
+  1. Relation itself implies the projection version
+  Note we also know the extension size version of the relation implies
+  the projection version if the extension size was used, but this is
+  also a fact we can get from this and the extension size lemmas, so
+  we don't add it here.
+
+  - rel is the relation for which we are defining the projection version
+  - argNames is the list of (unique) names for the relation arguments
+-}
+function buildExtIndLemma
+(QName, Metaterm) ::= rel::QName argNames::[String]
+{
+  local binds::Bindings = toBindings(argNames);
+  local projRel::Metaterm =
+      relationMetaterm(projRelQName(rel.sub),
+         toTermList(map(basicNameTerm, argNames)),
+         emptyRestriction());
+
+  --addP:  forall \bar{x}.  R \bar{X}  ->  projRel \bar{x}
+  local addPName::QName = addP_name(rel);
+  local addPBody::Metaterm =
+      bindingMetaterm(forallBinder(), binds,
+         impliesMetaterm(
+            relationMetaterm(rel,
+               toTermList(map(basicNameTerm, argNames)),
+               emptyRestriction()),
+            projRel));
+
+  return (addPName, addPBody);
+}
+
+
+function addP_name
+QName ::= rel::QName
+{
+  return
+      addQNameBase(rel.moduleName, "add_proj_rel_" ++ rel.shortName);
 }

@@ -34,6 +34,8 @@ terminal ExtInd_t        'Ext_Ind'                  lexer classes {COMMAND};
 terminal ProveExtInd_t   'Prove_Ext_Ind'            lexer classes {COMMAND};
 terminal ExtSize_t       'Ext_Size'                 lexer classes {COMMAND};
 terminal AddExtSize_t    'Add_Ext_Size'             lexer classes {COMMAND};
+terminal ProjRel_t       'Proj_Rel'                 lexer classes {COMMAND};
+terminal AddProjRel_t    'Add_Proj_Rel'             lexer classes {COMMAND};
 terminal Also_t          'also'                     lexer classes {COMMAND};
 
 

@@ -11,7 +11,8 @@ grammar extensibella:toAbella:abstractSyntax;
 data nonterminal ProverState with
    pp, --solely for debugging purposes
    state, debug, displayWidth,
-   knownTheorems, knownExtInds, knownExtSizes, remainingObligations,
+   knownTheorems, knownExtSizes, knownProjRels,
+   knownExtInds, remainingObligations,
    knownTypes, knownRels, knownConstrs, buildsOns,
    provingThms, provingExtInds, duringCommands, afterCommands,
    keyRelModules, currentKeyRelModule;
@@ -36,9 +37,12 @@ annotation knownTheorems::[(QName, Metaterm)];
 --[[(rel, rel arg names, full bindings, premises)]]
 annotation knownExtInds::[[(QName, [String], Bindings, ExtIndPremiseList)]];
 
---ExtSize relations that have been proven
+--ExtSize relations that have been declared
 --Each sublist is a group of mutually-defined ext size relations
 annotation knownExtSizes::[[QName]];
+--Projection versions of relations that have been declared
+--Each sublist is a group of mutually-defined projection versions of relations
+annotation knownProjRels::[[QName]];
 
 --Things we will need to do in the proof based on imports that we
 --haven't done yet
@@ -63,7 +67,7 @@ top::ProverState ::=
    --should be added to knownExtInds when we finish the proof
    provingExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
    --things to do when the subgoal reaches that number
-   --should clear it once it has been sent to Abella
+   --should clear it from the list once it has been sent to Abella
    --Note:  If there are commands for e.g. Subgoal 2 that are expected
    --  to move us to Subgoal 2.1, there should not be a separate entry
    --  for Subgoal 2.1.  Any sequential commands should be rolled into
@@ -102,6 +106,20 @@ top::ProverState ::=
                                           ppImplode(text(", "), map((.pp), map(fst, l))),
                                           text("]")]), top.knownExtInds)),
                       text("]"), realLine(),
+      --ext sizes
+      text("  Ext Sizes:  ["), ppImplode(text(",  "),
+                                  map(\ l::[QName] ->
+                                        ppConcat([text("["),
+                                           ppImplode(text(", "), map((.pp), l)),
+                                           text("]")]), top.knownExtSizes)),
+                      text("]"), realLine(),
+      --proj rels
+      text("  Proj Rels:  ["), ppImplode(text(",  "),
+                                  map(\ l::[QName] ->
+                                        ppConcat([text("["),
+                                           ppImplode(text(", "), map((.pp), l)),
+                                           text("]")]), top.knownProjRels)),
+                      text("]"), realLine(),
       --end
       text("}"), realLine()]);
 
@@ -134,6 +152,7 @@ ProverState ::= current::ProverState
             displayWidth = current.displayWidth, knownTheorems = outThms,
             knownExtInds = current.knownExtInds,
             knownExtSizes = current.knownExtSizes,
+            knownProjRels = current.knownProjRels,
             remainingObligations = outObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -190,6 +209,7 @@ ProverState ::= current::ProverState
                 if null(current.provingExtInds) then current.knownExtInds
                 else current.provingExtInds::current.knownExtInds,
             knownExtSizes = current.knownExtSizes,
+            knownProjRels = current.knownProjRels,
             remainingObligations =
                removeFinishedObligation(current.remainingObligations,
                   current.provingThms),
@@ -212,6 +232,7 @@ ProverState ::= current::ProverState
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
             knownExtSizes = current.knownExtSizes,
+            knownProjRels = current.knownProjRels,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -235,6 +256,7 @@ ProverState ::= current::ProverState debugVal::Boolean
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
             knownExtSizes = current.knownExtSizes,
+            knownProjRels = current.knownProjRels,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -258,6 +280,7 @@ ProverState ::= current::ProverState width::Integer
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
             knownExtSizes = current.knownExtSizes,
+            knownProjRels = current.knownProjRels,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
@@ -277,6 +300,7 @@ ProverState ::= current::ProverState newProofState::ProofState
    provingThms::[(QName, Metaterm)]
    provingExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
    newExtSizeGroup::Maybe<[QName]>
+   newProjRelGroup::Maybe<[QName]>
    duringCmds::[(SubgoalNum, [ProofCommand])]
    keyRelModules::[(SubgoalNum, QName)]
    afterCmds::[AnyCommand]
@@ -293,13 +317,23 @@ ProverState ::= current::ProverState newProofState::ProofState
                             | nothing() -> current.knownExtSizes
                             | just(g) -> g::current.knownExtSizes
                             end,
+            knownProjRels = case newProjRelGroup of
+                            | nothing() -> current.knownProjRels
+                            | just(g) -> g::current.knownProjRels
+                            end,
             remainingObligations =
                --other obligations are removed when they are proved
-               --since this has no proof, remove it here
-               case newExtSizeGroup, current.remainingObligations of
-               | just(g), extSizeElement(rels, _)::rest
-                 when subset(map(fst, rels), g) -> rest
-               | _, l -> l
+               --since these have no proof, remove them here
+               case current.remainingObligations of
+               | extSizeElement(rels, _)::rest
+                 when newExtSizeGroup.isJust &&
+                      subset(map(fst, rels),
+                             newExtSizeGroup.fromJust) -> rest
+               | projRelElement(rels, _)::rest
+                 when newProjRelGroup.isJust &&
+                      subset(map(fst, rels),
+                             newProjRelGroup.fromJust) -> rest
+               | l -> l
                end,
             knownTypes = addEnv(current.knownTypes, newTys),
             knownRels = addEnv(current.knownRels, newRels),
@@ -330,6 +364,7 @@ ProverState ::= current::ProverState newProofState::ProofState
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,
             knownExtSizes = current.knownExtSizes,
+            knownProjRels = current.knownProjRels,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
             knownRels =current.knownRels, knownConstrs = current.knownConstrs,
@@ -444,7 +479,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
             --
             state = noProof(isAbellaForm=false), debug = false,
             displayWidth = 80, knownTheorems = knownThms,
-            knownExtInds = [], knownExtSizes = [],
+            knownExtInds = [], knownExtSizes = [], knownProjRels = [],
             remainingObligations = obligations,
             knownTypes = addEnv(tyEnv, knownTys),
             knownRels = addEnv(relEnv, knownRels),
@@ -467,6 +502,7 @@ ProverState ::= p::ProverState
             knownTheorems = p.knownTheorems,
             knownExtInds = p.knownExtInds,
             knownExtSizes = p.knownExtSizes,
+            knownProjRels = p.knownProjRels,
             remainingObligations = p.remainingObligations,
             knownTypes = p.knownTypes, knownRels = p.knownRels,
             knownConstrs = p.knownConstrs, provingThms = p.provingThms,
@@ -512,6 +548,18 @@ Maybe<[QName]> ::= name::QName state::ProverState
          | [] -> nothing()
          | [x] -> just(x)
          | _ -> error("findExtSizeGroup impossible")
+         end;
+}
+
+--Find a R_P declaration group including rel
+function findProjRelGroup
+Maybe<[QName]> ::= name::QName state::ProverState
+{
+  local find::[[QName]] = filter(contains(name, _), state.knownProjRels);
+  return case find of
+         | [] -> nothing()
+         | [x] -> just(x)
+         | _ -> error("findProjRelGroup impossible")
          end;
 }
 

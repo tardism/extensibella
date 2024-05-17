@@ -99,6 +99,22 @@ top::ThmElement ::= rels::[(QName, [String])]
 }
 
 
+abstract production projRelElement
+top::ThmElement ::= rels::[(QName, [String])]
+                    tag::(Integer, Integer, String)
+{
+  top.pp = projRelDeclaration(rels).pp;
+
+  top.encode = error("projRelElement.encode");
+  top.is_nonextensible = false;
+  top.tag = tag;
+
+  top.thms =
+      flatMap(\ p::(QName, [String]) ->
+                buildProjRelLemmas(p.1, p.2), rels);
+}
+
+
 abstract production extIndElement
 top::ThmElement ::=
    --[(rel name, rel arg names, full bindings, extra premises)]

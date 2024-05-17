@@ -9,7 +9,7 @@ nonterminal TopCommand with
    interactive,
    newProofState,
    newTheorems,
-   provingTheorems, provingExtInds, newExtSizeGroup,
+   provingTheorems, provingExtInds, newExtSizeGroup, newProjRelGroup,
    duringCommands, afterCommands,
    keyRelModules,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
@@ -27,6 +27,7 @@ top::TopCommand ::=
   top.newTheorems = [];
   top.provingExtInds = [];
   top.newExtSizeGroup = nothing();
+  top.newProjRelGroup = nothing();
   top.keyRelModules = [(initialSubgoalNum, top.currentModule)];
 }
 

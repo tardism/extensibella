@@ -1,5 +1,8 @@
 Module compositionTest:otherSyntax.
 
+Add_Proj_Rel compositionTest:host:is_expr,
+             compositionTest:host:is_stmt.
+
 Prove_Ext_Ind compositionTest:host:is_expr,
               compositionTest:host:is_stmt.
 %is_expr
@@ -14,7 +17,8 @@ Prove_Ext_Ind compositionTest:host:is_expr,
 
 Add_Ext_Size compositionTest:host:evalExpr,
              compositionTest:host:evalStmt.
-
+Add_Proj_Rel compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt.
 
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt.

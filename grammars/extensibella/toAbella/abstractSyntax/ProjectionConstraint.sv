@@ -142,6 +142,9 @@ top::TopCommand ::= name::QName
       | extSizeElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext_Size obligation for " ++
             implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
+      | projRelElement(relInfo, _)::_ ->
+        [errorMsg("Expected Proj_Rel obligation for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       --split these out explicitly for better errors/catching if a
       --new constructor is added
       | nonextensibleTheorem(_, _, _)::_ ->

@@ -1411,6 +1411,16 @@ top::ThmElement ::= rels::[(QName, [String])]
 }
 
 
+aspect production projRelElement
+top::ThmElement ::= rels::[(QName, [String])]
+                    tag::(Integer, Integer, String)
+{
+  top.outgoingMods = todoError("projRelElement.outgoingMods");
+  top.composedCmds = todoError("projRelElement.composedCmds");
+  top.newThms = todoError("projRelElement.newThms");
+}
+
+
 
 
 
@@ -1858,6 +1868,30 @@ top::TopCommand ::= rels::[(QName, [String])]
 
 
 aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.matchesNames = \ l::[QName] -> false;
+
+  top.matchesRels = \ l::[QName] -> !null(intersect(oldRels, l));
+
+  top.isNotProof = false;
+}
+
+
+aspect production projRelDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.matchesNames = \ l::[QName] -> false;
+
+  local fullNames::[QName] = map(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                                   p.1.fullRel.name, decRels);
+  top.matchesRels = \ l::[QName] -> !null(intersect(fullNames, l));
+
+  top.isNotProof = false;
+}
+
+
+aspect production addProjRel
 top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 {
   top.matchesNames = \ l::[QName] -> false;

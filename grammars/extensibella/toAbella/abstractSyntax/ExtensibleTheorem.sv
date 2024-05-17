@@ -236,6 +236,9 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       | extSizeElement(relInfo, _)::_ ->
         [errorMsg("Expected Ext_Size addition for " ++
             implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
+      | projRelElement(relInfo, _)::_ ->
+        [errorMsg("Expected Proj_Rel addition for " ++
+            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
         let expectedNames::[QName] = map(fst, thms)
         in

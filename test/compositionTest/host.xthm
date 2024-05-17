@@ -1,5 +1,7 @@
 Module compositionTest:host.
 
+Proj_Rel is_expr E, is_stmt S.
+
 Ext_Ind forall E, is_expr E; forall S, is_stmt S.
 %is_expr
  %num
@@ -34,6 +36,7 @@ Ext_Ind forall E, is_expr E; forall S, is_stmt S.
   apply IH to R1. apply IH1 to R2. search.
 
 Ext_Size evalExpr G E V G', evalStmt G S G'.
+Proj_Rel evalExpr G E V G', evalStmt G S G'.
 
 Ext_Ind forall G E V G', evalExpr G E V G' with IsE: is_expr E;
         forall G S G', evalStmt G S G'     with IsS: is_stmt S.

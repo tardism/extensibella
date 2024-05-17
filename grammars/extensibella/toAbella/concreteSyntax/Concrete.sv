@@ -1,10 +1,6 @@
 grammar extensibella:toAbella:concreteSyntax;
 
 
-
-
-
-
 closed nonterminal ModuleDecl_c
    layout {Whitespace_t, BlockComment_t, OneLineComment_t}
    with ast<Maybe<QName>>; --just if module decl, nothing if quit
@@ -299,6 +295,12 @@ concrete productions top::PureTopCommand_c
   { top.ast = anyTopCommand(addExtSize(oldRels.ast, [])); }
 | 'Add_Ext_Size' oldRels::QnameList_c 'with' newRels::ExtSizeBodies_c '.'
   { top.ast = anyTopCommand(addExtSize(oldRels.ast, newRels.ast)); }
+| 'Proj_Rel' rels::ExtSizeBodies_c '.'
+  { top.ast = anyTopCommand(projRelDeclaration(rels.ast)); }
+| 'Add_Proj_Rel' oldRels::QnameList_c '.'
+  { top.ast = anyTopCommand(addProjRel(oldRels.ast, [])); }
+| 'Add_Proj_Rel' oldRels::QnameList_c 'with' newRels::ExtSizeBodies_c '.'
+  { top.ast = anyTopCommand(addProjRel(oldRels.ast, newRels.ast)); }
 
 
 nonterminal VarList_c with ast<[String]>;

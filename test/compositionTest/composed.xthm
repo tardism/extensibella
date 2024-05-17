@@ -1,10 +1,16 @@
 Module compositionTest:composed.
 
+Add_Proj_Rel compositionTest:host:is_expr,
+             compositionTest:host:is_stmt.
+
 Prove_Ext_Ind compositionTest:host:is_expr,
               compositionTest:host:is_stmt.
 
 
 Add_Ext_Size compositionTest:host:evalExpr,
+             compositionTest:host:evalStmt,
+             compositionTest:list:listIterate.
+Add_Proj_Rel compositionTest:host:evalExpr,
              compositionTest:host:evalStmt,
              compositionTest:list:listIterate.
 
@@ -52,6 +58,8 @@ Prove compositionTest:typing:typePres,
 
 
 Add_Ext_Size compositionTest:typing:typeE,
+             compositionTest:typing:typeS.
+Add_Proj_Rel compositionTest:typing:typeE,
              compositionTest:typing:typeS.
 
 

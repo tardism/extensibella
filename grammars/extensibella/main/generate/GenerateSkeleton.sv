@@ -147,3 +147,16 @@ top::ThmElement ::= rels::[(QName, [String])]
                      map((.pp), map(fst, rels)))) ++
          text("."));
 }
+
+
+aspect production projRelElement
+top::ThmElement ::= rels::[(QName, [String])]
+                    tag::(Integer, Integer, String)
+{
+  top.inSkeleton = true;
+  top.skeletonText =
+      showDoc(80, text("Add_Proj_Rel ") ++
+         nest(13, ppImplode(text(",") ++ line(),
+                     map((.pp), map(fst, rels)))) ++
+         text("."));
+}

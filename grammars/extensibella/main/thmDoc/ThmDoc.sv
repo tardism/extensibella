@@ -483,6 +483,26 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 }
 
 
+aspect production projRelDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.thmStrings = [];
+  top.defStrings = [];
+
+  top.newThms = [];
+}
+
+
+aspect production addProjRel
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.thmStrings = [];
+  top.defStrings = [];
+
+  top.newThms = [];
+}
+
+
 
 attribute
    formatThm, thmStrings, newThms
