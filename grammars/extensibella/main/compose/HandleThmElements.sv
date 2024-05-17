@@ -413,7 +413,7 @@ top::ThmElement ::=
                      implode(" ", introsNames) ++ ". "
              else "") ++
             --apply ExtInd to key rel and any other necessary args
-            "$R: apply " ++ extIndThmName(keyRel.name) ++
+            "$R: apply " ++ addP_name(keyRel.name).abella_pp ++
                " to " ++ implode(" ",
                             keyRelName::map(\ i::Integer ->
                                               if i == 0
@@ -619,13 +619,7 @@ top::ThmElement ::=
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
    tag::(Integer, Integer, String)
 {
-  {-
-    Definition of R_P relation
-  -}
-  local projRelDef::String =
-      buildProjRel_standInRules(rels, top.standInRules_down,
-         top.relEnv, top.buildsOns_down).abella_pp;
-  top.extIndDefs = [projRelDef];
+  top.extIndDefs = [];
 
   top.newExtInds = rels;
 
@@ -697,61 +691,6 @@ top::ThmElement ::=
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             buildExtSizeLemmas(p.1, p.2),
           rels);
-
-  {-
-    R_P to R proof
-  -}
-  local dropPThmName::String =
-      if length(rels) == 1
-      then dropPName(head(rels).1)
-      else "$dropP_" ++ toString(genInt());
-  local dropPStmt::Metaterm =
-      foldr1(andMetaterm,
-         map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
-               bindingMetaterm(forallBinder(),
-                  toBindings(p.2),
-                  impliesMetaterm(
-                     relationMetaterm(projRelQName(p.1.sub),
-                        toTermList(map(basicNameTerm, p.2)),
-                        emptyRestriction()),
-                     relationMetaterm(p.1,
-                        toTermList(map(basicNameTerm, p.2)),
-                        emptyRestriction()))),
-            rels));
-  local dropPProofStart::String =
-      "induction on " ++ implode(" ", repeat("1", length(rels))) ++
-      "." ++ if length(rels) == 1 then "\n" else " split.\n ";
-  local dropPProofs::[String] =
-      map(--[(plus count, [(ES premise, IH num)], is host)]
-        \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
-          "intros R. R: case R (keep).\n " ++
-          implode("\n ",
-             map(\ p::(Integer, [(Integer, Integer)], Boolean) ->
-                   implode("",
-                      map(\ ip::(Integer, Integer) ->
-                            let rnum::String =
-                                toString(ip.1 - p.1)
-                            in
-                              " apply IH" ++ (if ip.2 == 0 then ""
-                                              else toString(ip.2)) ++
-                                 " to R" ++ rnum ++ "."
-                            end,
-                          p.2)) ++ " search.",
-                 l)),
-        clauseInfo);
-  local dropPAfter::String =
-      if length(rels) == 1 then ""
-      else "Split " ++ dropPThmName ++ " as " ++
-           implode(", ", map(dropPName, map(fst, rels))) ++ ".\n";
-  local dropPFull::String =
-      "Theorem " ++ dropPThmName ++ " : " ++ dropPStmt.abella_pp ++
-          ".\n" ++ dropPProofStart ++
-      implode("\n ", dropPProofs) ++ "\n" ++
-      dropPAfter;
-
-  local dropP_abella::IOVal<String> =
-      sendBlockToAbella(dropPFull, top.liveAbella, top.runAbella,
-                        top.configuration);
 
 
 
@@ -852,7 +791,7 @@ top::ThmElement ::=
       toProjRelProofStart;
   local toProjRelProofInit_abella::IOVal<String> =
       sendBlockToAbella(toProjRelProofInit, top.liveAbella,
-                        dropP_abella.io, top.configuration);
+                        top.runAbella, top.configuration);
   --information about which relations are proven in which modules
   local toProjRelModuleThmInfo::[(QName, [QName], Integer)] =
       map(\ modInfo::(QName, [QName]) ->
@@ -895,18 +834,7 @@ top::ThmElement ::=
   --to adjust the naming elsewhere.
   local extIndProofs::[String] =
       map(\ p::(Integer, QName, [String], Bindings, ExtIndPremiseList) ->
-            let stmt::Metaterm =
-                bindingMetaterm(forallBinder(),
-                   toBindings(p.3),
-                   foldr(impliesMetaterm,
-                      --end:  R_P(args)
-                      relationMetaterm(projRelQName(p.2.sub),
-                         toTermList(map(basicNameTerm, p.3)),
-                         emptyRestriction()),
-                      --premises:  R(args)::other premises
-                      relationMetaterm(p.2,
-                         toTermList(map(basicNameTerm, p.3)),
-                         emptyRestriction())::map(snd, p.5.toList)))
+            let stmt::Metaterm = buildExtIndLemma(p.2, p.3, p.4, p.5).2
             in
             let introsNames::[String] =
                 map(\ i::Integer -> "A" ++ toString(i),
@@ -916,7 +844,7 @@ top::ThmElement ::=
                 if useES then "ES"::"Acc"::introsNames
                          else "R"::introsNames
             in
-              "Theorem " ++ extIndThmName(p.2) ++ " : " ++
+              "Theorem " ++ addP_name(p.2).abella_pp ++ " : " ++
                  stmt.abella_pp ++ ".\n " ++
               "intros R " ++ implode(" ", introsNames) ++ ". " ++
               (if useES
@@ -945,10 +873,10 @@ top::ThmElement ::=
 
 
   local displayNames::String =
-      implode(", ", map(justShow, map((.pp), map(fst, rels))));
+      implode(", ", map((.abella_pp), map(fst, rels)));
   top.composedCmds =
       "/*Start Ext_Ind for " ++ displayNames ++ "*/\n" ++
-      dropPFull ++ "\n\n" ++ fullToProjRel ++ "\n" ++
+      fullToProjRel ++ "\n" ++
       implode("\n", extIndProofs) ++ "\n" ++
       "/*End Ext_Ind for " ++ displayNames ++ "*/\n\n\n";
 
@@ -961,18 +889,6 @@ top::ThmElement ::=
 
   --nothing relevant for other proofs
   top.newThms = [];
-}
-
---to get consistent names
-function extIndThmName
-String ::= rel::QName
-{
-  return "$extInd_" ++ rel.abella_pp;
-}
-function dropPName
-String ::= rel::QName
-{
-  return "$dropP_" ++ rel.abella_pp;
 }
 
 function buildExtIndThmExtBody
@@ -1022,9 +938,8 @@ ExtBody ::= boundVars::Bindings rel::QName relArgs::[String]
 }
 
 function buildProjRel_standInRules
-TopCommand ::= rels::[(QName, [String], Bindings, ExtIndPremiseList)]
-               standInRules::[(QName, Def)] env::Env<RelationEnvItem>
-               buildsOns::[(QName, [QName])]
+TopCommand ::= rels::[(QName, [String])] standInRules::[(QName, Def)]
+               env::Env<RelationEnvItem> buildsOns::[(QName, [QName])]
 {
   return buildProjRelDef(buildDefInfo(rels, standInRules, env),
                          buildsOns);
@@ -1032,10 +947,10 @@ TopCommand ::= rels::[(QName, [String], Bindings, ExtIndPremiseList)]
 function buildDefInfo
 [(QName, ([String], [String], Maybe<Metaterm>),
   [([Term], Maybe<Metaterm>)], RelationEnvItem)] ::=
-     rels::[(QName, [String], Bindings, ExtIndPremiseList)]
-     standInRules::[(QName, Def)] env::Env<RelationEnvItem>
+     rels::[(QName, [String])] standInRules::[(QName, Def)]
+     env::Env<RelationEnvItem>
 {
-  local r::(QName, [String], Bindings, ExtIndPremiseList) =
+  local r::(QName, [String]) =
       head(rels);
   local rei::RelationEnvItem = head(lookupEnv(r.1, env));
 
@@ -1415,9 +1330,146 @@ aspect production projRelElement
 top::ThmElement ::= rels::[(QName, [String])]
                     tag::(Integer, Integer, String)
 {
-  top.outgoingMods = todoError("projRelElement.outgoingMods");
-  top.composedCmds = todoError("projRelElement.composedCmds");
-  top.newThms = todoError("projRelElement.newThms");
+  {-
+    Definition of R_P relation
+  -}
+  local projRelDef::String =
+      buildProjRel_standInRules(rels, top.standInRules_down,
+         top.relEnv, top.buildsOns_down).abella_pp;
+  top.extIndDefs = [projRelDef];
+
+
+  --get the information we need about the relation clauses to build
+  --   the individual proofs
+  --[[(number of adds, [(1-based indices for R_{ES} premises,
+  --                     0-based IH indices)], is host)]]
+  --inner list is grouped by relation
+  --   (e.g. [[rel 1 clauses], [rel 2 clauses], ...])
+  local clauseInfo::[[(Integer, [(Integer, Integer)], Boolean)]] =
+      map(\ q::QName ->
+            let rel::RelationEnvItem =
+                decorate q with {relationEnv=top.relEnv;}.fullRel
+            in --[(extension clause or not, split-up body)]
+            let splits::[(Boolean, [Metaterm])] =
+                filterMap(
+                    \ d::([Term], Maybe<Metaterm>) ->
+                      let prems::[Metaterm] = splitRulePrems(d.2)
+                      in
+                      --check the rule isn't impossible
+                      let unifyPrems::([Term], [Term]) =
+                          premiseUnificationPairs(prems)
+                      in
+                      let unifies::Boolean =
+                          unifyTermsSuccess(unifyPrems.1, unifyPrems.2)
+                      in
+                        if unifies
+                        then just((!sameModule(q.moduleName,
+                                      elemAtIndex(d.1, rel.pcIndex
+                                                 ).headConstructor),
+                                   prems))
+                        else nothing()
+                      end end end,
+                    rel.defsList)
+            in --premises that are part of this group of rels
+            let hereRels::[(Boolean, [Integer])] =
+                map(\ l::(Boolean, [Metaterm]) ->
+                      (l.1,
+                       map(\ m::Metaterm ->
+                             case m of
+                             | relationMetaterm(q, _, _)
+                               when contains(q, map(fst, rels)) ->
+                               indexOfName(q, rels) --index of IH
+                             | _ -> -1
+                             end,
+                          l.2)),
+                    splits)
+            in
+              map(\ l::(Boolean, [Integer]) ->
+                    let plusCount::Integer =
+                        length(filter(\ x -> x >= 0, l.2)
+                              ) - if !l.1 then 1 else 0
+                    in
+                      (plusCount,
+                       filterMap(\ p::(Integer, Integer) ->
+                                   if p.2 >= 0
+                                   then just(p)
+                                   else nothing(),
+                          enumerateFrom(plusCount + 1, l.2)),
+                       !l.1)
+                    end,
+                  hereRels)
+            end end end,
+          map(fst, rels));
+
+  {-
+    R_P to R proof
+  -}
+  local lemmaStatements::[[(QName, Metaterm)]] =
+      map(\ p::(QName, [String]) -> buildProjRelLemmas(p.1, p.2),
+          rels);
+  local jointDropPName::String =
+      --first make a sanity/extension check
+      if length(head(lemmaStatements)) != 1
+      then error("Number of ProjRel lemmas must be 4")
+      else case lemmaStatements of
+           | [[a]] -> --only one rel, so use actual name
+             a.1.abella_pp
+           | _ -> --multiple rels together, use fake then split
+             "$dropP_" ++ toString(genInt())
+           end;
+  local jointDropPStmt::Metaterm =
+      foldr1(andMetaterm,
+             map(\ l::[(QName, Metaterm)] -> head(l).2,
+                 lemmaStatements));
+  local dropPProofStart::String =
+      "induction on " ++ implode(" ", repeat("1", length(rels))) ++
+      "." ++ if length(rels) == 1 then "\n" else " split.\n ";
+  local dropPProofs::[String] =
+      map(--[(plus count, [(ES premise, IH num)], is host)]
+        \ l::[(Integer, [(Integer, Integer)], Boolean)] ->
+          "intros R. R: case R (keep).\n " ++
+          implode("\n ",
+             map(\ p::(Integer, [(Integer, Integer)], Boolean) ->
+                   implode("",
+                      map(\ ip::(Integer, Integer) ->
+                            let rnum::String =
+                                toString(ip.1 - p.1)
+                            in
+                              " apply IH" ++ (if ip.2 == 0 then ""
+                                              else toString(ip.2)) ++
+                                 " to R" ++ rnum ++ "."
+                            end,
+                          p.2)) ++ " search.",
+                 l)),
+        clauseInfo);
+  local dropPAfter::String =
+      if length(rels) == 1 then ""
+      else "Split " ++ jointDropPName ++ " as " ++
+           implode(", ", map((.abella_pp),
+                         map(dropP_name, map(fst, rels)))) ++ ".\n";
+  local dropPFull::String =
+      "Theorem " ++ jointDropPName ++ " : " ++
+          jointDropPStmt.abella_pp ++
+          ".\n" ++ dropPProofStart ++
+      implode("\n ", dropPProofs) ++ "\n" ++
+      dropPAfter;
+
+  local dropP_abella::IOVal<String> =
+      sendBlockToAbella(dropPFull, top.liveAbella, top.runAbella,
+                        top.configuration);
+
+
+
+  top.outgoingMods = dropProjRel(top.incomingMods, map(fst, rels));
+
+  local displayNames::String =
+      implode(", ", map(justShow, map((.pp), map(fst, rels))));
+  top.composedCmds =
+      "/*Start Proj_Rel for " ++ displayNames ++ "*/\n" ++
+      dropPFull ++ "\n" ++
+      "/*End Proj_Rel for " ++ displayNames ++ "*/\n\n\n";
+
+  top.newThms = flatMap(\ l -> l, lemmaStatements);
 }
 
 
@@ -1579,6 +1631,24 @@ function dropExtSize
              (q, c)::dropExtSize(r, rels)
            | emptyRunCommands() ->
              (q, c)::dropExtSize(r, rels)
+           end
+         end;
+}
+--
+function dropProjRel
+[(QName, DecCmds)] ::= mods::[(QName, DecCmds)] rels::[QName]
+{
+  return case mods of
+         | [] -> []
+         | (q, c)::r ->
+           case c of
+           | addRunCommands(anyTopCommand(t), _)
+             when t.matchesRels(rels) ->
+             (q, dropFirstTopCommand(c))::dropProjRel(r, rels)
+           | addRunCommands(a, _) ->
+             (q, c)::dropProjRel(r, rels)
+           | emptyRunCommands() ->
+             (q, c)::dropProjRel(r, rels)
            end
          end;
 }

@@ -85,7 +85,7 @@ function dropP_for_all
       | [] -> []
       | (h, projRelMetaterm(q, _, _))::rest ->
         applyTactic(noHint(), nothing(),
-           clearable(false, toQName(dropPName(q)), emptyTypeList()),
+           clearable(false, dropP_name(q), emptyTypeList()),
            addApplyArgs(hypApplyArg(h, emptyTypeList()),
               endApplyArgs()), endWiths())::dropP_for_all(rest)
       | _::rest -> dropP_for_all(rest)
@@ -470,7 +470,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       then dropP_for_all(top.newHyps)
       else if newHypIsProj
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, toQName(dropPName(newHypRel)),
+               clearable(false, dropP_name(newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
@@ -513,7 +513,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       then dropP_for_all(top.newHyps)
       else if newHypIsProj
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, toQName(dropPName(newHypRel)),
+               clearable(false, dropP_name(newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]

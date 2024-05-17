@@ -67,7 +67,7 @@ top::TopCommand ::= body::ExtIndBody
   local addPLemmas::[(QName, Metaterm)] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
                 RelationEnvItem) ->
-            buildExtIndLemma(p.1, p.2),
+            buildExtIndLemma(p.1, p.2, p.3, p.4),
           fullRelInfo);
 
   --Check each relation occurs at most once
@@ -696,7 +696,7 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
   local addPLemmas::[(QName, Metaterm)] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
                 RelationEnvItem) ->
-            buildExtIndLemma(p.1, p.2),
+            buildExtIndLemma(p.1, p.2, p.3, p.4),
           fullRelInfo);
 
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
@@ -1830,19 +1830,26 @@ QName ::= rel::QName
  --------------------------------------------------------------------}
 {-
   Build the lemma we know after proving Ext_Ind
-  1. Relation itself implies the projection version
+  1. Relation itself implies the projection version, modulo the extra
+     premises in the Ext_Ind declaration
   Note we also know the extension size version of the relation implies
   the projection version if the extension size was used, but this is
-  also a fact we can get from this and the extension size lemmas, so
-  we don't add it here.
+  also a fact we can get from this and the extension size lemmas,
+  which must exist if we used the extension size, so we don't add it
+  here.
 
   - rel is the relation for which we are defining the projection version
   - argNames is the list of (unique) names for the relation arguments
 -}
 function buildExtIndLemma
 (QName, Metaterm) ::= rel::QName argNames::[String]
+                      bindings::Bindings
+                      prems::ExtIndPremiseList
 {
-  local binds::Bindings = toBindings(argNames);
+  local relTm::Metaterm =
+      relationMetaterm(rel,
+         toTermList(map(basicNameTerm, argNames)),
+          emptyRestriction());
   local projRel::Metaterm =
       relationMetaterm(projRelQName(rel.sub),
          toTermList(map(basicNameTerm, argNames)),
@@ -1851,12 +1858,9 @@ function buildExtIndLemma
   --addP:  forall \bar{x}.  R \bar{X}  ->  projRel \bar{x}
   local addPName::QName = addP_name(rel);
   local addPBody::Metaterm =
-      bindingMetaterm(forallBinder(), binds,
-         impliesMetaterm(
-            relationMetaterm(rel,
-               toTermList(map(basicNameTerm, argNames)),
-               emptyRestriction()),
-            projRel));
+      bindingMetaterm(forallBinder(), bindings,
+         foldr(impliesMetaterm, projRel,
+               relTm::map(snd, prems.toList)));
 
   return (addPName, addPBody);
 }
