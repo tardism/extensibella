@@ -376,8 +376,8 @@ aspect production nameTerm
 top::Term ::= name::QName mty::MaybeType
 {
   top.full =
-      if !name.isQualified && (contains(name.shortName, top.boundNames) ||
-                               !name.constrFound)
+      if (!name.isQualified && contains(name.shortName, top.boundNames)) ||
+         !name.constrFound
       then nameTerm(name, mty.full)
       else case name.fullConstr of
            | left(x) -> nameTerm(x.name, mty.full)
