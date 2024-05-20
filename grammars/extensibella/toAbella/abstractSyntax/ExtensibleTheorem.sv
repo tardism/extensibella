@@ -383,9 +383,11 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       end;
 
   local thms::ExtThms =
-      foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
-              addExtThms(p.1, p.2, p.3, p.4, rest),
-            newThms, obligations);
+      if obligationFound
+      then foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
+                   addExtThms(p.1, p.2, p.3, p.4, rest),
+                 newThms, obligations)
+      else endExtThms(); --should not access, but may
   thms.startingGoalNum =
        if null(neededExtIndChecks)
        then if thms.len + alsos.len > 1
@@ -411,9 +413,11 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
   thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
   thms.numMutualThms = thms.len + alsos.len;
   local alsos::ExtThms =
-      foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
-              addExtThms(p.1, p.2, p.3, p.4, rest),
-            newAlsos, alsosInfo);
+      if obligationFound
+      then foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
+                   addExtThms(p.1, p.2, p.3, p.4, rest),
+                 newAlsos, alsosInfo)
+      else endExtThms(); --should not access, but may
   alsos.startingGoalNum = thms.nextGoalNum;
   alsos.typeEnv = top.typeEnv;
   alsos.relationEnv = top.relationEnv;
@@ -885,6 +889,11 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         decorate rel with {relationEnv = top.relationEnv;}.fullRel
       | _ -> error("Should not access keyRel")
       end;
+  local usesProjRel::Boolean =
+      case foundKeyRelPremise of
+      | just(projRelMetaterm(_, _, _)) -> true
+      | _ -> false
+      end;
 
   local thisExtInd::Maybe<(QName, [String], Bindings, ExtIndPremiseList)> =
       if keyRelFound --guard against out-of-order access
@@ -988,7 +997,11 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                 premUnifyPairs.2 ++ relArgs)
            in
            let unifies::Boolean =
-               unifyTermsSuccess(unifySides.1, unifySides.2)
+               unifyTermsSuccess(unifySides.1, unifySides.2) &&
+               --R_P doesn't have any generic rules, so rule doesn't
+               --   actually exist
+               !(usesProjRel &&
+                 (pc.isUnknownTermK || pc.isUnknownTermI))
            in
            let needToProve::Boolean =
                (fullName.moduleName == top.currentModule || --new thm
