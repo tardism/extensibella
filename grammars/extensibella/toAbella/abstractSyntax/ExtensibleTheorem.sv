@@ -302,7 +302,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       oldImportedKeyRels ++ newImportedKeyRels;
 
   top.toAbellaMsgs <-
-      if null(newImportedKeyRels)
+      if null(importedKeyRels)
       then []
       else if !extIndGroup.isJust
       then [errorMsg("Did not find Ext_Ind required for induction " ++
@@ -324,12 +324,23 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
                                map(justShow, map((.pp), missing))))]
            end;
   top.toAbellaMsgs <-
-      if null(newImportedKeyRels)
+      if null(importedKeyRels)
       then []
       else if alsos.len > 0
       then [errorMsg("Cannot have also theorems when using Ext_Ind")]
       else [];
-
+  --check we don't now require ExtInd for imported R_ES or R_P key rels
+  top.toAbellaMsgs <-
+      if !obligationFound ||
+         null(newImportedKeyRels) || --no new ExtInd requirement
+         !null(oldImportedKeyRels)   --old already used ExtInd
+      then []
+      else if !any(take(length(names), thms.specialKeyRels))
+      then [] --no imported R_ES or R_P key relations
+      else [errorMsg("New additions require Ext_Ind for existing " ++
+               "properties; cannot require Ext_Ind for imported " ++
+               "properties using extension size or projection " ++
+               "version for key relation")];
   --check for naming IH's the same thing
   top.toAbellaMsgs <-
       foldl(\ rest::([(String, String)], [Message])
@@ -552,7 +563,7 @@ nonterminal ExtThms with
    pps, abella_pp, len,
    toAbella<Metaterm>, toAbellaMsgs,
    provingTheorems,
-   inductionNums, keyRels,
+   inductionNums, keyRels, specialKeyRels,
    useExtInd, shouldBeExtensible,
    expectedIHNum, renamedIHs, specialIHNames, thmNames,
    startingGoalNum, nextGoalNum, followingCommands, duringCommands,
@@ -594,6 +605,8 @@ synthesized attribute extIndChecks::[(Metaterm, [ProofCommand])];
 inherited attribute numMutualThms::Integer;
 --numbers of inductions for each thm
 synthesized attribute numsInductions::[Integer];
+--key relations that are R_ES or R_P
+synthesized attribute specialKeyRels::[Boolean];
 
 abstract production endExtThms
 top::ExtThms ::=
@@ -609,6 +622,8 @@ top::ExtThms ::=
 
   top.inductionNums = [];
   top.keyRels = [];
+
+  top.specialKeyRels = [];
 
   top.duringCommands = top.followingCommands;
 
@@ -669,6 +684,13 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       then keyRel.name::rest.keyRels
       else rest.keyRels;
   top.numsInductions = ons.len::rest.numsInductions;
+
+  top.specialKeyRels =
+      case foundKeyRelPremise of
+      | just(extSizeMetaterm(_, _, _)) -> true
+      | just(projRelMetaterm(_, _, _)) -> true
+      | _ -> false
+      end::rest.specialKeyRels;
 
   ons.thmPremises = body.premises;
   ons.thmName = name;
