@@ -89,3 +89,14 @@ case Hyp1. search.
 
 Prove_Constraint compositionTest:host:stmt_same.
 case Hyp1. search.
+
+
+Prove compositionTest:host:drop_ES_expr,
+      compositionTest:host:drop_ES_stmt.
+apply IH to Ev2. search. apply IH to Ev2. search. apply IH1 to Ev3.
+apply IH1 to Ev4. search.
+Prove compositionTest:host:drop_P_expr,
+      compositionTest:host:drop_P_stmt.
+apply IH to Ev1. apply IH to Ev4. search.
+apply IH to Ev1. apply IH to Ev5. search.
+apply IH1 to Ev1. apply IH1 to Ev2. apply IH1 to Ev4. search.

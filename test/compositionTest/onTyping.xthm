@@ -173,3 +173,11 @@ Extensible_Theorem
   apply IH1 to Ty2 _. search.
  %T-S-Q
   apply IH1 to Ty2 _. search.
+
+
+Prove compositionTest:host:drop_ES_expr,
+      compositionTest:host:drop_ES_stmt.
+search. apply IH to Ev3. apply IH to Ev4. search.
+Prove compositionTest:host:drop_P_expr,
+      compositionTest:host:drop_P_stmt.
+search. apply IH to Ev1. apply IH to Ev2. apply IH to Ev5. search.

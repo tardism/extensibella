@@ -69,3 +69,11 @@ Prove_Ext_Ind compositionTest:typing:typeE,
 
 Prove compositionTest:onTyping:type_is,
       compositionTest:onTyping:typeCtx_is.
+
+
+Prove compositionTest:host:drop_ES_expr,
+      compositionTest:host:drop_ES_stmt,
+      compositionTest:list:drop_ES_listIterate.
+Prove compositionTest:host:drop_P_expr,
+      compositionTest:host:drop_P_stmt,
+      compositionTest:list:drop_P_listIterate.

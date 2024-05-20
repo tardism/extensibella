@@ -106,3 +106,10 @@ case Hyp1. apply minus_integer_unique to H1 Hyp2. search.
 
 Prove_Constraint compositionTest:host:stmt_same.
 
+
+Prove compositionTest:host:drop_ES_expr,
+      compositionTest:host:drop_ES_stmt.
+search.
+Prove compositionTest:host:drop_P_expr,
+      compositionTest:host:drop_P_stmt.
+search.

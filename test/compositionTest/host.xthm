@@ -35,6 +35,7 @@ Ext_Ind forall E, is_expr E; forall S, is_stmt S.
  %while
   apply IH to R1. apply IH1 to R2. search.
 
+
 Ext_Size evalExpr G E V G', evalStmt G S G'.
 Proj_Rel evalExpr G E V G', evalStmt G S G'.
 
@@ -335,3 +336,106 @@ Projection_Constraint expr_same : forall E EA EB,
   |{expr}- E ~~> EA -> |{expr}- E ~~> EB -> EA = EB.
 Projection_Constraint stmt_same : forall S SA SB,
   |{stmt}- S ~~> SA -> |{stmt}- S ~~> SB -> SA = SB.
+
+
+/*These are just for checking induction on R_ES and R_P work*/
+Extensible_Theorem
+  drop_ES_expr : forall G E V G' N,
+    Ev : <evalExpr {ES}> G E V G' N ->
+    evalExpr G E V G'
+  on Ev,
+  drop_ES_stmt : forall G S G' N,
+    Ev : <evalStmt {ES}> G S G' N ->
+    evalStmt G S G'
+  on Ev.
+%expr
+ %E-Num
+  search.
+ %E-Plus
+  apply IH to Ev2. apply IH to Ev3. search.
+ %E-True
+  search.
+ %E-False
+  search.
+ %E-And-False1
+  apply IH to Ev1. search.
+ %E-And-False2
+  apply IH to Ev2. apply IH to Ev3. search.
+ %E-And-True
+  apply IH to Ev2. apply IH to Ev3. search.
+ %E-Eq-True
+  apply IH to Ev2. apply IH to Ev3. search.
+ %E-Eq-False
+  apply IH to Ev2. apply IH to Ev3. search.
+ %E-StmtExpr
+  apply IH1 to Ev2. apply IH to Ev3. search.
+ %E-Name
+  search.
+%stmt
+ %E-Noop
+  search.
+ %E-Seq
+  apply IH1 to Ev3. apply IH1 to Ev4. apply IH1 to Ev5. search.
+ %E-Seq5
+  apply IH1 to Ev5. apply IH1 to Ev6. apply IH1 to Ev7.
+  apply IH1 to Ev8. apply IH1 to Ev9. search.
+ %E-Assign
+  apply IH to Ev1. search.
+ %E-IfThenElse-True
+  apply IH to Ev2. apply IH1 to Ev3. search.
+ %E-IfThenElse-False
+  apply IH to Ev2. apply IH1 to Ev3. search.
+ %E-While-False
+  apply IH to Ev1. search.
+ %E-While-True
+  apply IH to Ev3. apply IH1 to Ev4. apply IH1 to Ev5. search.
+Extensible_Theorem
+  drop_P_expr : forall G E V G',
+    Ev : <evalExpr {P}> G E V G' ->
+    evalExpr G E V G'
+  on Ev,
+  drop_P_stmt : forall G S G',
+    Ev : <evalStmt {P}> G S G' ->
+    evalStmt G S G'
+  on Ev.
+%expr
+ %E-Num
+  search.
+ %E-Plus
+  apply IH to Ev1. apply IH to Ev2. search.
+ %E-True
+  search.
+ %E-False
+  search.
+ %E-And-False1
+  apply IH to Ev1. search.
+ %E-And-False2
+  apply IH to Ev1. apply IH to Ev2. search.
+ %E-And-True
+  apply IH to Ev1. apply IH to Ev2. search.
+ %E-Eq-True
+  apply IH to Ev1. apply IH to Ev2. search.
+ %E-Eq-False
+  apply IH to Ev1. apply IH to Ev2. search.
+ %E-StmtExpr
+  apply IH1 to Ev1. apply IH to Ev2. search.
+ %E-Name
+  search.
+%stmt
+ %E-Noop
+  search.
+ %E-Seq
+  apply IH1 to Ev1. apply IH1 to Ev2. apply IH1 to Ev3. search.
+ %E-Seq5
+  apply IH1 to Ev1. apply IH1 to Ev2. apply IH1 to Ev3.
+  apply IH1 to Ev4. apply IH1 to Ev5. search.
+ %E-Assign
+  apply IH to Ev1. search.
+ %E-IfThenElse-True
+  apply IH to Ev1. apply IH1 to Ev2. search.
+ %E-IfThenElse-False
+  apply IH to Ev1. apply IH1 to Ev2. search.
+ %E-While-False
+  apply IH to Ev1. search.
+ %E-While-True
+  apply IH to Ev1. apply IH1 to Ev2. apply IH1 to Ev3. search.

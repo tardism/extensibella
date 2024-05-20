@@ -108,3 +108,12 @@ apply IH to R2 A. unfold. exists (eq E1 (num 0)). split.
    search.
   %1 + 1 = 2
    search.
+
+
+Prove compositionTest:host:drop_ES_expr,
+      compositionTest:host:drop_ES_stmt.
+apply IH to Ev2. search. apply IH to Ev2. search.
+Prove compositionTest:host:drop_P_expr,
+      compositionTest:host:drop_P_stmt.
+apply IH to Ev1. apply IH to Ev3. search.
+apply IH to Ev1. apply IH to Ev4. search.

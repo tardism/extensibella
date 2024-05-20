@@ -249,3 +249,9 @@ Ext_Ind forall G E T, typeE G E T;
  O: case Acc. skip.
  P: case Acc. skip.
  Q: case Acc. skip.
+
+
+Prove compositionTest:host:drop_ES_expr,
+      compositionTest:host:drop_ES_stmt.
+Prove compositionTest:host:drop_P_expr,
+      compositionTest:host:drop_P_stmt.

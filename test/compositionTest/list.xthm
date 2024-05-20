@@ -415,3 +415,37 @@ Prove_Ext_Ind compositionTest:typing:typeE,
 %typeS
  %T-Foreach
   skip.
+
+
+Prove compositionTest:host:drop_ES_expr,
+      compositionTest:host:drop_ES_stmt
+with
+  drop_ES_listIterate : forall G V X Body G' N,
+    LI : <listIterate {ES}> G V X Body G' N ->
+    listIterate G V X Body G'
+  on LI.
+search.
+apply IH to Ev3. apply IH to Ev4. search.
+apply IH to Ev2. search.
+apply IH to Ev2. search.
+apply IH to Ev2. search.
+apply IH to Ev2. search.
+apply IH to Ev3. apply IH2 to Ev4. search.
+search.
+apply IH1 to LI2. apply IH2 to LI3. search.
+Prove compositionTest:host:drop_P_expr,
+      compositionTest:host:drop_P_stmt
+with
+  drop_P_listIterate : forall G V X Body G',
+    LI : <listIterate {P}> G V X Body G' ->
+    listIterate G V X Body G'
+  on LI.
+search.
+apply IH to Ev1. apply IH to Ev2. search.
+apply IH to Ev1. apply IH to Ev3. search.
+apply IH to Ev1. apply IH to Ev3. search.
+apply IH to Ev1. apply IH to Ev3. search.
+apply IH to Ev1. apply IH to Ev3. search.
+apply IH to Ev1. apply IH2 to Ev2. apply IH1 to Ev4. search.
+search.
+apply IH1 to LI1. apply IH2 to LI2. search.
