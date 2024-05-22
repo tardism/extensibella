@@ -1149,7 +1149,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
           then [errorMsg("Too many relations; should not have " ++
                    implode(", ", map(justShow,
                       map((.pp), removeAll(expectedNames, oldRels)))))]
-          else [errorMsg("Expected ExtSize addition" ++
+          else [errorMsg("Expected Proj Rel addition" ++
                    (if length(expectedNames) == 1 then "" else "s") ++
                    " " ++ implode(", ",
                              map(justShow, map((.pp), expectedNames))))]
