@@ -420,7 +420,7 @@ Metaterm ::= boundVars::Bindings rel::QName relArgs::[String]
             else []),
          emptyRestriction());
   local acc::Metaterm =
-      relationMetaterm(toQName("acc"),
+      relationMetaterm(toQName("extensibella:stdLib:acc"),
          toTermList([nameTerm(toQName(n), nothingType())]),
          emptyRestriction());
   local conc::Metaterm =
@@ -1651,7 +1651,7 @@ function buildExtSizeLemmas
   local isIntThmBody::Metaterm =
       bindingMetaterm(forallBinder(), binds,
          impliesMetaterm(extSize,
-            relationMetaterm(toQName("is_integer"),
+            relationMetaterm(toQName("extensibella:stdLib:is_integer"),
                toTermList([basicNameTerm(numName)]),
                emptyRestriction())));
 

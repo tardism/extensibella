@@ -7,9 +7,10 @@ Import "integer_comparison".
   relations over them and properties of these relations.
 */
 
-Define is_list : (A -> prop) -> list A -> prop by
-  is_list IsA nil;
-  is_list IsA (H::T) := IsA H /\ is_list IsA T.
+Define extensibella-$-stdLib-$-is_list : (A -> prop) -> list A -> prop by
+  extensibella-$-stdLib-$-is_list IsA nil;
+  extensibella-$-stdLib-$-is_list IsA (H::T) :=
+     IsA H /\ extensibella-$-stdLib-$-is_list IsA T.
 
 
 Define $append : list A -> list A -> list A -> prop by
@@ -76,7 +77,7 @@ Define extensibella-$-stdLib-$-length : list A -> $lib__integer -> prop by
                $plus_integer ($posInt ($succ $zero)) N' N.
 
 Theorem extensibella-$-stdLib-$-length_is[A] : forall (L : list A) N,
-  extensibella-$-stdLib-$-length L N -> is_integer N.
+  extensibella-$-stdLib-$-length L N -> extensibella-$-stdLib-$-is_integer N.
 induction on 1. intros L. L: case L.
   %nil
    search.
@@ -96,7 +97,7 @@ induction on 1. intros LA LB. LA: case LA.
 
 %lemma
 Theorem $greater+1 : forall N N',
-  is_integer N -> $greater_integer N ($posInt $zero) ->
+  extensibella-$-stdLib-$-is_integer N -> $greater_integer N ($posInt $zero) ->
   $plus_integer ($posInt ($succ $zero)) N N' ->
   $greater_integer N' ($posInt $zero).
 intros IsN G P. P': apply extensibella-$-stdLib-$-plus_integer_comm to _ _ P.

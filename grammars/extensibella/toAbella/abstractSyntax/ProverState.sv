@@ -397,18 +397,18 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
           libTypeEnvItem(toQName("prop"), 0)]);
   local knownRels::[RelationEnvItem] =
       buildEnv(
-         [fixedRelationEnvItem(toQName("is_pair"),
+         [fixedRelationEnvItem(toQName("extensibella:stdLib:is_pair"),
              toTypeList([arrowType(varType("A"), propType),
                          arrowType(varType("B"), propType),
                          pairType(varType("A"), varType("B")),
                          propType])),
-          fixedRelationEnvItem(toQName("is_string"),
+          fixedRelationEnvItem(toQName("extensibella:stdLib:is_string"),
              toTypeList([stringType(), propType])),
-          fixedRelationEnvItem(toQName("is_bool"),
+          fixedRelationEnvItem(toQName("extensibella:stdLib:is_bool"),
              toTypeList([boolType, propType])),
-          fixedRelationEnvItem(toQName("is_integer"),
+          fixedRelationEnvItem(toQName("extensibella:stdLib:is_integer"),
              toTypeList([integerType, propType])),
-          fixedRelationEnvItem(toQName("is_list"),
+          fixedRelationEnvItem(toQName("extensibella:stdLib:is_list"),
              toTypeList([arrowType(varType("A"), propType),
                          listType(varType("A")), propType])),
               --this doesn't seem special enough to merit an unqualified name
@@ -447,7 +447,8 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
              toTypeList([boolType, boolType, boolType])),
           fixedRelationEnvItem(toQName(notName),
              toTypeList([boolType, boolType])),
-          fixedRelationEnvItem(toQName("acc"),
+          --
+          fixedRelationEnvItem(toQName("extensibella:stdLib:acc"),
              toTypeList([integerType, integerType])),
           --once again, not our library, but *a* library
           fixedRelationEnvItem(toQName("member"),

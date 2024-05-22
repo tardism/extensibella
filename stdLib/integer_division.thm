@@ -99,7 +99,7 @@ Define
 
 
 Theorem $abs_integer_total : forall N,
-  is_integer N -> exists N', $abs_integer N N'.
+  extensibella-$-stdLib-$-is_integer N -> exists N', $abs_integer N N'.
 intros. case H1.
   %Subgoal 1
    search.
@@ -117,7 +117,7 @@ induction on 1. intros. case H1.
   search.
 
 Theorem $abs_integer_is_integer : forall A B,
-  is_integer A -> $abs_integer A B -> is_integer B.
+  extensibella-$-stdLib-$-is_integer A -> $abs_integer A B -> extensibella-$-stdLib-$-is_integer B.
 intros. case H2.
   %Subgoal 1
    search.
@@ -206,11 +206,11 @@ induction on 1. intros. case H1.
 
 Theorem $divR_help_is_integer_combined :
   (forall A B Q R,
-     is_integer A -> is_integer B -> $divR_help A B Q R ->
-     is_integer Q /\ is_integer R) /\
+     extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> $divR_help A B Q R ->
+     extensibella-$-stdLib-$-is_integer Q /\ extensibella-$-stdLib-$-is_integer R) /\
   (forall A N B Q R,
-     is_integer A -> is_integer B -> $divR_help_minus A N B Q R ->
-     is_integer Q /\ is_integer R).
+     extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> $divR_help_minus A N B Q R ->
+     extensibella-$-stdLib-$-is_integer Q /\ extensibella-$-stdLib-$-is_integer R).
 induction on 3 3. split.
   %Subgoal 1
    intros. case H3.
@@ -271,7 +271,7 @@ induction on 1. intros. case H1.
             case H8. search.
 
 Theorem $divR_help_divide_by_one : forall A,
-  is_integer A -> $divR_help A ($posInt ($succ $zero)) A ($posInt $zero).
+  extensibella-$-stdLib-$-is_integer A -> $divR_help A ($posInt ($succ $zero)) A ($posInt $zero).
 induction on 1. intros. case H1.
   %Subgoal 1:  A = 0
    search.
@@ -313,10 +313,10 @@ induction on 1. intros. case H1.
 
 Theorem $divR_help_near_total_combined :
   (forall A B,
-     is_integer A -> is_integer B -> (B = $posInt $zero -> false) ->
+     extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> (B = $posInt $zero -> false) ->
      exists Q R, $divR_help A B Q R) /\
   (forall A N B,
-     is_integer A -> $is_nat N -> is_integer B ->
+     extensibella-$-stdLib-$-is_integer A -> $is_nat N -> extensibella-$-stdLib-$-is_integer B ->
      (B = $posInt $zero -> false) ->
      $lesseq_abs_integer ($posInt N) A ->
      %This premise was going to be (N = $zero -> false), but Abella has
@@ -351,7 +351,7 @@ induction on 1 1. rename IH to IH_div. rename IH1 to IH_sub. split.
            %Subgoal 1.2.2.1:  Divisor is smaller/equal
             case H7 (keep).
               %Subgoal 1.2.2.1.1:  Divisor = 1
-               TIsInt: assert is_integer ($posInt ($succ T)).
+               TIsInt: assert extensibella-$-stdLib-$-is_integer ($posInt ($succ T)).
                apply $divR_help_divide_by_one to TIsInt. search.
               %Subgoal 1.2.2.1.2:  Divisor > 1
                apply $is_integer_posInt_$$$$$_to_$$$$$_is_nat to H5.
@@ -360,7 +360,7 @@ induction on 1 1. rename IH to IH_div. rename IH1 to IH_sub. split.
                assert $divR_help_minus ($posInt ($succ T)) ($succ D)
                                        ($posInt ($succ D)) Q R.
                apply $divR_help_minus_is_integer to _ _ H12.
-               IsOne: assert (is_integer ($posInt ($succ $zero))).
+               IsOne: assert extensibella-$-stdLib-$-is_integer ($posInt ($succ $zero)).
                apply extensibella-$-stdLib-$-plus_integer_total to IsOne H14.
                rename N3 to Q'. exists Q', R.
                DivisorNotZero: assert (($succ ($succ N)) = $zero) -> false.
@@ -481,7 +481,7 @@ induction on 1 1. rename IH to IH_div. rename IH1 to IH_sub. split.
                assert $divR_help_minus ($negSuccInt ($succ N)) ($succ B')
                                        ($negSuccInt B') Q R.
                apply $divR_help_minus_is_integer to _ _ H8.
-               IsOne: assert is_integer ($posInt ($succ $zero)).
+               IsOne: assert extensibella-$-stdLib-$-is_integer ($posInt ($succ $zero)).
                apply extensibella-$-stdLib-$-plus_integer_total to IsOne H9.
                rename N3 to Q'. exists Q', R.
                assert $lesseq_nat B' ($succ N). case H6. search. case H12. search.
@@ -621,26 +621,26 @@ Split $divR_help_and_minus_unique as
 
 Theorem $divR_help_to_divR_integer'_all :
   (forall A B Q R,
-     is_integer A -> is_integer B ->
+     extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B ->
      $divR_help A B Q R ->
      $divR_integer' A B Q R) /\
   (forall X A B N Q R,
-     $is_nat X -> is_integer ($posInt B) -> $is_nat N ->
+     $is_nat X -> extensibella-$-stdLib-$-is_integer ($posInt B) -> $is_nat N ->
      $divR_help_minus ($posInt X) N ($posInt B) Q R ->
      $minus_integer ($posInt X) ($posInt N) A ->
      $divR_integer' A ($posInt B) Q R) /\
   (forall X A B N Q R,
-     $is_nat X -> is_integer ($negSuccInt B) -> $is_nat N ->
+     $is_nat X -> extensibella-$-stdLib-$-is_integer ($negSuccInt B) -> $is_nat N ->
      $divR_help_minus ($posInt X) ($succ N) ($negSuccInt B) Q R ->
      $plus_integer ($posInt X) ($negSuccInt N) A ->
      $divR_integer' A ($negSuccInt B) Q R) /\
   (forall X A B N Q R,
-     $is_nat X -> is_integer ($posInt B) -> $is_nat N ->
+     $is_nat X -> extensibella-$-stdLib-$-is_integer ($posInt B) -> $is_nat N ->
      $divR_help_minus ($negSuccInt X) N ($posInt B) Q R ->
      $plus_integer ($negSuccInt X) ($posInt N) A ->
      $divR_integer' A ($posInt B) Q R) /\
   (forall X A B N Q R,
-     $is_nat X -> is_integer ($negSuccInt B) -> $is_nat N ->
+     $is_nat X -> extensibella-$-stdLib-$-is_integer ($negSuccInt B) -> $is_nat N ->
      $divR_help_minus ($negSuccInt X) ($succ N) ($negSuccInt B) Q R ->
      $minus_integer ($negSuccInt X) ($negSuccInt N) A ->
      $divR_integer' A ($negSuccInt B) Q R).
@@ -755,7 +755,7 @@ induction on 2. intros. case H2.
    apply IH to _ H3. backchain $lesseq_nat_step_right.
 
 Theorem $divR_integer'_multiply : forall A B C Q R,
-  is_integer A -> is_integer B ->
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B ->
   $multiply_integer A B C -> $divR_integer' C B Q R ->
   Q = A /\ R = $posInt $zero.
 induction on 3. intros AIsInt BIsInt Mult Div. case Mult (keep).
@@ -893,7 +893,7 @@ induction on 3. intros AIsInt BIsInt Mult Div. case Mult (keep).
       apply IH to _ _ H1 H5. case H6. search.
 
 Theorem $divR_help_multiply : forall A B C,
-  is_integer A -> is_integer B -> (B = $posInt $zero -> false) ->
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> (B = $posInt $zero -> false) ->
   $multiply_integer A B C -> $divR_help C B A ($posInt $zero).
 intros AIsInt BIsInt BNotZero Mult.
 CIsInt: apply extensibella-$-stdLib-$-multiply_integer_is_integer to _ _ Mult.
@@ -902,7 +902,7 @@ Div: apply $divR_help_to_divR_integer' to _ _ DivHelp.
 apply $divR_integer'_multiply to AIsInt BIsInt Mult Div. search.
 
 Theorem $divR_help_0_right_false : forall A Q R,
-  is_integer A -> $divR_help A ($posInt $zero) Q R -> false.
+  extensibella-$-stdLib-$-is_integer A -> $divR_help A ($posInt $zero) Q R -> false.
 intros AIsInt Div. apply $divR_help_to_divR_integer' to _ _ Div.
 apply $divR_integer'_divisor_not_0 to H1.
 
@@ -922,26 +922,26 @@ Theorem extensibella-$-stdLib-$-divide_integer_unique : forall A B Q Q',
 intros. case H1. case H2. apply $divR_help_unique to H3 H4. search.
 
 Theorem extensibella-$-stdLib-$-divide_integer_near_total : forall A B,
-  is_integer A -> is_integer B -> (B = $posInt $zero -> false) ->
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> (B = $posInt $zero -> false) ->
   exists Q, $divide_integer A B Q.
 intros. apply $divR_help_near_total to _ _ _. search.
 
 Theorem extensibella-$-stdLib-$-divide_integer_is_integer : forall A B Q,
-  is_integer A -> is_integer B -> $divide_integer A B Q ->
-  is_integer Q.
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> $divide_integer A B Q ->
+  extensibella-$-stdLib-$-is_integer Q.
 intros. case H3. apply $divR_help_is_integer to H1 H2 H4. search.
 
 Theorem extensibella-$-stdLib-$-divide_integer_1_right : forall A,
-  is_integer A -> $divide_integer A ($posInt ($succ $zero)) A.
+  extensibella-$-stdLib-$-is_integer A -> $divide_integer A ($posInt ($succ $zero)) A.
 intros. apply $divR_help_divide_by_one to H1. search.
 
 Theorem extensibella-$-stdLib-$-divide_integer_0_right_false : forall A Q,
-  is_integer A -> $divide_integer A ($posInt $zero) Q -> false.
+  extensibella-$-stdLib-$-is_integer A -> $divide_integer A ($posInt $zero) Q -> false.
 intros. case H2. apply $divR_help_0_right_false to _ H3.
 
 Theorem extensibella-$-stdLib-$-divide_integer_related_multiply :
   forall A B C,
-    is_integer A -> is_integer B -> (B = $posInt $zero -> false) ->
+    extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> (B = $posInt $zero -> false) ->
     $multiply_integer A B C -> $divide_integer C B A.
 intros. apply $divR_help_multiply to _ _ _ H4. search.
 
@@ -961,27 +961,27 @@ Theorem extensibella-$-stdLib-$-modulus_integer_unique : forall A B R R',
 intros. case H1. case H2. apply $divR_help_unique to H3 H4. search.
 
 Theorem extensibella-$-stdLib-$-modulus_integer_near_total : forall A B,
-  is_integer A -> is_integer B -> (B = $posInt $zero -> false) ->
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> (B = $posInt $zero -> false) ->
   exists R, $modulus_integer A B R.
 intros. apply $divR_help_near_total to _ _ _. search.
 
 Theorem extensibella-$-stdLib-$-modulus_integer_is_integer : forall A B R,
-  is_integer A -> is_integer B -> $modulus_integer A B R ->
-  is_integer R.
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> $modulus_integer A B R ->
+  extensibella-$-stdLib-$-is_integer R.
 intros. case H3. apply $divR_help_is_integer to H1 H2 H4. search.
 
 Theorem extensibella-$-stdLib-$-modulus_integer_1_right : forall A,
-  is_integer A ->
+  extensibella-$-stdLib-$-is_integer A ->
   $modulus_integer A ($posInt ($succ $zero)) ($posInt $zero).
 intros. apply $divR_help_divide_by_one to H1. search.
 
 Theorem extensibella-$-stdLib-$-modulus_integer_0_right_false : forall A R,
-  is_integer A -> $modulus_integer A ($posInt $zero) R -> false.
+  extensibella-$-stdLib-$-is_integer A -> $modulus_integer A ($posInt $zero) R -> false.
 intros. case H2. apply $divR_help_0_right_false to _ H3.
 
 Theorem extensibella-$-stdLib-$-modulus_integer_related_multiply :
   forall A B C,
-    is_integer A -> is_integer B -> (B = $posInt $zero -> false) ->
+    extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> (B = $posInt $zero -> false) ->
     $multiply_integer A B C -> $modulus_integer C B ($posInt $zero).
 intros. apply $divR_help_multiply to _ _ _ H4. search.
 

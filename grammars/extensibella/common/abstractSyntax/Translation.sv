@@ -35,7 +35,7 @@ global integerLessEqName::String = "$lesseq_integer";
 global integerGreaterName::String = "$greater_integer";
 global integerGreaterEqName::String = "$greatereq_integer";
 
-global is_string::QName = toQName("is_string");
+global is_string::QName = toQName("extensibella:stdLib:is_string");
 
 global appendName::String = "$append";
 

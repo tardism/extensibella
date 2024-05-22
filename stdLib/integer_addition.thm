@@ -95,7 +95,7 @@ induction on 1. intros. case H1.
 %%%%% Dropping $succ from an addend:
 %%%%%%%%%%%%%%%%%%%%
 Theorem $plus_integer_negSuccInts_drop_succ : forall N1 N2 N3,
-  is_integer ($negSuccInt N1) ->
+  extensibella-$-stdLib-$-is_integer ($negSuccInt N1) ->
   $plus_integer ($negSuccInt ($succ N1)) N2
                 ($negSuccInt ($succ N3)) ->
   $plus_integer ($negSuccInt N1) N2 ($negSuccInt N3).
@@ -118,7 +118,7 @@ induction on 1. intros. case H1.
      search.
 
 Theorem $plus_integer_negSuccInt_-1_drop_succ : forall N1 N2,
-  is_integer ($negSuccInt N1) ->
+  extensibella-$-stdLib-$-is_integer ($negSuccInt N1) ->
   $plus_integer ($negSuccInt ($succ N1)) N2 ($negSuccInt $zero) ->
   $plus_integer ($negSuccInt N1) N2 ($posInt $zero).
 induction on 1. intros. case H1.
@@ -129,7 +129,7 @@ induction on 1. intros. case H1.
 
 Theorem $plus_integer_negSuccInt_posInt_drop_succ :
   forall N1 N2 N3,
-    is_integer ($negSuccInt N1) ->
+    extensibella-$-stdLib-$-is_integer ($negSuccInt N1) ->
     $plus_integer ($negSuccInt ($succ N1)) N2 ($posInt N3) ->
     $plus_integer ($negSuccInt N1) N2 ($posInt ($succ N3)).
 induction on 1. intros. case H1.
@@ -150,7 +150,7 @@ induction on 1. intros. case H1.
    apply IH to H2. search.
 
 Theorem $plus_integer_succ_left_to_right : forall N1 N2 N3,
-  is_integer ($posInt N1) ->
+  extensibella-$-stdLib-$-is_integer ($posInt N1) ->
   $plus_integer ($posInt ($succ N1)) ($posInt N2) N3 ->
   $plus_integer ($posInt N1) ($posInt ($succ N2)) N3.
 induction on 1. intros. case H1.
@@ -160,7 +160,7 @@ induction on 1. intros. case H1.
    case H2. apply IH to H3 H4. search.
 
 Theorem $plus_integer_succ_negSuccInt_left_to_right : forall N1 N2 N3,
-  is_integer ($negSuccInt N1) ->
+  extensibella-$-stdLib-$-is_integer ($negSuccInt N1) ->
   $plus_integer ($negSuccInt ($succ N1)) ($negSuccInt N2) N3 ->
   $plus_integer ($negSuccInt N1) ($negSuccInt ($succ N2)) N3.
 induction on 1. intros. case H1.
@@ -170,7 +170,7 @@ induction on 1. intros. case H1.
    case H2. apply IH to H3 H4. search.
 
 Theorem $plus_integer_succ_negSuccInt_right_to_left : forall N1 N2 N3,
-  is_integer ($negSuccInt N1) ->
+  extensibella-$-stdLib-$-is_integer ($negSuccInt N1) ->
   $plus_integer ($negSuccInt N1) ($negSuccInt ($succ N2)) N3 ->
   $plus_integer ($negSuccInt ($succ N1)) ($negSuccInt N2) N3.
 induction on 1. intros. case H1.
@@ -182,7 +182,7 @@ induction on 1. intros. case H1.
 %%%%% Base cases for left addition
 %%%%%%%%%%%%%%%%%%%%
 Theorem $plus_integer_zero_right : forall N,
-  is_integer N -> $plus_integer N ($posInt $zero) N.
+  extensibella-$-stdLib-$-is_integer N -> $plus_integer N ($posInt $zero) N.
 induction on 1. intros. case H1.
   %Subgoal 1
    search.
@@ -239,8 +239,8 @@ induction on 1. intros. case H1.
    case H2. apply IH to H3 H4. search.
 
 Theorem extensibella-$-stdLib-$-plus_integer_is_integer : forall N1 N2 N3,
-  is_integer N1 -> is_integer N2 -> $plus_integer N1 N2 N3 ->
-  is_integer N3.
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 -> $plus_integer N1 N2 N3 ->
+  extensibella-$-stdLib-$-is_integer N3.
 induction on 3. intros. case H3.
   %Subgoal 1
    search.
@@ -262,7 +262,7 @@ induction on 3. intros. case H3.
    case H1. apply IH to _ _ H4. search.
 
 Theorem extensibella-$-stdLib-$-plus_integer_total : forall N1 N2,
-  is_integer N1 -> is_integer N2 ->
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 ->
   exists N3, $plus_integer N1 N2 N3.
 induction on 1. intros. case H1.
   %Subgoal 1
@@ -326,7 +326,7 @@ induction on 1. intros. case H1.
       search.
 
 Theorem extensibella-$-stdLib-$-plus_integer_comm : forall N1 N2 N3,
-  is_integer N1 -> is_integer N2 -> $plus_integer N1 N2 N3 ->
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 -> $plus_integer N1 N2 N3 ->
   $plus_integer N2 N1 N3.
 induction on 3. intros. case H3.
   %Subgoal 1
@@ -352,14 +352,14 @@ induction on 3. intros. case H3.
    backchain $plus_integer_succ_negSuccInt_left_to_right.
 
 Theorem extensibella-$-stdLib-$-plus_integer_assoc : forall N1 N2 N3 Subtotal Total,
-  is_integer N1 -> is_integer N2 -> is_integer N3 ->
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 -> extensibella-$-stdLib-$-is_integer N3 ->
   $plus_integer N1 N2 Subtotal -> $plus_integer N3 Subtotal Total ->
   exists Subtotal', $plus_integer N2 N3 Subtotal' /\
                     $plus_integer N1 Subtotal' Total.
 induction on 4. intros.
-SubIsInt: assert (is_integer Subtotal).
+SubIsInt: assert extensibella-$-stdLib-$-is_integer Subtotal.
    backchain extensibella-$-stdLib-$-plus_integer_is_integer with N1 = N1, N2 = N2.
-TotalIsInt: assert (is_integer Total).
+TotalIsInt: assert extensibella-$-stdLib-$-is_integer Total.
    backchain extensibella-$-stdLib-$-plus_integer_is_integer with N1 = N3, N2 = Subtotal.
 case H4.
   %Subgoal 3
@@ -697,7 +697,7 @@ induction on 1. intros P. P: case P.
    search.
 
 Theorem extensibella-$-stdLib-$-plus_integer_is_integer_result : forall N1 N2 N3,
-  is_integer N3 -> $plus_integer N1 N2 N3 -> is_integer N1 /\ is_integer N2.
+  extensibella-$-stdLib-$-is_integer N3 -> $plus_integer N1 N2 N3 -> extensibella-$-stdLib-$-is_integer N1 /\ extensibella-$-stdLib-$-is_integer N2.
 induction on 2. intros IsN3 P. P: case P.
   %1:  0 + N3 = N3
    search.
@@ -719,7 +719,7 @@ induction on 2. intros IsN3 P. P: case P.
    case IsN3. apply IH to _ P. search.
 
 Theorem $plus_integer_negation : forall N,
-  is_integer ($posInt N) ->
+  extensibella-$-stdLib-$-is_integer ($posInt N) ->
   $plus_integer ($posInt ($succ N)) ($negSuccInt N) ($posInt $zero).
 induction on 1. intros. case H1.
   %Subgoal 1
@@ -751,7 +751,7 @@ intros. case H1.
    case H2. backchain extensibella-$-stdLib-$-plus_integer_unique.
 
 Theorem extensibella-$-stdLib-$-minus_integer_total : forall N1 N2,
-  is_integer N1 -> is_integer N2 ->
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 ->
   exists N3, $minus_integer N1 N2 N3.
 intros. case H2.
   %Subgoal 1
@@ -761,17 +761,17 @@ intros. case H2.
    apply $is_nat_$$$$$_to_$$$$$_is_integer_negSuccInt to H4.
    apply extensibella-$-stdLib-$-plus_integer_total to H1 H5. exists N3. search.
   %Subgoal 3
-   assert (is_integer ($posInt ($succ $zero))).
+   assert extensibella-$-stdLib-$-is_integer ($posInt ($succ $zero)).
    apply extensibella-$-stdLib-$-plus_integer_total to H1 H3. exists N3. search.
   %Subgoal 4
    apply $is_integer_negSuccInt_$$$$$_to_$$$$$_is_nat to H3.
    apply $is_nat_$$$$$_to_$$$$$_is_integer_posInt to H4.
-   assert (is_integer ($posInt ($succ ($succ N)))).
+   assert extensibella-$-stdLib-$-is_integer ($posInt ($succ ($succ N))).
    apply extensibella-$-stdLib-$-plus_integer_total to H1 H6. exists N3. search.
 
 Theorem extensibella-$-stdLib-$-minus_integer_is_integer : forall N1 N2 N3,
-  is_integer N1 -> is_integer N2 -> $minus_integer N1 N2 N3 ->
-  is_integer N3.
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 -> $minus_integer N1 N2 N3 ->
+  extensibella-$-stdLib-$-is_integer N3.
 intros. case H3.
   %Subgoal 1
    search.
@@ -787,12 +787,12 @@ intros. case H3.
    backchain $is_integer_negSuccInt_$$$$$_to_$$$$$_is_nat.
 
 Theorem extensibella-$-stdLib-$-minus_integer_same : forall N,
-  is_integer N -> $minus_integer N N ($posInt $zero).
+  extensibella-$-stdLib-$-is_integer N -> $minus_integer N N ($posInt $zero).
 intros. case H1.
   %Subgoal 1
    search.
   %Subgoal 2
-   assert (forall X, is_integer ($posInt X) ->
+   assert (forall X, extensibella-$-stdLib-$-is_integer ($posInt X) ->
            $plus_integer ($posInt ($succ X)) ($negSuccInt X)
                          ($posInt $zero)).
       induction on 1. intros. case H3.
@@ -804,7 +804,7 @@ intros. case H1.
   %Subgoal 3
    search.
   %Subgoal 4
-   assert (forall X, is_integer ($posInt X) ->
+   assert (forall X, extensibella-$-stdLib-$-is_integer ($posInt X) ->
            $plus_integer ($posInt ($succ X)) ($negSuccInt X)
                          ($posInt $zero)).
       induction on 1. intros. case H3.
@@ -821,7 +821,7 @@ Theorem extensibella-$-stdLib-$-minus_integer_0 : forall N,
 intros. search.
 
 Theorem extensibella-$-stdLib-$-plus_minus_same_integer : forall N1 N2 N3,
-  is_integer N1 -> is_integer N2 -> $plus_integer N1 N2 N3 ->
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 -> $plus_integer N1 N2 N3 ->
   $minus_integer N3 N2 N1.
 induction on 3. intros. case H3.
   %Subgoal 1
@@ -854,7 +854,7 @@ induction on 3. intros. case H3.
   %Subgoal 5
    search.
   %Subgoal 6
-   assert (forall X, is_integer ($posInt X) ->
+   assert (forall X, extensibella-$-stdLib-$-is_integer ($posInt X) ->
            $plus_integer ($posInt X) ($negSuccInt X)
                          ($negSuccInt $zero)).
       induction on 1. intros. case H4.
@@ -894,14 +894,14 @@ induction on 3. intros. case H3.
    apply $plus_integer_negSuccInts_succ to H7. search.
 
 Theorem extensibella-$-stdLib-$-minus_plus_same_integer : forall N1 N2 N3,
-  is_integer N1 -> is_integer N2 -> $minus_integer N1 N2 N3 ->
+  extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 -> $minus_integer N1 N2 N3 ->
   $plus_integer N3 N2 N1.
 intros. case H3.
   %Subgoal 1
    backchain extensibella-$-stdLib-$-plus_integer_comm.
   %Subgoal 2
    assert (forall X1 X2 X3,
-           is_integer X1 -> is_integer ($posInt X2) ->
+           extensibella-$-stdLib-$-is_integer X1 -> extensibella-$-stdLib-$-is_integer ($posInt X2) ->
            $plus_integer X1 ($negSuccInt X2) X3 ->
            $plus_integer X3 ($posInt ($succ X2)) X1).
       induction on 3. intros. case H7.
@@ -937,7 +937,7 @@ intros. case H3.
    case H2. backchain H5.
   %Subgoal 3
    assert (forall X1 X2 X3,
-           is_integer X1 -> is_integer ($posInt X2) ->
+           extensibella-$-stdLib-$-is_integer X1 -> extensibella-$-stdLib-$-is_integer ($posInt X2) ->
            $plus_integer X1 ($posInt ($succ X2)) X3 ->
            $plus_integer X3 ($negSuccInt X2) X1).
      induction on 3. intros. case H7 (keep).
@@ -947,7 +947,7 @@ intros. case H3.
         case H5. apply IH to _ _ H8.
         backchain $plus_integer_posInts_succ.
        %Sub 3
-        assert (forall Y, is_integer ($posInt Y) ->
+        assert (forall Y, extensibella-$-stdLib-$-is_integer ($posInt Y) ->
                 $plus_integer ($posInt Y) ($negSuccInt Y)
                               ($negSuccInt $zero)).
            induction on 1. intros. case H8.
@@ -972,7 +972,7 @@ intros. case H3.
    backchain H5. backchain $is_integer_negSuccInt_$$$$$_to_$$$$$_posInt.
 
 Theorem extensibella-$-stdLib-$-minus_integer_is_integer_result : forall N1 N2 N3,
-  is_integer N3 -> $minus_integer N1 N2 N3 -> is_integer N1 /\ is_integer N2.
+  extensibella-$-stdLib-$-is_integer N3 -> $minus_integer N1 N2 N3 -> extensibella-$-stdLib-$-is_integer N1 /\ extensibella-$-stdLib-$-is_integer N2.
 intros IsN3 M. P: case M.
   %1:  N3 - 0 = N3
    search.
@@ -989,7 +989,7 @@ intros IsN3 M. P: case M.
 %This belongs in the plus section, but we can't prove it, or it isn't obvious
 %how to prove it, without the minus theorems here.
 Theorem extensibella-$-stdLib-$-plus_integer_unique_addend : forall N A B Sum,
-  is_integer N -> is_integer A -> is_integer B ->
+  extensibella-$-stdLib-$-is_integer N -> extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B ->
   $plus_integer N A Sum -> $plus_integer N B Sum -> A = B.
 intros IsN IsA IsB PA PB.
 IsSum: apply extensibella-$-stdLib-$-plus_integer_is_integer to _ _ PA.
@@ -1025,7 +1025,7 @@ intros. case H1.
    case H2. search.
 
 Theorem extensibella-$-stdLib-$-negate_integer_total : forall N,
-  is_integer N -> exists N', $negate_integer N N'.
+  extensibella-$-stdLib-$-is_integer N -> exists N', $negate_integer N N'.
 intros. case H1.
   %Subgoal 1
    search.
@@ -1037,7 +1037,7 @@ intros. case H1.
    search.
 
 Theorem extensibella-$-stdLib-$-negate_integer_is_integer : forall N -N,
-  is_integer N -> $negate_integer N -N -> is_integer -N.
+  extensibella-$-stdLib-$-is_integer N -> $negate_integer N -N -> extensibella-$-stdLib-$-is_integer -N.
 intros. case H2.
   %Subgoal 1
    search.
@@ -1082,7 +1082,7 @@ induction on 1. intros. case H1.
    apply IH to H2. backchain $negate_integer_step_$$$$$_negSuccInt.
 
 Theorem extensibella-$-stdLib-$-plus_integer_negation : forall A -A,
-  is_integer A -> $negate_integer A -A ->
+  extensibella-$-stdLib-$-is_integer A -> $negate_integer A -A ->
   $plus_integer A -A ($posInt $zero).
 induction on 1. intros AIsInt NegA. case AIsInt.
   %Subgoal 1
@@ -1101,7 +1101,7 @@ induction on 1. intros AIsInt NegA. case AIsInt.
    apply IH to H1 H2. case H2. search.
 
 Theorem extensibella-$-stdLib-$-plus_integer_negatives : forall A -A B -B C -C,
-  is_integer A -> is_integer B -> is_integer C ->
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> extensibella-$-stdLib-$-is_integer C ->
   $negate_integer A -A -> $negate_integer B -B ->
   $negate_integer C -C -> $plus_integer A B C ->
   $plus_integer -A -B -C.

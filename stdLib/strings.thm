@@ -72,15 +72,18 @@ Define $is_char : $char -> prop by
   $is_char $c_119;  $is_char $c_120;  $is_char $c_121;  $is_char $c_122;
   $is_char $c_123;  $is_char $c_124;  $is_char $c_125;  $is_char $c_126.
 
-Define is_string : list $char -> prop by
-  is_string L := is_list $is_char L.
+Define extensibella-$-stdLib-$-is_string : list $char -> prop by
+  extensibella-$-stdLib-$-is_string L :=
+    extensibella-$-stdLib-$-is_list $is_char L.
 
 
 Theorem extensibella-$-stdLib-$-is_string_append : forall S1 S2 S3,
-  is_string S1 -> is_string S2 ->
-  $append S1 S2 S3 -> is_string S3.
-assert (forall S1 S2 S3, is_list $is_char S1 -> is_list $is_char S2 ->
-         $append S1 S2 S3 -> is_list $is_char S3).
+  extensibella-$-stdLib-$-is_string S1 -> extensibella-$-stdLib-$-is_string S2 ->
+  $append S1 S2 S3 -> extensibella-$-stdLib-$-is_string S3.
+assert (forall S1 S2 S3, extensibella-$-stdLib-$-is_list $is_char S1 ->
+                         extensibella-$-stdLib-$-is_list $is_char S2 ->
+                         $append S1 S2 S3 ->
+                         extensibella-$-stdLib-$-is_list $is_char S3).
    induction on 1. intros. case H1.
       case H3. search.
       case H3. apply IH to H5 H2 H6. search.
@@ -104,10 +107,11 @@ for i in range(100):
 */
 
 Theorem extensibella-$-stdLib-$-is_string_eq_or_not : forall S1 S2,
-  is_string S1 -> is_string S2 ->
+  extensibella-$-stdLib-$-is_string S1 -> extensibella-$-stdLib-$-is_string S2 ->
   S1 = S2 \/ (S1 = S2 -> false).
-assert (forall L1 L2, is_list $is_char L1 -> is_list $is_char L2 ->
-         L1 = L2 \/ (L1 = L2 -> false)).
+assert (forall L1 L2, extensibella-$-stdLib-$-is_list $is_char L1 ->
+                      extensibella-$-stdLib-$-is_list $is_char L2 ->
+                      L1 = L2 \/ (L1 = L2 -> false)).
    induction on 1. intros. case H1.
      case H2.
        left. search.
@@ -123,9 +127,12 @@ intros. case H2. case H3. apply H1 to H4 H5. search.
 
 
 Theorem extensibella-$-stdLib-$-append_string_is : forall S1 S2 S,
-  is_string S1 -> is_string S2 -> $append S1 S2 S -> is_string S.
-assert forall S1 S2 S, is_list $is_char S1 -> is_list $is_char S2 ->
-                       $append S1 S2 S -> is_list $is_char S.
+  extensibella-$-stdLib-$-is_string S1 -> extensibella-$-stdLib-$-is_string S2 ->
+  $append S1 S2 S -> extensibella-$-stdLib-$-is_string S.
+assert forall S1 S2 S, extensibella-$-stdLib-$-is_list $is_char S1 ->
+                       extensibella-$-stdLib-$-is_list $is_char S2 ->
+                       $append S1 S2 S ->
+                       extensibella-$-stdLib-$-is_list $is_char S.
   induction on 1. intros SA SB App. SA: case SA.
     %nil
      case App. search.
@@ -135,8 +142,10 @@ intros Is1 Is2 App. case Is1. case Is2. apply H1 to _ _ App. search.
 
 
 Theorem extensibella-$-stdLib-$-append_string_total : forall S1 S2,
-  is_string S1 -> is_string S2 -> exists S, $append S1 S2 S.
-assert forall S1 S2, is_list $is_char S1 -> is_list $is_char S2 ->
+  extensibella-$-stdLib-$-is_string S1 -> extensibella-$-stdLib-$-is_string S2 ->
+  exists S, $append S1 S2 S.
+assert forall S1 S2, extensibella-$-stdLib-$-is_list $is_char S1 ->
+                     extensibella-$-stdLib-$-is_list $is_char S2 ->
                      exists S, $append S1 S2 S.
   induction on 1. intros IsSA IsSB. Is: case IsSA.
     %nil
@@ -147,8 +156,9 @@ intros IsA IsB. case IsA. case IsB. apply H1 to H2 H3. search.
 
 
 Theorem extensibella-$-stdLib-$-string_length_total : forall S,
-  is_string S -> exists N, extensibella-$-stdLib-$-length S N.
-assert forall S, is_list $is_char S ->
+  extensibella-$-stdLib-$-is_string S ->
+  exists N, extensibella-$-stdLib-$-length S N.
+assert forall S, extensibella-$-stdLib-$-is_list $is_char S ->
                  exists N, extensibella-$-stdLib-$-length S N.
   induction on 1. intros Is. Is: case Is.
     %nil

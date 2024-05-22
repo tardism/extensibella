@@ -80,7 +80,7 @@ induction on 1. intros L. L: case L.
    apply IH to L. search.
 
 Theorem $less_integer_pos_self : forall A,
-  is_integer ($posInt A) ->
+  extensibella-$-stdLib-$-is_integer ($posInt A) ->
   $less_integer ($posInt A) ($posInt ($succ A)).
 induction on 1. intros IsA. IsA: case IsA.
   %Subgoal 1
@@ -89,7 +89,7 @@ induction on 1. intros IsA. IsA: case IsA.
    apply IH to IsA. search.
 
 Theorem $less_integer_neg_self : forall A,
-  is_integer ($negSuccInt A) ->
+  extensibella-$-stdLib-$-is_integer ($negSuccInt A) ->
   $less_integer ($negSuccInt ($succ A)) ($negSuccInt A).
 induction on 1. intros IsA. IsA: case IsA.
   %Subgoal 1
@@ -99,7 +99,7 @@ induction on 1. intros IsA. IsA: case IsA.
 
 Theorem $less_integer_sum_pos_neg : forall A B C,
   $plus_integer ($posInt A) ($negSuccInt B) C ->
-  is_integer ($posInt A) -> $less_integer C ($posInt A).
+  extensibella-$-stdLib-$-is_integer ($posInt A) -> $less_integer C ($posInt A).
 induction on 1. intros Plus IsA. Plus: case Plus.
   %Subgoal 1
    search.
@@ -110,7 +110,7 @@ induction on 1. intros Plus IsA. Plus: case Plus.
 
 Theorem $less_integer_sum_neg_pos : forall A B C,
   $plus_integer ($negSuccInt A) ($posInt ($succ B)) C ->
-  is_integer ($negSuccInt A) -> $less_integer ($negSuccInt A) C.
+  extensibella-$-stdLib-$-is_integer ($negSuccInt A) -> $less_integer ($negSuccInt A) C.
 induction on 1. intros Plus IsA. Plus: case Plus.
   %Subgoal 1
    search.
@@ -125,7 +125,7 @@ induction on 1. intros Plus IsA. Plus: case Plus.
 
 Theorem $less_integer_sum_pos_pos : forall A B C,
   $plus_integer ($posInt ($succ A)) ($posInt B) C ->
-  is_integer ($posInt A) -> $less_integer ($posInt A) C.
+  extensibella-$-stdLib-$-is_integer ($posInt A) -> $less_integer ($posInt A) C.
 induction on 1. intros Plus IsA. Plus: case Plus. P': case Plus (keep).
   %Subgoal 1
    search.
@@ -134,7 +134,7 @@ induction on 1. intros Plus IsA. Plus: case Plus. P': case Plus (keep).
 
 Theorem $less_integer_sum_neg_neg : forall A B C,
   $plus_integer ($negSuccInt A) ($negSuccInt B) C ->
-  is_integer ($negSuccInt A) -> $less_integer C ($negSuccInt A).
+  extensibella-$-stdLib-$-is_integer ($negSuccInt A) -> $less_integer C ($negSuccInt A).
 induction on 1. intros Plus IsA. Plus: case Plus.
   %Subgoal 1
    search.
@@ -294,7 +294,7 @@ induction on 1. intros L. L: case L.
 
 Theorem extensibella-$-stdLib-$-less_integer_step_lesseq :
   forall A B C,
-    is_integer A -> is_integer B ->
+    extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B ->
     $less_integer B A -> $plus_integer ($posInt ($succ $zero)) B C ->
     $lesseq_integer C A.
 induction on 3. intros IsA IsB L P. L: case L.
@@ -318,7 +318,7 @@ induction on 3. intros IsA IsB L P. L: case L.
       apply IH to _ _ L _. search.
 
 Theorem extensibella-$-stdLib-$-is_integer_lesseq : forall A,
-  is_integer A -> $lesseq_integer A A.
+  extensibella-$-stdLib-$-is_integer A -> $lesseq_integer A A.
  induction on 1. intros IsA. Is: case IsA.
   %Subgoal 1
    search.
@@ -411,7 +411,7 @@ induction on 1. intros LAB LBC. LAB: case LAB.
 
 Theorem extensibella-$-stdLib-$-less_sums : forall N1 N2 N3 Sum1 Sum2,
   $plus_integer N1 N2 Sum1 -> $plus_integer N1 N3 Sum2 ->
-  is_integer N1 -> $less_integer N2 N3 ->
+  extensibella-$-stdLib-$-is_integer N1 -> $less_integer N2 N3 ->
   $less_integer Sum1 Sum2.
 induction on 1. intros PlusA PlusB IsN1 L. PlusA: case PlusA.
   %Subgoal 1
@@ -529,7 +529,7 @@ apply $lesseq_integer_posInt to L2. case L1 (keep).
 
 Theorem extensibella-$-stdLib-$-less_integer__subtract_positive :
   forall N1 N2 Base Res,
-    is_integer N1 -> is_integer N2 ->
+    extensibella-$-stdLib-$-is_integer N1 -> extensibella-$-stdLib-$-is_integer N2 ->
     $less_integer N1 Base ->
     $lesseq_integer ($posInt $zero) N2 ->
     $minus_integer N1 N2 Res -> $less_integer Res Base.
@@ -621,7 +621,7 @@ intros LDiff Minus. Minus: case Minus.
 
 
 Theorem $minus_larger_negs : forall A N2 N3 Diff Diff',
-  is_integer A ->
+  extensibella-$-stdLib-$-is_integer A ->
   $less_integer ($posInt ($succ N2)) ($posInt ($succ N3)) ->
   $plus_integer A ($negSuccInt N2) Diff ->
   $plus_integer A ($negSuccInt N3) Diff' -> $less_integer Diff' Diff.
@@ -647,7 +647,7 @@ induction on 3. intros IsA L P P'. P: case P.
 
 
 Theorem $minus_larger_pos : forall A N2 N3 Diff Diff',
-  is_integer A ->
+  extensibella-$-stdLib-$-is_integer A ->
   $less_integer ($negSuccInt N2) ($negSuccInt N3) ->
   $plus_integer A ($posInt N2) Diff ->
   $plus_integer A ($posInt N3) Diff' -> $less_integer Diff' Diff.
@@ -682,7 +682,7 @@ induction on 3. intros IsA L P P'. P: case P.
 
 Theorem extensibella-$-stdLib-$-minus_larger :
   forall A B Diff B' Diff',
-    is_integer A ->
+    extensibella-$-stdLib-$-is_integer A ->
     $minus_integer A B Diff -> $minus_integer A B' Diff' ->
     $less_integer B B' -> $less_integer Diff' Diff.
 intros IsA Minus Minus' L. Minus: case Minus.
@@ -793,7 +793,7 @@ intros M L. M: case M.
 
 
 Theorem extensibella-$-stdLib-$-less_lesseq_plus_one : forall A B Sum,
-  is_integer A -> is_integer B -> $less_integer A B ->
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> $less_integer A B ->
   $plus_integer A ($posInt ($succ $zero)) Sum ->
   $lesseq_integer Sum B.
 induction on 3. intros IsA IsB L P. L: case L.
@@ -887,7 +887,7 @@ apply extensibella-$-stdLib-$-less_integer_not_eq to L.
 
 Theorem extensibella-$-stdLib-$-greater_plus_positive :
   forall N1 N2 Sum,
-    is_integer N2 -> is_integer N1 -> $plus_integer N1 N2 Sum ->
+    extensibella-$-stdLib-$-is_integer N2 -> extensibella-$-stdLib-$-is_integer N1 -> $plus_integer N1 N2 Sum ->
     $greater_integer N2 ($posInt $zero) ->
     $greater_integer Sum N1.
 induction on 3. intros IsN2 IsN1 P G. P: case P.
@@ -920,7 +920,7 @@ induction on 3. intros IsN2 IsN1 P G. P: case P.
 
 Theorem extensibella-$-stdLib-$-lesseq_integer_or_greater :
   forall A B,
-    is_integer A -> is_integer B ->
+    extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B ->
     $lesseq_integer A B \/ $greater_integer A B.
 induction on 1. intros IsA IsB. IsA: case IsA.
   %A = 0
@@ -974,7 +974,7 @@ induction on 1. intros IsA IsB. IsA: case IsA.
 
 
 Theorem extensibella-$-stdLib-$-integer_compare_total : forall A B,
-  is_integer A -> is_integer B ->
+  extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B ->
   $lesseq_integer A B \/ $greater_integer A B.
 induction on 1. intros IsA IsB. IsA: case IsA.
   %1:  A = 0
@@ -1042,7 +1042,7 @@ apply extensibella-$-stdLib-$-less_integer_lesseq to L. search.
 
 Theorem extensibella-$-stdLib-$-greater_integer_step_greatereq :
   forall A B C,
-    is_integer A -> is_integer B -> $greater_integer A B ->
+    extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B -> $greater_integer A B ->
     $plus_integer ($posInt ($succ $zero)) B C ->
     $greatereq_integer A C.
 intros IsA IsB G P. L: case G.
@@ -1050,7 +1050,7 @@ apply extensibella-$-stdLib-$-less_integer_step_lesseq to _ _ L P.
 search.
 
 Theorem extensibella-$-stdLib-$-is_integer_greatereq : forall A,
-  is_integer A -> $greatereq_integer A A.
+  extensibella-$-stdLib-$-is_integer A -> $greatereq_integer A A.
 intros Is. apply extensibella-$-stdLib-$-is_integer_lesseq to Is.
 search.
 
@@ -1123,8 +1123,8 @@ L: case Or.
 
 
 Theorem $lesseq_integer_is_posInt : forall X High,
-  is_integer High -> $lesseq_integer ($posInt X) High ->
-  is_integer ($posInt X).
+  extensibella-$-stdLib-$-is_integer High -> $lesseq_integer ($posInt X) High ->
+  extensibella-$-stdLib-$-is_integer ($posInt X).
 induction on 2. intros IsHigh LEq. LEq: case LEq.
   %1:  0 <= 0
    search.
@@ -1135,8 +1135,8 @@ induction on 2. intros IsHigh LEq. LEq: case LEq.
 
 
 Theorem $lesseq_integer_is_negSuccInt : forall Low X,
-  is_integer Low -> $lesseq_integer Low ($negSuccInt X) ->
-  is_integer ($negSuccInt X).
+  extensibella-$-stdLib-$-is_integer Low -> $lesseq_integer Low ($negSuccInt X) ->
+  extensibella-$-stdLib-$-is_integer ($negSuccInt X).
 induction on 2. intros IsLow LEq. LEq: case LEq.
   %1:  -1 <= -1
    search.
@@ -1148,8 +1148,8 @@ induction on 2. intros IsLow LEq. LEq: case LEq.
 
 Theorem extensibella-$-stdLib-$-between_integers_is_integer :
   forall Low High X,
-    is_integer Low -> is_integer High -> $lesseq_integer Low X ->
-    $lesseq_integer X High -> is_integer X.
+    extensibella-$-stdLib-$-is_integer Low -> extensibella-$-stdLib-$-is_integer High -> $lesseq_integer Low X ->
+    $lesseq_integer X High -> extensibella-$-stdLib-$-is_integer X.
 intros IsLow IsHigh LowX XHigh. LowX: case LowX (keep).
   %1:  0 <= 0
    search.
@@ -1169,7 +1169,7 @@ intros IsLow IsHigh LowX XHigh. LowX: case LowX (keep).
 
 Theorem extensibella-$-stdLib-$-is_integer_related :
   forall A B,
-    is_integer A -> is_integer B ->
+    extensibella-$-stdLib-$-is_integer A -> extensibella-$-stdLib-$-is_integer B ->
     A = B \/ $less_integer A B \/ $greater_integer A B.
 induction on 1. intros IsA IsB. IsA: case IsA.
   %1: A = 0

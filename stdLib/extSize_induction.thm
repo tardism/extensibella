@@ -6,21 +6,21 @@ Import "integers".
 Import "integer_addition".
 Import "integer_comparison".
 
-Define pos_int : $lib__integer -> prop by
-pos_int ($posInt $zero);
-pos_int ($posInt ($succ N)) :=
-   pos_int ($posInt N).
+Define extensibella-$-stdLib-$-pos_int : $lib__integer -> prop by
+extensibella-$-stdLib-$-pos_int ($posInt $zero);
+extensibella-$-stdLib-$-pos_int ($posInt ($succ N)) :=
+   extensibella-$-stdLib-$-pos_int ($posInt N).
 
 
-Define acc : $lib__integer -> prop by
-acc N :=
+Define extensibella-$-stdLib-$-acc : $lib__integer -> prop by
+extensibella-$-stdLib-$-acc N :=
   forall M, $lesseq_integer ($posInt $zero) M ->
             $less_integer M N ->
-            acc M.
+            extensibella-$-stdLib-$-acc M.
 
 
 Theorem $less_integer_drop_succ : forall A B,
-  is_integer ($posInt B) ->
+  extensibella-$-stdLib-$-is_integer ($posInt B) ->
   $less_integer A ($posInt ($succ B)) ->
   $less_integer A ($posInt B) \/ A = ($posInt B).
 induction on 2. intros IsB L. L: case L.
@@ -38,7 +38,8 @@ induction on 2. intros IsB L. L: case L.
 
 %every int > 0 is accessible
 Theorem extensibella-$-stdLib-$-all_acc : forall N,
-  is_integer N -> $lesseq_integer ($posInt $zero) N -> acc N.
+  extensibella-$-stdLib-$-is_integer N ->
+  $lesseq_integer ($posInt $zero) N -> extensibella-$-stdLib-$-acc N.
 induction on 1. intros IsN LEq. IsN: case IsN.
   %1:  N = 0
    unfold. intros LEqM LM. case LM. case LEqM.
@@ -88,7 +89,7 @@ induction on 1. intros Plus PosA PosB. Plus: case Plus.
 
 
 Theorem extensibella-$-stdLib-$-lt_right : forall A B C,
-  $plus_integer A B C -> is_integer B ->
+  $plus_integer A B C -> extensibella-$-stdLib-$-is_integer B ->
   $lesseq_integer ($posInt $zero) A ->
   $lesseq_integer ($posInt $zero) B ->
   $less_integer B C \/ B = C.
@@ -122,7 +123,7 @@ induction on 1. intros Plus IsB PosA PosB. Plus: case Plus.
 
 
 Theorem extensibella-$-stdLib-$-lte_left : forall A B C,
-  $plus_integer A B C -> is_integer A ->
+  $plus_integer A B C -> extensibella-$-stdLib-$-is_integer A ->
   $lesseq_integer ($posInt $zero) A ->
   $lesseq_integer ($posInt $zero) B ->
   $lesseq_integer A C.
@@ -133,7 +134,7 @@ Or: apply extensibella-$-stdLib-$-lt_left to P LA LB. case Or.
 
 
 Theorem extensibella-$-stdLib-$-lte_right : forall A B C,
-  $plus_integer A B C -> is_integer B ->
+  $plus_integer A B C -> extensibella-$-stdLib-$-is_integer B ->
   $lesseq_integer ($posInt $zero) A ->
   $lesseq_integer ($posInt $zero) B ->
   $lesseq_integer B C.
@@ -155,7 +156,8 @@ search.
 
 
 Theorem extensibella-$-stdLib-$-lt_plus_one : forall X Sum,
-  $plus_integer ($posInt ($succ $zero)) X Sum -> is_integer X ->
+  $plus_integer ($posInt ($succ $zero)) X Sum ->
+  extensibella-$-stdLib-$-is_integer X ->
   $less_integer X Sum.
 intros Plus IsX. Plus: case Plus.
   %1:  1 + N2 = N3
