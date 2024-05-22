@@ -520,22 +520,6 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
   --check for the expected obligation
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
-      | [] -> [errorMsg("No obligations left to prove")]
-      | projectionConstraintTheorem(q, x, b, _)::_ ->
-        [errorMsg("Expected projection constraint obligation " ++
-            justShow(q.pp))]
-      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
-        [errorMsg("Expected theorem obligations " ++
-            implode(", ", map(justShow, map((.pp), map(fst, thms)))) ++
-            if null(alsos) then ""
-            else " also " ++
-                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
-      | extSizeElement(rels, _)::_ ->
-        [errorMsg("Expected Ext Size addition for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, rels)))))]
-      | projRelElement(relInfo, _)::_ ->
-        [errorMsg("Expected Proj_Rel addition for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | extIndElement(relInfo, _)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -558,14 +542,7 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
                    " " ++ implode(", ",
                              map(justShow, map((.pp), expectedNames))))]
         end
-      --split these out explicitly for better errors/catching if a
-      --new constructor is added
-      | nonextensibleTheorem(_, _, _)::_ ->
-        error("Should be impossible (proveExtInd.toAbellaMsgs " ++
-              "nonextensibleTheorem)")
-      | splitElement(_, _)::_ ->
-        error("Should be impossible (proveExtInd.toAbellaMsgs " ++
-              "splitElement)")
+      | l -> [wrongObligation(l)]
       end;
   --Check each relation occurs at most once
   top.toAbellaMsgs <- --([duplicated], [seen])
@@ -876,22 +853,6 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
-      | [] -> [errorMsg("No obligations left to prove")]
-      | projectionConstraintTheorem(q, x, b, _)::_ ->
-        [errorMsg("Expected projection constraint obligation" ++
-            justShow(q.pp))]
-      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
-        [errorMsg("Expected theorem obligations " ++
-            implode(", ", map(justShow, map((.pp), map(fst, thms)))) ++
-            if null(alsos) then ""
-            else " also " ++
-                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
-      | extIndElement(relInfo, _)::_ ->
-        [errorMsg("Expected Ext Ind for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | projRelElement(relInfo, _)::_ ->
-        [errorMsg("Expected Proj_Rel addition for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | extSizeElement(relInfo, _)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -914,14 +875,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                    " " ++ implode(", ",
                              map(justShow, map((.pp), expectedNames))))]
         end
-      --split these out explicitly for better errors/catching if a
-      --new constructor is added
-      | nonextensibleTheorem(_, _, _)::_ ->
-        error("Should be impossible (addExtSize.toAbellaMsgs " ++
-              "nonextensibleTheorem)")
-      | splitElement(_, _)::_ ->
-        error("Should be impossible (addExtSize.toAbellaMsgs " ++
-              "splitElement)")
+      | l -> [wrongObligation(l)]
       end;
   top.toAbellaMsgs <-
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
@@ -1116,22 +1070,6 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
-      | [] -> [errorMsg("No obligations left to prove")]
-      | projectionConstraintTheorem(q, x, b, _)::_ ->
-        [errorMsg("Expected projection constraint obligation" ++
-            justShow(q.pp))]
-      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
-        [errorMsg("Expected theorem obligations " ++
-            implode(", ", map(justShow, map((.pp), map(fst, thms)))) ++
-            if null(alsos) then ""
-            else " also " ++
-                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
-      | extIndElement(relInfo, _)::_ ->
-        [errorMsg("Expected Ext Ind for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | extSizeElement(relInfo, _)::_ ->
-        [errorMsg("Expected Ext Size for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | projRelElement(relInfo, _)::_ ->
         let expectedNames::[QName] = map(fst, relInfo)
         in
@@ -1154,14 +1092,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                    " " ++ implode(", ",
                              map(justShow, map((.pp), expectedNames))))]
         end
-      --split these out explicitly for better errors/catching if a
-      --new constructor is added
-      | nonextensibleTheorem(_, _, _)::_ ->
-        error("Should be impossible (addProjRel.toAbellaMsgs " ++
-              "nonextensibleTheorem)")
-      | splitElement(_, _)::_ ->
-        error("Should be impossible (addProjRel.toAbellaMsgs " ++
-              "splitElement)")
+      | l -> [wrongObligation(l)]
       end;
   top.toAbellaMsgs <-
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->

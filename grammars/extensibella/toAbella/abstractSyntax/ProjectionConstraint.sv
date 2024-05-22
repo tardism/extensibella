@@ -122,37 +122,12 @@ top::TopCommand ::= name::QName
   --check for the expected theorems being proven
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
-      | [] -> [errorMsg("No obligations left to prove")]
-      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
-        [errorMsg("Expected inductive obligation" ++
-            (if length(thms) == 1 then "" else "s") ++
-            " " ++ implode(", ",
-                      map(justShow, map((.pp), map(fst, thms)))) ++
-            if null(alsos) then ""
-            else " also " ++
-                 implode(", ", map(justShow, map((.pp), map(fst, alsos)))))]
       | projectionConstraintTheorem(q, x, b, _)::_ ->
         if name == q
         then []
         else [errorMsg("Expected projection constraint obligation" ++
                  " " ++ justShow(q.pp))]
-      | extIndElement(relInfo, _)::_ ->
-        [errorMsg("Expected Ext_Ind obligation for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | extSizeElement(relInfo, _)::_ ->
-        [errorMsg("Expected Ext_Size obligation for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | projRelElement(relInfo, _)::_ ->
-        [errorMsg("Expected Proj_Rel obligation for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      --split these out explicitly for better errors/catching if a
-      --new constructor is added
-      | nonextensibleTheorem(_, _, _)::_ ->
-        error("Should be impossible (proveConstraint.toAbellaMsgs " ++
-              "nonextensibleTheorem)")
-      | splitElement(_, _)::_ ->
-        error("Should be impossible (proveConstraint.toAbellaMsgs " ++
-              "splitElement)")
+      | l -> [wrongObligation(l)]
       end;
 
   local obligation::(QName, Bindings, ExtBody) =

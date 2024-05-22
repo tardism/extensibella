@@ -226,19 +226,6 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
   --check for the expected theorems being proven
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
-      | [] -> [errorMsg("No obligations left to prove")]
-      | projectionConstraintTheorem(q, x, b, _)::_ ->
-        [errorMsg("Expected projection constraint obligation " ++
-            justShow(q.pp))]
-      | extIndElement(relInfo, _)::_ ->
-        [errorMsg("Expected Ext_Ind obligation for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | extSizeElement(relInfo, _)::_ ->
-        [errorMsg("Expected Ext_Size addition for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
-      | projRelElement(relInfo, _)::_ ->
-        [errorMsg("Expected Proj_Rel addition for " ++
-            implode(", ", map(justShow, map((.pp), map(fst, relInfo)))))]
       | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
         let expectedNames::[QName] = map(fst, thms)
         in
@@ -273,14 +260,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
                         implode(", ", map(justShow,
                                           map((.pp), map(fst, alsos)))))]
         end end
-      --split these out explicitly for better errors/catching if a
-      --new constructor is added
-      | nonextensibleTheorem(_, _, _)::_ ->
-        error("Should be impossible (proveObligations.toAbellaMsgs " ++
-              "nonextensibleTheorem)")
-      | splitElement(_, _)::_ ->
-        error("Should be impossible (proveObligations.toAbellaMsgs " ++
-              "splitElement)")
+      | l -> [wrongObligation(l)]
       end;
 
   --find extInd if needed for the relations

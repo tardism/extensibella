@@ -154,6 +154,48 @@ ExtIndBody ::=
 
 
 
+{-
+  The idea is to make the error messages for missing obligations be
+  consistent.  Each Prove version of a command checks for exactly the
+  type of obligation it expects, then delegates to this in the case
+  where that type of obligation is not at the front to get the
+  specific error message.
+-}
+function wrongObligation
+Message ::= obligations::[ThmElement]
+{
+  return
+      case obligations of
+      | [] -> errorMsg("No obligations left to prove")
+      | projectionConstraintTheorem(q, x, b, _)::_ ->
+        errorMsg("Expected projection constraint obligation " ++
+           justShow(q.pp))
+      | extIndElement(relInfo, _)::_ ->
+        errorMsg("Expected Ext_Ind obligation for " ++
+           implode(", ",
+              map(justShow, map((.pp), map(fst, relInfo)))))
+      | extSizeElement(relInfo, _)::_ ->
+        errorMsg("Expected Ext_Size addition for " ++
+           implode(", ",
+              map(justShow, map((.pp), map(fst, relInfo)))))
+      | projRelElement(relInfo, _)::_ ->
+        errorMsg("Expected Proj_Rel addition for " ++
+           implode(", ",
+              map(justShow, map((.pp), map(fst, relInfo)))))
+      | extensibleMutualTheoremGroup(thms, alsos, _)::_ ->
+        errorMsg("Expected theorem obligations" ++
+           implode(", ", map(justShow, map((.pp), map(fst, thms)))))
+      --split these out explicitly for better errors/catching if a new
+      --constructor is added
+      | nonextensibleTheorem(_, _, _)::_ ->
+        error("Nonextensible ThmElement in obligations not cleared")
+      | splitElement(_, _)::_ ->
+        error("Nonextensible ThmElement in obligations not cleared")
+      end;
+}
+
+
+
 
 
 nonterminal DefElement with pp, encode;
