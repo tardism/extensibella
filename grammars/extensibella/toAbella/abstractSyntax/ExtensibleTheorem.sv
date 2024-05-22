@@ -644,10 +644,10 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   top.toAbella =
       case rest of
       | endExtThms() ->
-        bindingMetaterm(forallBinder(), bindings, body.toAbella)
+        bindingMetaterm(forallBinder(), bindings.toAbella, body.toAbella)
       | _ ->
         andMetaterm(
-           bindingMetaterm(forallBinder(), bindings, body.toAbella),
+           bindingMetaterm(forallBinder(), bindings.toAbella, body.toAbella),
            rest.toAbella)
       end;
 

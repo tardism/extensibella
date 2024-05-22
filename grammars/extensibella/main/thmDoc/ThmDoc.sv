@@ -444,9 +444,9 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::= body::ExtIndBody
+top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
 {
-  top.thmStrings = [];
+  top.thmStrings = thms.thmStrings ++ alsos.thmStrings;
   top.defStrings = [];
 
   top.newThms = [];

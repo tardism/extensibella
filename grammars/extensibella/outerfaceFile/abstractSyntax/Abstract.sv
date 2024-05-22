@@ -403,7 +403,7 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::= e::ExtIndBody
+top::TopCommand ::= e::ExtIndBody thms::ExtThms alsos::ExtThms
 {
   top.defElements = [];
   top.thmElements = [extIndElement(e.extIndInfo, top.downTag)];

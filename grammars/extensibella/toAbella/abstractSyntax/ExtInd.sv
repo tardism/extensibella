@@ -2,41 +2,83 @@ grammar extensibella:toAbella:abstractSyntax;
 
 
 abstract production extIndDeclaration
-top::TopCommand ::= body::ExtIndBody
+top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
 {
   top.pp = text("Ext_Ind ") ++ ppImplode(text(";") ++ realLine(),
                                   map(\ d::Document ->
                                         docGroup(nest(9, d)),
                                       body.pps)) ++
+           (if thms.len > 0
+            then text(" and ") ++ ppImplode(text(", "), thms.pps)
+            else text("")) ++
+           (if alsos.len > 0
+            then text(" also ") ++ ppImplode(text(", "), alsos.pps)
+            else text("")) ++
            text(".") ++ realLine();
-  top.abella_pp = "Ext_Ind " ++ body.abella_pp ++ ".\n";
+  top.abella_pp = "Ext_Ind " ++ body.abella_pp ++
+      (if thms.len > 0 then " and " ++ thms.abella_pp else "") ++
+      (if alsos.len > 0 then " also " ++ alsos.abella_pp else "") ++
+      ".\n";
 
-  top.provingTheorems = [];
+  top.provingTheorems = thms.provingTheorems ++ alsos.provingTheorems;
   top.provingExtInds = body.extIndInfo;
 
   body.startingGoalNum =
-      if body.len > 1
+      if body.len + thms.len + alsos.len > 1
       then [1]
       else []; --only one, so subgoals are 1, 2, ...
 
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
+  local fullThm::Metaterm =
+      case thms.len, alsos.len of
+      | 0, 0 -> body.toAbella
+      | _, 0 -> andMetaterm(body.toAbella, alsos.toAbella)
+      | 0, _ -> andMetaterm(body.toAbella, thms.toAbella)
+      | _, _ -> andMetaterm(body.toAbella,
+                andMetaterm(thms.toAbella, alsos.toAbella))
+      end;
+  local bodyIndNums::[[Integer]] =
+      if useExtSize
+      then repeat([2, 1], body.len) --acc and rel
+      else repeat([1], body.len);   --just rel
   top.toAbella =
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
-                        body.toAbella))] ++
-       --declare inductions:  acc (if using ExtSize) and rel
-      (if useExtSize
-       then [anyProofCommand(inductionTactic(noHint(), repeat(2, body.len)))]
-       else []) ++
-      [anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
+                        fullThm))] ++
+       --declare inductions
+      map(\ l::[Integer] ->
+            anyProofCommand(inductionTactic(noHint(), l)),
+          transpose(bodyIndNums ++ thms.inductionNums ++ alsos.inductionNums)) ++
+      --rename IH's
+      map(\ p::(String, String, String) ->
+            anyProofCommand(renameTactic(p.1, p.2)),
+          thms.renamedIHs ++ alsos.renamedIHs) ++
        --split
-      (if body.len > 1 then [anyProofCommand(splitTactic())]
-                       else []) ++
+      (if body.len + thms.len + alsos.len > 1
+       then [anyProofCommand(splitTactic())]
+       else []) ++
        --initial set of during commands, which is at least intros
       map(anyProofCommand, head(body.duringCommands).2);
 
-  body.downDuringCommands = [];
-  top.duringCommands = tail(body.duringCommands);
+  body.downDuringCommands = thms.duringCommands;
+  top.duringCommands = tail(body.duringCommands) ++
+      thms.duringCommands ++ alsos.duringCommands;
+
+  thms.useExtInd = [];
+  thms.startingGoalNum = [body.len + 1];
+  thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  thms.expectedIHNum = body.len;
+  thms.numMutualThms = body.len + thms.len + alsos.len;
+  thms.shouldBeExtensible = true;
+  thms.followingCommands = alsos.duringCommands;
+  --
+  alsos.useExtInd = [];
+  alsos.startingGoalNum = [body.len + 1 + thms.len];
+  alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  alsos.expectedIHNum = body.len + thms.len;
+  alsos.numMutualThms = body.len + thms.len + alsos.len;
+  alsos.shouldBeExtensible = false;
+  alsos.followingCommands = [];
 
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                        RelationEnvItem)] =
@@ -117,6 +159,60 @@ top::TopCommand ::= body::ExtIndBody
       else [warningMsg("No definition of Ext Size for all " ++
                "relations in Ext Ind; defaulting to proving " ++
                "Ext Ind without Ext Size")];
+
+  {-
+    Cannot use Ext_Ind for induction for properties mutual with
+    proving Ext_Ind because we need to use Ext_Ind for *all* mutual
+    properties, and we cannot do that when proving it is valid.  Thus
+    mutual properties need to have new, non-imported key relations.
+  -}
+  --need extInd for all if any relations are imported
+  local importedKeyRels::[QName] =
+      filter(\ r::QName -> !sameModule(top.currentModule, r),
+             thms.keyRels);
+  top.toAbellaMsgs <-
+      if null(importedKeyRels)
+      then []
+      else [errorMsg("Theorems declared mutually with Ext_Ind must " ++
+               "use new key relations; found imported key relations " ++
+               implode(", ",
+                  map(justShow, map((.pp), nub(importedKeyRels)))))];
+
+  --check for naming IH's the same thing
+  top.toAbellaMsgs <-
+      foldl(\ rest::([(String, String)], [Message])
+              p::(String, String, String) ->
+              case lookup(p.2, rest.1) of
+              | just(thm) ->
+                (rest.1, errorMsg("IH name " ++ p.2 ++
+                            " already used by " ++ thm)::rest.2)
+              | nothing() -> ((p.2, p.3)::rest.1, rest.2)
+              end, ([], []), thms.renamedIHs ++ alsos.renamedIHs).2;
+
+  --check for naming thms the same thing
+  top.toAbellaMsgs <-
+      map(\ q::QName ->
+            errorMsg("Theorem " ++ justShow(q.pp) ++ " is declared " ++
+                     "multiple times"),
+                               --(seen,    multiple)
+          foldr(\ q::QName rest::([QName], [QName]) ->
+                  if !contains(q, rest.1)
+                  then (q::rest.1, rest.2)
+                  else if contains(q, rest.2)
+                  then (rest.1, rest.2)
+                  else (rest.1, q::rest.2),
+                ([], []), thms.thmNames ++ alsos.thmNames).2);
+
+  --check all use the same number of inductions
+  top.toAbellaMsgs <-
+      case nub(thms.numsInductions ++ alsos.numsInductions ++
+               if useExtSize then [2] else [1]) of
+      | [_] -> [] --all are the same
+      | _ -> --at least two different numbers of inductions
+        [errorMsg("Not all mutual theorems declare the same number" ++
+            " of inductions; expected " ++ if useExtSize
+                                           then "2" else "1")]
+      end;
 }
 
 

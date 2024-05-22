@@ -333,7 +333,7 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::=  body::ExtIndBody
+top::TopCommand ::=  body::ExtIndBody thms::ExtThms also::ExtThms
 {
   top.tys = [];
   top.rels = [];

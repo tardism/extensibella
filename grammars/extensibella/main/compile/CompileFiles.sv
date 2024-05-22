@@ -393,9 +393,10 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::= body::ExtIndBody
+top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
 {
-  top.compiled = just(extIndDeclaration(body.full));
+  top.compiled =
+      just(extIndDeclaration(body.full, thms.full, alsos.full));
   top.maybeTag = nothing();
 }
 
@@ -419,7 +420,8 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
       | [extIndElement(relInfo, _)] ->
         just(extIndDeclaration(
                 branchExtIndBody(extIndInfo_to_extIndBody(relInfo),
-                                 newRels.full)))
+                                 newRels.full),
+                endExtThms(), endExtThms()))
       | _ ->
         error("Could not identify Ext_Ind when compiling " ++
               "Prove_Ext_Ind; file must be checkable before " ++

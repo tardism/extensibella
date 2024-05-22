@@ -2,7 +2,18 @@ Module compositionTest:host.
 
 Proj_Rel is_expr E, is_stmt S.
 
-Ext_Ind forall E, is_expr E; forall S, is_stmt S.
+Ext_Ind forall E, is_expr E; forall S, is_stmt S
+and %just to have something here
+  is_expr_is : forall E,
+    IsE : is_expr E ->
+    is_expr E
+  on IsE as IH_Is
+also
+  append_unique_here : forall L1 L2 (A B : list expr),
+    AppA : L1 ++ L2 = A ->
+    AppB : L1 ++ L2 = B ->
+    A = B
+  on AppA as IH_App.
 %is_expr
  %num
   search.
@@ -34,6 +45,10 @@ Ext_Ind forall E, is_expr E; forall S, is_stmt S.
   apply IH to R1. apply IH1 to R2. apply IH1 to R3. search.
  %while
   apply IH to R1. apply IH1 to R2. search.
+%is_expr_is
+ search. search. search. search. search. search. search. search.
+%append_unique_here
+ apply append_unique to AppA AppB. search.
 
 
 Ext_Size evalExpr G E V G', evalStmt G S G'.
