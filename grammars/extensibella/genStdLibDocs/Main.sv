@@ -570,7 +570,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 
 
 aspect production proveObligations
-top::TopCommand ::= names::[QName]
+top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
 {
   top.docString = error("Should not occur");
 }
@@ -598,7 +598,7 @@ top::TopCommand ::= body::ExtIndBody
 
 
 aspect production proveExtInd
-top::TopCommand ::= rels::[QName]
+top::TopCommand ::= rels::[QName] newRels::ExtIndBody
 {
   top.docString = error("Should not occur");
 }
@@ -611,7 +611,21 @@ top::TopCommand ::= rels::[(QName, [String])]
 }
 
 
+aspect production projRelDeclaration
+top::TopCommand ::= rels::[(QName, [String])]
+{
+  top.docString = error("Should not occur");
+}
+
+
 aspect production addExtSize
+top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
+{
+  top.docString = error("Should not occur");
+}
+
+
+aspect production addProjRel
 top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 {
   top.docString = error("Should not occur");
