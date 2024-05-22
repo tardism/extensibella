@@ -873,7 +873,7 @@ top::ThmElement ::=
 
 
   local displayNames::String =
-      implode(", ", map((.abella_pp), map(fst, rels)));
+      implode(", ", map(justShow, map((.pp), map(fst, rels))));
   top.composedCmds =
       "/*Start Ext_Ind for " ++ displayNames ++ "*/\n" ++
       fullToProjRel ++ "\n" ++
