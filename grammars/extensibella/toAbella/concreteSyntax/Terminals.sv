@@ -38,6 +38,7 @@ terminal ProjRel_t       'Proj_Rel'                 lexer classes {COMMAND};
 terminal AddProjRel_t    'Add_Proj_Rel'             lexer classes {COMMAND};
 terminal Also_t          'also'                     lexer classes {COMMAND};
 terminal TextAnd_t       'and'                      lexer classes {COMMAND};
+terminal AndThms_t       'and_thms'                 lexer classes {COMMAND};
 
 
 terminal Abbrev_t       'abbrev'       lexer classes {COMMAND};

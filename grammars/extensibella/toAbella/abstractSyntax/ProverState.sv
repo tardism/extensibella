@@ -182,7 +182,7 @@ function removeFinishedObligation
         | [(q2, _)] when q == q2 -> rest
         | _ -> obligations
         end
-      | extIndElement(rels, _)::rest ->
+      | extIndElement(rels, thms, alsos, _)::rest ->
         --everything imported here is in the things we just proved
         if all(map(\ r::QName ->
                      contains(extIndThmName(r), map(fst, provenThms)),

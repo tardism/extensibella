@@ -6,7 +6,7 @@
   '(
     ;;The actual top commands
     ;; Theorem | Define | Import | Kind | Split | Type | Extensible_Theorem | Module | Prove | Projection_Constraint | Ext_Ind | Ext_Size | Proj_Rel
-    ("\\<\\(\\(Theorem\\)\\|\\(Define\\)\\|\\(Import\\)\\|\\(Kind\\)\\|\\(Split\\)\\|\\(Type\\)\\|\\(Extensible_Theorem\\)\\|\\(Module\\)\\|\\(Prove\\)\\|\\(Projection_Constraint\\)\\|\\(Prove_Constraint\\)\\|\\(Ext_Ind\\)\\|\\(Prove_Ext_Ind\\)\\|\\(Ext_Size\\)\\|\\(Add_Ext_Size\\)\\|\\(Proj_Rel\\)\\|\\(Add_Proj_Rel\\)\\)\\|\\(and\\)\\>"
+    ("\\<\\(\\(Theorem\\)\\|\\(Define\\)\\|\\(Import\\)\\|\\(Kind\\)\\|\\(Split\\)\\|\\(Type\\)\\|\\(Extensible_Theorem\\)\\|\\(Module\\)\\|\\(Prove\\)\\|\\(Projection_Constraint\\)\\|\\(Prove_Constraint\\)\\|\\(Ext_Ind\\)\\|\\(Prove_Ext_Ind\\)\\|\\(Ext_Size\\)\\|\\(Add_Ext_Size\\)\\|\\(Proj_Rel\\)\\|\\(Add_Proj_Rel\\)\\|\\(and\\)\\|\\(and_thms\\)\\)\\>"
      . font-lock-keyword-face)
     ;;Auxiliary words to go with them
     ;; as | by

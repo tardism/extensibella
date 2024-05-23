@@ -866,7 +866,11 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
           boundVarTys);
   body.downSubst = emptySubst();
 
-  top.provingTheorems = (fullName, body.thm)::rest.provingTheorems;
+  top.provingTheorems =
+      (fullName, if bindings.len > 0
+                 then bindingMetaterm(forallBinder(),
+                         bindings.toAbella, body.thm)
+                 else body.thm)::rest.provingTheorems;
 
   rest.startingGoalNum =
        init(top.startingGoalNum) ++ [last(top.startingGoalNum) + 1];

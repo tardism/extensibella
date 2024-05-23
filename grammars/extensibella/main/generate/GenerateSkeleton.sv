@@ -125,6 +125,8 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 aspect production extIndElement
 top::ThmElement ::=
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   thms::[(QName, Bindings, ExtBody, InductionOns)]
+   alsos::[(QName, Bindings, ExtBody, InductionOns)]
    tag::(Integer, Integer, String)
 {
   top.inSkeleton = true;
@@ -132,6 +134,11 @@ top::ThmElement ::=
       showDoc(80, text("Prove_Ext_Ind ") ++
          nest(14, ppImplode(text(",") ++ line(),
                      map((.pp), map(fst, rels)))) ++
+         (if length(thms) > 0
+          then line() ++ text("and_thms") ++ line() ++
+               nest(9, ppImplode(text(",")  ++ line(),
+                         map((.pp), map(fst, thms))))
+          else text("")) ++
          text("."));
 }
 

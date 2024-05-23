@@ -32,8 +32,8 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
   local fullThm::Metaterm =
       case thms.len, alsos.len of
       | 0, 0 -> body.toAbella
-      | _, 0 -> andMetaterm(body.toAbella, alsos.toAbella)
-      | 0, _ -> andMetaterm(body.toAbella, thms.toAbella)
+      | _, 0 -> andMetaterm(body.toAbella, thms.toAbella)
+      | 0, _ -> andMetaterm(body.toAbella, alsos.toAbella)
       | _, _ -> andMetaterm(body.toAbella,
                 andMetaterm(thms.toAbella, alsos.toAbella))
       end;
@@ -599,12 +599,19 @@ top::ExtIndPremiseList ::= m::Metaterm rest::ExtIndPremiseList
 
 
 abstract production proveExtInd
-top::TopCommand ::= rels::[QName] newRels::ExtIndBody
+top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
+                    newThms::ExtThms newAlsos::ExtThms
 {
   top.pp = text("Prove_Ext_Ind ") ++ ppImplode(text(",") ++ line(),
                                         map((.pp), rels)) ++
+           (if length(oldThms) > 0
+            then realLine() ++ text("and_thms ") ++
+                 ppImplode(text(",") ++ line(),
+                    map(\ d::Document -> docGroup(nest(8, d)),
+                        map((.pp), oldThms)))
+            else text("")) ++
            (if newRels.len > 0
-            then realLine() ++ text("with") ++
+            then realLine() ++ text("with ") ++
                  ppImplode(text(";") ++ realLine(),
                     map(\ d::Document -> docGroup(nest(9, d)),
                         newRels.pps))
@@ -616,28 +623,55 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
   --check for the expected obligation
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
-      | extIndElement(relInfo, _)::_ ->
-        let expectedNames::[QName] = map(fst, relInfo)
+      | extIndElement(relInfo, importedThms, oldAlsos, _)::_ ->
+        let expectedRelNames::[QName] = map(fst, relInfo)
         in
-          if setEq(rels, expectedNames)
-          then []
-          else if subset(rels, expectedNames)
-          then let missing::[QName] = removeAll(rels, expectedNames)
-               in
-                 [errorMsg("Missing relation" ++
-                     (if length(missing) == 1 then " " else "s ") ++
-                     implode(", ", map(justShow,
-                        map((.pp), removeAll(rels, expectedNames)))))]
-               end
-          else if subset(expectedNames, rels)
-          then [errorMsg("Too many relations; should not have " ++
-                   implode(", ", map(justShow,
-                      map((.pp), removeAll(expectedNames, rels)))))]
-          else [errorMsg("Expected ExtInd obligation" ++
-                   (if length(expectedNames) == 1 then "" else "s") ++
+        let expectedThmNames::[QName] = map(fst, importedThms)
+        in
+          if !subset(rels, expectedRelNames) &&
+             !subset(expectedRelNames, rels)
+          then [errorMsg("Expected ExtInd obligation " ++
                    " " ++ implode(", ",
-                             map(justShow, map((.pp), expectedNames))))]
-        end
+                             map(justShow, map((.pp), expectedRelNames))) ++
+                   if length(importedThms) > 0
+                   then " and_thms " ++
+                        implode(", ",
+                           map(justShow, map((.pp), map(fst, importedThms))))
+                   else "")]
+          else (if setEq(rels, expectedRelNames)
+                then []
+                else if subset(rels, expectedRelNames)
+                then let missing::[QName] = removeAll(rels, expectedRelNames)
+                     in
+                       [errorMsg("Missing relation" ++
+                           (if length(missing) == 1 then " " else "s ") ++
+                           implode(", ", map(justShow,
+                              map((.pp), removeAll(rels, expectedRelNames)))))]
+                     end
+                else --subset(expectedRelNames, rels)
+                     [errorMsg("Too many relations; should not have " ++
+                         implode(", ", map(justShow,
+                            map((.pp), removeAll(expectedRelNames, rels)))))]) ++
+                --thm errors
+                if setEq(oldThms, expectedThmNames)
+                then []
+                else if subset(oldThms, expectedThmNames)
+                then let missing::[QName] = removeAll(rels, expectedThmNames)
+                     in
+                       [errorMsg("Missing imported theorem" ++
+                           (if length(missing) == 1 then " " else "s ") ++
+                           implode(", ", map(justShow,
+                              map((.pp), removeAll(oldThms, expectedThmNames)))))]
+                     end
+                else if subset(expectedThmNames, oldThms)
+                then [errorMsg("Too many imported theorems; should not have " ++
+                         implode(", ", map(justShow,
+                            map((.pp), removeAll(expectedThmNames, oldThms)))))]
+                else [errorMsg("Expected imported theorem" ++
+                         (if length(importedThms) > 1 then "s " else " ") ++
+                         implode(", ",
+                            map(justShow, map((.pp), map(fst, importedThms)))))]
+        end end
       | l -> [wrongObligation(l)]
       end;
   --Check each relation occurs at most once
@@ -668,7 +702,7 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
       if !obligationsFound
       then []
       else case head(top.proverState.remainingObligations) of
-           | extIndElement(_, _) ->
+           | extIndElement(_, _, _, _) ->
              case fullRelInfo of
              | (q, _, _, _)::rest ->
                case findProjRelGroup(q, top.proverState) of
@@ -706,15 +740,92 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
                "relations in Ext Ind; defaulting to proving " ++
                "Ext Ind without Ext Size")];
 
+  {-
+    Cannot use Ext_Ind for induction for properties mutual with
+    proving Ext_Ind because we need to use Ext_Ind for *all* mutual
+    properties, and we cannot do that when proving it is valid.  Thus
+    mutual properties need to have new, non-imported key relations.
+  -}
+  --need extInd for all if any relations are imported
+  local importedKeyRels::[QName] =
+      filter(\ r::QName -> !sameModule(top.currentModule, r),
+             newThms.keyRels);
+  top.toAbellaMsgs <-
+      if null(importedKeyRels)
+      then []
+      else [errorMsg("Theorems declared mutually with Ext_Ind must " ++
+               "use new key relations; found imported key relations " ++
+               implode(", ",
+                  map(justShow, map((.pp), nub(importedKeyRels)))))];
+
+  --check for naming IH's the same thing
+  top.toAbellaMsgs <-
+      let fullIHNames::[(String, String)] =
+          map(\ p::(String, String, String) -> (p.1, p.3),
+              if obligationsFound
+              then thms.renamedIHs ++ alsos.renamedIHs
+              else newThms.renamedIHs ++ newAlsos.renamedIHs)
+      in
+        filterMap(\ p::(String, String, String) ->
+                    case lookupAll(p.2, fullIHNames) of
+                    | [_] -> nothing()
+                    | l ->
+                      just(errorMsg("IH name " ++ p.2 ++ " for " ++
+                              p.1 ++ " is also used by " ++
+                              implode(", ",
+                                 filter(neq(p.1, _), l))))
+                    end,
+           newThms.renamedIHs ++ newAlsos.renamedIHs)
+      end;
+
+  --check for naming thms the same thing
+  --only check new ones because imported ones must be unique and
+  --   qualified with a different module name
+  top.toAbellaMsgs <-
+      map(\ q::QName ->
+            errorMsg("Theorem " ++ justShow(q.pp) ++ " is declared " ++
+                     "multiple times"),
+                               --(seen,    multiple)
+          foldr(\ q::QName rest::([QName], [QName]) ->
+                  if !contains(q, rest.1)
+                  then (q::rest.1, rest.2)
+                  else if contains(q, rest.2)
+                  then (rest.1, rest.2)
+                  else (rest.1, q::rest.2),
+                ([], []), newThms.thmNames ++ newAlsos.thmNames).2);
+
+  --check all use the same number of inductions
+  top.toAbellaMsgs <-
+      if !obligationsFound then [] else --guard
+      case nub(thms.numsInductions ++ alsos.numsInductions ++
+               if useExtSize then [2] else [1]) of
+      | [_] -> [] --all are the same
+      | _ -> --at least two different numbers of inductions
+        [errorMsg("Not all mutual theorems declare the same number" ++
+            " of inductions; expected " ++ if useExtSize
+                                           then "2" else "1")]
+      end;
+
   local obligationsFound::Boolean =
       case top.proverState.remainingObligations of
-      | extIndElement(relInfo, _)::_ -> setEq(rels, map(fst, relInfo))
+      | extIndElement(relInfo, _, _, _)::_ ->
+        setEq(rels, map(fst, relInfo))
       | _ -> false
       end;
   local obligations::[(QName, [String], Bindings, ExtIndPremiseList)] =
       case head(top.proverState.remainingObligations) of
-      | extIndElement(r, _) -> r
+      | extIndElement(r, _, _, _) -> r
       | _ -> error("Not possible (proveExtInd.obligations)")
+      end;
+  local importedThms::[(QName, Bindings, ExtBody, InductionOns)] =
+      case head(top.proverState.remainingObligations) of
+      | extIndElement(_, t, _, _) -> t
+      | _ -> error("Not possible (proveExtInd.importedThms)")
+      end;
+  local importedAlsos::[(QName, Bindings, ExtBody, InductionOns)] =
+      case head(top.proverState.remainingObligations) of
+      | extIndElement(_, _, a, _) -> a
+      | _ -> error("Not possible (proveExtInd.importedAlsos)")
       end;
   --This should only be accessed if there are no errors
   top.provingExtInds = obligations ++ newRels.extIndInfo;
@@ -722,9 +833,10 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
             --don't need the actual metaterm, only the name
             (extIndThmName(p.1), trueMetaterm()),
-          obligations ++ newRels.extIndInfo);
+          obligations ++ newRels.extIndInfo) ++
+      thms.provingTheorems ++ alsos.provingTheorems;
 
-  --get the environment entry for the relation as well
+  --get the environment entry for each relation as well
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
                        RelationEnvItem)] =
       zipWith(\ p::(QName, [String], Bindings, ExtIndPremiseList)
@@ -757,14 +869,63 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
   body.relationEnv = top.relationEnv;
   body.currentModule = top.currentModule;
   body.constructorEnv = top.constructorEnv;
-  body.downDuringCommands = [];
+  body.downDuringCommands = thms.duringCommands;
+
+  local thms::ExtThms =
+      foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, rest),
+            newThms, importedThms);
+  local alsos::ExtThms =
+      foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
+              addExtThms(p.1, p.2, p.3, p.4, rest),
+            newAlsos, importedAlsos);
+
+  thms.useExtInd = [];
+  thms.startingGoalNum = [body.len + 1];
+  thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  thms.expectedIHNum = body.len;
+  thms.numMutualThms = body.len + thms.len + alsos.len;
+  thms.shouldBeExtensible = true;
+  thms.followingCommands = alsos.duringCommands;
+  thms.relationEnv = top.relationEnv;
+  thms.constructorEnv = top.constructorEnv;
+  thms.typeEnv = top.typeEnv;
+  thms.currentModule = top.currentModule;
+  --
+  alsos.useExtInd = [];
+  alsos.startingGoalNum = [body.len + 1 + thms.len];
+  alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  alsos.expectedIHNum = body.len + thms.len;
+  alsos.numMutualThms = body.len + thms.len + alsos.len;
+  alsos.shouldBeExtensible = false;
+  alsos.followingCommands = [];
+  alsos.relationEnv = top.relationEnv;
+  alsos.constructorEnv = top.constructorEnv;
+  alsos.typeEnv = top.typeEnv;
+  alsos.currentModule = top.currentModule;
+
+  --decorate newThms and newAlsos only for error checking
+  newThms.useExtInd = [];
+  newThms.specialIHNames =
+      thms.specialIHNames ++ alsos.specialIHNames;
+  newThms.shouldBeExtensible = true;
+  newThms.numMutualThms = 0; --not accurately needed
+  newThms.expectedIHNum = 0; --not accurately needed
+  --
+  newAlsos.useExtInd = [];
+  newAlsos.specialIHNames =
+      thms.specialIHNames ++ alsos.specialIHNames;
+  newAlsos.shouldBeExtensible = false;
+  newAlsos.numMutualThms = 0; --not accurately needed
+  newAlsos.expectedIHNum = 0; --not accurately needed
 
   top.newTheorems = addPLemmas;
   top.afterCommands =
       flatMap(\ p::(QName, Metaterm) ->
                 [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
                  anyProofCommand(skipTactic())],
-              addPLemmas);
+              addPLemmas ++ thms.provingTheorems ++
+              alsos.provingTheorems);
 
   local addPLemmas::[(QName, Metaterm)] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
@@ -773,22 +934,39 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
           fullRelInfo);
 
   local extIndName::String = "$Ext_Ind_" ++ toString(genInt());
+  local fullThm::Metaterm =
+      case thms.len, alsos.len of
+      | 0, 0 -> body.toAbella
+      | _, 0 -> andMetaterm(body.toAbella, thms.toAbella)
+      | 0, _ -> andMetaterm(body.toAbella, alsos.toAbella)
+      | _, _ -> andMetaterm(body.toAbella,
+                andMetaterm(thms.toAbella, alsos.toAbella))
+      end;
+  local bodyIndNums::[[Integer]] =
+      if useExtSize
+      then repeat([2, 1], body.len) --acc and rel
+      else repeat([1], body.len);   --just rel
   top.toAbella =
        --declare theorem
       [anyTopCommand(theoremDeclaration(toQName(extIndName), [],
-                        body.toAbella))] ++
-       --declare inductions:  acc (if using ExtSize) and rel
-      (if useExtSize
-       then [anyProofCommand(inductionTactic(noHint(), repeat(2, body.len)))]
-       else []) ++
-      [anyProofCommand(inductionTactic(noHint(), repeat(1, body.len)))] ++
+                        fullThm))] ++
+       --declare inductions
+      map(\ l::[Integer] ->
+            anyProofCommand(inductionTactic(noHint(), l)),
+          transpose(bodyIndNums ++ thms.inductionNums ++ alsos.inductionNums)) ++
+      --rename IH's
+      map(\ p::(String, String, String) ->
+            anyProofCommand(renameTactic(p.1, p.2)),
+          thms.renamedIHs ++ alsos.renamedIHs) ++
        --split
-      (if body.len > 1 then [anyProofCommand(splitTactic())]
-                       else []) ++
+      (if body.len + thms.len + alsos.len > 1
+       then [anyProofCommand(splitTactic())]
+       else []) ++
        --initial set of during commands, which is at least intros
       map(anyProofCommand, head(body.duringCommands).2);
 
-  top.duringCommands = tail(body.duringCommands);
+  top.duringCommands = tail(body.duringCommands) ++
+      thms.duringCommands ++ alsos.duringCommands;
 }
 
 

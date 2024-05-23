@@ -319,40 +319,153 @@ concrete productions top::PureTopCommand_c
           anyTopCommand(extIndDeclaration(e, t, a))
         end; }
 | 'Prove_Ext_Ind' rels::QnameList_c '.'
-  { top.ast = anyTopCommand(proveExtInd(rels.ast, emptyExtIndBody())); }
+  { top.ast = anyTopCommand(proveExtInd(rels.ast, [],
+                 emptyExtIndBody(), endExtThms(), endExtThms())); }
 | 'Prove_Ext_Ind' oldRels::QnameList_c 'with' e::ExtIndBodies_c '.'
   { top.ast =
         case e.ast of
         | left(err) -> anyParseFailure(err)
-        | right(a) -> anyTopCommand(proveExtInd(oldRels.ast, a))
+        | right(a) -> anyTopCommand(proveExtInd(oldRels.ast, [], a,
+                         endExtThms(), endExtThms()))
         end; }
 | 'Prove_Ext_Ind' rels::QnameList_c 'and' thms::TheoremStmts_c '.'
-  { top.ast = anyTopCommand(proveExtInd(rels.ast, emptyExtIndBody())); }
+  { top.ast =
+        case thms.ast of
+        | left(err) -> anyParseFailure(err)
+        | right(t) -> anyTopCommand(proveExtInd(rels.ast, [],
+                         emptyExtIndBody(), t, endExtThms()))
+        end; }
 | 'Prove_Ext_Ind' oldRels::QnameList_c 'with' e::ExtIndBodies_c
   'and' thms::TheoremStmts_c '.'
   { top.ast =
-        case e.ast of
-        | left(err) -> anyParseFailure(err)
-        | right(a) -> anyTopCommand(proveExtInd(oldRels.ast, a))
+        case e.ast, thms.ast of
+        | left(erre), left(errt) -> anyParseFailure(erre ++ errt)
+        | left(err), _ -> anyParseFailure(err)
+        | _, left(err) -> anyParseFailure(err)
+        | right(e), right(t) ->
+          anyTopCommand(proveExtInd(oldRels.ast, [], e, t, endExtThms()))
         end; }
 | 'Prove_Ext_Ind' rels::QnameList_c 'also' alsos::TheoremStmts_c '.'
-  { top.ast = anyTopCommand(proveExtInd(rels.ast, emptyExtIndBody())); }
+  { top.ast =
+        case alsos.ast of
+        | left(err) -> anyParseFailure(err)
+        | right(a) ->
+          anyTopCommand(proveExtInd(rels.ast, [], emptyExtIndBody(),
+                           endExtThms(), a))
+        end; }
 | 'Prove_Ext_Ind' oldRels::QnameList_c 'with' e::ExtIndBodies_c
   'also' alsos::TheoremStmts_c '.'
   { top.ast =
-        case e.ast of
-        | left(err) -> anyParseFailure(err)
-        | right(a) -> anyTopCommand(proveExtInd(oldRels.ast, a))
+        case e.ast, alsos.ast of
+        | left(erre), left(erra) -> anyParseFailure(erre ++ erra)
+        | left(err), _ -> anyParseFailure(err)
+        | _, left(err) -> anyParseFailure(err)
+        | right(e), right(a) ->
+          anyTopCommand(proveExtInd(oldRels.ast, [], e,
+                           endExtThms(), a))
         end; }
 | 'Prove_Ext_Ind' rels::QnameList_c 'and' thms::TheoremStmts_c
   'also' alsos::TheoremStmts_c '.'
-  { top.ast = anyTopCommand(proveExtInd(rels.ast, emptyExtIndBody())); }
+  { top.ast =
+        case thms.ast, alsos.ast of
+        | left(errt), left(erra) -> anyParseFailure(errt ++ erra)
+        | left(err), _ -> anyParseFailure(err)
+        | _, left(err) -> anyParseFailure(err)
+        | right(t), right(a) ->
+          anyTopCommand(proveExtInd(rels.ast, [], emptyExtIndBody(), t, a))
+        end; }
 | 'Prove_Ext_Ind' oldRels::QnameList_c 'with' e::ExtIndBodies_c
   'and' thms::TheoremStmts_c 'also' alsos::TheoremStmts_c '.'
   { top.ast =
+        case e.ast, thms.ast, alsos.ast of
+        | left(erre), left(errt), left(erra) ->
+          anyParseFailure(erre ++ errt ++ erra)
+        | left(erre), left(errt), _ -> anyParseFailure(erre ++ errt)
+        | left(erre), _, left(erra) -> anyParseFailure(erre ++ erra)
+        | _, left(errt), left(erra) -> anyParseFailure(errt ++ erra)
+        | left(err), _, _ -> anyParseFailure(err)
+        | _, left(err), _ -> anyParseFailure(err)
+        | _, _, left(err) -> anyParseFailure(err)
+        | right(e), right(t), right(a) ->
+          anyTopCommand(proveExtInd(oldRels.ast, [], e, t, a))
+        end; }
+| 'Prove_Ext_Ind' rels::QnameList_c 'and_thms' oldThms::QnameList_c '.'
+  { top.ast = anyTopCommand(proveExtInd(rels.ast, oldThms.ast,
+                 emptyExtIndBody(), endExtThms(), endExtThms())); }
+| 'Prove_Ext_Ind' oldRels::QnameList_c  'and_thms' oldThms::QnameList_c
+  'with' e::ExtIndBodies_c '.'
+  { top.ast =
         case e.ast of
         | left(err) -> anyParseFailure(err)
-        | right(a) -> anyTopCommand(proveExtInd(oldRels.ast, a))
+        | right(a) -> anyTopCommand(proveExtInd(oldRels.ast, oldThms.ast,
+                                       a, endExtThms(), endExtThms()))
+        end; }
+| 'Prove_Ext_Ind' rels::QnameList_c  'and_thms' oldThms::QnameList_c
+  'and' thms::TheoremStmts_c '.'
+  { top.ast =
+        case thms.ast of
+        | left(err) -> anyParseFailure(err)
+        | right(t) ->
+          anyTopCommand(proveExtInd(rels.ast, oldThms.ast,
+                           emptyExtIndBody(), t, endExtThms()))
+        end; }
+| 'Prove_Ext_Ind' oldRels::QnameList_c  'and_thms' oldThms::QnameList_c
+  'with' e::ExtIndBodies_c 'and' thms::TheoremStmts_c '.'
+  { top.ast =
+        case e.ast, thms.ast of
+        | left(erre), left(errt) -> anyParseFailure(erre ++ errt)
+        | left(err), _ -> anyParseFailure(err)
+        | _, left(err) -> anyParseFailure(err)
+        | right(e), right(t) ->
+          anyTopCommand(proveExtInd(oldRels.ast, oldThms.ast, e, t,
+                           endExtThms()))
+        end; }
+| 'Prove_Ext_Ind' rels::QnameList_c  'and_thms' oldThms::QnameList_c
+  'also' alsos::TheoremStmts_c '.'
+  { top.ast =
+        case alsos.ast of
+        | left(err) -> anyParseFailure(err)
+        | right(a) ->
+          anyTopCommand(proveExtInd(rels.ast, oldThms.ast,
+             emptyExtIndBody(), endExtThms(), a))
+        end; }
+| 'Prove_Ext_Ind' oldRels::QnameList_c  'and_thms' oldThms::QnameList_c
+  'with' e::ExtIndBodies_c 'also' alsos::TheoremStmts_c '.'
+  { top.ast =
+        case e.ast, alsos.ast of
+        | left(erre), left(erra) -> anyParseFailure(erre ++ erra)
+        | left(err), _ -> anyParseFailure(err)
+        | _, left(err) -> anyParseFailure(err)
+        | right(e), right(a) ->
+          anyTopCommand(proveExtInd(oldRels.ast, oldThms.ast, e,
+                           endExtThms(), a))
+        end; }
+| 'Prove_Ext_Ind' rels::QnameList_c  'and_thms' oldThms::QnameList_c
+  'and' thms::TheoremStmts_c 'also' alsos::TheoremStmts_c '.'
+  { top.ast =
+        case thms.ast, alsos.ast of
+        | left(errt), left(erra) -> anyParseFailure(errt ++ erra)
+        | left(err), _ -> anyParseFailure(err)
+        | _, left(err) -> anyParseFailure(err)
+        | right(t), right(a) ->
+          anyTopCommand(proveExtInd(rels.ast, oldThms.ast,
+                           emptyExtIndBody(), t, a))
+        end; }
+| 'Prove_Ext_Ind' oldRels::QnameList_c  'and_thms' oldThms::QnameList_c
+  'with' e::ExtIndBodies_c 'and' thms::TheoremStmts_c
+                           'also' alsos::TheoremStmts_c '.'
+  { top.ast =
+        case e.ast, thms.ast, alsos.ast of
+        | left(erre), left(errt), left(erra) ->
+          anyParseFailure(erre ++ errt ++ erra)
+        | left(erre), left(errt), _ -> anyParseFailure(erre ++ errt)
+        | left(erre), _, left(erra) -> anyParseFailure(erre ++ erra)
+        | _, left(errt), left(erra) -> anyParseFailure(errt ++ erra)
+        | left(err), _, _ -> anyParseFailure(err)
+        | _, left(err), _ -> anyParseFailure(err)
+        | _, _, left(err) -> anyParseFailure(err)
+        | right(e), right(t), right(a) ->
+          anyTopCommand(proveExtInd(oldRels.ast, oldThms.ast, e, t, a))
         end; }
 ----
 | 'Ext_Size' rels::ExtSizeBodies_c '.'

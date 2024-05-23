@@ -125,8 +125,8 @@ ThmElement ::= a::ThmElement b::ThmElement
              extensibleMutualTheoremGroup(athms ++ addthms,
                 aalsos ++ addalsos, atag)
            end end
-         | extIndElement(arelinfo, atag),
-           extIndElement(brelinfo, btag) ->
+         | extIndElement(arelinfo, athms, aalsos, atag),
+           extIndElement(brelinfo, bthms, balsos, btag) ->
            let addrels::[(QName, [String], Bindings, ExtIndPremiseList)] =
                filter(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
                         !containsBy(
@@ -136,8 +136,27 @@ ThmElement ::= a::ThmElement b::ThmElement
                             p, arelinfo),
                       brelinfo)
            in
-             extIndElement(arelinfo ++ addrels, atag)
-           end
+           let addthms::[(QName, Bindings, ExtBody, InductionOns)] =
+               filter(\ p::(QName, Bindings, ExtBody, InductionOns) ->
+                        !containsBy(
+                            \ p1::(QName, Bindings, ExtBody, InductionOns)
+                              p2::(QName, Bindings, ExtBody, InductionOns) ->
+                              p1.1 == p2.1,
+                            p, athms),
+                      bthms)
+           in
+           let addalsos::[(QName, Bindings, ExtBody, InductionOns)] =
+               filter(\ p::(QName, Bindings, ExtBody, InductionOns) ->
+                        !containsBy(
+                            \ p1::(QName, Bindings, ExtBody, InductionOns)
+                              p2::(QName, Bindings, ExtBody, InductionOns) ->
+                              p1.1 == p2.1,
+                            p, aalsos),
+                      balsos)
+           in
+             extIndElement(arelinfo ++ addrels, athms ++ addthms,
+                           aalsos ++ addalsos, atag)
+           end end end
          | extSizeElement(arels, atag), extSizeElement(brels, btag) ->
            let addrels::[(QName, [String])] =
                filter(\ p::(QName, [String]) ->
@@ -183,7 +202,8 @@ function cleanModThms
       | projectionConstraintTheorem(aname, abinds, abody, atag),
         projectionConstraintTheorem(bname, bbinds, bbody, btag) ->
         atag == btag
-      | extIndElement(arelinfo, atag), extIndElement(brelinfo, btag) ->
+      | extIndElement(arelinfo, athms, aalsos, atag),
+        extIndElement(brelinfo, bthms, balsos, btag) ->
         atag == btag
       | extSizeElement(arels, atag), extSizeElement(brels, btag) ->
         atag == btag
@@ -406,12 +426,14 @@ aspect production extIndDeclaration
 top::TopCommand ::= e::ExtIndBody thms::ExtThms alsos::ExtThms
 {
   top.defElements = [];
-  top.thmElements = [extIndElement(e.extIndInfo, top.downTag)];
+  top.thmElements = [extIndElement(e.extIndInfo, thms.thmInfo,
+                                   alsos.thmInfo, top.downTag)];
 }
 
 
 aspect production proveExtInd
-top::TopCommand ::= rels::[QName] newRels::ExtIndBody
+top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
+                    newThms::ExtThms newAlsos::ExtThms
 {
   top.defElements =
       error("Should not have proveExtInd in interface file");

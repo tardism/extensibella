@@ -4,8 +4,11 @@ Add_Proj_Rel compositionTest:host:is_expr,
              compositionTest:host:is_stmt.
 
 Prove_Ext_Ind compositionTest:host:is_expr,
-              compositionTest:host:is_stmt.
+              compositionTest:host:is_stmt
+     and_thms compositionTest:host:is_expr_is.
 apply IH to R1. search.
+%is_expr_is
+ search.
 
 
 Add_Ext_Size compositionTest:host:evalExpr,

@@ -4,7 +4,8 @@ Add_Proj_Rel compositionTest:host:is_expr,
              compositionTest:host:is_stmt.
 
 Prove_Ext_Ind compositionTest:host:is_expr,
-              compositionTest:host:is_stmt.
+              compositionTest:host:is_stmt
+     and_thms compositionTest:host:is_expr_is.
 
 
 Add_Ext_Size compositionTest:host:evalExpr,
@@ -17,7 +18,8 @@ Add_Proj_Rel compositionTest:host:evalExpr,
 
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt,
-              compositionTest:list:listIterate.
+              compositionTest:list:listIterate
+     and_thms compositionTest:list:listIterate_true.
 
 
 Prove compositionTest:host:evalExpr_unique,

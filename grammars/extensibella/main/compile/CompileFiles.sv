@@ -402,12 +402,13 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
 
 
 aspect production proveExtInd
-top::TopCommand ::= rels::[QName] newRels::ExtIndBody
+top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
+                    newThms::ExtThms newAlsos::ExtThms
 {
   local foundExtInd::[ThmElement] =
       filter(\ t::ThmElement ->
                case t of
-               | extIndElement(relInfo, _) ->
+               | extIndElement(relInfo, thms, alsos, _) ->
                  let l::[QName] = map(fst, relInfo)
                  in --equal by mutual subsets
                    subset(l, rels) && subset(rels, l)
@@ -417,11 +418,18 @@ top::TopCommand ::= rels::[QName] newRels::ExtIndBody
              top.proverState.remainingObligations);
   top.compiled =
       case foundExtInd of
-      | [extIndElement(relInfo, _)] ->
+      | [extIndElement(relInfo, thms, alsos, _)] ->
         just(extIndDeclaration(
                 branchExtIndBody(extIndInfo_to_extIndBody(relInfo),
                                  newRels.full),
-                endExtThms(), endExtThms()))
+              foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
+                      rest::ExtThms ->
+                      addExtThms(p.1, p.2, p.3, p.4, rest),
+                    newThms.full, thms),
+              foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
+                      rest::ExtThms ->
+                      addExtThms(p.1, p.2, p.3, p.4, rest),
+                    newAlsos.full, alsos)))
       | _ ->
         error("Could not identify Ext_Ind when compiling " ++
               "Prove_Ext_Ind; file must be checkable before " ++

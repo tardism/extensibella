@@ -617,6 +617,9 @@ aspect production extIndElement
 top::ThmElement ::=
    --[(rel name, rel arg names, all bindings, extra premises)]
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   --[(thm name, var bindings, thm statement, induction info)]
+   thms::[(QName, Bindings, ExtBody, InductionOns)]
+   alsos::[(QName, Bindings, ExtBody, InductionOns)]
    tag::(Integer, Integer, String)
 {
   top.extIndDefs = [];
@@ -1914,7 +1917,8 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
 
 
 aspect production proveExtInd
-top::TopCommand ::= rels::[QName] newRels::ExtIndBody
+top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
+                    newThms::ExtThms newAlsos::ExtThms
 {
   top.matchesNames = \ l::[QName] -> false;
 

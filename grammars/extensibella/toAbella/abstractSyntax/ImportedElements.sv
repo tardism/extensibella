@@ -119,6 +119,9 @@ abstract production extIndElement
 top::ThmElement ::=
    --[(rel name, rel arg names, full bindings, extra premises)]
    rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   --[(thm name, var bindings, thm statement, induction info)]
+   thms::[(QName, Bindings, ExtBody, InductionOns)]
+   alsos::[(QName, Bindings, ExtBody, InductionOns)]
    tag::(Integer, Integer, String)
 {
   top.pp = text("ExtInd") ++ ppImplode(text(", "),
@@ -128,11 +131,12 @@ top::ThmElement ::=
   top.is_nonextensible = false;
   top.tag = tag;
 
-  --only user-relevant theorems are the lemmas about extSize
-  --the proven things are only for framework use
   top.thms =
-      flatMap(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
-                buildExtSizeLemmas(p.1, p.2), rels);
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+            buildExtIndLemma(p.1, p.2, p.3, p.4), rels) ++
+      map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
+            (p.1, p.3.thm),
+          thms ++ alsos);
 }
 
 --Create the contents of Ext_Ind from the tuple of its information
@@ -170,10 +174,13 @@ Message ::= obligations::[ThmElement]
       | projectionConstraintTheorem(q, x, b, _)::_ ->
         errorMsg("Expected projection constraint obligation " ++
            justShow(q.pp))
-      | extIndElement(relInfo, _)::_ ->
+      | extIndElement(relInfo, thms, alsos, _)::_ ->
         errorMsg("Expected Ext_Ind obligation for " ++
            implode(", ",
-              map(justShow, map((.pp), map(fst, relInfo)))))
+              map(justShow, map((.pp), map(fst, relInfo)))) ++
+           " with imported theorems " ++
+           implode(", ",
+              map(justShow, map((.pp), map(fst, thms)))))
       | extSizeElement(relInfo, _)::_ ->
         errorMsg("Expected Ext_Size addition for " ++
            implode(", ",

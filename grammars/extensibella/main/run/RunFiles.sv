@@ -69,10 +69,13 @@ IOToken ::= order::[ThmElement] config::Configuration ioin::IOToken
                                    map((.pp), map(fst, thms)))) ++ "."
                | projectionConstraintTheorem(n, _, _, tag) ->
                  "PC " ++ justShow(n.pp) ++ "."
-               | extIndElement(r, tag) ->
+               | extIndElement(r, t, a, tag) ->
                  "ExtInd " ++
                  implode(", ", map(justShow,
-                                   map((.pp), map(fst, r)))) ++ "."
+                                   map((.pp), map(fst, r)))) ++
+                 (if length(t) > 0
+                  then implode(", ", map(justShow, map((.pp), map(fst, t))))
+                  else "") ++ "."
                | extSizeElement(r, tag) ->
                  "ExtSize " ++
                  implode(", ", map(justShow,
