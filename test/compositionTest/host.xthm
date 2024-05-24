@@ -48,7 +48,8 @@ also
 %is_expr_is
  search. search. search. search. search. search. search. search.
 %append_unique_here
- apply append_unique to AppA AppB. search.
+ %qualified name to check it handles that correctly
+ apply extensibella:stdLib:append_unique to AppA AppB. search.
 
 
 Ext_Size evalExpr G E V G', evalStmt G S G'.
@@ -412,7 +413,13 @@ Extensible_Theorem
   drop_P_stmt : forall G S G',
     Ev : <evalStmt {P}> G S G' ->
     evalStmt G S G'
-  on Ev.
+  on Ev
+%just for testing purposes
+also
+  length_is : forall (L : list expr) Len,
+    Len : length L Len ->
+    is_integer Len
+  on Len.
 %expr
  %E-Num
   search.
@@ -454,3 +461,5 @@ Extensible_Theorem
   apply IH to Ev1. search.
  %E-While-True
   apply IH to Ev1. apply IH1 to Ev2. apply IH1 to Ev3. search.
+%length_is
+ apply length_is to Len. search.

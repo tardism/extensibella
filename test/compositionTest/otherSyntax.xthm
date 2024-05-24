@@ -99,7 +99,16 @@ Prove compositionTest:host:drop_ES_expr,
 apply IH to Ev2. search. apply IH to Ev2. search. apply IH1 to Ev3.
 apply IH1 to Ev4. search.
 Prove compositionTest:host:drop_P_expr,
-      compositionTest:host:drop_P_stmt.
+      compositionTest:host:drop_P_stmt
+%just for testing purposes
+also
+  length_unique : forall (L : list expr) LenA LenB,
+    LenA : length L LenA ->
+    LenB : length L LenB ->
+    LenA = LenB
+  on LenA.
 apply IH to Ev1. apply IH to Ev4. search.
 apply IH to Ev1. apply IH to Ev5. search.
 apply IH1 to Ev1. apply IH1 to Ev2. apply IH1 to Ev4. search.
+%length_unique
+ apply length_unique to LenA LenB. search.

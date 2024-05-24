@@ -120,7 +120,10 @@ top::ThmElement ::=
       --thms
       map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                 ExtBody, String) ->
-            bindingMetaterm(forallBinder(), p.5,
+            bindingMetaterm(forallBinder(),
+               decorate p.5 with {
+                  typeEnv = top.tyEnv;
+               }.toAbella,
                decorate if useR_P --everything uses it if anything does
                         then decorate p.6 with {
                                 makeProjRel = p.7;
@@ -134,7 +137,10 @@ top::ThmElement ::=
           thmsInfo) ++
       --alsos
       map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
-            bindingMetaterm(forallBinder(), p.2,
+            bindingMetaterm(forallBinder(),
+               decorate p.2 with {
+                  typeEnv = top.tyEnv;
+               }.toAbella,
                decorate p.3 with {
                   relationEnv = top.relEnv;
                   constructorEnv = top.constrEnv;
@@ -320,6 +326,24 @@ top::ThmElement ::=
                                         prems)) ++ "."
             end,
           alsos);
+  --count number of thms and old alsos known in each module
+  local numNotNewAlsosByModule::[(QName, Integer)] =
+      let checkNames::[QName] = map(fst, thms)
+      in
+      let checkAlsos::[QName] = map(fst, alsos)
+      in
+        map(\ b::(QName, [QName]) ->
+              (b.1,
+               length(filter(\ q::QName ->
+                               --b.1::b.2 for old + new
+                               contains(q.moduleName, b.1::b.2),
+                             checkNames)) +
+               length(filter(\ q::QName ->
+                               --just b.2, not b.1, for old
+                               contains(q.moduleName, b.2),
+                             checkAlsos))),
+            top.buildsOns_down)
+      end end;
   local alsosCmds::[String] =
       map(\ full::[(ProofState, [AnyCommand])] ->
             implode("\n  ",
@@ -335,10 +359,19 @@ top::ThmElement ::=
                            subgoalRoot(p2.1.currentSubgoal),
                          full))),
           --get down to the ones for alsos
-          dropWhile(\ l::[(ProofState, [AnyCommand])] ->
-                      !subgoalStartsWith([length(thms) + 1],
-                          head(l).1.currentSubgoal),
-                    head(topGoalProofInfo).2));
+          flatMap(\ modInfo::(QName, [[(ProofState, [AnyCommand])]]) ->
+                    --number of subgoals before alsos
+                    case lookup(modInfo.1, numNotNewAlsosByModule) of
+                    | just(num) ->
+                      --drop everything from non-also subgoals
+                      dropWhile(
+                         \ l::[(ProofState, [AnyCommand])] ->
+                           !subgoalStartsWith([num + 1],
+                               head(l).1.currentSubgoal),
+                         modInfo.2)
+                    | nothing() -> []
+                    end,
+                  topGoalProofInfo));
   local fullAlsos::[String] =
       map(\ p::(String, String) -> p.1 ++ " " ++ p.2,
           zip(alsosIntros, alsosCmds));
@@ -808,17 +841,24 @@ top::ThmElement ::=
                                         prems)) ++ "."
             end,
           alsos);
-  --count number of rels and thms (not alsos) known in each module
-  local numNotAlsosByModule::[(QName, Integer)] =
+  --count number of rels, thms, and old alsos known in each module
+  local numNotNewAlsosByModule::[(QName, Integer)] =
       let checkNames::[QName] = map(fst, rels) ++ map(fst, thms)
+      in
+      let checkAlsos::[QName] = map(fst, alsos)
       in
         map(\ b::(QName, [QName]) ->
               (b.1,
                length(filter(\ q::QName ->
+                               --b.1::b.2 for old + new
                                contains(q.moduleName, b.1::b.2),
-                             checkNames))),
+                             checkNames)) +
+               length(filter(\ q::QName ->
+                               --just b.2, not b.1, for old
+                               contains(q.moduleName, b.2),
+                             checkAlsos))),
             top.buildsOns_down)
-      end;
+      end end;
   local alsosCmds::[String] =
       map(\ full::[(ProofState, [AnyCommand])] ->
             implode("\n  ",
@@ -836,7 +876,7 @@ top::ThmElement ::=
           --get down to the ones for alsos
           flatMap(\ modInfo::(QName, [[(ProofState, [AnyCommand])]]) ->
                     --number of subgoals before alsos
-                    case lookup(modInfo.1, numNotAlsosByModule) of
+                    case lookup(modInfo.1, numNotNewAlsosByModule) of
                     | just(num) ->
                       --drop everything from non-also subgoals
                       dropWhile(
