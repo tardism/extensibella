@@ -859,21 +859,14 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
 
   --check for naming IH's the same thing
   top.toAbellaMsgs <-
-      let fullIHNames::[(String, String)] =
-          map(\ p::(String, String, String) -> (p.1, p.3),
-              totalRenames)
-      in
-        filterMap(\ p::(String, String, String) ->
-                    case lookupAll(p.2, fullIHNames) of
-                    | [_] -> nothing()
-                    | l ->
-                      just(errorMsg("IH name " ++ p.2 ++ " for " ++
-                              p.1 ++ " is also used by " ++
-                              implode(", ",
-                                 filter(neq(p.1, _), l))))
-                    end,
-           totalRenames)
-      end;
+      foldl(\ rest::([(String, String)], [Message])
+              p::(String, String, String) ->
+              case lookup(p.2, rest.1) of
+              | just(thm) ->
+                (rest.1, errorMsg("IH name " ++ p.2 ++
+                            " already used by " ++ thm)::rest.2)
+              | nothing() -> ((p.2, p.3)::rest.1, rest.2)
+              end, ([], []), totalRenames).2;
 
   --check for naming thms the same thing
   --only check new ones because imported ones must be unique and

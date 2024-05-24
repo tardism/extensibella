@@ -4,7 +4,7 @@ Proj_Rel is_expr E, is_stmt S.
 
 Ext_Ind forall E, is_expr E; forall S, is_stmt S
 and %just to have something here
-  is_expr_is : forall E A,
+  is_expr_is : forall E,
     IsE : is_expr E ->
     is_expr E
   on IsE as IH_Is
@@ -68,7 +68,7 @@ Ext_Ind forall G E V G', evalExpr G E V G'
   apply ext_size_is_int_evalExpr to R3. OrN3: apply lt_right to R1 _ _ _.
   Is: case IsE. Ev1: apply drop_ext_size_evalExpr to R2. LN2: case OrN2.
     %N2 < N
-     A2: apply Acc' to _ LN2. apply IH2 to R2 A2 _.
+     A2: apply Acc' to _ LN2. apply IH_E to R2 A2 _.
      Ev: apply drop_ext_size_evalExpr to R2. LN3: case OrN3.
        %N3 < N
         A3: apply Acc' to _ LN3. apply IH_E to R3 A3 _. search.

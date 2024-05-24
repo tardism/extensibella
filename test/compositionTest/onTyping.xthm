@@ -34,21 +34,21 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
  L: apply lt_plus_one to R1 _. LN2: case OrN2.
    %N2 < N
     LN2': apply less_integer_transitive to LN2 L.
-    A2: apply Acc' to _ LN2'. apply IH2 to R3 A2 _.
+    A2: apply Acc' to _ LN2'. apply IH_E_A to R3 A2 _.
     Ev: apply drop_ext_size_evalExpr to R3. LN3: case OrN3.
       %N3 < N
        LN3': apply less_integer_transitive to LN3 L.
-       A3: apply Acc' to _ LN3'. apply IH2 to R4 A3 _. search.
+       A3: apply Acc' to _ LN3'. apply IH_E_A to R4 A3 _. search.
       %N3 = N
-       A3: apply Acc' to _ L. apply IH2 to R4 A3 _. search.
+       A3: apply Acc' to _ L. apply IH_E_A to R4 A3 _. search.
    %N2 = N
-    A4: apply Acc' to _ L. apply IH2 to R3 A4 _.
+    A4: apply Acc' to _ L. apply IH_E_A to R3 A4 _.
     Ev: apply drop_ext_size_evalExpr to R3. LN3: case OrN3.
       %N3 < N
        LN3': apply less_integer_transitive to LN3 L.
-       A3: apply Acc' to _ LN3'. apply IH2 to R4 A3 _. search.
+       A3: apply Acc' to _ LN3'. apply IH_E_A to R4 A3 _. search.
       %N3 = N
-       apply IH2 to R4 A4 _. search.
+       apply IH_E_A to R4 A4 _. search.
 
 
 Prove compositionTest:host:evalExpr_unique,

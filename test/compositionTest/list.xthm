@@ -39,7 +39,7 @@ Add_Proj_Rel compositionTest:host:evalExpr,
 Prove_Ext_Ind compositionTest:host:evalExpr,
               compositionTest:host:evalStmt
 with forall G V X Body G',
-       listIterate G V X Body G' with IsV: is_expr V
+       listIterate G V X Body G' with IsV: is_expr V as IH_LI
 %just need to add something here for testing
 and listIterate_true : forall G V X Body G',
       LI : listIterate G V X Body G' ->
@@ -79,7 +79,7 @@ and listIterate_true : forall G V X Body G',
        apply less_integer_transitive to L' L4. search.
       %N3 = N4
        search.
-  A2: apply Acc to _ L2. apply IH to R3 A2 _.
+  A2: apply Acc to _ L2. apply IH_E to R3 A2 _.
   A3: apply Acc to _ L3. LIP: apply IH6 to R4 A3 _. skip.
   skip.
 %listIterate
@@ -94,13 +94,13 @@ and listIterate_true : forall G V X Body G',
   assert <evalStmt {P}> ((X, V1)::G) Body G3.
     Or: apply lt_left to R1 _ _. L: case Or.
       %N2 < N
-       A2: apply Acc' to _ L. apply IH1 to R2 A2 _. skip. search.
+       A2: apply Acc' to _ L. apply IH_S to R2 A2 _. skip. search.
       %N2 = N
-       apply IH5 to R2 Acc _. skip. search.
+       apply IH_S_A to R2 Acc _. skip. search.
   assert <listIterate {P}> G3 V2 X Body G'.
     Or: apply lt_right to R1 _ _ _. L: case Or.
       %N3 < N
-       A3: apply Acc' to _ L. apply IH2 to R3 A3 _. search.
+       A3: apply Acc' to _ L. apply IH_LI to R3 A3 _. search.
       %N3 = N
        apply IH6 to R3 Acc _. search.
   search.

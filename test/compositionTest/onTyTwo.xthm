@@ -23,11 +23,11 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
 %E-IsZero-True
  apply ext_size_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
  apply ext_size_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
- case IsE. apply IH to R2 A _. search.
+ case IsE. apply IH_E to R2 A _. search.
 %E-IsZero-False
  apply ext_size_is_int_evalExpr to R2. L: apply lt_plus_one to R1 _.
  apply ext_size_pos_evalExpr to R2. Acc: case Acc. A: apply Acc to _ L.
- case IsE. apply IH to R2 A _. search.
+ case IsE. apply IH_E to R2 A _. search.
 
 
 Prove compositionTest:host:evalExpr_unique,

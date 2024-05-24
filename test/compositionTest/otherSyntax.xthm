@@ -29,7 +29,7 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
  unfold. exists Half = Half. exists plus E1 E1. Acc: case Acc.
  IsN2: apply ext_size_is_int_evalExpr to R2.
  L: apply lt_plus_one to R1 _. apply ext_size_pos_evalExpr to R2.
- A: apply Acc to _ L. case IsE. apply IH to R2 A _. split.
+ A: apply Acc to _ L. case IsE. apply IH_E to R2 A _. split.
    %plus
     search.
    %eval_T E1
@@ -44,7 +44,7 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
     Acc: case Acc. Is: apply ext_size_is_int_evalExpr to R2.
     L: apply lt_plus_one to R1 _.
     apply ext_size_pos_evalExpr to R2. A: apply Acc to _ L.
-    case IsE. apply IH to R2 A _. search.
+    case IsE. apply IH_E to R2 A _. search.
    %plus
     search.
    %plus

@@ -327,10 +327,12 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
               nonErrorProverState.knownTypes,
               nonErrorProverState.knownRels,
               nonErrorProverState.knownConstrs, width, true) ++ "\n"
-      else our_own_output ++
+      else our_own_output ++ showDoc(width, state.pp) ++ "\n"; {-
+           The following occasionally crashes due to a Silver bug at
+              the moment, but should eventually be what we use.
            decorateAndShow(state, top.proverState.knownTypes,
               top.proverState.knownRels,
-              top.proverState.knownConstrs, width, false) ++ "\n";
+              top.proverState.knownConstrs, width, false) ++ "\n";-}
   local io_action_6::IOToken =
       if top.config.showUser
       then printT(output_output, io_action_5.io)
