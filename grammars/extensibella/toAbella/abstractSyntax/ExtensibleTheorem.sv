@@ -1274,10 +1274,8 @@ top::InductionOns ::=
   top.renamedIHs =
       case asName of
       | nothing() -> []
-      | just(n) when top.expectedIHNum == 0 ->
-        [("IH", n, top.thmName.shortName)]
       | just(n) ->
-        [("IH" ++ toString(top.expectedIHNum), n, top.thmName.shortName)]
+        [(numToIHName(top.expectedIHNum), n, top.thmName.shortName)]
       end ++ rest.renamedIHs;
   rest.expectedIHNum = top.expectedIHNum + top.numMutualThms;
 
@@ -1294,6 +1292,13 @@ top::InductionOns ::=
       then []
       else [errorMsg("Unknown label " ++ label ++ " for theorem " ++
                      top.thmName.shortName)];
+}
+
+--Turn an IH index into the name Abella will give it
+function numToIHName
+String ::= n::Integer
+{
+  return if n == 0 then "IH" else "IH" ++ toString(n);
 }
 
 
@@ -1372,7 +1377,7 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
       if matches_IH_form(label)
       then [errorMsg("Cannot declare label of form \"IH<num>\"")]
       else [];
-  --cannot have names of
+  --cannot have names of other IH's
   top.toAbellaMsgs <-
       let whichThm::Maybe<String> =
           lookup(label, map(snd, top.specialIHNames))
@@ -1380,7 +1385,7 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
         case whichThm of
         | nothing() -> []
         | just(thm) ->
-          [errorMsg("Label " ++ label ++ " is the name of the IH " ++
+          [errorMsg("Label " ++ label ++ " is the name of an IH " ++
                     "for " ++ thm ++ " and cannot be used as a " ++
                     "premise label")]
         end
@@ -1418,5 +1423,6 @@ top::ExtBody ::= m::Metaterm rest::ExtBody
 function matches_IH_form
 Boolean ::= n::String
 {
-  return startsWith(n, "IH") && isDigit(substring(2, length(n), n));
+  return n == "IH" ||
+         startsWith(n, "IH") && isDigit(substring(2, length(n), n));
 }

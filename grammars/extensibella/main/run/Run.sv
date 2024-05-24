@@ -326,11 +326,11 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
            decorateAndShow(finalDisplay,
               nonErrorProverState.knownTypes,
               nonErrorProverState.knownRels,
-              nonErrorProverState.knownConstrs, width) ++ "\n"
+              nonErrorProverState.knownConstrs, width, true) ++ "\n"
       else our_own_output ++
            decorateAndShow(state, top.proverState.knownTypes,
               top.proverState.knownRels,
-              top.proverState.knownConstrs, width) ++ "\n";
+              top.proverState.knownConstrs, width, false) ++ "\n";
   local io_action_6::IOToken =
       if top.config.showUser
       then printT(output_output, io_action_5.io)
@@ -631,9 +631,12 @@ attribute fromAbella<a> {typeEnv, relationEnv, constructorEnv} occurs on a,
 attribute pp {} occurs on a =>
 String ::= a::a ty::Env<TypeEnvItem> rel::Env<RelationEnvItem>
            cons::Env<ConstructorEnvItem> width::Integer
+           doFromAbella::Boolean
 {
   a.typeEnv = ty;
   a.relationEnv = rel;
   a.constructorEnv = cons;
-  return showDoc(width, a.fromAbella.pp);
+  return if doFromAbella
+         then showDoc(width, a.fromAbella.pp)
+         else showDoc(width, a.pp);
 }

@@ -322,10 +322,10 @@ top::ExtIndBody ::=
 
 aspect production oneExtIndBody
 top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
-                    premises::ExtIndPremiseList
+                    premises::ExtIndPremiseList ihNames::[String]
 {
   top.full = oneExtIndBody(boundVars.full, rel.fullRel.name, relArgs,
-                           premises.full);
+                           premises.full, ihNames);
 }
 
 

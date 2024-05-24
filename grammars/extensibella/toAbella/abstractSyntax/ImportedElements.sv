@@ -117,8 +117,8 @@ top::ThmElement ::= rels::[(QName, [String])]
 
 abstract production extIndElement
 top::ThmElement ::=
-   --[(rel name, rel arg names, full bindings, extra premises)]
-   rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   --[(rel name, rel arg names, full bindings, extra premises, IH names)]
+   rels::[(QName, [String], Bindings, ExtIndPremiseList, [String])]
    --[(thm name, var bindings, thm statement, induction info)]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
@@ -132,7 +132,8 @@ top::ThmElement ::=
   top.tag = tag;
 
   top.thms =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
+                [String]) ->
             buildExtIndLemma(p.1, p.2, p.3, p.4), rels) ++
       map(\ p::(QName, Bindings, ExtBody, InductionOns) ->
             (p.1, p.3.thm),
@@ -142,11 +143,11 @@ top::ThmElement ::=
 --Create the contents of Ext_Ind from the tuple of its information
 function extIndInfo_to_extIndBody
 ExtIndBody ::=
-   extIndInfo::[(QName, [String], Bindings, ExtIndPremiseList)]
+   extIndInfo::[(QName, [String], Bindings, ExtIndPremiseList, [String])]
 {
-  local p::(QName, [String], Bindings, ExtIndPremiseList) =
+  local p::(QName, [String], Bindings, ExtIndPremiseList, [String]) =
       head(extIndInfo);
-  local one::ExtIndBody = oneExtIndBody(p.3, p.1, p.2, p.4);
+  local one::ExtIndBody = oneExtIndBody(p.3, p.1, p.2, p.4, p.5);
   return
       case extIndInfo of
       | [] -> error("Should not call extIndInfo_to_extIndBody " ++

@@ -124,7 +124,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 aspect production extIndElement
 top::ThmElement ::=
-   rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   rels::[(QName, [String], Bindings, ExtIndPremiseList, [String])]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
    tag::(Integer, Integer, String)

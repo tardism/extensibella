@@ -127,11 +127,11 @@ ThmElement ::= a::ThmElement b::ThmElement
            end end
          | extIndElement(arelinfo, athms, aalsos, atag),
            extIndElement(brelinfo, bthms, balsos, btag) ->
-           let addrels::[(QName, [String], Bindings, ExtIndPremiseList)] =
-               filter(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+           let addrels::[(QName, [String], Bindings, ExtIndPremiseList, [String])] =
+               filter(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
                         !containsBy(
-                            \ p1::(QName, [String], Bindings, ExtIndPremiseList)
-                              p2::(QName, [String], Bindings, ExtIndPremiseList) ->
+                            \ p1::(QName, [String], Bindings, ExtIndPremiseList, [String])
+                              p2::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
                               p1.1 == p2.1,
                             p, arelinfo),
                       brelinfo)

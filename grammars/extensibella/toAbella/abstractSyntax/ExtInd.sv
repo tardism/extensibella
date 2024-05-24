@@ -21,7 +21,10 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
       ".\n";
 
   top.provingTheorems = thms.provingTheorems ++ alsos.provingTheorems;
-  top.provingExtInds = body.extIndInfo;
+  top.provingExtInds =
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
+            (p.1, p.2, p.3, p.4),
+          body.extIndInfo);
 
   body.startingGoalNum =
       if body.len + thms.len + alsos.len > 1
@@ -52,7 +55,7 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
       --rename IH's
       map(\ p::(String, String, String) ->
             anyProofCommand(renameTactic(p.1, p.2)),
-          thms.renamedIHs ++ alsos.renamedIHs) ++
+          totalRenames) ++
        --split
       (if body.len + thms.len + alsos.len > 1
        then [anyProofCommand(splitTactic())]
@@ -64,9 +67,15 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
   top.duringCommands = tail(body.duringCommands) ++
       thms.duringCommands ++ alsos.duringCommands;
 
+  local totalRenames::[(String, String, String)] =
+      body.renamedIHs ++ thms.renamedIHs ++ alsos.renamedIHs;
+  body.specialIHNames = totalRenames;
+  body.expectedIHNum = 0;
+  body.numMutualThms = body.len + thms.len + alsos.len;
+  --
   thms.useExtInd = [];
   thms.startingGoalNum = [body.len + 1];
-  thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  thms.specialIHNames = totalRenames;
   thms.expectedIHNum = body.len;
   thms.numMutualThms = body.len + thms.len + alsos.len;
   thms.shouldBeExtensible = true;
@@ -74,17 +83,17 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
   --
   alsos.useExtInd = [];
   alsos.startingGoalNum = [body.len + 1 + thms.len];
-  alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  alsos.specialIHNames = totalRenames;
   alsos.expectedIHNum = body.len + thms.len;
   alsos.numMutualThms = body.len + thms.len + alsos.len;
   alsos.shouldBeExtensible = false;
   alsos.followingCommands = [];
 
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
-                       RelationEnvItem)] =
-      zipWith(\ p::(QName, [String], Bindings, ExtIndPremiseList)
+                       [String], RelationEnvItem)] =
+      zipWith(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String])
                 e::RelationEnvItem ->
-                (e.name, p.2, p.3, p.4, e),
+                (e.name, p.2, p.3, p.4, p.5, e),
               body.extIndInfo, body.relationEnvItems);
 
   --whether or not to use ExtSize for the proof, or just the relation
@@ -108,7 +117,7 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
 
   local addPLemmas::[(QName, Metaterm)] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
-                RelationEnvItem) ->
+                [String], RelationEnvItem) ->
             buildExtIndLemma(p.1, p.2, p.3, p.4),
           fullRelInfo);
 
@@ -187,7 +196,7 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
                 (rest.1, errorMsg("IH name " ++ p.2 ++
                             " already used by " ++ thm)::rest.2)
               | nothing() -> ((p.2, p.3)::rest.1, rest.2)
-              end, ([], []), thms.renamedIHs ++ alsos.renamedIHs).2;
+              end, ([], []), totalRenames).2;
 
   --check for naming thms the same thing
   top.toAbellaMsgs <-
@@ -223,20 +232,25 @@ nonterminal ExtIndBody with
    toAbella<Metaterm>, toAbellaMsgs,
    useExtSize,
    downDuringCommands, duringCommands, startingGoalNum, nextGoalNum,
+   expectedIHNum, nextIHNum, renamedIHs, specialIHNames,
+   numMutualThms,
    relations, extIndInfo, relationEnvItems,
    currentModule, typeEnv, constructorEnv, relationEnv;
 propagate constructorEnv, relationEnv, typeEnv, currentModule,
-          toAbellaMsgs, useExtSize, proverState on ExtIndBody;
+          toAbellaMsgs, useExtSize, proverState, numMutualThms,
+          specialIHNames on ExtIndBody;
 
 synthesized attribute relations::[QName];
-                --[(rel, args, total bound vars, premises)]
+                --[(rel, args, total bound vars, premises, IH names)]
 synthesized attribute extIndInfo::[(QName, [String], Bindings,
-                                    ExtIndPremiseList)];
+                                    ExtIndPremiseList, [String])];
 synthesized attribute relationEnvItems::[RelationEnvItem];
 --thread commands around, since we might need to combine them
 inherited attribute downDuringCommands::[(SubgoalNum, [ProofCommand])];
 --whether to use ExtSize in thm statement, or just relation itself
 inherited attribute useExtSize::Boolean;
+--thread expectedIHNum through branching with this
+synthesized attribute nextIHNum::Integer;
 
 abstract production branchExtIndBody
 top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
@@ -259,6 +273,12 @@ top::ExtIndBody ::= e1::ExtIndBody e2::ExtIndBody
   e1.startingGoalNum = top.startingGoalNum;
   e2.startingGoalNum = e1.nextGoalNum;
   top.nextGoalNum = e2.nextGoalNum;
+
+  e1.expectedIHNum = top.expectedIHNum;
+  e2.expectedIHNum = e1.nextIHNum;
+  top.nextIHNum = e2.nextIHNum;
+
+  top.renamedIHs = e1.renamedIHs ++ e2.renamedIHs;
 
   e2.downDuringCommands = top.downDuringCommands;
   e1.downDuringCommands = e2.duringCommands;
@@ -285,6 +305,8 @@ top::ExtIndBody ::=
   top.relationEnvItems = [];
 
   top.nextGoalNum = top.startingGoalNum;
+  top.nextIHNum = top.expectedIHNum;
+  top.renamedIHs = [];
   top.duringCommands = top.downDuringCommands;
   top.toAbella = error("Should not access (emptyExtIndBody.toAbella)");
 }
@@ -292,21 +314,28 @@ top::ExtIndBody ::=
 
 abstract production oneExtIndBody
 top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
-                    premises::ExtIndPremiseList
+                    premises::ExtIndPremiseList ihNames::[String]
 {
   top.pps = [text("forall ") ++ ppImplode(text(" "), boundVars.pps) ++
              text(", ") ++
              ppImplode(text(" "), rel.pp::map(text, relArgs)) ++
-             if premises.len > 0
-             then ( text(" with") ++ line() ++
-                    nest(3, ppImplode(text(", "), premises.pps)) )
-             else text("")];
+             (if premises.len > 0
+              then ( text(" with") ++ line() ++
+                     nest(3, ppImplode(text(", "), premises.pps)) )
+              else text("")) ++
+             (if length(ihNames) > 0
+              then text("")
+              else text(" as ") ++
+                   ppImplode(text(", "), map(text, ihNames)))];
   top.abella_pp =
       "forall " ++ boundVars.abella_pp ++ ", " ++
       implode(" ", rel.abella_pp::relArgs) ++
-      if premises.len > 0
-      then (" with " ++ premises.abella_pp)
-      else "";
+      (if premises.len > 0
+       then (" with " ++ premises.abella_pp)
+       else "") ++
+      (if length(ihNames) > 0
+       then " as " ++ implode(", ", ihNames)
+       else "");
 
   top.len = 1;
 
@@ -317,11 +346,28 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
   top.relations = if rel.relFound then [fullRel.name] else [];
 
   top.extIndInfo = [(if rel.relFound then fullRel.name else rel,
-                     relArgs, boundVars, premises.full)];
+                     relArgs, boundVars, premises.full, ihNames)];
 
   top.relationEnvItems = if rel.relFound then [fullRel] else [];
 
   top.nextGoalNum = [head(top.startingGoalNum) + 1];
+
+  top.nextIHNum = top.expectedIHNum + 1;
+
+  --only two can be used legitimately, so hardcode that here
+  top.renamedIHs =
+      let thmName::String = "relation " ++ rel.shortName
+      in
+        case ihNames of
+        | [ih] ->
+          [(numToIHName(top.expectedIHNum), ih, thmName)]
+        | [ih1, ih2] ->
+          [(numToIHName(top.expectedIHNum), ih1, thmName),
+           (numToIHName(top.expectedIHNum + top.numMutualThms),
+            ih2, thmName)]
+        | _ -> [] --too many or none
+        end
+      end;
 
   local givenLabels::[String] = filterMap(fst, premises.toList);
   local relLabel::String = freshName("R", givenLabels);
@@ -461,6 +507,33 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
                        " for relation " ++ justShow(rel.pp))::rest.2)
               else (x::rest.1, rest.2),
             ([], []), filterMap(fst, premises.toList)).2;
+  --Check the number of IH names is valid
+  top.toAbellaMsgs <-
+      case ihNames of
+      | [] -> [] --always fine not to name them
+      | [ih] -> [] --fine to name just one
+      | [ih1, ih2] ->
+        if top.useExtSize
+        then [] --there are two inductions, so valid
+        else [errorMsg("Too many IH names for relation " ++
+                 justShow(rel.pp) ++ "; not using Ext_Size, so " ++
+                 "there is only one induction")]
+      | l -> [errorMsg("Too many IH names for relation " ++
+                 justShow(rel.pp) ++ "; expected at most " ++
+                 (if top.useExtSize then "2" else "1") ++
+                 " but found " ++ toString(length(l)))]
+      end;
+  --Check the IH names do not have conflict-causing shapes
+  top.toAbellaMsgs <-
+      flatMap(\ name::String ->
+                if name == "H" ||
+                   (startsWith("H", name) &&
+                    isDigit(substring(1, length(name), name)))
+                then [errorMsg("Cannot declare label of form \"H<num>\"")]
+                else if matches_IH_form(name)
+                then [errorMsg("Cannot declare label of form \"IH<num>\"")]
+                else [],
+              ihNames);
 
   --Check it is well-typed
   top.toAbellaMsgs <-
@@ -539,10 +612,11 @@ nonterminal ExtIndPremiseList with
    toList<(Maybe<String>, Metaterm)>, len,
    typeEnv, constructorEnv, relationEnv,
    boundNames, usedNames,
+   specialIHNames,
    upSubst, downSubst, downVarTys, tyVars,
    toAbella<[(Maybe<String>, Metaterm)]>, toAbellaMsgs, proverState;
 propagate typeEnv, constructorEnv, relationEnv, boundNames, downVarTys,
-          tyVars, usedNames, proverState, toAbellaMsgs
+          tyVars, usedNames, proverState, toAbellaMsgs, specialIHNames
    on ExtIndPremiseList;
 
 abstract production emptyExtIndPremiseList
@@ -577,6 +651,31 @@ top::ExtIndPremiseList ::= name::String m::Metaterm
   top.upSubst = rest.upSubst;
 
   top.toAbella = (just(name), m.toAbella)::rest.toAbella;
+
+  --labels of the form H<num> cause Abella errors
+  top.toAbellaMsgs <-
+      if startsWith("H", name) &&
+         isDigit(substring(1, length(name), name))
+      then [errorMsg("Cannot declare label of form \"H<num>\"")]
+      else [];
+  --labels of the form IH<num> may interfere with inductive hypotheses
+  top.toAbellaMsgs <-
+      if matches_IH_form(name)
+      then [errorMsg("Cannot declare label of form \"IH<num>\"")]
+      else [];
+  --cannot have names of other IH's
+  top.toAbellaMsgs <-
+      let whichThm::Maybe<String> =
+          lookup(name, map(snd, top.specialIHNames))
+      in
+        case whichThm of
+        | nothing() -> []
+        | just(thm) ->
+          [errorMsg("Label " ++ name ++ " is the name of an IH " ++
+                    "for " ++ thm ++ " and cannot be used as a " ++
+                    "premise label")]
+        end
+      end;
 }
 
 
@@ -762,9 +861,7 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
   top.toAbellaMsgs <-
       let fullIHNames::[(String, String)] =
           map(\ p::(String, String, String) -> (p.1, p.3),
-              if obligationsFound
-              then thms.renamedIHs ++ alsos.renamedIHs
-              else newThms.renamedIHs ++ newAlsos.renamedIHs)
+              totalRenames)
       in
         filterMap(\ p::(String, String, String) ->
                     case lookupAll(p.2, fullIHNames) of
@@ -775,7 +872,7 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
                               implode(", ",
                                  filter(neq(p.1, _), l))))
                     end,
-           newThms.renamedIHs ++ newAlsos.renamedIHs)
+           totalRenames)
       end;
 
   --check for naming thms the same thing
@@ -812,7 +909,8 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
         setEq(rels, map(fst, relInfo))
       | _ -> false
       end;
-  local obligations::[(QName, [String], Bindings, ExtIndPremiseList)] =
+  local obligations::[(QName, [String], Bindings, ExtIndPremiseList,
+                       [String])] =
       case head(top.proverState.remainingObligations) of
       | extIndElement(r, _, _, _) -> r
       | _ -> error("Not possible (proveExtInd.obligations)")
@@ -828,9 +926,12 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
       | _ -> error("Not possible (proveExtInd.importedAlsos)")
       end;
   --This should only be accessed if there are no errors
-  top.provingExtInds = obligations ++ newRels.extIndInfo;
+  top.provingExtInds =
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
+            (p.1, p.2, p.3, p.4),
+          obligations ++ newRels.extIndInfo);
   top.provingTheorems =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             --don't need the actual metaterm, only the name
             (extIndThmName(p.1), trueMetaterm()),
           obligations ++ newRels.extIndInfo) ++
@@ -838,10 +939,10 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
 
   --get the environment entry for each relation as well
   local fullRelInfo::[(QName, [String], Bindings, ExtIndPremiseList,
-                       RelationEnvItem)] =
-      zipWith(\ p::(QName, [String], Bindings, ExtIndPremiseList)
-                e::RelationEnvItem ->
-                (e.name, p.2, p.3, p.4, e),
+                       [String], RelationEnvItem)] =
+      zipWith(\ p::(QName, [String], Bindings, ExtIndPremiseList,
+                    [String]) e::RelationEnvItem ->
+                (e.name, p.2, p.3, p.4, p.5, e),
               body.extIndInfo, body.relationEnvItems);
 
   --whether or not to use ExtSize for the proof, or just the relation
@@ -860,8 +961,9 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
 
   local body::ExtIndBody =
       foldr(branchExtIndBody, newRels,
-         map(\ here::(QName, [String], Bindings, ExtIndPremiseList) ->
-               oneExtIndBody(here.3, here.1, here.2, here.4),
+         map(\ here::(QName, [String], Bindings, ExtIndPremiseList,
+                      [String]) ->
+               oneExtIndBody(here.3, here.1, here.2, here.4, here.5),
              obligations));
   body.startingGoalNum =
        if body.len > 1 then [1] else [];
@@ -870,6 +972,8 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
   body.currentModule = top.currentModule;
   body.constructorEnv = top.constructorEnv;
   body.downDuringCommands = thms.duringCommands;
+  body.expectedIHNum = 0;
+  body.numMutualThms = body.len + thms.len + alsos.len;
 
   local thms::ExtThms =
       foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
@@ -880,9 +984,15 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
               addExtThms(p.1, p.2, p.3, p.4, rest),
             newAlsos, importedAlsos);
 
+  local totalRenames::[(String, String, String)] =
+      if obligationsFound
+      then body.renamedIHs ++ thms.renamedIHs ++ alsos.renamedIHs
+      else newRels.renamedIHs ++ newThms.renamedIHs ++
+           newAlsos.renamedIHs;
+
   thms.useExtInd = [];
   thms.startingGoalNum = [body.len + 1];
-  thms.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  thms.specialIHNames = totalRenames;
   thms.expectedIHNum = body.len;
   thms.numMutualThms = body.len + thms.len + alsos.len;
   thms.shouldBeExtensible = true;
@@ -894,7 +1004,7 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
   --
   alsos.useExtInd = [];
   alsos.startingGoalNum = [body.len + 1 + thms.len];
-  alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
+  alsos.specialIHNames = totalRenames;
   alsos.expectedIHNum = body.len + thms.len;
   alsos.numMutualThms = body.len + thms.len + alsos.len;
   alsos.shouldBeExtensible = false;
@@ -904,17 +1014,20 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
   alsos.typeEnv = top.typeEnv;
   alsos.currentModule = top.currentModule;
 
-  --decorate newThms and newAlsos only for error checking
+  --decorate new things only for error checking
+  newRels.numMutualThms = 0; --not accurately needed
+  newRels.expectedIHNum = 0; --not accurately needed
+  newRels.useExtSize = useExtSize;
+  newRels.specialIHNames = totalRenames;
+  --
   newThms.useExtInd = [];
-  newThms.specialIHNames =
-      thms.specialIHNames ++ alsos.specialIHNames;
+  newThms.specialIHNames = totalRenames;
   newThms.shouldBeExtensible = true;
   newThms.numMutualThms = 0; --not accurately needed
   newThms.expectedIHNum = 0; --not accurately needed
   --
   newAlsos.useExtInd = [];
-  newAlsos.specialIHNames =
-      thms.specialIHNames ++ alsos.specialIHNames;
+  newAlsos.specialIHNames = totalRenames;
   newAlsos.shouldBeExtensible = false;
   newAlsos.numMutualThms = 0; --not accurately needed
   newAlsos.expectedIHNum = 0; --not accurately needed
@@ -929,7 +1042,7 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
 
   local addPLemmas::[(QName, Metaterm)] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
-                RelationEnvItem) ->
+                [String], RelationEnvItem) ->
             buildExtIndLemma(p.1, p.2, p.3, p.4),
           fullRelInfo);
 
@@ -957,7 +1070,7 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
       --rename IH's
       map(\ p::(String, String, String) ->
             anyProofCommand(renameTactic(p.1, p.2)),
-          thms.renamedIHs ++ alsos.renamedIHs) ++
+          totalRenames) ++
        --split
       (if body.len + thms.len + alsos.len > 1
        then [anyProofCommand(splitTactic())]

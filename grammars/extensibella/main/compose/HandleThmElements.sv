@@ -648,8 +648,8 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 aspect production extIndElement
 top::ThmElement ::=
-   --[(rel name, rel arg names, all bindings, extra premises)]
-   rels::[(QName, [String], Bindings, ExtIndPremiseList)]
+   --[(rel name, rel arg names, all bindings, extra premises, IH names)]
+   rels::[(QName, [String], Bindings, ExtIndPremiseList, [String])]
    --[(thm name, var bindings, thm statement, induction info)]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
@@ -657,11 +657,14 @@ top::ThmElement ::=
 {
   top.extIndDefs = [];
 
-  top.newExtInds = rels;
+  top.newExtInds =
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
+            (p.1, p.2, p.3, p.4),
+          rels);
 
   --lemma names are used for proofs
   local lemmaStatements::[[(QName, Metaterm)]] =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             buildExtSizeLemmas(p.1, p.2),
           rels);
 
@@ -709,7 +712,7 @@ top::ThmElement ::=
          zip(extThms.keyRels, thms)); --cuts off the alsos part
 
   local toProjRelStatements::[Metaterm] =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             buildExtIndThm(p.3, p.1, p.2, p.4.toList, useES),
           rels);
   local mutThmStatements::[Metaterm] =
@@ -728,12 +731,12 @@ top::ThmElement ::=
   local toProjRelStatement::Metaterm =
       foldr1(andMetaterm, toProjRelStatements ++ mutThmStatements);
   local toProjRelNames::[String] =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             "$toProjRel__" ++ p.1.abella_pp,
           rels);
   local toProjRelInfo::[(QName, RelationEnvItem, Boolean, Boolean,
                          Bindings, ExtBody, String)] =
-      map(\ p::(String, QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(String, QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             let rei::RelationEnvItem =
                 decorate p.2 with {relationEnv = top.relEnv;}.fullRel
             in
@@ -766,7 +769,7 @@ top::ThmElement ::=
              transpose(bodyIndNums ++ extThms.inductionNums))) ++
       if length(rels) > 1 then " split.\n" else "\n";
   local toProjRelSetups::[String] =
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             let givenLabels::[String] = filterMap(fst, p.4.toList)
             in
             let rName::String = freshName("R", givenLabels)
@@ -916,7 +919,7 @@ top::ThmElement ::=
   --was proved modularly; however, it is easier to use that here than
   --to adjust the naming elsewhere.
   local extIndProofs::[String] =
-      map(\ p::(Integer, QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(Integer, QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             let stmt::Metaterm = buildExtIndLemma(p.2, p.3, p.4, p.5).2
             in
             let introsNames::[String] =
@@ -976,7 +979,7 @@ top::ThmElement ::=
 
   top.newThms =
       --addP lemma for each relation
-      map(\ p::(QName, [String], Bindings, ExtIndPremiseList) ->
+      map(\ p::(QName, [String], Bindings, ExtIndPremiseList, [String]) ->
             buildExtIndLemma(p.1, p.2, p.3, p.4),
           rels) ++
       --mutual theorems
