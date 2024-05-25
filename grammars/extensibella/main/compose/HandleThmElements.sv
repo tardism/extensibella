@@ -1040,10 +1040,11 @@ ExtBody ::= boundVars::Bindings rel::QName relArgs::[String]
 
 function buildProjRel_standInRules
 TopCommand ::= rels::[(QName, [String])] standInRules::[(QName, Def)]
-               env::Env<RelationEnvItem> buildsOns::[(QName, [QName])]
+               env::Env<RelationEnvItem> cenv::Env<ConstructorEnvItem>
+               buildsOns::[(QName, [QName])]
 {
   return buildProjRelDef(buildDefInfo(rels, standInRules, env),
-                         buildsOns);
+                         buildsOns, env, cenv);
 }
 function buildDefInfo
 [(QName, ([String], [String], Maybe<Metaterm>),
@@ -1436,7 +1437,7 @@ top::ThmElement ::= rels::[(QName, [String])]
   -}
   local projRelDef::String =
       buildProjRel_standInRules(rels, top.standInRules_down,
-         top.relEnv, top.buildsOns_down).abella_pp;
+         top.relEnv, top.constrEnv, top.buildsOns_down).abella_pp;
   top.extIndDefs = [projRelDef];
 
 

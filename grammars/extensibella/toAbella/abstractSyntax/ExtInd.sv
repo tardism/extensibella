@@ -1337,7 +1337,7 @@ top::TopCommand ::= rels::[(QName, [String])]
   local projRelDef::TopCommand =
       buildProjRel(map(\ p::(Decorated QName with {relationEnv}, [String]) ->
                          (p.1.fullRel.name, p.2), decRels),
-                   top.relationEnv, top.proverState.buildsOns);
+         top.relationEnv, top.constructorEnv, top.proverState.buildsOns);
   local projRelLemmas::[(QName, Metaterm)] =
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
                 buildProjRelLemmas(p.1.fullRel.name, p.2), decRels);
@@ -1433,7 +1433,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
       buildProjRel(obligations ++
                    map(\ p::(Decorated QName with {relationEnv}, [String]) ->
                          (p.1.fullRel.name, p.2), decNewRels),
-                   top.relationEnv, top.proverState.buildsOns);
+         top.relationEnv, top.constructorEnv, top.proverState.buildsOns);
   local projRelLemmas::[(QName, Metaterm)] =
       flatMap(\ p::(QName, [String]) ->
                 buildProjRelLemmas(p.1, p.2),
@@ -1721,6 +1721,7 @@ function buildExtSizeDefBody
 function buildProjRel
 TopCommand ::= relInfo::[(QName, [String])]
                relEnv::Env<RelationEnvItem>
+               constrEnv::Env<ConstructorEnvItem>
                --[(module, [modules on which it builds])]
                buildsOns::[(QName, [QName])]
 {
@@ -1735,7 +1736,7 @@ TopCommand ::= relInfo::[(QName, [String])]
   local defInfo::[(QName, ([String], [String], Maybe<Metaterm>),
                    [([Term], Maybe<Metaterm>)], RelationEnvItem)] =
       buildProjRelDefInfo(fullRelInfo);
-  return buildProjRelDef(defInfo, buildsOns);
+  return buildProjRelDef(defInfo, buildsOns, relEnv, constrEnv);
 }
 
 --Gather up the information we need to build the R_P def clauses
@@ -1814,6 +1815,7 @@ TopCommand ::=
            [([Term], Maybe<Metaterm>)], RelationEnvItem)]
 --[(module, [modules on which it builds])]
    buildsOns::[(QName, [QName])]
+   relEnv::Env<RelationEnvItem> constrEnv::Env<ConstructorEnvItem>
 {
   local preds::[(QName, Type)] =
       map(\ p::(QName, ([String], [String], Maybe<Metaterm>),
@@ -1843,7 +1845,8 @@ TopCommand ::=
                 in
                   buildProjRelClauses(p.1, projRelledDefs,
                      p.2.1, p.2.2, projRelledQBody,
-                     p.4.pcIndex, allRels, buildsOns)
+                     p.4.pcIndex, allRels, buildsOns,
+                     relEnv, constrEnv)
                 end end,
               rels);
   return definitionDeclaration(preds,
@@ -1861,7 +1864,8 @@ function buildProjRelClauses
           qRuleArgs::[String] qRuleBindings::[String]
           qRuleBody::Maybe<Metaterm>
           pcIndex::Integer allRels::[QName]
-          buildsOns::[(QName, [QName])]
+          buildsOns::[(QName, [QName])] relEnv::Env<RelationEnvItem>
+          constrEnv::Env<ConstructorEnvItem>
 {
   local projRel::QName = projRelQName(rel.sub);
   local usedVars::[String] =
@@ -1887,6 +1891,8 @@ function buildProjRelClauses
       end;
 
   local pc::Term = elemAtIndex(head(defs).1, pcIndex);
+  pc.relationEnv = relEnv;
+  pc.constructorEnv = constrEnv;
 
   --replace vars from Q rule conclusion with terms from rule and
   --unknownK with pc
@@ -1903,7 +1909,9 @@ function buildProjRelClauses
   --determine whether this is a rule needing a projection
   local isExtRule::Boolean =
       let constr::QName = pc.headConstructor
-      in --rules for K's getting here are instantiated default rules,
+      in --unstructured PC is host rule
+         pc.isStructured &&
+         --rules for K's getting here are instantiated default rules,
          --  which are host-y rules
          !pc.isUnknownTermK &&
          --extension rules are the ones from modules building on rel
@@ -1945,7 +1953,7 @@ function buildProjRelClauses
          | [] -> []
          | _::tl -> hereDef::buildProjRelClauses(rel, tl, qRuleArgs,
                                 qRuleBindings, qRuleBody, pcIndex, allRels,
-                                buildsOns)
+                                buildsOns, relEnv, constrEnv)
          end;
 }
 
