@@ -1120,7 +1120,8 @@ top::TopCommand ::= rels::[(QName, [String])]
   local extSizeDef::TopCommand =
       buildExtSize(map(\ q::Decorated QName with {relationEnv} ->
                          q.fullRel.name, map(fst, decRels)),
-                       top.relationEnv);
+                   top.relationEnv, top.constructorEnv,
+                   top.proverState.buildsOns);
   local extSizeLemmas::[(QName, Metaterm)] =
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
                 buildExtSizeLemmas(p.1.fullRel.name, p.2), decRels);
@@ -1216,7 +1217,8 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
       buildExtSize(map(fst, obligations) ++
                    map(\ q::Decorated QName with {relationEnv} ->
                          q.fullRel.name, map(fst, decNewRels)),
-                   top.relationEnv);
+                   top.relationEnv, top.constructorEnv,
+                   top.proverState.buildsOns);
   local extSizeLemmas::[(QName, Metaterm)] =
       flatMap(\ p::(QName, [String]) ->
                 buildExtSizeLemmas(p.1, p.2),
@@ -1521,6 +1523,8 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 -}
 function buildExtSize
 TopCommand ::= fullRels::[QName] relEnv::Env<RelationEnvItem>
+               cenv::Env<ConstructorEnvItem>
+               buildsOns::[(QName, [QName])]
 {
   local fullRelInfo::[(QName, RelationEnvItem)] =
       map(\ q::QName ->
@@ -1533,7 +1537,8 @@ TopCommand ::= fullRels::[QName] relEnv::Env<RelationEnvItem>
                     init(p.2.types.toList) ++ --drop prop at end
                     [integerType, propType])),
           fullRelInfo);
-  local defs::[Def] = buildExtSizeDef(fullRelInfo, fullRels);
+  local defs::[Def] =
+      buildExtSizeDef(fullRelInfo, fullRels, relEnv, cenv, buildsOns);
   return definitionDeclaration(preds,
             foldrLastElem(consDefs, singleDefs, defs));
 }
@@ -1544,14 +1549,18 @@ TopCommand ::= fullRels::[QName] relEnv::Env<RelationEnvItem>
 -}
 function buildExtSizeDef
 [Def] ::= relInfo::[(QName, RelationEnvItem)] allRels::[QName]
+          renv::Env<RelationEnvItem> cenv::Env<ConstructorEnvItem>
+          buildsOns::[(QName, [QName])]
 {
   local pcIndex::Integer = head(relInfo).2.pcIndex;
   local defList::[([Term], Maybe<Metaterm>)] = head(relInfo).2.defsList;
   local firstRel::[Def] =
-      buildExtSizeClauses(head(relInfo).1, defList, pcIndex, allRels);
+      buildExtSizeClauses(head(relInfo).1, defList, pcIndex, allRels,
+                          renv, cenv, buildsOns);
   return case relInfo of
          | [] -> []
-         | _::t -> firstRel ++ buildExtSizeDef(t, allRels)
+         | _::t -> firstRel ++
+                   buildExtSizeDef(t, allRels, renv, cenv, buildsOns)
          end;
 }
 
@@ -1562,6 +1571,8 @@ function buildExtSizeDef
 function buildExtSizeClauses
 [Def] ::= rel::QName defs::[([Term], Maybe<Metaterm>)]
           pcIndex::Integer allRels::[QName]
+          renv::Env<RelationEnvItem> cenv::Env<ConstructorEnvItem>
+          buildsOns::[(QName, [QName])]
 {
   local extSizeRel::QName = extSizeQName(rel.sub);
   local usedVars::[String] =
@@ -1577,7 +1588,13 @@ function buildExtSizeClauses
       in
       let constr::QName = pc.headConstructor
       in
-        !sameModule(rel.moduleName, constr)
+        decorate pc with {
+          relationEnv = renv;
+          constructorEnv = cenv;
+        }.isStructured &&
+         --extension rules are the ones from modules building on rel
+         contains(rel.moduleName,
+            lookup(constr.moduleName, buildsOns).fromJust)
       end end;
 
   --(has extSize premises added, new body)
@@ -1626,7 +1643,8 @@ function buildExtSizeClauses
   return case defs of
          | [] -> []
          | _::tl ->
-           hereDef::buildExtSizeClauses(rel, tl, pcIndex, allRels)
+           hereDef::buildExtSizeClauses(rel, tl, pcIndex, allRels,
+                                        renv, cenv, buildsOns)
          end;
 }
 
@@ -1681,7 +1699,7 @@ function buildExtSizeDefBody
       case modBody.1 of
       | [] -> ([], modBody.2)
       --more than one
-      | h::t when isExtRule -> --sum + 1
+      | h::t when isExtRule -> --1 + sum
         let x::(String, [String], [Metaterm]) = sumUp(h::t)
         in
           (x.2, addTerm(integerToIntegerTerm(1), basicNameTerm(x.1),

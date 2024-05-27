@@ -1101,7 +1101,8 @@ top::ThmElement ::= rels::[(QName, [String])]
     Definition of R_{ES} relation
   -}
   local extSizeDef::String =
-      buildExtSize(map(fst, rels), top.relEnv).abella_pp;
+      buildExtSize(map(fst, rels), top.relEnv, top.constrEnv,
+                   top.buildsOns_down).abella_pp;
   top.extIndDefs = [extSizeDef];
 
   top.newExtSizes = [map(fst, rels)];
