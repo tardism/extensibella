@@ -487,6 +487,15 @@ top::ProcessingErrorMessage ::=
 }
 
 
+abstract production strictSubtermsRestrictions
+top::ProcessingErrorMessage ::= m::Metaterm
+{
+  top.pp = text("Inductive restrictions must not occur in strict subterms:\n") ++ m.pp;
+
+  top.fromAbella = strictSubtermsRestrictions(m.fromAbella);
+}
+
+
 
 
 

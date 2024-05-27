@@ -340,6 +340,9 @@ concrete productions top::ProcessingErrorMessage_c
   { top.ast = inductiveRestrictionViolated(); }
 | 'No matching clauses'
   { top.ast = noMatchingClauses(); }
+| 'Inductive restrictions must not occur in strict subterms' ':'
+  m::Metaterm_c
+  { top.ast = strictSubtermsRestrictions(m.ast.fromRight); }
 
 
 concrete productions top::TypingErrorMessage_c
