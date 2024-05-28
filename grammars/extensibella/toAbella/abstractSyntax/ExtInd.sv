@@ -111,9 +111,16 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
   top.newTheorems = addPLemmas;
   top.afterCommands =
       flatMap(\ p::(QName, Metaterm) ->
-                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                [anyTopCommand(theoremDeclaration(p.1, [],
+                    decorate p.2 with {
+                      typeEnv = top.typeEnv;
+                      relationEnv = top.relationEnv;
+                      constructorEnv = top.constructorEnv;
+                      boundNames = [];
+                    }.toAbella)),
                  anyProofCommand(skipTactic())],
-              addPLemmas);
+              addPLemmas ++ thms.provingTheorems ++
+              alsos.provingTheorems);
 
   local addPLemmas::[(QName, Metaterm)] =
       map(\ p::(QName, [String], Bindings, ExtIndPremiseList,
@@ -1028,7 +1035,13 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
   top.newTheorems = addPLemmas;
   top.afterCommands =
       flatMap(\ p::(QName, Metaterm) ->
-                [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
+                [anyTopCommand(theoremDeclaration(p.1, [],
+                    decorate p.2 with {
+                      typeEnv = top.typeEnv;
+                      relationEnv = top.relationEnv;
+                      constructorEnv = top.constructorEnv;
+                      boundNames = [];
+                    }.toAbella)),
                  anyProofCommand(skipTactic())],
               addPLemmas ++ thms.provingTheorems ++
               alsos.provingTheorems);
