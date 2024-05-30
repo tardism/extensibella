@@ -356,8 +356,6 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
   local finalIO::IOToken =
       io(if a.isQuit then exited else io_action_6);
 
-  --Note:  The only way to fix the MWDA error here is to move all the
-  --processing attrs to extensibella:toAbella:abstractSyntax
   top.numAbellaCommands = length(a.toAbella) +
       if continueProcessing --only add others if they happened
       then duringed.1 + aftered.1 + io_action_5.iovalue.1
@@ -372,7 +370,9 @@ top::RunCommands ::= a::AnyCommand rest::RunCommands
        else a.newProverState;
   rest.priorStep =
        if speak_to_abella
-       then top
+       then if full_a.isError
+            then top.priorStep --can't use this if this was bad
+            else top
        else if is_error
        then top.priorStep --can't use this if this was bad
        else case a.newPriorStep of
