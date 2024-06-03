@@ -330,7 +330,7 @@ top::ExtIndBody ::= boundVars::Bindings rel::QName relArgs::[String]
               then ( text(" with") ++ line() ++
                      nest(3, ppImplode(text(", "), premises.pps)) )
               else text("")) ++
-             (if length(ihNames) > 0
+             (if length(ihNames) == 0
               then text("")
               else text(" as ") ++
                    ppImplode(text(", "), map(text, ihNames)))];
