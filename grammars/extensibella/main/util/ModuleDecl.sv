@@ -141,7 +141,8 @@ IOVal<Either<String ([DefElement], [ThmElement])>> ::=
 
 --Get the actual definitions out of def elements to add to the context
 function defElementsDefinitions
-([TypeEnvItem], [RelationEnvItem], [ConstructorEnvItem]) ::=
+--(types, rels, constrs, groups of mutually-defined relations
+([TypeEnvItem], [RelationEnvItem], [ConstructorEnvItem], [[QName]]) ::=
    elems::[DefElement]
 {
   local defs::ListOfCommands =
@@ -153,7 +154,7 @@ function defElementsDefinitions
   defs.currentModule = error("defElementsDefinitions.currentModule");
   defs.ignoreDefErrors = true;
   defs.proverState = error("defElementsDefinitions.proverState");
-  return (defs.tys, defs.rels, defs.constrs);
+  return (defs.tys, defs.rels, defs.constrs, defs.newMutualRelGroups);
 }
 
 

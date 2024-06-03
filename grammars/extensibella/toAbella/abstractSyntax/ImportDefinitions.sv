@@ -16,6 +16,7 @@ nonterminal ListOfCommands with
    ignoreDefErrors,
    typeEnv, relationEnv, constructorEnv, proverState, currentModule,
    commandList, tys, rels, constrs,
+   newMutualRelGroups,
    declaredThms,
    interactive;
 propagate proverState, currentModule, ignoreDefErrors,
@@ -26,6 +27,9 @@ synthesized attribute commandList::[AnyCommand];
 synthesized attribute tys::[TypeEnvItem];
 synthesized attribute rels::[RelationEnvItem];
 synthesized attribute constrs::[ConstructorEnvItem];
+
+--groups of relations defined together in a mutual group
+synthesized attribute newMutualRelGroups::[[QName]];
 
 synthesized attribute declaredThms::[(QName, Metaterm)];
 
@@ -42,6 +46,8 @@ top::ListOfCommands ::=
   top.rels = [];
   top.constrs = [];
 
+  top.newMutualRelGroups = [];
+
   top.declaredThms = [];
 }
 
@@ -57,6 +63,9 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   top.tys = a.tys ++ rest.tys;
   top.rels = a.rels ++ rest.rels;
   top.constrs = a.constrs ++ rest.constrs;
+
+  top.newMutualRelGroups =
+      a.newMutualRelGroups ++ rest.newMutualRelGroups;
 
   a.typeEnv = top.typeEnv;
   a.relationEnv = top.relationEnv;
@@ -76,6 +85,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 attribute
    ignoreDefErrors,
    tys, rels, constrs,
+   newMutualRelGroups,
    declaredThms
 occurs on AnyCommand;
 propagate ignoreDefErrors on AnyCommand;
@@ -86,6 +96,8 @@ top::AnyCommand ::= c::TopCommand
   top.tys = c.tys;
   top.rels = c.rels;
   top.constrs = c.constrs;
+
+  top.newMutualRelGroups = c.newMutualRelGroups;
 
   --filter out anything containing dollar signs
   top.declaredThms =
@@ -102,6 +114,8 @@ top::AnyCommand ::= c::ProofCommand
   top.rels = [];
   top.constrs = [];
 
+  top.newMutualRelGroups = [];
+
   top.declaredThms = [];
 }
 
@@ -112,6 +126,8 @@ top::AnyCommand ::= c::NoOpCommand
   top.tys = [];
   top.rels = [];
   top.constrs = [];
+
+  top.newMutualRelGroups = [];
 
   top.declaredThms = [];
 }
@@ -124,6 +140,8 @@ top::AnyCommand ::= parseErrors::String
   top.rels = [];
   top.constrs = [];
 
+  top.newMutualRelGroups = [];
+
   top.declaredThms = [];
 }
 
@@ -133,8 +151,15 @@ top::AnyCommand ::= parseErrors::String
 
 attribute
    ignoreDefErrors,
-   tys, rels, constrs
+   tys, rels, constrs,
+   newMutualRelGroups
 occurs on TopCommand;
+
+aspect default production
+top::TopCommand ::=
+{
+  top.newMutualRelGroups = [];
+}
 
 aspect production theoremDeclaration
 top::TopCommand ::= name::QName params::[String] body::Metaterm
@@ -193,6 +218,8 @@ top::TopCommand ::= preds::[(QName, Type)] defs::Defs
                    fullNames)
       else [];
   top.constrs = [];
+
+  top.newMutualRelGroups = [map(fst, preds)];
 }
 
 

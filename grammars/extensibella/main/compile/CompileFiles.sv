@@ -47,15 +47,15 @@ IOVal<Integer> ::= parsers::AllParsers ioin::IOToken filename::String
   local stdLibThms::IOVal<Either<String [(QName, Metaterm)]>> =
       importStdLibThms(parsers, fileInfo.io);
   local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
-                            [ConstructorEnvItem]) =
+                            [ConstructorEnvItem], [[QName]]) =
       defElementsDefinitions(processed.2);
   local proverState::ProverState =
       defaultProverState(processed.3,
          buildEnv(modComms.tys ++ importedProofDefs.1),
          buildEnv(modComms.rels ++ importedProofDefs.2),
          buildEnv(modComms.constrs ++ importedProofDefs.3),
-         stdLibThms.iovalue.fromRight,
-         processed.4);
+         importedProofDefs.4 ++ modComms.newMutualRelGroups,
+         stdLibThms.iovalue.fromRight, processed.4);
   --
   local compiledContents::String =
       buildCompiledOutput(fileAST.1.fromJust, fileAST.2, proverState);

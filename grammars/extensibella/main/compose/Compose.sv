@@ -233,14 +233,14 @@ IOVal<Integer> ::= outFilename::String defFileContents::String
 
   --things we'll need for proof processing
   local proofDefItems::([TypeEnvItem], [RelationEnvItem],
-                        [ConstructorEnvItem]) =
+                        [ConstructorEnvItem], [[QName]]) =
       defElementsDefinitions(proofDefs);
   local proverState::ProverState =
       defaultProverState([],
          addEnv(defTyEnv, proofDefItems.1),
          addEnv(defRelEnv, proofDefItems.2),
          addEnv(defConstrEnv, proofDefItems.3),
-         [], buildsOns);
+         proofDefItems.4, [], buildsOns);
 
   --proof definitions
   local encodedProofDefs::[AnyCommand] =

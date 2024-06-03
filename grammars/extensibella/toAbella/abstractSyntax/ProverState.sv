@@ -13,7 +13,7 @@ data nonterminal ProverState with
    state, debug, displayWidth,
    knownTheorems, knownExtSizes, knownProjRels,
    knownExtInds, remainingObligations,
-   knownTypes, knownRels, knownConstrs, buildsOns,
+   knownTypes, knownRels, knownConstrs, mutualRelGroups, buildsOns,
    provingThms, provingExtInds, duringCommands, afterCommands,
    keyRelModules, currentKeyRelModule;
 
@@ -52,6 +52,11 @@ annotation remainingObligations::[ThmElement];
 annotation knownTypes::Env<TypeEnvItem>;
 annotation knownRels::Env<RelationEnvItem>;
 annotation knownConstrs::Env<ConstructorEnvItem>;
+
+--Sets of relations declared mutually
+--Does not guarantee they are actually mutual in definition, but they
+--   were declared in one group
+annotation mutualRelGroups::[[QName]];
 
 --modules and the modules on which they build
 annotation buildsOns::[(QName, [QName])];
@@ -157,6 +162,7 @@ ProverState ::= current::ProverState
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs =current.knownConstrs,
+            mutualRelGroups = current.mutualRelGroups,
             provingThms = current.provingThms,
             buildsOns = current.buildsOns,
             currentKeyRelModule = current.currentKeyRelModule);
@@ -214,7 +220,9 @@ ProverState ::= current::ProverState
                removeFinishedObligation(current.remainingObligations,
                   current.provingThms),
             knownTypes = current.knownTypes, knownRels = current.knownRels,
-            knownConstrs = current.knownConstrs, provingThms = [],
+            knownConstrs = current.knownConstrs,
+            mutualRelGroups = current.mutualRelGroups,
+            provingThms = [],
             buildsOns = current.buildsOns,
             currentKeyRelModule = nothing());
 }
@@ -237,6 +245,7 @@ ProverState ::= current::ProverState
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
+            mutualRelGroups = current.mutualRelGroups,
             provingThms = [],
             buildsOns = current.buildsOns,
             currentKeyRelModule = nothing());
@@ -261,6 +270,7 @@ ProverState ::= current::ProverState debugVal::Boolean
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
+            mutualRelGroups = current.mutualRelGroups,
             provingThms = current.provingThms,
             buildsOns = current.buildsOns,
             currentKeyRelModule = current.currentKeyRelModule);
@@ -285,6 +295,7 @@ ProverState ::= current::ProverState width::Integer
             knownTypes = current.knownTypes,
             knownRels = current.knownRels,
             knownConstrs = current.knownConstrs,
+            mutualRelGroups = current.mutualRelGroups,
             provingThms = current.provingThms,
             buildsOns = current.buildsOns,
             currentKeyRelModule = current.currentKeyRelModule);
@@ -297,6 +308,7 @@ function updateProverStateTop
 ProverState ::= current::ProverState newProofState::ProofState
    newThms::[(QName, Metaterm)] newTys::[TypeEnvItem]
    newRels::[RelationEnvItem] newConstrs::[ConstructorEnvItem]
+   newMutualRelGroups::[[QName]]
    provingThms::[(QName, Metaterm)]
    provingExtInds::[(QName, [String], Bindings, ExtIndPremiseList)]
    newExtSizeGroup::Maybe<[QName]>
@@ -338,6 +350,7 @@ ProverState ::= current::ProverState newProofState::ProofState
             knownTypes = addEnv(current.knownTypes, newTys),
             knownRels = addEnv(current.knownRels, newRels),
             knownConstrs = addEnv(current.knownConstrs, newConstrs),
+            mutualRelGroups = newMutualRelGroups ++ current.mutualRelGroups,
             provingThms = provingThms, buildsOns = current.buildsOns,
             currentKeyRelModule =
                 if null(keyRelModules) then nothing()
@@ -367,7 +380,9 @@ ProverState ::= current::ProverState newProofState::ProofState
             knownProjRels = current.knownProjRels,
             remainingObligations = current.remainingObligations,
             knownTypes = current.knownTypes,
-            knownRels =current.knownRels, knownConstrs = current.knownConstrs,
+            knownRels =current.knownRels,
+            knownConstrs = current.knownConstrs,
+            mutualRelGroups = current.mutualRelGroups,
             provingThms = current.provingThms,
             buildsOns = current.buildsOns,
             currentKeyRelModule = if updateKeyRelModule
@@ -380,7 +395,8 @@ ProverState ::= current::ProverState newProofState::ProofState
 function defaultProverState
 ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
    relEnv::Env<RelationEnvItem> constrEnv::Env<ConstructorEnvItem>
-   knownThms::[(QName, Metaterm)] buildsOns::[(QName, [QName])]
+   mutualRelGroups::[[QName]] knownThms::[(QName, Metaterm)]
+   buildsOns::[(QName, [QName])]
 {
   {-Starting environments with the things from the environment not
     having special syntax to hide them-}
@@ -485,6 +501,7 @@ ProverState ::= obligations::[ThmElement] tyEnv::Env<TypeEnvItem>
             knownTypes = addEnv(tyEnv, knownTys),
             knownRels = addEnv(relEnv, knownRels),
             knownConstrs = addEnv(constrEnv, knownConstrs),
+            mutualRelGroups = mutualRelGroups,
             provingThms = [], buildsOns = buildsOns,
             currentKeyRelModule = nothing());
 }
@@ -506,7 +523,9 @@ ProverState ::= p::ProverState
             knownProjRels = p.knownProjRels,
             remainingObligations = p.remainingObligations,
             knownTypes = p.knownTypes, knownRels = p.knownRels,
-            knownConstrs = p.knownConstrs, provingThms = p.provingThms,
+            knownConstrs = p.knownConstrs,
+            mutualRelGroups = p.mutualRelGroups,
+            provingThms = p.provingThms,
             buildsOns = p.buildsOns,
             currentKeyRelModule = p.currentKeyRelModule);
 }
@@ -575,4 +594,18 @@ Boolean ::= p::ProverState builtOnMod::QName buildingOnMod::QName
       | nothing() ->
         error("Unknown module " ++ justShow(buildingOnMod.pp))
       end;
+}
+
+
+--Find the mutual group with which a relation was declared
+function findMutualGroup
+Maybe<[QName]> ::= name::QName state::ProverState
+{
+  local find::[[QName]] =
+      filter(contains(name, _), state.mutualRelGroups);
+  return case find of
+         | [] -> nothing()
+         | [x] -> just(x)
+         | _ -> error("findMutualGroup multiple")
+         end;
 }

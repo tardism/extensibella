@@ -1359,16 +1359,19 @@ top::TopCommand ::= rels::[(QName, [String])]
 
   top.toAbellaMsgs <-
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                --check no repeated arguments
                 (if length(nub(p.2)) != length(p.2)
                  then [errorMsg("Repeated arguments in Proj Rel for " ++
                           justShow(p.1.pp))]
                  else []) ++
+                --check arguments are capitalized
                 flatMap(\ x::String ->
                           if !isCapitalized(x)
                           then [errorMsg("Arguments in Proj Rel " ++
                                    "declaration must be capitalized, but " ++
                                    x ++ " is not")]
                           else [], nub(p.2)) ++
+                --check right number of arguments
                 (if p.1.relFound &&  --len - 1 to drop prop
                     length(p.2) != p.1.fullRel.types.len - 1
                  then [errorMsg("Expected " ++
@@ -1376,20 +1379,51 @@ top::TopCommand ::= rels::[(QName, [String])]
                           " arguments to " ++ justShow(p.1.pp) ++
                           " but found " ++ toString(length(p.2)))]
                  else []) ++
+                --errors from finding relation
                 p.1.relErrors ++
+                --
                 if !p.1.relFound
                 then []
-                else (if !sameModule(top.currentModule, p.1.fullRel.name)
+                else --new relations only
+                     (if !sameModule(top.currentModule, p.1.fullRel.name)
                       then [errorMsg("Relation " ++
                                justShow(p.1.fullRel.name.pp) ++
                                " is not from this module")]
                       else []) ++
+                     --only one definition for it
                      (if findProjRelGroup(p.1.fullRel.name,
                             top.proverState).isJust
                       then [errorMsg("Relation " ++
                               justShow(p.1.fullRel.name.pp) ++
                               " already has Proj Rel defined for it")]
-                      else []), decRels);
+                      else []) ++
+                     --all mutual relations included
+                     (case findMutualGroup(p.1.fullRel.name,
+                                           top.proverState) of
+                      | just(g) ->
+                        let allHere::[QName] =
+                            filterMap(
+                               \ p::(Decorated QName with {relationEnv}, [String]) ->
+                                 if p.1.relFound
+                                 then just(p.1.fullRel.name)
+                                 else nothing(),
+                               decRels)
+                        in
+                        let missing::[QName] = removeAll(allHere, g)
+                        in
+                          case missing of
+                          | [] -> [] --none missing, so fine
+                          | l -> [errorMsg("Missing relation" ++
+                                     (if length(l) == 1 then " " else "s ") ++
+                                     "defined mutually with " ++
+                                     justShow(p.1.fullRel.name.pp) ++ ":  " ++
+                                     implode(", ", map(justShow, map((.pp), l))))]
+                          end
+                        end end
+                      | nothing() ->
+                        error("Should be impossible (projRelDecl.toAbellaMsgs)")
+                      end),
+              decRels);
 }
 
 
@@ -1491,16 +1525,19 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
       end;
   top.toAbellaMsgs <-
       flatMap(\ p::(Decorated QName with {relationEnv}, [String]) ->
+                --check no repeated arguments
                 (if length(nub(p.2)) != length(p.2)
                  then [errorMsg("Repeated arguments in Proj Rel for " ++
                           justShow(p.1.pp))]
                  else []) ++
+                --check arguments are capitalized
                 flatMap(\ x::String ->
                           if !isCapitalized(x)
                           then [errorMsg("Arguments in Proj Rel " ++
                                    "declaration must be capitalized, but " ++
                                    x ++ " is not")]
                           else [], nub(p.2)) ++
+                --check right number of arguments
                 (if p.1.relFound &&  --len - 1 to drop prop
                     length(p.2) != p.1.fullRel.types.len - 1
                  then [errorMsg("Expected " ++
@@ -1508,20 +1545,54 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                           " arguments to " ++ justShow(p.1.pp) ++
                           " but found " ++ toString(length(p.2)))]
                  else []) ++
+                --errors from finding relation
                 p.1.relErrors ++
+                --
                 if !p.1.relFound
                 then []
-                else (if !sameModule(top.currentModule, p.1.fullRel.name)
+                else --new relations only
+                     (if !sameModule(top.currentModule, p.1.fullRel.name)
                       then [errorMsg("Relation " ++
                                justShow(p.1.fullRel.name.pp) ++
                                " is not from this module")]
                       else []) ++
+                     --only one definition for it
                      (if findProjRelGroup(p.1.fullRel.name,
                             top.proverState).isJust
                       then [errorMsg("Relation " ++
                               justShow(p.1.fullRel.name.pp) ++
                               " already has Proj Rel defined for it")]
-                      else []), decNewRels);
+                      else []),
+              decNewRels);
+  --check all mutual relations included
+  top.toAbellaMsgs <-
+      let allRels::[QName] =
+          filterMap(
+             \ p::(Decorated QName with {relationEnv}, [String]) ->
+               if p.1.relFound
+               then just(p.1.fullRel.name)
+               else nothing(),
+             decNewRels) ++ oldRels
+      in
+        flatMap(\ q::QName ->
+                  case findMutualGroup(q, top.proverState) of
+                  | just(g) ->
+                    let missing::[QName] = removeAll(allRels, g)
+                    in
+                      case missing of
+                      | [] -> [] --none missing, so fine
+                      | l -> [errorMsg("Missing relation" ++
+                                 (if length(l) == 1 then " " else "s ") ++
+                                 "defined mutually with " ++
+                                 justShow(q.pp) ++ ":  " ++
+                                 implode(", ", map(justShow, map((.pp), l))))]
+                      end
+                    end
+                  | nothing() ->
+                    error("Should be impossible (addProjRel.toAbellaMsgs)")
+                  end,
+                allRels)
+      end;
 }
 
 

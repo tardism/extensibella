@@ -71,7 +71,7 @@ Either<IOVal<String>  DecCmds> ::=
       module_elements(definitionCmds);
   --context information for imported definitions
   local importedProofDefs::([TypeEnvItem], [RelationEnvItem],
-                            [ConstructorEnvItem]) =
+                            [ConstructorEnvItem], [[QName]]) =
       defElementsDefinitions(importDefs);
   --combine definition file and imported proof definitions
   local startProverState::ProverState =
@@ -79,6 +79,7 @@ Either<IOVal<String>  DecCmds> ::=
          addEnv(build_context.1, importedProofDefs.1),
          addEnv(build_context.2, importedProofDefs.2),
          addEnv(build_context.3, importedProofDefs.3),
+         importedProofDefs.4 ++ definitionCmds.newMutualRelGroups,
          stdLibThms.iovalue.fromRight, buildsOns);
   --send definitions to Abella
   local importDefCmds::[AnyCommand] =
