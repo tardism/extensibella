@@ -309,18 +309,14 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       else if alsos.len > 0
       then [errorMsg("Cannot have also theorems when using Ext_Ind")]
       else [];
-  --check we don't now require ExtInd for imported R_ES or R_P key rels
+  --check we don't now require ExtInd when we didn't before
   top.toAbellaMsgs <-
-      if !obligationFound ||
-         null(newImportedKeyRels) || --no new ExtInd requirement
-         !null(oldImportedKeyRels)   --old already used ExtInd
-      then []
-      else if !any(take(length(names), thms.specialKeyRels))
-      then [] --no imported R_ES or R_P key relations
-      else [errorMsg("New additions require Ext_Ind for existing " ++
-               "properties; cannot require Ext_Ind for imported " ++
-               "properties using extension size or projection " ++
-               "version for key relation")];
+      if !obligationFound || null(newImportedKeyRels)
+      then [] --imported not known or no attempt to use ExtInd for new
+      else if !null(oldImportedKeyRels)
+      then [] --old already used ExtInd
+      else [errorMsg("Cannot have new properties using imported " ++
+               "key relations when existing properties do not")];
   --check for naming IH's the same thing
   top.toAbellaMsgs <-
       foldl(\ rest::([(String, String)], [Message])

@@ -1131,13 +1131,26 @@ top::ThmElement ::= rels::[(QName, [String])]
                       let unifies::Boolean =
                           unifyTermsSuccess(unifyPrems.1, unifyPrems.2)
                       in
+                      let pc::Decorated Term with {relationEnv, constructorEnv} =
+                          decorate elemAtIndex(d.1, rel.pcIndex) with {
+                             relationEnv = top.relEnv;
+                             constructorEnv = top.constrEnv;
+                          }
+                      in
+                      let constr::QName = pc.headConstructor
+                      in
+                      let isExtRule::Boolean =
+                          --if not structured, must be from host
+                          pc.isStructured &&
+                          --check if PC module builds on rel module
+                          contains(rel.name.moduleName,
+                             lookup(constr.moduleName,
+                                    top.buildsOns_down).fromJust)
+                      in
                         if unifies
-                        then just((!sameModule(q.moduleName,
-                                      elemAtIndex(d.1, rel.pcIndex
-                                                 ).headConstructor),
-                                   prems))
+                        then just((isExtRule, prems))
                         else nothing()
-                      end end end,
+                      end end end end end end,
                     rel.defsList)
             in --premises that are part of this group of rels
             let hereRels::[(Boolean, [Integer])] =

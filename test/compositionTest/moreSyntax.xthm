@@ -24,69 +24,9 @@ unfold. exists num N1. search.
 
 
 Prove compositionTest:host:evalExpr_unique,
-      compositionTest:host:evalStmt_unique
-   %This is just to get another ExtInd check, in addition to the one
-   %added in compositionTest:list
-with
-  evalStmt_lookup_unique : forall G S GA GB X V,
-    EvA : evalStmt G S GA ->
-    EvB : evalStmt G S GB ->
-    L : lookup GA X V ->
-    lookup GB X V
-  on EvA * as IH_L, EvB.
-%Ext_Ind checks
- %evalExpr_unique
-  skip.
- %evalStmt_unique
-  skip.
- %evalStmt_lookup_unique
-  skip.
-%Actual properties
- %evalExpr_unique
-  EvB: case EvB. apply minus_integer_unique to EvA1 EvB. search.
- %evalStmt_lookup_unique
-  %E-Noop
-   case EvB. search.
-  %E-Seq
-   EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
-   apply IH_L to EvA3 EvB2 L. search.
-  %E-Seq5
-   EvB: case EvB. apply IH_S to EvA1 EvB. apply IH_S to EvA2 EvB1.
-   apply IH_S to EvA3 EvB2. apply IH_S to EvA4 EvB3.
-   apply IH_L to EvA5 EvB4 L. search.
-  %E-Assign
-   EvB: case EvB. apply IH_EB to EvA1 EvB. L: case L.
-     %Lkp-Here
-      search.
-     %Lkp-Later
-      search.
-  %E-IfThenElse-True
-   EvB: case EvB.
-     %E-IfThenElse-True
-      apply IH to EvA1 EvB. apply IH_L to EvA2 EvB1 L. search.
-     %E-IfThenElse-False
-      apply IH to EvA1 EvB.
-  %E-IfThenElse-False
-   EvB: case EvB.
-     %E-IfThenElse-True
-      apply IH to EvA1 EvB.
-     %E-IfThenElse-False
-      apply IH to EvA1 EvB. apply IH_L to EvA2 EvB1 L. search.
-  %E-While-False
-   EvB: case EvB.
-     %E-While-False
-      apply IH to EvA1 EvB. search.
-     %E-While-True
-      apply IH to EvA1 EvB.
-  %E-While-True
-   EvB: case EvB.
-     %E-While-False
-      apply IH to EvA1 EvB.
-     %E-While-True
-      apply IH to EvA1 EvB. apply IH_S to EvA2 EvB1.
-      apply IH_L to EvA3 EvB2 L. search.
-  %E-S-Q
-   skip.
+      compositionTest:host:evalStmt_unique.
+%evalExpr_unique
+ EvB: case EvB. apply minus_integer_unique to EvA1 EvB. search.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.

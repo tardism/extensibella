@@ -24,12 +24,7 @@ Prove_Ext_Ind compositionTest:host:evalExpr,
 
 Prove compositionTest:host:evalExpr_unique,
       compositionTest:host:evalStmt_unique,
-      compositionTest:list:listIterate_unique,
-      compositionTest:list:evalExpr_isValue,
-      compositionTest:list:evalExpr_isCtx,
-      compositionTest:list:evalStmt_isCtx,
-      compositionTest:list:listIterate_isCtx,
-      compositionTest:moreSyntax:evalStmt_lookup_unique.
+      compositionTest:list:listIterate_unique.
 
 
 Prove_Constraint compositionTest:host:evalExpr_forward.
