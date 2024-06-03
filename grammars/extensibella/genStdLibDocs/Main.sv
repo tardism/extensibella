@@ -591,14 +591,15 @@ top::TopCommand ::= name::QName
 
 
 aspect production extIndDeclaration
-top::TopCommand ::= body::ExtIndBody
+top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
 {
   top.docString = error("Should not occur");
 }
 
 
 aspect production proveExtInd
-top::TopCommand ::= rels::[QName] newRels::ExtIndBody
+top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
+                    newThms::ExtThms newAlsos::ExtThms
 {
   top.docString = error("Should not occur");
 }
