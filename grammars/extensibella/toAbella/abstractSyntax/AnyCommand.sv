@@ -10,7 +10,7 @@ nonterminal AnyCommand with
    boundNames,
    typeEnv, constructorEnv, relationEnv, currentModule, proverState;
 propagate typeEnv, constructorEnv, relationEnv, currentModule,
-      proverState, boundNames, toAbellaMsgs, interactive, priorStep
+      proverState, boundNames, interactive, priorStep
    on AnyCommand;
 
 
@@ -22,10 +22,10 @@ top::AnyCommand ::= c::TopCommand
 
   top.toAbella = c.toAbella;
 
-  top.toAbellaMsgs <-
+  top.toAbellaMsgs :=
       if top.proverState.state.inProof
       then [errorMsg("Cannot use top-level commands while in proof")]
-      else [];
+      else c.toAbellaMsgs;
 
   c.newProofState = top.newProofState;
 
@@ -57,9 +57,9 @@ top::AnyCommand ::= c::ProofCommand
       then c.newPriorStep
       else nothing();
 
-  top.toAbellaMsgs <-
+  top.toAbellaMsgs :=
       if top.proverState.state.inProof
-      then []
+      then c.toAbellaMsgs
       else [errorMsg("Cannot use proof commands when not in proof")];
 
   top.isQuit = false;
@@ -76,6 +76,8 @@ top::AnyCommand ::= c::NoOpCommand
 
   top.newProverState = c.newProverState;
   top.newPriorStep = c.newPriorStep;
+
+  top.toAbellaMsgs := c.toAbellaMsgs;
 
   top.isQuit = c.isQuit;
 }
@@ -94,7 +96,7 @@ top::AnyCommand ::= parseErrors::String
   top.newProverState = top.proverState;
   top.newPriorStep = just(top.priorStep);
 
-  top.toAbellaMsgs <- [errorMsg(parseErrors)];
+  top.toAbellaMsgs := [errorMsg(parseErrors)];
 
   top.isQuit = false;
 }
