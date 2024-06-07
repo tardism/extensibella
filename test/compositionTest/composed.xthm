@@ -74,3 +74,6 @@ Prove compositionTest:host:drop_ES_expr,
 Prove compositionTest:host:drop_P_expr,
       compositionTest:host:drop_P_stmt,
       compositionTest:list:drop_P_listIterate.
+
+
+Prove compositionTest:typing:one_rule.

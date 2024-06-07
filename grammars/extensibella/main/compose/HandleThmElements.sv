@@ -288,7 +288,9 @@ top::ThmElement ::=
             in
             let remainingCmds::[[(ProofState, [AnyCommand])]] =
                 dropWhile(\ x::[(ProofState, [AnyCommand])] ->
-                            head(head(x).1.currentSubgoal) <= numChecks,
+                            if numChecks == 0
+                            then false --don't drop anything for no checks
+                            else head(head(x).1.currentSubgoal) <= numChecks,
                           modInfo.2)
             in
               (modInfo.1, remainingCmds)
@@ -309,7 +311,6 @@ top::ThmElement ::=
          map(\ p::(QName, RelationEnvItem, Boolean, Boolean, Bindings,
                    ExtBody, String) -> p.2.name, thmsInfo),
          moduleThmInfo, proofStart_abella.io);
-
   --Commands for proving alsos
   local alsosIntros::[String] =
       map(\ p::(QName, Bindings, ExtBody, InductionOns) ->

@@ -308,3 +308,6 @@ apply IH to Ev1. apply IH to Ev3. search.
 apply IH to Ev1. apply IH2 to Ev2. apply IH1 to Ev4. search.
 search.
 apply IH1 to LI1. apply IH2 to LI2. search.
+
+
+Prove compositionTest:typing:one_rule.

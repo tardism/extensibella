@@ -130,3 +130,15 @@ Extensibella_Stand_In {
   ------------------ [T-S-Q]
   typeS G S G1
 }
+
+
+
+
+/*
+  This relation is just to create a property with a single rule to
+  test the composition of such properties
+*/
+Judgment one_rule : ty*
+
+-------------- [OneRule]
+one_rule intTy

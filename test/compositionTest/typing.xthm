@@ -256,3 +256,11 @@ Prove compositionTest:host:drop_ES_expr,
       compositionTest:host:drop_ES_stmt.
 Prove compositionTest:host:drop_P_expr,
       compositionTest:host:drop_P_stmt.
+
+
+Extensible_Theorem
+  one_rule : forall T,
+    OR : one_rule T ->
+    T = intTy
+  on OR.
+search.

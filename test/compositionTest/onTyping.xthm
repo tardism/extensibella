@@ -184,3 +184,6 @@ search. apply IH to Ev3. apply IH to Ev4. search.
 Prove compositionTest:host:drop_P_expr,
       compositionTest:host:drop_P_stmt.
 search. apply IH to Ev1. apply IH to Ev2. apply IH to Ev5. search.
+
+
+Prove compositionTest:typing:one_rule.
