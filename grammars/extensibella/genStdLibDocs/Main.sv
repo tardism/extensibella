@@ -296,7 +296,7 @@ IOVal<String> ::= filename::String
   --to get the basic, initial envs
   local basicProverState::ProverState =
       defaultProverState([], buildEnv([]), buildEnv([]),
-                         buildEnv([]), [], []);
+                         buildEnv([]), [], [], []);
   local ast::ListOfCommands = parsed.parseTree.ast;
   ast.typeEnv = basicProverState.knownTypes;
   ast.constructorEnv = basicProverState.knownConstrs;
