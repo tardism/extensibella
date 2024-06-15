@@ -115,13 +115,14 @@ function combineTags
    tags::[(Integer, Integer, String)] last::(Integer, Integer, String)
    mod::QName
 {
+  local n::Integer = hashModule(mod);
   return
       case comms, tags of
       | [], _ -> []
       | (just(t), c)::rest, _::restT ->
         (t, c)::combineTags(rest, restT, t, mod)
       | (nothing(), c)::rest, nextT::restT ->
-        let newTag::(Integer, Integer) = betweenTag(last, nextT)
+        let newTag::(Integer, Integer) = betweenTag(last, nextT, n)
         in
           ((newTag.1, newTag.2, justShow(mod.pp)),
             c)::combineTags(rest, tags,
@@ -129,7 +130,7 @@ function combineTags
         end
       | (nothing(), c)::rest, [] ->
         let newTag::(Integer, Integer, String) =
-            (last.1 + 5, last.2, justShow(mod.pp))
+            (last.1 + n, last.2, justShow(mod.pp))
         in
           (newTag, c)::combineTags(rest, [], newTag, mod)
         end
@@ -139,7 +140,9 @@ function combineTags
 function betweenTag
 (Integer, Integer) ::=
    low::(Integer, Integer, String) high::(Integer, Integer, String)
+   n::Integer
 {
+  --get the same denominator for both tag numbers
   local denominator::Integer =
       if low.2 == high.2
       then low.2
@@ -152,9 +155,59 @@ function betweenTag
       if low.2 == high.2
       then high.1
       else high.1 * low.2;
-  return if lowNumerator + 1 == highNumerator
-         then ((lowNumerator + highNumerator) * 2, denominator * 4)
-         else ((lowNumerator + highNumerator) / 2, denominator);
+  --difference between them
+  local diff::Integer = highNumerator - lowNumerator;
+  --2^k such that n/(2^k) < diff/denominator
+  local kDen::Integer = find2KValue(diff, denominator, n);
+  --find new tag:  low + n/ked
+  local fullNum::Integer = lowNumerator * kDen + n;
+  local fullDen::Integer = denominator * kDen;
+  --find gcd to reduce if possible
+  local g::Integer = gcd(fullNum, fullDen);
+  return
+     --if same tags, only possible tag between uses same number
+     if lowNumerator == highNumerator
+     then (low.1, low.2)
+     else (fullNum / g, fullDen / g);
+}
+
+--find 2^k for the smallest non-negative k such that
+--   n/(2^k) < diff/denominator
+function find2KValue
+Integer ::= diff::Integer denominator::Integer n::Integer
+{
+  return find2KValue_help(diff, denominator, n, 1);
+}
+function find2KValue_help
+Integer ::= diff::Integer denominator::Integer n::Integer
+            kDenThusFar::Integer
+{
+  local fullDen::Integer = denominator * kDenThusFar;
+  local fullDiff::Integer = diff * kDenThusFar;
+  return if n < fullDiff
+         then kDenThusFar
+         else find2KValue_help(diff, denominator, n, 2 * kDenThusFar);
+}
+
+function gcd
+Integer ::= a::Integer b::Integer
+{
+  return if a == 0
+         then b
+         else let n::Integer = b % a
+              in
+                gcd(if n < 0 then a + n else n, a)
+              end;
+}
+
+
+--hash a module into a number we can use for creating a tag
+function hashModule
+Integer ::= module::QName
+{
+  --need a non-negative, non-zero, non-one number
+  local n::Integer = hashString(justShow(module.pp)) % 83;
+  return 2 + if n < 0 then 83 + n else n;
 }
 
 
