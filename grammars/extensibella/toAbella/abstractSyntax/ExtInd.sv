@@ -1588,8 +1588,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                                  implode(", ", map(justShow, map((.pp), l))))]
                       end
                     end
-                  | nothing() ->
-                    error("Should be impossible (addProjRel.toAbellaMsgs)")
+                  | nothing() -> [] --bad module name; error elsewhere
                   end,
                 allRels)
       end;
