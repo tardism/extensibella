@@ -48,13 +48,23 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
                     "module (expected " ++
                     justShow(top.currentModule.pp) ++ ")")]
       else [];
-  --check there are premises and the first premise is a projection
+  --check there are premises, the first premise is a projection,
+  --   and the projection is for a type from the same module
   top.toAbellaMsgs <-
       case body.premises of
       | [] -> [errorMsg("Projection constraint " ++
                   justShow(name.pp) ++ " must have premises")]
-      | (_, projectionMetaterm(_, _, _, _))::_ ->
-        [] --any type errors are already identified
+      | (_, projectionMetaterm(_, q, _, _))::_ ->
+        let decQ::Decorated QName with {typeEnv} =
+            decorate q with {typeEnv = top.typeEnv;}
+        in
+          if !decQ.typeFound ||
+             sameModule(top.currentModule, decQ.fullType.name)
+          then []
+          else [errorMsg("New projection constraints must be for " ++
+                   "new types; " ++ justShow(decQ.fullType.name.pp) ++
+                   " is imported")]
+        end
       | (_, m)::_ ->
         [errorMsg("First premise in projection constraint " ++
             justShow(name.pp) ++ " must be a projection; found " ++
@@ -66,16 +76,6 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       then []
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
-  --check this is for a projection type from the same module
-  top.toAbellaMsgs <-
-      case body.toAbella of
-      | impliesMetaterm(projectionMetaterm(_, q, _, _), _) ->
-        if sameModule(top.currentModule, q)
-        then []
-        else [errorMsg("New projection constraints must be for " ++
-                 "new types; " ++ justShow(q.pp) ++ " is imported")]
-      | _ -> []
-      end;
 
   --check the body is well-typed
   top.toAbellaMsgs <-
