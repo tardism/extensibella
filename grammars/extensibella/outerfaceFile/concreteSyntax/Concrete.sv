@@ -29,20 +29,22 @@ concrete productions top::TopCommands_c
            | anyTopCommand(tc) -> tc
            | _ -> error("Cannot have errors in interface file")
            end, rest.ast); }
-| num::Number_t '/' den::Number_t '->' q::Qname_t ':'
+| whole::Number_t '-' num::Number_t '/' den::Number_t '->' q::Qname_t ':'
   t::PureTopCommand_c rest::TopCommands_c
   { top.ast =
         addTagTopCommands(
-           (toInteger(num.lexeme), toInteger(den.lexeme), q.lexeme),
+           (toInteger(whole.lexeme), toInteger(num.lexeme),
+            toInteger(den.lexeme), q.lexeme),
            case t.ast of
            | anyTopCommand(tc) -> tc
            | _ -> error("Cannot have errors in interface file")
            end, rest.ast); }
-| num::Number_t '/' den::Number_t '->' q::Id_t ':'
+| whole::Number_t '-' num::Number_t '/' den::Number_t '->' q::Id_t ':'
   t::PureTopCommand_c rest::TopCommands_c
   { top.ast =
         addTagTopCommands(
-           (toInteger(num.lexeme), toInteger(den.lexeme), q.lexeme),
+           (toInteger(whole.lexeme), toInteger(num.lexeme),
+            toInteger(den.lexeme), q.lexeme),
            case t.ast of
            | anyTopCommand(tc) -> tc
            | _ -> error("Cannot have errors in interface file")

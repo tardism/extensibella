@@ -76,23 +76,22 @@ ThmElement ::= modThms::[ThmElement] thusFar::ThmElement
 
 --compare two tags, returning true if ta < tb
 function lessTags
-Boolean ::= ta::(Integer, Integer, String)
-            tb::(Integer, Integer, String)
+Boolean ::= ta::Tag tb::Tag
 {
-        --lower number
-  return (ta.1 * tb.2 < tb.1 * ta.2) ||
-        --same number and lower name
-         (ta.1 * tb.2 == tb.1 * ta.2 &&
-          ta.3 < tb.3);
+       --lower whole number
+  return ta.1 < tb.1 ||
+       --same whole number and lower fraction
+         (ta.1 == tb.1 && ta.2 * tb.3 < tb.2 * ta.3) ||
+       --same number and lower name
+         (ta.1 == tb.1 && ta.2 == tb.2 && ta.3 == tb.3 &&
+          ta.4 < tb.4);
 }
 
 function equalTags
-Boolean ::= ta::(Integer, Integer, String)
-            tb::(Integer, Integer, String)
+Boolean ::= ta::Tag tb::Tag
 {
        --same number and same name
-  return (ta.1 * tb.2 == tb.1 * ta.2 &&
-          ta.3 == tb.3);
+  return ta.1 == tb.1 && ta.2 * tb.3 == tb.2 * ta.3 && ta.4 == tb.4;
 }
 
 
@@ -257,8 +256,7 @@ top::TopCommands ::=
 
 
 abstract production addTagTopCommands
-top::TopCommands ::= tag::(Integer, Integer, String)
-                     t::TopCommand rest::TopCommands
+top::TopCommands ::= tag::Tag t::TopCommand rest::TopCommands
 {
   top.pp = t.pp ++ rest.pp;
   top.len = 1 + rest.len;
@@ -308,7 +306,7 @@ attribute
    defElements, thmElements, downTag
 occurs on TopCommand;
 
-inherited attribute downTag::(Integer, Integer, String);
+inherited attribute downTag::Tag;
 
 aspect production theoremDeclaration
 top::TopCommand ::= name::QName params::[String] body::Metaterm

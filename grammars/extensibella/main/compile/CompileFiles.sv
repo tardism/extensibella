@@ -95,24 +95,38 @@ String ::= currentModule::QName comms::ListOfCommands
   comms.proverState = proverState;
   comms.currentModule = currentModule;
   comms.ignoreDefErrors = true;
-  local initTags::[(Integer, Integer, String)] =
+  local initTags::[Tag] =
       filterMap(fst, comms.compiled);
-  local allTagged::[((Integer, Integer, String), TopCommand)] =
-      combineTags(comms.compiled, initTags, (0, 1, ""),
+  local allTagged::[(Tag, TopCommand)] =
+      combineTags(comms.compiled, initTags, (0, 0, 1, ""),
          currentModule);
   --use abella_pp to get correct prefixes for relations, types, etc.
   return implode("\n",
-            map(\ p::((Integer, Integer, String), TopCommand) ->
-                  toString(p.1.1) ++ "/" ++ toString(p.1.2) ++
-                  " -> " ++ p.1.3 ++ " : " ++ p.2.abella_pp,
+            map(\ p::(Tag, TopCommand) ->
+                  --tag
+                  tagToString(p.1) ++ " : " ++
+                  --actual command
+                  p.2.abella_pp,
                 allTagged));
 }
 
 
+function tagToString
+String ::= tag::Tag
+{
+       --whole number
+  return toString(tag.1) ++ "-" ++
+       --fraction
+         toString(tag.2) ++ "/" ++ toString(tag.3) ++
+       --module
+         " -> " ++ tag.4;
+}
+
+
 function combineTags
-[((Integer, Integer, String), TopCommand)] ::=
-   comms::[(Maybe<(Integer, Integer, String)>, TopCommand)]
-   tags::[(Integer, Integer, String)] last::(Integer, Integer, String)
+[(Tag, TopCommand)] ::=
+   comms::[(Maybe<Tag>, TopCommand)]
+   tags::[Tag] last::Tag
    mod::QName
 {
   local n::Integer = hashModule(mod);
@@ -122,15 +136,18 @@ function combineTags
       | (just(t), c)::rest, _::restT ->
         (t, c)::combineTags(rest, restT, t, mod)
       | (nothing(), c)::rest, nextT::restT ->
-        let newTag::(Integer, Integer) = betweenTag(last, nextT, n)
+        let newTagNum::(Integer, Integer, Integer) =
+            betweenTag(last, nextT, n)
         in
-          ((newTag.1, newTag.2, justShow(mod.pp)),
-            c)::combineTags(rest, tags,
-                   (newTag.1, newTag.2, justShow(mod.pp)), mod)
-        end
+        let newTag::Tag =
+            (newTagNum.1, newTagNum.2, newTagNum.3, justShow(mod.pp))
+        in
+          (newTag, c)::combineTags(rest, tags, newTag, mod)
+        end end
       | (nothing(), c)::rest, [] ->
-        let newTag::(Integer, Integer, String) =
-            (last.1 + n, last.2, justShow(mod.pp))
+        let newTag::Tag =
+            --add n to the whole number, drop the fraction
+            (last.1 + n, 0, 1, justShow(mod.pp))
         in
           (newTag, c)::combineTags(rest, [], newTag, mod)
         end
@@ -138,37 +155,44 @@ function combineTags
 }
 
 function betweenTag
-(Integer, Integer) ::=
-   low::(Integer, Integer, String) high::(Integer, Integer, String)
-   n::Integer
+--(whole number, numerator, denominator)
+(Integer, Integer, Integer) ::= low::Tag high::Tag n::Integer
 {
+  --Tag:  (whole number, numerator, denominator, module)
+  --
   --get the same denominator for both tag numbers
-  local denominator::Integer =
-      if low.2 == high.2
-      then low.2
-      else low.2 * high.2;
-  local lowNumerator::Integer =
-      if low.2 == high.2
-      then low.1
-      else low.1 * high.2;
-  local highNumerator::Integer =
-      if low.2 == high.2
-      then high.1
-      else high.1 * low.2;
+  local denG::Integer = gcd(low.3, high.3);
+                             --divide inside to keep numbers low
+  local denominator::Integer = low.3 / denG * high.3;
+  local lowNumerator::Integer = low.2 * (high.3 / denG);
+  local highNumerator::Integer = high.2 * (low.3 / denG);
+
   --difference between them
-  local diff::Integer = highNumerator - lowNumerator;
+  local wholeDiff::Integer = high.1 - low.1;
+  local diff::Integer =
+      highNumerator - lowNumerator + wholeDiff * denominator;
+
   --2^k such that n/(2^k) < diff/denominator
   local kDen::Integer = find2KValue(diff, denominator, n);
+
   --find new tag:  low + n/ked
-  local fullNum::Integer = lowNumerator * kDen + n;
-  local fullDen::Integer = denominator * kDen;
-  --find gcd to reduce if possible
-  local g::Integer = gcd(fullNum, fullDen);
+  local stepG::Integer = gcd(low.3, kDen);
+                                 --divide inside to keep numbers low
+  local stepDenominator::Integer = low.3 / stepG * kDen;
+  local stepNumerator::Integer =
+      low.2 * (kDen / stepG) + n * (low.3 / stepG);
+  local finalWhole::Integer = low.1 + stepNumerator / stepDenominator;
+  local finalNumerator::Integer = stepNumerator % stepDenominator;
+
+  --find gcd to reduce remaining fraction
+  local g::Integer =
+      gcd(stepDenominator, stepNumerator % stepDenominator);
+
   return
-     --if same tags, only possible tag between uses same number
-     if lowNumerator == highNumerator
-     then (low.1, low.2)
-     else (fullNum / g, fullDen / g);
+      --if same tag numbers, only possible tag between uses same number
+      if low.1 == high.1 && lowNumerator == highNumerator
+      then (low.1, low.2, low.3)
+      else (finalWhole, finalNumerator / g, stepDenominator / g);
 }
 
 --find 2^k for the smallest non-negative k such that
@@ -184,7 +208,8 @@ Integer ::= diff::Integer denominator::Integer n::Integer
 {
   local fullDen::Integer = denominator * kDenThusFar;
   local fullDiff::Integer = diff * kDenThusFar;
-  return if n < fullDiff
+  local fullN::Integer = n * denominator;
+  return if fullN < fullDiff
          then kDenThusFar
          else find2KValue_help(diff, denominator, n, 2 * kDenThusFar);
 }
@@ -217,7 +242,7 @@ Integer ::= module::QName
 synthesized attribute compiled<a>::a;
 
 attribute
-   compiled<[(Maybe<(Integer, Integer, String)>, TopCommand)]>
+   compiled<[(Maybe<Tag>, TopCommand)]>
 occurs on ListOfCommands;
 
 aspect production emptyListOfCommands
@@ -241,7 +266,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
 
 attribute compiled<Maybe<TopCommand>>, maybeTag occurs on AnyCommand;
 
-synthesized attribute maybeTag::Maybe<(Integer, Integer, String)>;
+synthesized attribute maybeTag::Maybe<Tag>;
 
 aspect production anyTopCommand
 top::AnyCommand ::= c::TopCommand

@@ -73,7 +73,7 @@ top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction info)]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
-   tag::(Integer, Integer, String)
+   tag::Tag
 {
   local extThms::ExtThms =
       foldr(\ p::(QName, Bindings, ExtBody, InductionOns)
@@ -563,7 +563,7 @@ top::ThmElement ::=
 
 aspect production projectionConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
-                    tag::(Integer, Integer, String)
+                    tag::Tag
 {
   --MWDA copy of body
   local bodyC::ExtBody = body;
@@ -654,7 +654,7 @@ top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction info)]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
-   tag::(Integer, Integer, String)
+   tag::Tag
 {
   top.extIndDefs = [];
 
@@ -1095,8 +1095,7 @@ Integer ::= q::QName l::[(QName, a)]
 
 
 aspect production extSizeElement
-top::ThmElement ::= rels::[(QName, [String])]
-                    tag::(Integer, Integer, String)
+top::ThmElement ::= rels::[(QName, [String])] tag::Tag
 {
   {-
     Definition of R_{ES} relation
@@ -1444,8 +1443,7 @@ top::ThmElement ::= rels::[(QName, [String])]
 
 
 aspect production projRelElement
-top::ThmElement ::= rels::[(QName, [String])]
-                    tag::(Integer, Integer, String)
+top::ThmElement ::= rels::[(QName, [String])] tag::Tag
 {
   {-
     Definition of R_P relation

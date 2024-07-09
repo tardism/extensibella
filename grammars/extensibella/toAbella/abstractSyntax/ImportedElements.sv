@@ -5,11 +5,16 @@ nonterminal ThmElement with
    encode, is_nonextensible, tag,
    knownThms, thms;
 
+--Tag type for ordering extensible things
+--(whole number, numerotare, denominator, module name)
+--e.g. (5, 3, 4, m) has tag (23/4, m) (e.g. (5 + 3/4, m))
+--Assumes proper and reduced fractions
+type Tag = (Integer, Integer, Integer, String);
+
 --using AnyCommand allows having a theorem declaration and its proof
 synthesized attribute encode::[AnyCommand];
 synthesized attribute is_nonextensible::Boolean;
---tag is (numerator, denominator, module)
-synthesized attribute tag::(Integer, Integer, String);
+synthesized attribute tag::Tag;
 
 --get the theorems produced out of each element
 synthesized attribute thms::[(QName, Metaterm)];
@@ -21,7 +26,7 @@ top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction info)]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
-   tag::(Integer, Integer, String)
+   tag::Tag
 {
   top.pp = text("ExtThm ") ++ ppImplode(text(", "),
                                  map((.pp), map(fst, thms)));
@@ -38,7 +43,7 @@ top::ThmElement ::=
 
 abstract production projectionConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
-                    tag::(Integer, Integer, String)
+                    tag::Tag
 {
   top.pp = text("PC ") ++ name.pp;
 
@@ -84,8 +89,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
 
 abstract production extSizeElement
-top::ThmElement ::= rels::[(QName, [String])]
-                    tag::(Integer, Integer, String)
+top::ThmElement ::= rels::[(QName, [String])] tag::Tag
 {
   top.pp = extSizeDeclaration(rels).pp;
 
@@ -100,8 +104,7 @@ top::ThmElement ::= rels::[(QName, [String])]
 
 
 abstract production projRelElement
-top::ThmElement ::= rels::[(QName, [String])]
-                    tag::(Integer, Integer, String)
+top::ThmElement ::= rels::[(QName, [String])] tag::Tag
 {
   top.pp = projRelDeclaration(rels).pp;
 
@@ -122,7 +125,7 @@ top::ThmElement ::=
    --[(thm name, var bindings, thm statement, induction info)]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
-   tag::(Integer, Integer, String)
+   tag::Tag
 {
   top.pp = text("ExtInd") ++ ppImplode(text(", "),
                                 map((.pp), map(fst, rels)));

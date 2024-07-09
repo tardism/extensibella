@@ -87,7 +87,7 @@ synthesized attribute skeletonText::String;
 aspect production extensibleMutualTheoremGroup
 top::ThmElement ::= thms::[(QName, Bindings, ExtBody, InductionOns)]
                     alsos::[(QName, Bindings, ExtBody, InductionOns)]
-                    tag::(Integer, Integer, String)
+                    tag::Tag
 {
   top.inSkeleton = true;
   top.skeletonText =
@@ -99,7 +99,7 @@ top::ThmElement ::= thms::[(QName, Bindings, ExtBody, InductionOns)]
 
 aspect production projectionConstraintTheorem
 top::ThmElement ::= name::QName binds::Bindings body::ExtBody
-                    tag::(Integer, Integer, String)
+                    tag::Tag
 {
   top.inSkeleton = true;
   top.skeletonText = "Prove_Constraint " ++ justShow(name.pp) ++ ".";
@@ -127,7 +127,7 @@ top::ThmElement ::=
    rels::[(QName, [String], Bindings, ExtIndPremiseList, [String])]
    thms::[(QName, Bindings, ExtBody, InductionOns)]
    alsos::[(QName, Bindings, ExtBody, InductionOns)]
-   tag::(Integer, Integer, String)
+   tag::Tag
 {
   top.inSkeleton = true;
   top.skeletonText =
@@ -144,8 +144,7 @@ top::ThmElement ::=
 
 
 aspect production extSizeElement
-top::ThmElement ::= rels::[(QName, [String])]
-                    tag::(Integer, Integer, String)
+top::ThmElement ::= rels::[(QName, [String])] tag::Tag
 {
   top.inSkeleton = true;
   top.skeletonText =
@@ -157,8 +156,7 @@ top::ThmElement ::= rels::[(QName, [String])]
 
 
 aspect production projRelElement
-top::ThmElement ::= rels::[(QName, [String])]
-                    tag::(Integer, Integer, String)
+top::ThmElement ::= rels::[(QName, [String])] tag::Tag
 {
   top.inSkeleton = true;
   top.skeletonText =
