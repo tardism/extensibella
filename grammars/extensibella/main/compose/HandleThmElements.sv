@@ -279,7 +279,7 @@ top::ThmElement ::=
                 map(fst, thmsInfo));
 
   --update the list of proof steps to drop the ones for the ExtInd checks
-  local topGoalThmsProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
+  local topGoalExtThmsProofInfo::[(QName, [[(ProofState, [AnyCommand])]])] =
       map(\ modInfo::(QName, [[(ProofState, [AnyCommand])]]) ->
             let extIndChecks::[QName] = --must exist, even if empty
                 lookup(modInfo.1, extIndsProvenByModule).fromJust
@@ -293,8 +293,24 @@ top::ThmElement ::=
                             else head(head(x).1.currentSubgoal) <= numChecks,
                           modInfo.2)
             in
-              (modInfo.1, remainingCmds)
-            end end end,
+            let modAlsos::[QName] =
+                filter(sameModule(modInfo.1, _), map(fst, alsos))
+            in
+            let nonAlsoCmds::[[(ProofState, [AnyCommand])]] =
+                --number of subgoals before alsos
+                case lookup(modInfo.1, numNotNewAlsosByModule) of
+                          --when there are new alsos in this module
+                | just(num) when length(modAlsos) > 0 ->
+                  --take everything from non-also subgoals
+                  takeWhile(\ l::[(ProofState, [AnyCommand])] ->
+                              !subgoalStartsWith([num + 1],
+                                  head(l).1.currentSubgoal),
+                            remainingCmds)
+                | _ -> remainingCmds
+                end
+            in
+              (modInfo.1, nonAlsoCmds)
+            end end end end end,
           topGoalProofInfo);
 
 
@@ -303,8 +319,7 @@ top::ThmElement ::=
 
   --Commands for proving thms
   local thmProofs::IOVal<[String]> =
-      --doesn't matter if alsos proof information in topGoalThmsProofInfo
-      buildExtThmProofs(thmsInfo, topGoalThmsProofInfo,
+      buildExtThmProofs(thmsInfo, topGoalExtThmsProofInfo,
          if length(thms ++ alsos) == 1 then [] else [1], useR_P,
          top.allThms, top.tyEnv, top.relEnv, top.constrEnv,
          top.liveAbella, top.configuration, top.allParsers,
@@ -346,20 +361,8 @@ top::ThmElement ::=
             top.buildsOns_down)
       end end;
   local alsosCmds::[String] =
-      map(\ full::[(ProofState, [AnyCommand])] ->
-            implode("\n  ",
-               map(\ l::[(ProofState, [AnyCommand])] ->
-                     implode("",
-                        flatMap(\ a::[AnyCommand] ->
-                                  map((.abella_pp), a),
-                           map(snd, l))),
-                 --group into commands for each also
-                 groupBy(\ p1::(ProofState, [AnyCommand])
-                           p2::(ProofState, [AnyCommand]) ->
-                           subgoalRoot(p1.1.currentSubgoal) ==
-                           subgoalRoot(p2.1.currentSubgoal),
-                         full))),
           --get down to the ones for alsos
+      let justAlsoCmds::[[(ProofState, [AnyCommand])]] =
           flatMap(\ modInfo::(QName, [[(ProofState, [AnyCommand])]]) ->
                     --number of subgoals before alsos
                     case lookup(modInfo.1, numNotNewAlsosByModule) of
@@ -372,7 +375,32 @@ top::ThmElement ::=
                          modInfo.2)
                     | nothing() -> []
                     end,
-                  topGoalProofInfo));
+                  topGoalProofInfo)
+      in --group commands for same also
+      let groupedCmds::[[(ProofState, [AnyCommand])]] =
+          map(\ l::[[(ProofState, [AnyCommand])]] ->
+                flatMap(\ x::[(ProofState, [AnyCommand])] -> x, l),
+              groupBy(\ l1::[(ProofState, [AnyCommand])]
+                        l2::[(ProofState, [AnyCommand])] ->
+                        head(head(l1).1.currentSubgoal) ==
+                        head(head(l2).1.currentSubgoal),
+                      justAlsoCmds))
+      in
+        map(\ full::[(ProofState, [AnyCommand])] ->
+              implode("\n  ",
+                 map(\ l::[(ProofState, [AnyCommand])] ->
+                       implode("",
+                          flatMap(\ a::[AnyCommand] ->
+                                    map((.abella_pp), a),
+                             map(snd, l))),
+                   --group into commands for each also
+                   groupBy(\ p1::(ProofState, [AnyCommand])
+                             p2::(ProofState, [AnyCommand]) ->
+                             subgoalRoot(p1.1.currentSubgoal) ==
+                             subgoalRoot(p2.1.currentSubgoal),
+                           full))),
+            groupedCmds)
+      end end;
   local fullAlsos::[String] =
       map(\ p::(String, String) -> p.1 ++ " " ++ p.2,
           zip(alsosIntros, alsosCmds));

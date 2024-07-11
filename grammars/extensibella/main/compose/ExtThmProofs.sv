@@ -46,6 +46,7 @@ IOVal<[String]> ::=
       foldr(\ here::(QName, [[(ProofState, [AnyCommand])]])
               rest::([(QName, [[[(ProofState, [AnyCommand])]]])],
                      [(QName, [[(ProofState, [AnyCommand])]])]) ->
+                --([properties being proven], num ExtInd checks)
               let modInfo::([QName], Integer) =
                   case lookup(here.1, moduleThmInfo) of
                   | just(x) -> x
