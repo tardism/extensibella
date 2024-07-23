@@ -108,6 +108,8 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
   top.duringCommands = [];
 
   top.afterCommands = [];
+
+  top.is_nonextensible = false;
 }
 
 
@@ -219,4 +221,6 @@ top::TopCommand ::= name::QName
       else [];
 
   top.afterCommands = [];
+
+  top.is_nonextensible = false;
 }

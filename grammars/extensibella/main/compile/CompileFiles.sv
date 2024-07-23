@@ -97,16 +97,21 @@ String ::= currentModule::QName comms::ListOfCommands
   comms.ignoreDefErrors = true;
   local initTags::[Tag] =
       filterMap(fst, comms.compiled);
-  local allTagged::[(Tag, TopCommand)] =
+  --everything extensible tagged, non-extensible still nothing()
+  local allTagged::[(Maybe<Tag>, TopCommand)] =
       combineTags(comms.compiled, initTags, (0, 0, 1, ""),
          currentModule);
   --use abella_pp to get correct prefixes for relations, types, etc.
   return implode("\n",
-            map(\ p::(Tag, TopCommand) ->
-                  --tag
-                  tagToString(p.1) ++ " : " ++
-                  --actual command
-                  p.2.abella_pp,
+            map(\ p::(Maybe<Tag>, TopCommand) ->
+                  case p of
+                  | (nothing(), c) -> c.abella_pp
+                  | (just(t), c) ->
+                    --tag
+                    tagToString(t) ++ " : " ++
+                    --actual command
+                    c.abella_pp
+                  end,
                 allTagged));
 }
 
@@ -124,7 +129,7 @@ String ::= tag::Tag
 
 
 function combineTags
-[(Tag, TopCommand)] ::=
+[(Maybe<Tag>, TopCommand)] ::=
    comms::[(Maybe<Tag>, TopCommand)]
    tags::[Tag] last::Tag
    mod::QName
@@ -134,7 +139,9 @@ function combineTags
       case comms, tags of
       | [], _ -> []
       | (just(t), c)::rest, _::restT ->
-        (t, c)::combineTags(rest, restT, t, mod)
+        (just(t), c)::combineTags(rest, restT, t, mod)
+      | (nothing(), c)::rest, tags when c.is_nonextensible ->
+        (nothing(), c)::combineTags(rest, tags, last, mod)
       | (nothing(), c)::rest, nextT::restT ->
         let newTagNum::(Integer, Integer, Integer) =
             betweenTag(last, nextT, n)
@@ -142,14 +149,14 @@ function combineTags
         let newTag::Tag =
             (newTagNum.1, newTagNum.2, newTagNum.3, justShow(mod.pp))
         in
-          (newTag, c)::combineTags(rest, tags, newTag, mod)
+          (just(newTag), c)::combineTags(rest, tags, newTag, mod)
         end end
       | (nothing(), c)::rest, [] ->
         let newTag::Tag =
             --add n to the whole number, drop the fraction
             (last.1 + n, 0, 1, justShow(mod.pp))
         in
-          (newTag, c)::combineTags(rest, [], newTag, mod)
+          (just(newTag), c)::combineTags(rest, [], newTag, mod)
         end
       end;
 }

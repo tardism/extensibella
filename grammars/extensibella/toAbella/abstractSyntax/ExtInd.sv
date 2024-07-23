@@ -229,6 +229,8 @@ top::TopCommand ::= body::ExtIndBody thms::ExtThms alsos::ExtThms
             " of inductions; expected " ++ if useExtSize
                                            then "2" else "1")]
       end;
+
+  top.is_nonextensible = false;
 }
 
 
@@ -1086,6 +1088,8 @@ top::TopCommand ::= rels::[QName] oldThms::[QName] newRels::ExtIndBody
 
   top.duringCommands = tail(body.duringCommands) ++
       thms.duringCommands ++ alsos.duringCommands;
+
+  top.is_nonextensible = false;
 }
 
 
@@ -1172,6 +1176,8 @@ top::TopCommand ::= rels::[(QName, [String])]
                               justShow(p.1.fullRel.name.pp) ++
                               " already has Ext Size defined for it")]
                       else []), decRels);
+
+  top.is_nonextensible = false;
 }
 
 
@@ -1305,6 +1311,8 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                               justShow(p.1.fullRel.name.pp) ++
                               " already has Ext Size defined for it")]
                       else []), decNewRels);
+
+  top.is_nonextensible = false;
 }
 
 
@@ -1424,6 +1432,8 @@ top::TopCommand ::= rels::[(QName, [String])]
                         error("Should be impossible (projRelDecl.toAbellaMsgs)")
                       end),
               decRels);
+
+  top.is_nonextensible = false;
 }
 
 
@@ -1592,6 +1602,8 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
                   end,
                 allRels)
       end;
+
+  top.is_nonextensible = false;
 }
 
 

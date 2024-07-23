@@ -199,6 +199,8 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
   alsos.expectedIHNum = thms.len;
   alsos.specialIHNames = thms.renamedIHs ++ alsos.renamedIHs;
   alsos.numMutualThms = thms.len + alsos.len;
+
+  top.is_nonextensible = false;
 }
 
 
@@ -514,6 +516,8 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
 
   --don't need alsos because we aren't proving them
   top.keyRelModules = thms.keyRelModules;
+
+  top.is_nonextensible = false;
 }
 
 

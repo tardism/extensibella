@@ -12,6 +12,7 @@ nonterminal TopCommand with
    provingTheorems, provingExtInds, newExtSizeGroup, newProjRelGroup,
    duringCommands, afterCommands,
    keyRelModules,
+   is_nonextensible,
    currentModule, typeEnv, constructorEnv, relationEnv, proverState;
 propagate constructorEnv, relationEnv, currentModule, proverState,
           toAbellaMsgs, interactive on TopCommand
@@ -29,6 +30,7 @@ top::TopCommand ::=
   top.newExtSizeGroup = nothing();
   top.newProjRelGroup = nothing();
   top.keyRelModules = [(initialSubgoalNum, top.currentModule)];
+  top.is_nonextensible = true;
 }
 
 
