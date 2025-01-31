@@ -85,7 +85,7 @@ function dropP_for_all
       | [] -> []
       | (h, projRelMetaterm(q, _, _))::rest ->
         applyTactic(noHint(), nothing(),
-           clearable(false, dropP_name(q), emptyTypeList()),
+           clearable(false, dropP_name(^q), emptyTypeList()),
            addApplyArgs(hypApplyArg(h, emptyTypeList()),
               endApplyArgs()), endWiths())::dropP_for_all(rest)
       | _::rest -> dropP_for_all(rest)
@@ -126,7 +126,7 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
   args.basicKeyRelExpectations = theorem.expectBasicKeyRel;
 
   top.mappedCmds = args.mappedCmds ++
-                   [applyTactic(h, depth, theorem.mapped,
+                   [applyTactic(^h, depth, theorem.mapped,
                                 args.mapped, withs.mapped)];
 }
 
@@ -148,11 +148,11 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
   top.mappedCmds =
       case lookup(hyp, top.mapHyps) of
       | just((newHyp, _)) ->
-        [caseTactic(h, newHyp, keep)]
+        [caseTactic(^h, newHyp, keep)]
       | nothing() ->
         --if not found, it must result from a case within a single command
         --   translation (e.g. compute), so the name must be there
-        [caseTactic(h, hyp, keep)]
+        [caseTactic(^h, hyp, keep)]
       end;
 }
 
@@ -161,7 +161,7 @@ aspect production assertTactic
 top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
 {
   top.mappedCmds = dropP_for_all(top.newHyps) ++
-                   [assertTactic(h, depth, m.mapped)];
+                   [assertTactic(^h, depth, m.mapped)];
 }
 
 
@@ -352,20 +352,20 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
 {
   top.mapped =
       clearable(star,
-         if hyp.isQualified then hyp
+         if hyp.isQualified then ^hyp
          else case lookup(hyp.shortName, top.mapHyps) of
               | just((h, _)) -> toQName(h)
               | nothing() ->
                 error("No " ++ hyp.shortName ++ " (clearable)")
               end,
-         instantiation);
+         ^instantiation);
 
   top.hypNameMap =
       if hyp.isQualified
       then [] --names in theorems don't change
       else hypNameMap;
 
-  local m::Metaterm = if hyp.isQualified then thmM else hypNewM;
+  local m::Metaterm = if hyp.isQualified then ^thmM else ^hypNewM;
   local msplits::[Metaterm] =
       case m of
       | bindingMetaterm(_, _, body) -> body.splitImplies
@@ -438,7 +438,7 @@ top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
 aspect production hypApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
 {
-  top.mapped = hypApplyArg(finalHyp, instantiation);
+  top.mapped = hypApplyArg(finalHyp, ^instantiation);
 
   local finalHyp::String =
       if hyp == "_" then hyp else
@@ -459,7 +459,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       end;
   local newHypRel::QName =
       case lookup(newHyp, top.newHyps) of
-      | just(projRelMetaterm(q, _, _)) -> q
+      | just(projRelMetaterm(q, _, _)) -> ^q
       | _ -> error("Should not access (hypApplyArg)")
       end;
   local genName::String = "$" ++ toString(genInt());
@@ -470,7 +470,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       then dropP_for_all(top.newHyps)
       else if newHypIsProj
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, dropP_name(newHypRel),
+               clearable(false, dropP_name(^newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
@@ -481,7 +481,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
 aspect production starApplyArg
 top::ApplyArg ::= hyp::String instantiation::TypeList
 {
-  top.mapped = starApplyArg(finalHyp, instantiation);
+  top.mapped = starApplyArg(finalHyp, ^instantiation);
 
   local finalHyp::String =
       if hyp == "_" then hyp else
@@ -502,7 +502,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       end;
   local newHypRel::QName =
       case lookup(newHyp, top.newHyps) of
-      | just(projRelMetaterm(q, _, _)) -> q
+      | just(projRelMetaterm(q, _, _)) -> ^q
       | _ -> error("Should not access (hypApplyArg)")
       end;
   local genName::String = "$" ++ toString(genInt());
@@ -513,7 +513,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
       then dropP_for_all(top.newHyps)
       else if newHypIsProj
       then [applyTactic(nameHint(genName), nothing(),
-               clearable(false, dropP_name(newHypRel),
+               clearable(false, dropP_name(^newHypRel),
                          emptyTypeList()),
                addApplyArgs(hypApplyArg(newHyp, emptyTypeList()),
                   endApplyArgs()), endWiths())]
@@ -535,7 +535,7 @@ propagate mapBindingNames on Withs;
 aspect production endWiths
 top::Withs ::=
 {
-  top.mapped = top;
+  top.mapped = ^top;
 }
 
 
@@ -558,7 +558,7 @@ top::Term ::= name::QName mty::MaybeType
 {
   top.mapped =
       if name.isQualified
-      then top
+      then ^top
       else case lookup(name.shortName, top.mapVars) of
            | just(t) -> t
            | _ -> top

@@ -12,7 +12,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 
   production fullName::QName =
       if name.isQualified
-      then name
+      then ^name
       else addQNameBase(top.currentModule, name.shortName);
 
   body.boundNames = binds.usedNames;
@@ -32,7 +32,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 
   local projTy::QName =
       case body.premises of
-      | (_, projectionMetaterm(_, ty, _, _))::_ -> ty
+      | (_, projectionMetaterm(_, ty, _, _))::_ -> ^ty
       | _ -> error("Should not access projTy")
       end;
   projTy.typeEnv = top.typeEnv;
@@ -56,7 +56,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
                   justShow(name.pp) ++ " must have premises")]
       | (_, projectionMetaterm(_, q, _, _))::_ ->
         let decQ::Decorated QName with {typeEnv} =
-            decorate q with {typeEnv = top.typeEnv;}
+            decorate ^q with {typeEnv = top.typeEnv;}
         in
           if !decQ.typeFound ||
              sameModule(top.currentModule, decQ.fullType.name)
@@ -72,7 +72,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       end;
   --check there are no existing theorems with this full name
   top.toAbellaMsgs <-
-      if null(findTheorem(fullName, top.proverState))
+      if null(findTheorem(^fullName, top.proverState))
       then []
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
@@ -96,8 +96,8 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
   body.downSubst = emptySubst();
 
   top.toAbella =
-      [anyTopCommand(theoremDeclaration(fullName, [],
-          bindingMetaterm(forallBinder(), binds, body.toAbella))),
+      [anyTopCommand(theoremDeclaration(^fullName, [],
+          bindingMetaterm(forallBinder(), ^binds, body.toAbella))),
        anyProofCommand(introsTactic(introsNames)),
        anyProofCommand(caseTactic(nameHint(head(introsNames)),
           head(introsNames), true))];
@@ -159,7 +159,7 @@ top::TopCommand ::= name::QName
 
   local projTy::QName =
       case body.premises of
-      | (_, projectionMetaterm(_, ty, _, _))::_ -> ty
+      | (_, projectionMetaterm(_, ty, _, _))::_ -> ^ty
       | _ -> error("Should not access projTy")
       end;
   projTy.typeEnv = top.typeEnv;
@@ -202,7 +202,7 @@ top::TopCommand ::= name::QName
 
   top.toAbella =
       [anyTopCommand(theoremDeclaration(obligation.1, [],
-          bindingMetaterm(forallBinder(), binds, body.toAbella))),
+          bindingMetaterm(forallBinder(), ^binds, body.toAbella))),
        anyProofCommand(introsTactic(introsNames)),
        anyProofCommand(caseTactic(nameHint(head(introsNames)),
           head(introsNames), true))] ++

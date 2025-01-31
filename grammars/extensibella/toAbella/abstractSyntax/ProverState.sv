@@ -321,7 +321,7 @@ ProverState ::= current::ProverState newProofState::ProofState
             if null(keyRelModules) then [] else tail(keyRelModules),
             afterCmds,
             --
-            state = newProofState, debug = current.debug,
+            state = ^newProofState, debug = current.debug,
             displayWidth = current.displayWidth,
             knownTheorems = newThms ++ current.knownTheorems,
             knownExtInds = current.knownExtInds,
@@ -372,7 +372,7 @@ ProverState ::= current::ProverState newProofState::ProofState
             else current.keyRelModules,
             current.afterCommands,
             --
-            state = newProofState, debug = current.debug,
+            state = ^newProofState, debug = current.debug,
             displayWidth = current.displayWidth,
             knownTheorems = current.knownTheorems,
             knownExtInds = current.knownExtInds,

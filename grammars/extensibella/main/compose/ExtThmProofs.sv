@@ -134,7 +134,7 @@ IOVal<[String]> ::=
   --run through the case commands, building the proof
   local runProof::IOVal<([[String]], ProofState)> =
       buildExtThmProof(knownCases, genericCases.1, genericCases.2,
-         currentSubgoalNum, abella, config, parsers, initProofState,
+         currentSubgoalNum, abella, config, parsers, ^initProofState,
          allThms, keyRels, typeEnv, relEnv, constrEnv,
          intros_case_to_abella.io);
   --put the commands together into a single string
@@ -273,13 +273,13 @@ IOVal<([[String]], ProofState)> ::=
    constrEnv::Env<ConstructorEnvItem> ioin::IOToken
 {
   local origState::ProofState = head(head(head(knownCases))).1;
-  origState.mapTo = incomingState;
+  origState.mapTo = ^incomingState;
   origState.typeEnv = typeEnv;
   origState.relationEnv = relEnv;
   origState.constructorEnv = constrEnv;
 
   local kState::ProofState = head(head(genericCaseK.fromJust)).1;
-  kState.mapTo = incomingState;
+  kState.mapTo = ^incomingState;
   kState.typeEnv = typeEnv;
   kState.relationEnv = relEnv;
   kState.constructorEnv = constrEnv;
@@ -291,13 +291,13 @@ IOVal<([[String]], ProofState)> ::=
   --when the current composed case is one of the known cases
   local runKnown::IOVal<([String], ProofState)> =
       runKnownCase(head(knownCases), abella, config, parsers,
-         incomingState, allThms, keyRels, typeEnv, relEnv,
+         ^incomingState, allThms, keyRels, typeEnv, relEnv,
          constrEnv, ioin);
 
   --when the current composed case is one of the K unknown cases
   local runK::IOVal<([String], ProofState)> =
       runPreservabilityCase(genericCaseK.fromJust, abella, config,
-         parsers, incomingState, allThms, keyRels, typeEnv, relEnv,
+         parsers, ^incomingState, allThms, keyRels, typeEnv, relEnv,
          constrEnv, ioin);
 
   --when the current composed case is one of the I unknown cases
@@ -312,7 +312,7 @@ IOVal<([[String]], ProofState)> ::=
                              else justShow(kState.pp)))
   else
       runPreservabilityCase(genericCaseI.fromJust, abella, config,
-         parsers, incomingState, allThms, keyRels, typeEnv, relEnv,
+         parsers, ^incomingState, allThms, keyRels, typeEnv, relEnv,
          constrEnv, ioin);
 
   --select the correct run
@@ -385,7 +385,7 @@ IOVal<([String], ProofState)> ::=
    constrEnv::Env<ConstructorEnvItem> ioin::IOToken
 {
   return runKnownCase_help(flatMap(\ l -> l, caseInfo), abella,
-            config, parsers, incomingState, allThms, keyRels,
+            config, parsers, ^incomingState, allThms, keyRels,
             typeEnv, relEnv, constrEnv, ioin);
 }
 function runKnownCase_help
@@ -398,7 +398,7 @@ IOVal<([String], ProofState)> ::=
 {
   --get commands and run them in Abella to get new proof state
   local run::IOVal<([String], ProofState)> =
-      runCmds(head(caseInfo), allThms, incomingState, keyRels,
+      runCmds(head(caseInfo), allThms, ^incomingState, keyRels,
          typeEnv, relEnv, constrEnv, abella, config, parsers, ioin);
 
   --run it with the rest of the case
@@ -431,7 +431,7 @@ IOVal<([String], ProofState)> ::=
 {
   --get the mapping from old to new
   local unifyMap::ProofState = head(head(preservabilityCase)).1;
-  unifyMap.mapTo = incomingState;
+  unifyMap.mapTo = ^incomingState;
   unifyMap.typeEnv = typeEnv;
   unifyMap.relationEnv = relEnv;
   unifyMap.constructorEnv = constrEnv;
@@ -454,14 +454,14 @@ IOVal<([String], ProofState)> ::=
 
   --condition arguments to next bit on whether we run this part
   local nextState::ProofState =
-      if unifyMap.mapSuccess then run.iovalue.2 else incomingState;
+      if unifyMap.mapSuccess then run.iovalue.2 else @incomingState;
   local nextIO::IOToken =
       if unifyMap.mapSuccess then run.io else ioin;
 
   --run it with the rest of the case
   local sub::IOVal<([String], ProofState)> =
       runPreservabilityCase(tail(preservabilityCase), abella, config,
-         parsers, nextState, allThms, keyRels, typeEnv, relEnv,
+         parsers, ^nextState, allThms, keyRels, typeEnv, relEnv,
          constrEnv, nextIO);
 
   return
@@ -490,7 +490,7 @@ IOVal<([String], ProofState)> ::= cmd::(ProofState, [AnyCommand])
 {
   --get the mapping from old to new
   local unifyMap::ProofState = cmd.1;
-  unifyMap.mapTo = incomingState;
+  unifyMap.mapTo = ^incomingState;
   unifyMap.typeEnv = typeEnv;
   unifyMap.relationEnv = relEnv;
   unifyMap.constructorEnv = constrEnv;
@@ -539,12 +539,12 @@ ProofState ::= stateStr::String typeEnv::Env<TypeEnvItem>
       parsers.from_parse(stateStr,
          "<<Abella output>>").parseTree.ast.proof;
   local fromState::ProofState =
-      decorate readState with {
+      decorate @readState with {
          typeEnv = typeEnv;
          relationEnv = relEnv;
          constructorEnv = constrEnv;
       }.fromAbella;
-  return decorate fromState with {
+  return decorate @fromState with {
             typeEnv = typeEnv;
             relationEnv = relEnv;
             constructorEnv = constrEnv;

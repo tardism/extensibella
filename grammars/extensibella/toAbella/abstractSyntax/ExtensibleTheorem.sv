@@ -29,7 +29,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
 
   local extThmCmds::[AnyCommand] =
       --declare theorems
-      [anyTopCommand(theoremDeclaration(extName, [], fullThms))] ++
+      [anyTopCommand(theoremDeclaration(^extName, [], ^fullThms))] ++
       --declare inductions
       map(\ l::[Integer] ->
             anyProofCommand(inductionTactic(noHint(), l)),
@@ -54,7 +54,7 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
          map(fst, thms.extIndChecks) ++
          [bindingMetaterm(existsBinder(),
              oneBinding("$", justType(integerType)),
-             fullThms)]);
+             ^fullThms)]);
   --during commands for extIndCheck, including declaration of ExtThm
   local extIndCheckCmds::[(SubgoalNum, [ProofCommand])] =
       --intros for each check
@@ -64,14 +64,14 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
       [([length(thms.extIndChecks) + 1],
         existsTactic(oneEWitnesses(termEWitness(integerToIntegerTerm(0))))::
         map(\ a::AnyCommand -> case a of
-                               | anyProofCommand(p) -> p
+                               | anyProofCommand(p) -> ^p
                                | _ -> error("only proof commands")
                                end, tail(extThmCmds)))];
   local extIndCheckStart::[AnyCommand] =
       --declare checks
       [anyTopCommand(
           theoremDeclaration(toQName("$ExtIndCheck_" ++ toString(genInt())),
-             [], extIndCheck)),
+             [], ^extIndCheck)),
       --split (must split because at least 1 + true)
        anyProofCommand(splitTactic())] ++
       --intros/set-up for first one
@@ -90,10 +90,10 @@ top::TopCommand ::= thms::ExtThms alsos::ExtThms
                      [anyTopCommand(theoremDeclaration(p.1, [], p.2)),
                       anyProofCommand(skipTactic())],
                    zip(map(fst, thms.provingTheorems ++ alsos.provingTheorems),
-                       splitMetaterm(fullThms)))
+                       splitMetaterm(^fullThms)))
       else if thms.len + alsos.len == 1
       then [] --nothing to do after if there is only one being proven
-      else [anyTopCommand(splitTheorem(extName,
+      else [anyTopCommand(splitTheorem(^extName,
                map(fst, thms.provingTheorems ++ alsos.provingTheorems)))];
 
   top.keyRelModules = thms.keyRelModules ++ alsos.keyRelModules;
@@ -450,7 +450,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
          map(fst, neededExtIndChecks) ++
          [bindingMetaterm(existsBinder(),
              oneBinding("$", justType(integerType)),
-             fullThms)]);
+             ^fullThms)]);
   --during commands for extIndCheck, including declaration of ExtThm
   local extIndCheckCmds::[(SubgoalNum, [ProofCommand])] =
       --intros for each check
@@ -460,14 +460,14 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       [([length(neededExtIndChecks) + 1],
         existsTactic(oneEWitnesses(termEWitness(integerToIntegerTerm(0))))::
         map(\ a::AnyCommand -> case a of
-                               | anyProofCommand(p) -> p
+                               | anyProofCommand(p) -> ^p
                                | _ -> error("only proof commands")
                                end, tail(extThmCmds)))];
   local extIndCheckStart::[AnyCommand] =
       --declare checks
       [anyTopCommand(
           theoremDeclaration(toQName("$ExtIndCheck_" ++ toString(genInt())),
-             [], extIndCheck)),
+             [], ^extIndCheck)),
       --split (must split because at least 1 + true)
        anyProofCommand(splitTactic())] ++
       --intros/set-up for first one
@@ -475,7 +475,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
 
   local extThmCmds::[AnyCommand] =
       --declare theorems
-      [anyTopCommand(theoremDeclaration(extName, [], fullThms))] ++
+      [anyTopCommand(theoremDeclaration(^extName, [], ^fullThms))] ++
       --declare inductions
       map(\ l::[Integer] ->
             anyProofCommand(inductionTactic(noHint(), l)),
@@ -510,7 +510,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       else tail(extIndCheckCmds) ++ tail(thms.duringCommands);
   top.afterCommands =
       if thms.len + alsos.len > 1
-      then [anyTopCommand(splitTheorem(extName,
+      then [anyTopCommand(splitTheorem(^extName,
                              map(fst, top.provingTheorems)))]
       else []; --nothing to split, so nothing to do
 
@@ -638,7 +638,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
   production fullName::QName =
       if name.isQualified
-      then name
+      then ^name
       else addQNameBase(top.currentModule, name.shortName);
 
   top.toAbella =
@@ -673,7 +673,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       end::rest.specialKeyRels;
 
   ons.thmPremises = body.premises;
-  ons.thmName = name;
+  ons.thmName = ^name;
 
   --the premise we declared for the key relation
   local keyRelPremiseName::String =
@@ -713,7 +713,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       | just(relationMetaterm(rel, args, r)) ->
         --need to check the metaterm is built by an extensible relation
         let decRel::Decorated QName with {relationEnv} =
-            decorate rel with {relationEnv = top.relationEnv;}
+            decorate ^rel with {relationEnv = top.relationEnv;}
         in
           if !decRel.relFound
           then [] --covered by other errors
@@ -744,7 +744,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         end
       | just(extSizeMetaterm(rel, args, r)) ->
         let decRel::Decorated QName with {relationEnv} =
-            decorate rel with {relationEnv = top.relationEnv;}
+            decorate ^rel with {relationEnv = top.relationEnv;}
         in
           if !decRel.relFound
           then [] --covered by other errors
@@ -782,7 +782,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
         end
       | just(projRelMetaterm(rel, args, r)) ->
         let decRel::Decorated QName with {relationEnv} =
-            decorate rel with {relationEnv = top.relationEnv;}
+            decorate ^rel with {relationEnv = top.relationEnv;}
         in
           if !decRel.relFound
           then [] --covered by other errors
@@ -821,7 +821,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       else [];
   --check there are no existing theorems with this full name
   top.toAbellaMsgs <-
-      if null(findTheorem(fullName, top.proverState))
+      if null(findTheorem(^fullName, top.proverState))
       then []
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
@@ -878,21 +878,21 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local keyRelFound::Boolean =
       case foundKeyRelPremise of
       | just(relationMetaterm(rel, _, _)) ->
-        decorate rel with {relationEnv = top.relationEnv;}.relFound
+        decorate ^rel with {relationEnv = top.relationEnv;}.relFound
       | just(extSizeMetaterm(rel, _, _)) ->
-        decorate rel with {relationEnv = top.relationEnv;}.relFound
+        decorate ^rel with {relationEnv = top.relationEnv;}.relFound
       | just(projRelMetaterm(rel, _, _)) ->
-        decorate rel with {relationEnv = top.relationEnv;}.relFound
+        decorate ^rel with {relationEnv = top.relationEnv;}.relFound
       | _ -> false
       end;
   local keyRel::RelationEnvItem =
       case foundKeyRelPremise of
       | just(relationMetaterm(rel, _, _)) ->
-        decorate rel with {relationEnv = top.relationEnv;}.fullRel
+        decorate ^rel with {relationEnv = top.relationEnv;}.fullRel
       | just(extSizeMetaterm(rel, _, _)) ->
-        decorate rel with {relationEnv = top.relationEnv;}.fullRel
+        decorate ^rel with {relationEnv = top.relationEnv;}.fullRel
       | just(projRelMetaterm(rel, _, _)) ->
-        decorate rel with {relationEnv = top.relationEnv;}.fullRel
+        decorate ^rel with {relationEnv = top.relationEnv;}.fullRel
       | _ -> error("Should not access keyRel")
       end;
   local usesProjRel::Boolean =
@@ -914,21 +914,21 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       --take full of these to turn constructor names into constructor
       --   terms, not vars that will unify with anything
       | just(relationMetaterm(_, a, _)) ->
-        decorate a with {
+        decorate ^a with {
           typeEnv = top.typeEnv;
           relationEnv = top.relationEnv;
           constructorEnv = top.constructorEnv;
           boundNames = bindings.usedNames;
         }.full.toList
       | just(extSizeMetaterm(_, a, _)) ->
-        init(decorate a with {
+        init(decorate ^a with {
                typeEnv = top.typeEnv;
                relationEnv = top.relationEnv;
                constructorEnv = top.constructorEnv;
                boundNames = bindings.usedNames;
              }.full.toList) --drop num
       | just(projRelMetaterm(_, a, _)) ->
-        decorate a with {
+        decorate ^a with {
           typeEnv = top.typeEnv;
           relationEnv = top.relationEnv;
           constructorEnv = top.constructorEnv;
@@ -1109,7 +1109,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       case thisExtInd of
       | just((_, args, binds, prems)) ->
         generateExtIndCheck(args, binds, prems,
-                            relArgs, bindings, body)
+                            relArgs, ^bindings, body)
       | nothing() -> error("extIndUseCheck")
       end;
   --
@@ -1181,14 +1181,14 @@ Metaterm ::= extIndArgs::[String] extIndBinds::Bindings
                            extIndUseCheckBinds));
   --full metaterm to prove to show this use of ExtInd is valid
   local extIndUseCheck::Metaterm =
-      bindingMetaterm(forallBinder(), thmBindings,
+      bindingMetaterm(forallBinder(), @thmBindings,
          foldr1(impliesMetaterm,
             metatermPremises(thmBody.toAbella) ++
             [if null(extIndUseCheckBinds)
              then foldr1(andMetaterm, extIndUseCheckConcs)
-             else bindingMetaterm(existsBinder(), thmBindings,
+             else bindingMetaterm(existsBinder(), ^thmBindings,
                      foldr1(andMetaterm, extIndUseCheckConcs))]));
-  return extIndUseCheck;
+  return ^extIndUseCheck;
 }
 
 
@@ -1328,7 +1328,7 @@ top::ExtBody ::= conc::Metaterm
   top.pp = conc.pp;
   top.abella_pp = conc.abella_pp;
 
-  top.thm = conc;
+  top.thm = ^conc;
 
   top.toAbella = conc.toAbella;
 
@@ -1353,7 +1353,7 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
   top.abella_pp =
       label ++ " : (" ++ m.abella_pp ++ ") -> " ++ rest.abella_pp;
 
-  top.thm = impliesMetaterm(m, rest.thm);
+  top.thm = impliesMetaterm(^m, rest.thm);
 
   top.toAbella = impliesMetaterm(m.toAbella, rest.toAbella);
 
@@ -1402,7 +1402,7 @@ top::ExtBody ::= m::Metaterm rest::ExtBody
       (if m.isAtomic then m.abella_pp else "(" ++ m.abella_pp ++ ")") ++
       " -> " ++ rest.abella_pp;
 
-  top.thm = impliesMetaterm(m, rest.thm);
+  top.thm = impliesMetaterm(^m, rest.thm);
 
   top.toAbella = impliesMetaterm(m.toAbella, rest.toAbella);
 

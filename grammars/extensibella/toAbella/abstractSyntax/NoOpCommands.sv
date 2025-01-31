@@ -74,7 +74,7 @@ top::NoOpCommand ::= theoremName::QName
   top.abella_pp = "Show " ++ theoremName.abella_pp ++ ".\n";
 
   production possibleThms::[(QName, Metaterm)] =
-      findTheorem(theoremName, top.proverState);
+      findTheorem(^theoremName, top.proverState);
   top.toAbella = [showCommand(head(possibleThms).1)];
 
   top.newProverState = top.proverState;

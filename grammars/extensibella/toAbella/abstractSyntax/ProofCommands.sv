@@ -61,7 +61,7 @@ top::ProofCommand ::= h::HHint nl::[Integer]
                    --allow induction on append
                    when rel.shortName == appendName -> []
                  | relationMetaterm(rel, args, r) when
-                   decorate rel with {
+                   decorate ^rel with {
                      relationEnv = top.relationEnv;}.relFound -> []
                  | extSizeMetaterm(rel, args, r) -> []
                  | projRelMetaterm(rel, args, r) -> []
@@ -139,7 +139,7 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> theorem::Clearable
       argsString_abella ++ withsString_abella ++ ".  ";
 
   top.toAbella =
-      [applyTactic(h, depth, theorem.toAbella,
+      [applyTactic(^h, depth, theorem.toAbella,
                    args.toAbella, withs.toAbella)];
 }
 
@@ -251,7 +251,7 @@ top::ProofCommand ::= h::HHint depth::Maybe<Integer> m::Metaterm
   top.abella_pp = h.abella_pp ++ "assert " ++ depthString ++
                   m.abella_pp ++ ".  ";
 
-  top.toAbella = [assertTactic(h, depth, m.toAbella)];
+  top.toAbella = [assertTactic(^h, depth, m.toAbella)];
 }
 
 
@@ -531,7 +531,7 @@ top::ProofCommand ::= all::Boolean
              } of
         | relationMetaterm(r, a, _) ->
           let rel::RelationEnvItem = --r must be qualified, so only one
-              head(lookupEnv(r, top.proverState.knownRels))
+              head(lookupEnv(^r, top.proverState.knownRels))
           in
             if !rel.isExtensible
             then [] --always fine, since no other rules can be added
@@ -545,7 +545,7 @@ top::ProofCommand ::= all::Boolean
           end
         | projRelMetaterm(r, a, _) ->
           let rel::RelationEnvItem = --r must be qualified, so only one
-              head(lookupEnv(r, top.proverState.knownRels))
+              head(lookupEnv(^r, top.proverState.knownRels))
           in
             if !rel.isExtensible
             then [] --always fine, since no other rules can be added
@@ -559,7 +559,7 @@ top::ProofCommand ::= all::Boolean
           end
         | extSizeMetaterm(r, a, _) ->
           let rel::RelationEnvItem = --r must be qualified, so only one
-              head(lookupEnv(r, top.proverState.knownRels))
+              head(lookupEnv(^r, top.proverState.knownRels))
           in
             if !rel.isExtensible
             then [] --always fine, since no other rules can be added
@@ -601,7 +601,7 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
      else text("[") ++ ppImplode(text(", "), instantiation.pps) ++
           text("]");
   top.pp = text(if star then "*" else "") ++ hyp.pp ++
-           docGroup(instPP);
+           docGroup(^instPP);
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -614,11 +614,11 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
              found || p.1 == hyp.shortName,
            false, top.proverState.state.hypList);
   production possibleThms::[(QName, Metaterm)] =
-     findTheorem(hyp, top.proverState);
+     findTheorem(^hyp, top.proverState);
   top.toAbella =
       clearable(star,
                 if hyp.isQualified || hypFound
-                then hyp
+                then ^hyp
                 else head(possibleThms).1, instantiation.toAbella);
 
   top.toAbellaMsgs <-
