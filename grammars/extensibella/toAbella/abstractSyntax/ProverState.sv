@@ -185,7 +185,7 @@ function removeFinishedObligation
         else obligations
       | projectionConstraintTheorem(q, x, b, _)::rest ->
         case provenThms of
-        | [(q2, _)] when ^q == ^q2 -> rest
+        | [(q2, _)] when ^q == q2 -> rest
         | _ -> obligations
         end
       | extIndElement(rels, thms, alsos, _)::rest ->
@@ -575,7 +575,7 @@ Maybe<[QName]> ::= name::QName state::ProverState
 function findProjRelGroup
 Maybe<[QName]> ::= name::QName state::ProverState
 {
-  local find::[[QName]] = filter(contains(name, _), state.knownProjRels);
+  local find::[[QName]] = filter(contains(^name, _), state.knownProjRels);
   return case find of
          | [] -> nothing()
          | [x] -> just(x)
@@ -589,8 +589,8 @@ function buildsOn
 Boolean ::= p::ProverState builtOnMod::QName buildingOnMod::QName
 {
   return
-      case lookup(buildingOnMod, p.buildsOns) of
-      | just(l) -> contains(builtOnMod, l)
+      case lookup(^buildingOnMod, p.buildsOns) of
+      | just(l) -> contains(^builtOnMod, l)
       | nothing() ->
         error("Unknown module " ++ justShow(buildingOnMod.pp))
       end;
@@ -602,7 +602,7 @@ function findMutualGroup
 Maybe<[QName]> ::= name::QName state::ProverState
 {
   local find::[[QName]] =
-      filter(contains(name, _), state.mutualRelGroups);
+      filter(contains(^name, _), state.mutualRelGroups);
   return case find of
          | [] -> nothing()
          | [x] -> just(x)

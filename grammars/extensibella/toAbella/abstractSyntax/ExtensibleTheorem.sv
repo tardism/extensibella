@@ -375,7 +375,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       if obligationFound
       then foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
                    addExtThms(p.1, p.2, p.3, p.4, rest),
-                 newThms, obligations)
+                 ^newThms, obligations)
       else endExtThms(); --should not access, but may
   thms.startingGoalNum =
        if null(neededExtIndChecks)
@@ -405,7 +405,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
       if obligationFound
       then foldr(\ p::(QName, Bindings, ExtBody, InductionOns) rest::ExtThms ->
                    addExtThms(p.1, p.2, p.3, p.4, rest),
-                 newAlsos, alsosInfo)
+                 ^newAlsos, alsosInfo)
       else endExtThms(); --should not access, but may
   alsos.startingGoalNum = thms.nextGoalNum;
   alsos.typeEnv = top.typeEnv;
@@ -852,7 +852,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   local boundVarTys::[(String, Either<Type String>)] =
       map(\ p::(String, MaybeType) ->
             (p.1, case p.2 of
-                  | justType(t) -> left(t)
+                  | justType(t) -> left(^t)
                   | nothingType() ->
                     right("__Bound" ++ toString(genInt()))
                   end),
@@ -867,7 +867,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
   body.downSubst = emptySubst();
 
   top.provingTheorems =
-      (fullName, if bindings.len > 0
+      (^fullName, if bindings.len > 0
                  then bindingMetaterm(forallBinder(),
                          bindings.toAbella, body.thm)
                  else body.thm)::rest.provingTheorems;
@@ -1117,7 +1117,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
       if !null(top.useExtInd) && --sameModule(top.currentModule, keyRel.name) &&
          --if premises are empty, nothing to show
          thisExtInd.isJust && thisExtInd.fromJust.4.len != 0
-      then (extIndUseCheck, [introsTactic(introsNames)])::rest.extIndChecks
+      then (^extIndUseCheck, [introsTactic(introsNames)])::rest.extIndChecks
       else rest.extIndChecks;
 
   top.keyRelModules =
@@ -1131,7 +1131,7 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
 
   --pass it up
   top.nextGoalNum = rest.nextGoalNum;
-  top.thmNames = fullName::rest.thmNames;
+  top.thmNames = ^fullName::rest.thmNames;
 }
 
 --generate names for intros
@@ -1360,7 +1360,7 @@ top::ExtBody ::= label::String m::Metaterm rest::ExtBody
   m.boundNames = top.boundNames;
   rest.boundNames = top.boundNames;
 
-  top.premises = (just(label), m)::rest.premises;
+  top.premises = (just(label), ^m)::rest.premises;
 
   m.downSubst = top.downSubst;
   rest.downSubst = m.upSubst;

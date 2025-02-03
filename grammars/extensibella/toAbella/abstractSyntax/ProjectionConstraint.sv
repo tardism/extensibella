@@ -89,7 +89,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
       map(\ p::(String, MaybeType) ->
             (p.1,
              case p.2 of
-             | justType(t) -> t
+             | justType(t) -> ^t
              | nothingType() -> varType("__X" ++ toString(genInt()))
              end),
           binds.toList);
@@ -102,7 +102,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
        anyProofCommand(caseTactic(nameHint(head(introsNames)),
           head(introsNames), true))];
 
-  top.provingTheorems = [(fullName, body.thm)];
+  top.provingTheorems = [(^fullName, body.thm)];
 
   --no skips at declaration time, so no during commands
   top.duringCommands = [];
@@ -125,7 +125,7 @@ top::TopCommand ::= name::QName
   top.toAbellaMsgs <-
       case top.proverState.remainingObligations of
       | projectionConstraintTheorem(q, x, b, _)::_ ->
-        if name == q
+        if ^name == ^q
         then []
         else [errorMsg("Expected projection constraint obligation" ++
                  " " ++ justShow(q.pp))]
@@ -134,7 +134,7 @@ top::TopCommand ::= name::QName
 
   local obligation::(QName, Bindings, ExtBody) =
       case head(top.proverState.remainingObligations) of
-      | projectionConstraintTheorem(q, x, b, _) -> (q, x, b)
+      | projectionConstraintTheorem(q, x, b, _) -> (^q, ^x, ^b)
       | _ -> error("Not possible (length top.toAbellaMsgs = " ++
                    toString(length(top.toAbellaMsgs)) ++ ")")
       end;

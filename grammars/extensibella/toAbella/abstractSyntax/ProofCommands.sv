@@ -34,7 +34,7 @@ top::ProofCommand ::= h::HHint nl::[Integer]
   top.abella_pp = h.abella_pp ++ "induction on " ++
                   implode(" ", map(toString, nl)) ++ ".  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 
   local goal::Metaterm = top.proverState.state.goal.fromJust;
   local splits::[[Metaterm]] =
@@ -83,7 +83,7 @@ top::ProofCommand ::= h::HHint
   top.pp = ppConcat([h.pp, text("coinduction."), line()]);
   top.abella_pp = h.abella_pp ++ "coinduction.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -97,7 +97,7 @@ top::ProofCommand ::= names::[String]
   top.pp = cat(text("intros" ++ namesString ++ "."), line());
   top.abella_pp = "intros" ++ namesString ++ ".  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -178,7 +178,7 @@ top::ProofCommand ::= h::HHint hyp::String keep::Boolean
   top.abella_pp = h.abella_pp ++ "case " ++ hyp ++
                   if keep then " (keep).  " else ".  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 
   local maybeHypBody::Maybe<Metaterm> =
       lookup(hyp, top.proverState.state.hypList);
@@ -285,7 +285,7 @@ top::ProofCommand ::=
   top.pp = cat(text("search."), line());
   top.abella_pp = "search.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -295,7 +295,7 @@ top::ProofCommand ::= n::Integer
   top.pp = cat(text("search " ++ toString(n) ++ "."), line());
   top.abella_pp = "search " ++ toString(n) ++ ".  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -315,7 +315,7 @@ top::ProofCommand ::=
   top.pp = cat(text("async."), line());
   top.abella_pp = "async.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -325,7 +325,7 @@ top::ProofCommand ::=
   top.pp = cat(text("split."), line());
   top.abella_pp = "split.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -335,7 +335,7 @@ top::ProofCommand ::=
   top.pp = cat(text("split*."), line());
   top.abella_pp = "split*.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -345,7 +345,7 @@ top::ProofCommand ::=
   top.pp = cat(text("left."), line());
   top.abella_pp = "left.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -355,7 +355,7 @@ top::ProofCommand ::=
   top.pp = cat(text("right."), line());
   top.abella_pp = "right.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -365,7 +365,7 @@ top::ProofCommand ::=
   top.pp = cat(text("skip."), line());
   top.abella_pp = "skip.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -391,7 +391,7 @@ top::ProofCommand ::=
   top.pp = cat(text("abort."), line());
   top.abella_pp = "abort.  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -433,7 +433,7 @@ top::ProofCommand ::= removes::[String] hasArrow::Boolean
               line()]);
   top.abella_pp = justShow(top.pp);
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -444,7 +444,7 @@ top::ProofCommand ::= original::String renamed::String
                     renamed ++ "."), line());
   top.abella_pp = "rename " ++ original ++ " to " ++ renamed ++ ".  ";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -484,7 +484,7 @@ top::ProofCommand ::= names::[String] hyp::Maybe<String>
               text("."), line()]);
   top.abella_pp = justShow(top.pp);
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -495,7 +495,7 @@ top::ProofCommand ::= steps::Integer all::Boolean
                     if all then "(all)." else "."), line());
   top.abella_pp = justShow(top.pp);
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 }
 
 
@@ -519,7 +519,7 @@ top::ProofCommand ::= all::Boolean
   top.pp = text("unfold " ++ if all then "(all)." else ".") ++ line();
   top.abella_pp = justShow(top.pp);
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 
   top.toAbellaMsgs <-
       if !top.proverState.state.goal.isJust
@@ -668,7 +668,7 @@ top::ApplyArgs ::= a::ApplyArg rest::ApplyArgs
   top.abella_pp = a.abella_pp ++
            if rest.abella_pp == "" then "" else " " ++ rest.abella_pp;
 
-  top.toList = a::rest.toList;
+  top.toList = ^a::rest.toList;
   top.len = 1 + rest.len;
 
   top.toAbella = addApplyArgs(a.toAbella, rest.toAbella);
@@ -695,7 +695,7 @@ top::ApplyArg ::= hyp::String instantiation::TypeList
      then text("")
      else text("[") ++ ppImplode(text(", "),  instantiation.pps) ++
           text("]");
-  top.pp = text(hyp) ++ instPP;
+  top.pp = text(hyp) ++ ^instPP;
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -713,7 +713,7 @@ top::ApplyArg ::= name::String instantiation::TypeList
      then text("")
      else text("[") ++ ppImplode(text(", "), instantiation.pps) ++
           text("]");
-  top.pp = text("*") ++ text(name) ++ instPP;
+  top.pp = text("*") ++ text(name) ++ ^instPP;
   local instString_abella::String =
      if instantiation.abella_pp == ""
      then ""
@@ -756,7 +756,7 @@ top::Withs ::= name::String term::Term rest::Withs
   top.abella_pp = name ++ " = " ++ term.abella_pp ++
                  if rest.len == 0 then "" else ", " ++ rest.abella_pp;
 
-  top.toList = (name, term)::rest.toList;
+  top.toList = (name, ^term)::rest.toList;
   top.len = 1 + rest.len;
 
   top.toAbella = addWiths(name, term.toAbella, rest.toAbella);
@@ -845,4 +845,3 @@ top::HHint ::=
   top.pp = text("");
   top.abella_pp = "";
 }
-

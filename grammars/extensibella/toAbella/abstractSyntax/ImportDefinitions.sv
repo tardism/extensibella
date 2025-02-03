@@ -58,7 +58,7 @@ top::ListOfCommands ::= a::AnyCommand rest::ListOfCommands
   top.pp = docGroup(a.pp) ++ rest.pp;
   top.abella_pp = a.abella_pp ++ rest.abella_pp;
 
-  top.commandList = a::rest.commandList;
+  top.commandList = ^a::rest.commandList;
 
   top.tys = a.tys ++ rest.tys;
   top.rels = a.rels ++ rest.rels;

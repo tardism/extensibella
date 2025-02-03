@@ -52,7 +52,7 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
   top.tag = tag;
 
   top.thms =
-      [(name, bindingMetaterm(forallBinder(), ^binds, body.thm))];
+      [(^name, bindingMetaterm(forallBinder(), ^binds, body.thm))];
 }
 
 
@@ -68,7 +68,7 @@ top::ThmElement ::= name::QName params::[String] stmt::Metaterm
   top.is_nonextensible = true;
   top.tag = error("Non-extensible theorem tag");
 
-  top.thms = [(name, stmt)];
+  top.thms = [(^name, ^stmt)];
 }
 
 
@@ -83,7 +83,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
   --theorem must already exist, so don't need to consider Maybe
   local foundSplittee::Metaterm =
-      lookup(toSplit, top.knownThms).fromJust;
+      lookup(^toSplit, top.knownThms).fromJust;
   top.thms = zip(newNames, splitMetaterm(^foundSplittee));
 }
 

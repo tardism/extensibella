@@ -108,7 +108,7 @@ top::NoOpCommand ::=
   top.pp = cat(text("Quit."), realLine());
   top.abella_pp = "Quit.\n";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 
   top.newProverState = top.proverState;
   top.newPriorStep = nothing();
@@ -161,7 +161,7 @@ top::NoOpCommand ::=
   top.pp = cat(text("#reset."), realLine());
   top.abella_pp = "#reset.\n";
 
-  top.toAbella = [top];
+  top.toAbella = [^top];
 
   --this command is a fiction, so nothing here
   top.newProverState = error("resetCommand.newProverState");
