@@ -98,98 +98,271 @@ Found silver:langutil:reflect:serialize
 Found silver:langutil:reflect:concretesyntax
 	[/home/linglong/silver/jars/silver.langutil.jar]
 Checking For Errors.
-Errors for extensibella:main:util
- [grammars/extensibella/main/util/ModuleDecl.sv]
-ModuleDecl.sv:47:2: error: Expected return type is silver:core:IOVal<silver:core:Either<String (extensibella:toAbella:abstractSyntax:ListOfCommands, [extensibella:toAbella:abstractSyntax:DefElement], [extensibella:toAbella:abstractSyntax:ThmElement], [(extensibella:common:abstractSyntax:QName, [extensibella:common:abstractSyntax:QName])])>>, but the expression has actual type silver:core:IOVal<silver:core:Either<String (Decorated extensibella:toAbella:abstractSyntax:ListOfCommands with {}, [extensibella:toAbella:abstractSyntax:DefElement], [extensibella:toAbella:abstractSyntax:ThmElement], [(Decorated extensibella:common:abstractSyntax:QName with {}, [extensibella:common:abstractSyntax:QName])])>>
-ModuleDecl.sv:78:23: error: Argument 2 of function 'silver:core:cons' expected [(Decorated extensibella:common:abstractSyntax:QName with {}, [extensibella:common:abstractSyntax:QName])] but argument is of type [(extensibella:common:abstractSyntax:QName, [extensibella:common:abstractSyntax:QName])]
+Generating Translation.
+	[extensibella:composed]
+	[extensibella:main:util]
+	[extensibella:main]
+	[extensibella:toAbella:abstractSyntax]
+	[extensibella:fromAbella:concreteSyntax]
+	[extensibella:toAbella:concreteSyntax]
+	[extensibella:interfaceFile:concreteSyntax]
+	[extensibella:outerfaceFile:concreteSyntax]
+	[extensibella:common:concreteSyntax]
+	[extensibella:common]
+	[extensibella:toAbella]
+	[extensibella:fromAbella]
+	[extensibella:interfaceFile]
+	[extensibella:outerfaceFile]
+	[extensibella:main:run]
+	[extensibella:main:compile]
+	[extensibella:main:generate]
+	[extensibella:main:compose]
+	[extensibella:main:thmDoc]
+	[extensibella:common:abstractSyntax]
+	[extensibella:fromAbella:abstractSyntax]
+	[extensibella:interfaceFile:abstractSyntax]
+	[extensibella:outerfaceFile:abstractSyntax]
+Generating parser extensibella:composed:from_parse.
+-------------
+Final report:
+-------------
+Parser and scanner specification
+   has 153 terminals, 38 nonterminals, 230 productions,
+   and 0 disambiguation functions declared,
+   producing 499 unique parse states
+   and 2193 unique scanner states.
+0 useless nonterminals.
+0 malformed regexes.
+0 unresolved parse table conflicts:
+   13 shift/reduce conflicts, 0 reduce/reduce, 13 resolved.
+0 unresolved lexical ambiguities:
+   155 resolved by context, 0 by disambiguation function/group.
+Parser code output to /home/linglong/silver/generated/src/extensibella/composed/Parser_extensibella_composed_from_parse.java.
+Generating parser extensibella:composed:cmd_parse.
+extensibella:toAbella:concreteSyntax/Concrete.sv:21.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:FullFile_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:24.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ListOfCommands_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:4.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ModuleDecl_c'
+-------------
+Final report:
+-------------
+Parser and scanner specification
+   has 119 terminals, 68 nonterminals, 362 productions,
+   and 0 disambiguation functions declared,
+   producing 822 unique parse states
+   and 473 unique scanner states.
+3 useless nonterminals.
+0 malformed regexes.
+0 unresolved parse table conflicts:
+   16 shift/reduce conflicts, 0 reduce/reduce, 16 resolved.
+0 unresolved lexical ambiguities:
+   4 resolved by context, 0 by disambiguation function/group.
+Parser code output to /home/linglong/silver/generated/src/extensibella/composed/Parser_extensibella_composed_cmd_parse.java.
+Generating parser extensibella:composed:module_decl_parse.
+extensibella:common:concreteSyntax/Concrete.sv:432.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:ATy_c'
+extensibella:common:concreteSyntax/Concrete.sv:519.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Ats_c'
+extensibella:common:concreteSyntax/Concrete.sv:474.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Binder_c'
+extensibella:common:concreteSyntax/Concrete.sv:475.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:BindingList_c'
+extensibella:common:concreteSyntax/Concrete.sv:476.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:BindingOne_c'
+extensibella:common:concreteSyntax/Concrete.sv:477.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:BindingVars_c'
+extensibella:common:concreteSyntax/Concrete.sv:345.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:ExpList_c'
+extensibella:common:concreteSyntax/Concrete.sv:344.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Exp_c'
+extensibella:common:concreteSyntax/Concrete.sv:521.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Hashes_c'
+extensibella:common:concreteSyntax/Concrete.sv:347.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:ListBody_c'
+extensibella:common:concreteSyntax/Concrete.sv:17.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Metaterm_c'
+extensibella:common:concreteSyntax/Concrete.sv:343.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:MidTerm_c'
+extensibella:common:concreteSyntax/Concrete.sv:348.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:PAId_c'
+extensibella:common:concreteSyntax/Concrete.sv:431.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:PTy_c'
+extensibella:common:concreteSyntax/Concrete.sv:346.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:PairBody_c'
+extensibella:common:concreteSyntax/Concrete.sv:520.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Pluses_c'
+extensibella:common:concreteSyntax/Concrete.sv:518.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Stars_c'
+extensibella:common:concreteSyntax/Concrete.sv:18.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:SubMetaterm_c'
+extensibella:common:concreteSyntax/Concrete.sv:342.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Term_c'
+extensibella:common:concreteSyntax/Concrete.sv:433.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Ty_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:923.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ATyList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:45.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:AnyCommand_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1072.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ApplyArg_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1071.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ApplyArgs_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:890.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Backs_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1223.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ClauseSel_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1109.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Clearable_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:44.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:CommonCommand_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:956.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Def_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:955.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Defs_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1201.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Depth_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1051.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:EWitness_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1050.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:EWitnesses_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1092.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ExistsBinds_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:52.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ExtBodyIHs_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:50.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ExtBody_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:51.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ExtIndBodies_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:53.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ExtIndPremiseList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:54.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ExtSizeBodies_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:21.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:FullFile_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1108.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:HHint_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1163.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:HypList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1162.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Hyp_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1105.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:IdList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1106.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:IdTy_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1107.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:IdTys_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:920.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Knd_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:24.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ListOfCommands_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1184.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:MaybeDepth_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1183.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:MaybeInst_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1210.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:NumList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:49.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Ons_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:991.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:PermIds_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:990.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Perm_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:42.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:PureCommand_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:43.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:PureTopCommand_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:55.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:QnameList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1010.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:SearchWitnessList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1009.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:SearchWitness_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1224.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:SolSel_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:48.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:TheoremStmts_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1246.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:TheoremTyparams_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:922.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:UTyList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:921.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:UTy_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:483.68: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:VarList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1110.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Withs_c'
+-------------
+Final report:
+-------------
+Parser and scanner specification
+   has 119 terminals, 68 nonterminals, 362 productions,
+   and 0 disambiguation functions declared,
+   producing 9 unique parse states
+   and 473 unique scanner states.
+66 useless nonterminals.
+0 malformed regexes.
+No parse table conflicts detected.
+0 unresolved lexical ambiguities:
+   2 resolved by context, 0 by disambiguation function/group.
+Parser code output to /home/linglong/silver/generated/src/extensibella/composed/Parser_extensibella_composed_module_decl_parse.java.
+Generating parser extensibella:composed:file_parse.
+-------------
+Final report:
+-------------
+Parser and scanner specification
+   has 119 terminals, 68 nonterminals, 362 productions,
+   and 0 disambiguation functions declared,
+   producing 833 unique parse states
+   and 473 unique scanner states.
+0 useless nonterminals.
+0 malformed regexes.
+0 unresolved parse table conflicts:
+   16 shift/reduce conflicts, 0 reduce/reduce, 16 resolved.
+0 unresolved lexical ambiguities:
+   4 resolved by context, 0 by disambiguation function/group.
+Parser code output to /home/linglong/silver/generated/src/extensibella/composed/Parser_extensibella_composed_file_parse.java.
+Generating parser extensibella:composed:import_parse.
+extensibella:toAbella:concreteSyntax/Concrete.sv:21.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:FullFile_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:4.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ModuleDecl_c'
+-------------
+Final report:
+-------------
+Parser and scanner specification
+   has 119 terminals, 68 nonterminals, 362 productions,
+   and 0 disambiguation functions declared,
+   producing 824 unique parse states
+   and 473 unique scanner states.
+2 useless nonterminals.
+0 malformed regexes.
+0 unresolved parse table conflicts:
+   16 shift/reduce conflicts, 0 reduce/reduce, 16 resolved.
+0 unresolved lexical ambiguities:
+   4 resolved by context, 0 by disambiguation function/group.
+Parser code output to /home/linglong/silver/generated/src/extensibella/composed/Parser_extensibella_composed_import_parse.java.
+Generating parser extensibella:composed:outerface_parse.
+extensibella:toAbella:concreteSyntax/Concrete.sv:45.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:AnyCommand_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1072.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ApplyArg_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1071.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ApplyArgs_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:890.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Backs_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1223.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ClauseSel_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1109.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Clearable_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:44.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:CommonCommand_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1201.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Depth_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1051.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:EWitness_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1050.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:EWitnesses_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1092.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ExistsBinds_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:21.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:FullFile_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1108.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:HHint_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1163.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:HypList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1162.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Hyp_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:24.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ListOfCommands_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1184.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:MaybeDepth_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1183.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:MaybeInst_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:4.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:ModuleDecl_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1210.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:NumList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:991.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:PermIds_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:990.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Perm_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:42.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:PureCommand_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1010.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:SearchWitnessList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1009.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:SearchWitness_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1224.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:SolSel_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:922.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:UTyList_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:921.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:UTy_c'
+extensibella:toAbella:concreteSyntax/Concrete.sv:1110.0: warning: useless nonterminal 'extensibella:toAbella:concreteSyntax:Withs_c'
+-------------
+Final report:
+-------------
+Parser and scanner specification
+   has 119 terminals, 70 nonterminals, 367 productions,
+   and 0 disambiguation functions declared,
+   producing 613 unique parse states
+   and 473 unique scanner states.
+29 useless nonterminals.
+0 malformed regexes.
+0 unresolved parse table conflicts:
+   16 shift/reduce conflicts, 0 reduce/reduce, 16 resolved.
+0 unresolved lexical ambiguities:
+   4 resolved by context, 0 by disambiguation function/group.
+Parser code output to /home/linglong/silver/generated/src/extensibella/composed/Parser_extensibella_composed_outerface_parse.java.
+Generating parser extensibella:composed:interface_parse.
+extensibella:common:concreteSyntax/Concrete.sv:432.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:ATy_c'
+extensibella:common:concreteSyntax/Concrete.sv:519.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Ats_c'
+extensibella:common:concreteSyntax/Concrete.sv:474.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Binder_c'
+extensibella:common:concreteSyntax/Concrete.sv:475.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:BindingList_c'
+extensibella:common:concreteSyntax/Concrete.sv:476.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:BindingOne_c'
+extensibella:common:concreteSyntax/Concrete.sv:477.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:BindingVars_c'
+extensibella:common:concreteSyntax/Concrete.sv:345.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:ExpList_c'
+extensibella:common:concreteSyntax/Concrete.sv:344.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Exp_c'
+extensibella:common:concreteSyntax/Concrete.sv:521.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Hashes_c'
+extensibella:common:concreteSyntax/Concrete.sv:347.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:ListBody_c'
+extensibella:common:concreteSyntax/Concrete.sv:17.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Metaterm_c'
+extensibella:common:concreteSyntax/Concrete.sv:343.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:MidTerm_c'
+extensibella:common:concreteSyntax/Concrete.sv:348.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:PAId_c'
+extensibella:common:concreteSyntax/Concrete.sv:431.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:PTy_c'
+extensibella:common:concreteSyntax/Concrete.sv:346.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:PairBody_c'
+extensibella:common:concreteSyntax/Concrete.sv:520.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Pluses_c'
+extensibella:common:concreteSyntax/Concrete.sv:518.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Stars_c'
+extensibella:common:concreteSyntax/Concrete.sv:18.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:SubMetaterm_c'
+extensibella:common:concreteSyntax/Concrete.sv:342.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Term_c'
+extensibella:common:concreteSyntax/Concrete.sv:433.0: warning: useless nonterminal 'extensibella:common:concreteSyntax:Ty_c'
+-------------
+Final report:
+-------------
+Parser and scanner specification
+   has 51 terminals, 23 nonterminals, 142 productions,
+   and 0 disambiguation functions declared,
+   producing 22 unique parse states
+   and 129 unique scanner states.
+20 useless nonterminals.
+0 malformed regexes.
+No parse table conflicts detected.
+0 unresolved lexical ambiguities:
+   2 resolved by context, 0 by disambiguation function/group.
+Parser code output to /home/linglong/silver/generated/src/extensibella/composed/Parser_extensibella_composed_interface_parse.java.
+Buildfile: /home/linglong/extensibella/build.xml
 
-Errors for extensibella:toAbella:abstractSyntax
- [grammars/extensibella/toAbella/abstractSyntax/Declarations.sv]
-Declarations.sv:132:2: error: Attribute toList has type [extensibella:toAbella:abstractSyntax:Def] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
-Declarations.sv:148:2: error: Attribute toList has type [extensibella:toAbella:abstractSyntax:Def] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
-Declarations.sv:148:15: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:Def with {}] but argument is of type [extensibella:toAbella:abstractSyntax:Def]
-Declarations.sv:196:24: error: Argument 2 of function 'silver:core:eq' expected extensibella:common:abstractSyntax:QName but argument is of type Decorated extensibella:common:abstractSyntax:QName with {}
-Declarations.sv:264:24: error: Argument 2 of function 'silver:core:eq' expected extensibella:common:abstractSyntax:QName but argument is of type Decorated extensibella:common:abstractSyntax:QName with {}
-Declarations.sv:299:2: error: Attribute defTuple has type ([extensibella:common:abstractSyntax:Term], silver:core:Maybe<extensibella:common:abstractSyntax:Metaterm>) but the expression being assigned to it has type ([extensibella:common:abstractSyntax:Term], silver:core:Maybe<Decorated extensibella:common:abstractSyntax:Metaterm with {}>)
- [grammars/extensibella/toAbella/abstractSyntax/ExtInd.sv]
-ExtInd.sv:357:2: error: Attribute extIndInfo has type [(extensibella:common:abstractSyntax:QName, [String], extensibella:common:abstractSyntax:Bindings, extensibella:toAbella:abstractSyntax:ExtIndPremiseList, [String])] but the expression being assigned to it has type [(extensibella:common:abstractSyntax:QName, [String], Decorated extensibella:common:abstractSyntax:Bindings with {}, extensibella:toAbella:abstractSyntax:ExtIndPremiseList, [String])]
-ExtInd.sv:357:21: error: Then and else branch must have the same type. Instead they are extensibella:common:abstractSyntax:QName and Decorated extensibella:common:abstractSyntax:QName with {}
-ExtInd.sv:568:24: error: Argument 2 of function 'silver:core:append' expected [(String, extensibella:common:abstractSyntax:Type)] but argument is of type []<(String, Decorated extensibella:common:abstractSyntax:Type with a)>
-ExtInd.sv:573:32: error: pattern expression should have type Decorated extensibella:common:abstractSyntax:Type with a instead it has type extensibella:common:abstractSyntax:Type
-ExtInd.sv:612:32: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Metaterm but argument is of type Decorated extensibella:common:abstractSyntax:Metaterm with {}
-ExtInd.sv:613:15: error: Argument 3 of function 'foldr' expected [extensibella:common:abstractSyntax:Metaterm] but argument is of type [Decorated extensibella:common:abstractSyntax:Metaterm with {}]
-ExtInd.sv:614:29: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:common:abstractSyntax:Metaterm with {}] but argument is of type []<extensibella:common:abstractSyntax:Metaterm>
-ExtInd.sv:615:20: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:common:abstractSyntax:Metaterm with {}] but argument is of type []<extensibella:common:abstractSyntax:Metaterm>
-ExtInd.sv:655:2: error: Attribute toList has type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
-ExtInd.sv:655:15: error: Argument 2 of function 'silver:core:cons' expected [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})] but argument is of type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)]
-ExtInd.sv:698:2: error: Attribute toList has type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
-ExtInd.sv:698:15: error: Argument 2 of function 'silver:core:cons' expected [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})] but argument is of type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)]
-ExtInd.sv:965:30: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtIndBody but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtIndBody with {}
-ExtInd.sv:983:12: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtThms but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtThms with {}
-ExtInd.sv:987:12: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtThms but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtThms with {}
-ExtInd.sv:1697:6: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Bindings but argument is of type Decorated extensibella:common:abstractSyntax:Bindings with a
-ExtInd.sv:1729:39: error: Argument 2 of function 'silver:core:append' expected [extensibella:common:abstractSyntax:Term] but argument is of type [Decorated extensibella:common:abstractSyntax:Term with {}]
-ExtInd.sv:1738:2: error: Expected return type is [extensibella:toAbella:abstractSyntax:Def], but the expression has actual type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
-ExtInd.sv:1738:9: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:Def with {}] but argument is of type [extensibella:toAbella:abstractSyntax:Def]
-ExtInd.sv:1762:47: error: Ambiguous type variable a (arising from the use of contains) prevents the constraint silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with a from being solved.
-ExtInd.sv:1762:59: error: Argument 2 of function 'contains' expected [Decorated extensibella:common:abstractSyntax:QName with a] but argument is of type [extensibella:common:abstractSyntax:QName]
-ExtInd.sv:1821:2: error: Expected return type is ([String], extensibella:common:abstractSyntax:Metaterm), but the expression has actual type ([String], Decorated extensibella:common:abstractSyntax:Metaterm with {})
-ExtInd.sv:2037:5: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Bindings but argument is of type Decorated extensibella:common:abstractSyntax:Bindings with a
-ExtInd.sv:2065:2: error: Expected return type is [extensibella:toAbella:abstractSyntax:Def], but the expression has actual type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
-ExtInd.sv:2065:9: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:Def with {}] but argument is of type [extensibella:toAbella:abstractSyntax:Def]
-ExtInd.sv:2083:45: error: Ambiguous type variable a (arising from the use of contains) prevents the constraint silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with a from being solved.
-ExtInd.sv:2083:57: error: Argument 2 of function 'contains' expected [Decorated extensibella:common:abstractSyntax:QName with a] but argument is of type [extensibella:common:abstractSyntax:QName]
-ExtInd.sv:2143:38: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2134:8:binds in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2162:38
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2153:38
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2143:38
+init:
 
-ExtInd.sv:2144:25: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
+grammars:
+    [javac] Compiling 1461 source files to /home/linglong/silver/generated/bin
 
-ExtInd.sv:2153:38: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2134:8:binds in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2162:38
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2153:38
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2143:38
+jars:
+      [jar] Building jar: /home/linglong/extensibella/extensibella.jar
 
-ExtInd.sv:2154:25: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
+dist:
 
-ExtInd.sv:2162:38: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2134:8:binds in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2162:38
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2153:38
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2143:38
-
-ExtInd.sv:2163:25: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
-
-ExtInd.sv:2164:29: error: Tree rel in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2173:29
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2164:29
-
-ExtInd.sv:2173:29: error: Tree rel in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2173:29
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2164:29
-
-ExtInd.sv:2177:15: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
-	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
-
-ExtInd.sv:2179:2: error: Expected return type is [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)], but the expression has actual type [(Decorated extensibella:common:abstractSyntax:QName with {}, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
-ExtInd.sv:2245:2: error: Expected return type is [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)], but the expression has actual type [(Decorated extensibella:common:abstractSyntax:QName with {}, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
-ExtInd.sv:2294:32: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Metaterm but argument is of type Decorated extensibella:common:abstractSyntax:Metaterm with {}
-ExtInd.sv:2295:15: error: Argument 3 of function 'foldr' expected [extensibella:common:abstractSyntax:Metaterm] but argument is of type [Decorated extensibella:common:abstractSyntax:Metaterm with {}]
-ExtInd.sv:2295:15: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:common:abstractSyntax:Metaterm with {}] but argument is of type []<extensibella:common:abstractSyntax:Metaterm>
-ExtInd.sv:2297:2: error: Expected return type is (extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm), but the expression has actual type (Decorated extensibella:common:abstractSyntax:QName with {}, Decorated extensibella:common:abstractSyntax:Metaterm with {})
-
+BUILD SUCCESSFUL
+Total time: 39 seconds

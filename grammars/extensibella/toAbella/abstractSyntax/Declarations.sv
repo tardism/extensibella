@@ -129,7 +129,7 @@ top::Defs ::= d::Def
 
   top.relationClauseModules = d.relationClauseModules;
 
-  top.toList = [d];
+  top.toList = [^d];
   top.len = 1;
 }
 
@@ -145,7 +145,7 @@ top::Defs ::= d::Def rest::Defs
   top.relationClauseModules =
       d.relationClauseModules ++ rest.relationClauseModules;
 
-  top.toList = d::rest.toList;
+  top.toList = ^d::rest.toList;
   top.len = 1 + rest.len;
 }
 
@@ -193,7 +193,7 @@ top::Def ::= defRel::QName args::TermList
   production foundDef::[(QName, Type)] =
       flatMap(\ p::(QName, Type) ->
                 if defRel.isQualified
-                then if p.1 == defRel then [p] else []
+                then if p.1 == ^defRel then [p] else []
                 else if p.1.shortName == defRel.shortName
                      then [p] else [],
               top.beingDefined);
@@ -261,7 +261,7 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
   production foundDef::[(QName, Type)] =
       flatMap(\ p::(QName, Type) ->
                 if defRel.isQualified
-                then if p.1 == defRel then [p] else []
+                then if p.1 == ^defRel then [p] else []
                 else if p.1.shortName == defRel.shortName
                      then [p] else [],
               top.beingDefined);
@@ -296,5 +296,5 @@ top::Def ::= defRel::QName args::TermList body::Metaterm
   top.defRel = if defRel.isQualified
                then ^defRel
                else addQNameBase(top.currentModule, defRel.shortName);
-  top.defTuple = (args.toList, just(body));
+  top.defTuple = (args.toList, just(^body));
 }
