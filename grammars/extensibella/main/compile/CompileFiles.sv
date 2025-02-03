@@ -460,7 +460,7 @@ top::TopCommand ::= name::QName
          \ t::ThmElement ->
            case t of
            | projectionConstraintTheorem(projName, binds, body, _) ->
-             name == projName
+             ^name == ^projName
            | _ -> false
            end,
          top.proverState.remainingObligations);

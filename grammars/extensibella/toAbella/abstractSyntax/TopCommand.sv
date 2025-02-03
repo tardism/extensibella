@@ -85,7 +85,7 @@ top::TopCommand ::= name::QName params::[String] body::Metaterm
       else [errorMsg("Theorem named " ++ justShow(fullName.pp) ++
                      " already exists")];
 
-  top.provingTheorems = [(fullName, body)];
+  top.provingTheorems = [(^fullName, ^body)];
 }
 
 

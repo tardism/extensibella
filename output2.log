@@ -1,0 +1,263 @@
+Compiling extensibella:composed
+	[grammars/extensibella/composed/]
+	[Main.sv Parsers.sv]
+Compiling extensibella:main:util
+	[grammars/extensibella/main/util/]
+	[CmdArgs.sv FileHandling.sv ModuleDecl.sv Parsers.sv]
+Compiling extensibella:main
+	[grammars/extensibella/main/]
+	[Main.sv]
+Compiling extensibella:toAbella:abstractSyntax
+	[grammars/extensibella/toAbella/abstractSyntax/]
+	[AnyCommand.sv Attributes.sv Compute.sv Declarations.sv ExtInd.sv ExtensibleTheorem.sv FileErrors.sv 
+	 Full.sv ImportDefinitions.sv ImportedElements.sv NoOpCommands.sv ProjectionConstraint.sv ProofCommands.sv ProverState.sv 
+	 RuleWrangling.sv RunCommands.sv SearchWitness.sv Term.sv TopCommand.sv Translation.sv Util.sv]
+Compiling extensibella:fromAbella:concreteSyntax
+	[grammars/extensibella/fromAbella/concreteSyntax/]
+	[Concrete.sv Terminals.sv]
+Compiling extensibella:toAbella:concreteSyntax
+	[grammars/extensibella/toAbella/concreteSyntax/]
+	[Concrete.sv Terminals.sv]
+Compiling extensibella:interfaceFile:concreteSyntax
+	[grammars/extensibella/interfaceFile/concreteSyntax/]
+	[Concrete.sv]
+Compiling extensibella:outerfaceFile:concreteSyntax
+	[grammars/extensibella/outerfaceFile/concreteSyntax/]
+	[Concrete.sv]
+Compiling extensibella:common:concreteSyntax
+	[grammars/extensibella/common/concreteSyntax/]
+	[Concrete.sv Terminals.sv]
+Found silver:core
+	[/home/linglong/silver/jars/silver.core.jar]
+Found silver:util:cmdargs
+	[/home/linglong/silver/jars/silver.util.jar]
+Found silver:langutil:pp
+	[/home/linglong/silver/jars/silver.langutil.jar]
+Found silver:langutil
+	[/home/linglong/silver/jars/silver.langutil.jar]
+Compiling extensibella:common
+	[grammars/extensibella/common/]
+	[Grammar.sv]
+Compiling extensibella:toAbella
+	[grammars/extensibella/toAbella/]
+	[Grammar.sv]
+Compiling extensibella:fromAbella
+	[grammars/extensibella/fromAbella/]
+	[Grammar.sv]
+Compiling extensibella:interfaceFile
+	[grammars/extensibella/interfaceFile/]
+	[Grammar.sv]
+Compiling extensibella:outerfaceFile
+	[grammars/extensibella/outerfaceFile/]
+	[Grammar.sv]
+Compiling extensibella:main:run
+	[grammars/extensibella/main/run/]
+	[AbellaInteraction.sv AnnotatedOutput.sv Grammar.sv HandleIncomingTheorems.sv Run.sv RunFiles.sv RunInteractive.sv]
+Compiling extensibella:main:compile
+	[grammars/extensibella/main/compile/]
+	[CompileFiles.sv Grammar.sv]
+Compiling extensibella:main:generate
+	[grammars/extensibella/main/generate/]
+	[GenerateSkeleton.sv Grammar.sv]
+Compiling extensibella:main:compose
+	[grammars/extensibella/main/compose/]
+	[Compose.sv ExtThmProofs.sv GatherStandInRules.sv Grammar.sv HandleThmElements.sv ProofStateMapper.sv Remap.sv]
+Compiling extensibella:main:thmDoc
+	[grammars/extensibella/main/thmDoc/]
+	[Grammar.sv ThmDoc.sv]
+Compiling extensibella:common:abstractSyntax
+	[grammars/extensibella/common/abstractSyntax/]
+	[Attributes.sv Env.sv Messages.sv ProofState.sv QName.sv SpecialTerms.sv Terms.sv 
+	 Translation.sv Type.sv Unify.sv Util.sv]
+Found silver:util:subprocess
+	[/home/linglong/silver/jars/silver.util.jar]
+Compiling extensibella:fromAbella:abstractSyntax
+	[grammars/extensibella/fromAbella/abstractSyntax/]
+	[Attributes.sv Errors.sv FullDisplay.sv Hypotheses.sv QName.sv SpecialTerms.sv Term.sv 
+	 Util.sv]
+Compiling extensibella:interfaceFile:abstractSyntax
+	[grammars/extensibella/interfaceFile/abstractSyntax/]
+	[Abstract.sv]
+Compiling extensibella:outerfaceFile:abstractSyntax
+	[grammars/extensibella/outerfaceFile/abstractSyntax/]
+	[Abstract.sv]
+Found silver:util:deque
+	[/home/linglong/silver/jars/silver.util.jar]
+Found silver:langutil:lsp
+	[/home/linglong/silver/jars/silver.langutil.jar]
+Found silver:langutil:unparse
+	[/home/linglong/silver/jars/silver.langutil.jar]
+Found silver:langutil:reflect
+	[/home/linglong/silver/jars/silver.langutil.jar]
+Found silver:reflect
+	[/home/linglong/silver/jars/silver.util.jar]
+Found silver:util:treemap
+	[/home/linglong/silver/jars/silver.util.jar]
+Found silver:langutil:reflect:serialize
+	[/home/linglong/silver/jars/silver.langutil.jar]
+Found silver:langutil:reflect:concretesyntax
+	[/home/linglong/silver/jars/silver.langutil.jar]
+Checking For Errors.
+Errors for extensibella:main:util
+ [grammars/extensibella/main/util/ModuleDecl.sv]
+ModuleDecl.sv:47:2: error: Expected return type is silver:core:IOVal<silver:core:Either<String (extensibella:toAbella:abstractSyntax:ListOfCommands, [extensibella:toAbella:abstractSyntax:DefElement], [extensibella:toAbella:abstractSyntax:ThmElement], [(extensibella:common:abstractSyntax:QName, [extensibella:common:abstractSyntax:QName])])>>, but the expression has actual type silver:core:IOVal<silver:core:Either<String (Decorated extensibella:toAbella:abstractSyntax:ListOfCommands with {}, [extensibella:toAbella:abstractSyntax:DefElement], [extensibella:toAbella:abstractSyntax:ThmElement], [(Decorated extensibella:common:abstractSyntax:QName with {}, [extensibella:common:abstractSyntax:QName])])>>
+ModuleDecl.sv:78:23: error: Argument 2 of function 'silver:core:cons' expected [(Decorated extensibella:common:abstractSyntax:QName with {}, [extensibella:common:abstractSyntax:QName])] but argument is of type [(extensibella:common:abstractSyntax:QName, [extensibella:common:abstractSyntax:QName])]
+
+Errors for extensibella:toAbella:abstractSyntax
+ [grammars/extensibella/toAbella/abstractSyntax/Declarations.sv]
+Declarations.sv:132:2: error: Attribute toList has type [extensibella:toAbella:abstractSyntax:Def] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
+Declarations.sv:148:2: error: Attribute toList has type [extensibella:toAbella:abstractSyntax:Def] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
+Declarations.sv:148:15: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:Def with {}] but argument is of type [extensibella:toAbella:abstractSyntax:Def]
+Declarations.sv:196:24: error: Argument 2 of function 'silver:core:eq' expected extensibella:common:abstractSyntax:QName but argument is of type Decorated extensibella:common:abstractSyntax:QName with {}
+Declarations.sv:264:24: error: Argument 2 of function 'silver:core:eq' expected extensibella:common:abstractSyntax:QName but argument is of type Decorated extensibella:common:abstractSyntax:QName with {}
+Declarations.sv:299:2: error: Attribute defTuple has type ([extensibella:common:abstractSyntax:Term], silver:core:Maybe<extensibella:common:abstractSyntax:Metaterm>) but the expression being assigned to it has type ([extensibella:common:abstractSyntax:Term], silver:core:Maybe<Decorated extensibella:common:abstractSyntax:Metaterm with {}>)
+ [grammars/extensibella/toAbella/abstractSyntax/ExtInd.sv]
+ExtInd.sv:357:2: error: Attribute extIndInfo has type [(extensibella:common:abstractSyntax:QName, [String], extensibella:common:abstractSyntax:Bindings, extensibella:toAbella:abstractSyntax:ExtIndPremiseList, [String])] but the expression being assigned to it has type [(extensibella:common:abstractSyntax:QName, [String], Decorated extensibella:common:abstractSyntax:Bindings with {}, extensibella:toAbella:abstractSyntax:ExtIndPremiseList, [String])]
+ExtInd.sv:357:21: error: Then and else branch must have the same type. Instead they are extensibella:common:abstractSyntax:QName and Decorated extensibella:common:abstractSyntax:QName with {}
+ExtInd.sv:568:24: error: Argument 2 of function 'silver:core:append' expected [(String, extensibella:common:abstractSyntax:Type)] but argument is of type []<(String, Decorated extensibella:common:abstractSyntax:Type with a)>
+ExtInd.sv:573:32: error: pattern expression should have type Decorated extensibella:common:abstractSyntax:Type with a instead it has type extensibella:common:abstractSyntax:Type
+ExtInd.sv:612:32: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Metaterm but argument is of type Decorated extensibella:common:abstractSyntax:Metaterm with {}
+ExtInd.sv:613:15: error: Argument 3 of function 'foldr' expected [extensibella:common:abstractSyntax:Metaterm] but argument is of type [Decorated extensibella:common:abstractSyntax:Metaterm with {}]
+ExtInd.sv:614:29: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:common:abstractSyntax:Metaterm with {}] but argument is of type []<extensibella:common:abstractSyntax:Metaterm>
+ExtInd.sv:615:20: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:common:abstractSyntax:Metaterm with {}] but argument is of type []<extensibella:common:abstractSyntax:Metaterm>
+ExtInd.sv:655:2: error: Attribute toList has type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
+ExtInd.sv:655:15: error: Argument 2 of function 'silver:core:cons' expected [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})] but argument is of type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)]
+ExtInd.sv:698:2: error: Attribute toList has type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
+ExtInd.sv:698:15: error: Argument 2 of function 'silver:core:cons' expected [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})] but argument is of type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)]
+ExtInd.sv:965:30: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtIndBody but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtIndBody with {}
+ExtInd.sv:983:12: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtThms but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtThms with {}
+ExtInd.sv:987:12: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtThms but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtThms with {}
+ExtInd.sv:1697:6: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Bindings but argument is of type Decorated extensibella:common:abstractSyntax:Bindings with a
+ExtInd.sv:1729:39: error: Argument 2 of function 'silver:core:append' expected [extensibella:common:abstractSyntax:Term] but argument is of type [Decorated extensibella:common:abstractSyntax:Term with {}]
+ExtInd.sv:1738:2: error: Expected return type is [extensibella:toAbella:abstractSyntax:Def], but the expression has actual type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
+ExtInd.sv:1738:9: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:Def with {}] but argument is of type [extensibella:toAbella:abstractSyntax:Def]
+ExtInd.sv:1762:47: error: Ambiguous type variable a (arising from the use of contains) prevents the constraint silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with a from being solved.
+ExtInd.sv:1762:59: error: Argument 2 of function 'contains' expected [Decorated extensibella:common:abstractSyntax:QName with a] but argument is of type [extensibella:common:abstractSyntax:QName]
+ExtInd.sv:1821:2: error: Expected return type is ([String], extensibella:common:abstractSyntax:Metaterm), but the expression has actual type ([String], Decorated extensibella:common:abstractSyntax:Metaterm with {})
+ExtInd.sv:2037:5: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Bindings but argument is of type Decorated extensibella:common:abstractSyntax:Bindings with a
+ExtInd.sv:2065:2: error: Expected return type is [extensibella:toAbella:abstractSyntax:Def], but the expression has actual type [Decorated extensibella:toAbella:abstractSyntax:Def with {}]
+ExtInd.sv:2065:9: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:Def with {}] but argument is of type [extensibella:toAbella:abstractSyntax:Def]
+ExtInd.sv:2083:45: error: Ambiguous type variable a (arising from the use of contains) prevents the constraint silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with a from being solved.
+ExtInd.sv:2083:57: error: Argument 2 of function 'contains' expected [Decorated extensibella:common:abstractSyntax:QName with a] but argument is of type [extensibella:common:abstractSyntax:QName]
+ExtInd.sv:2143:38: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2134:8:binds in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2162:38
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2153:38
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2143:38
+
+ExtInd.sv:2144:25: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
+
+ExtInd.sv:2153:38: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2134:8:binds in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2162:38
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2153:38
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2143:38
+
+ExtInd.sv:2154:25: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
+
+ExtInd.sv:2162:38: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2134:8:binds in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2162:38
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2153:38
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2143:38
+
+ExtInd.sv:2163:25: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
+
+ExtInd.sv:2164:29: error: Tree rel in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2173:29
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2164:29
+
+ExtInd.sv:2173:29: error: Tree rel in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2173:29
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2164:29
+
+ExtInd.sv:2177:15: error: Tree extensibella:toAbella:abstractSyntax:buildExtSizeLemmas:local:extensibella:toAbella:abstractSyntax:ExtInd_sv:2135:8:extSize in production extensibella:toAbella:abstractSyntax:buildExtSizeLemmas is shared in multiple places:
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2177:15
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2163:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2154:25
+	extensibella:toAbella:abstractSyntax:ExtInd.sv:2144:25
+
+ExtInd.sv:2179:2: error: Expected return type is [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)], but the expression has actual type [(Decorated extensibella:common:abstractSyntax:QName with {}, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
+ExtInd.sv:2245:2: error: Expected return type is [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)], but the expression has actual type [(Decorated extensibella:common:abstractSyntax:QName with {}, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
+ExtInd.sv:2294:32: error: Argument 2 of function 'foldr' expected extensibella:common:abstractSyntax:Metaterm but argument is of type Decorated extensibella:common:abstractSyntax:Metaterm with {}
+ExtInd.sv:2295:15: error: Argument 3 of function 'foldr' expected [extensibella:common:abstractSyntax:Metaterm] but argument is of type [Decorated extensibella:common:abstractSyntax:Metaterm with {}]
+ExtInd.sv:2295:15: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:common:abstractSyntax:Metaterm with {}] but argument is of type []<extensibella:common:abstractSyntax:Metaterm>
+ExtInd.sv:2297:2: error: Expected return type is (extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm), but the expression has actual type (Decorated extensibella:common:abstractSyntax:QName with {}, Decorated extensibella:common:abstractSyntax:Metaterm with {})
+ [grammars/extensibella/toAbella/abstractSyntax/ExtensibleTheorem.sv]
+ExtensibleTheorem.sv:378:17: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtThms but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtThms with {}
+ExtensibleTheorem.sv:408:17: error: Argument 2 of function 'foldr' expected extensibella:toAbella:abstractSyntax:ExtThms but argument is of type Decorated extensibella:toAbella:abstractSyntax:ExtThms with {}
+ExtensibleTheorem.sv:852:2: error: Local boundVarTys has type [(String, silver:core:Either<extensibella:common:abstractSyntax:Type String>)] but the expression being assigned to it has type []<(String, silver:core:Either<Decorated extensibella:common:abstractSyntax:Type with a String>)>
+ExtensibleTheorem.sv:869:2: error: Attribute provingTheorems has type [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(Decorated extensibella:common:abstractSyntax:QName with {}, extensibella:common:abstractSyntax:Metaterm)]
+ExtensibleTheorem.sv:870:6: error: Argument 2 of function 'silver:core:cons' expected [(Decorated extensibella:common:abstractSyntax:QName with {}, extensibella:common:abstractSyntax:Metaterm)] but argument is of type [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)]
+ExtensibleTheorem.sv:1116:2: error: Attribute extIndChecks has type [(extensibella:common:abstractSyntax:Metaterm, [extensibella:toAbella:abstractSyntax:ProofCommand])] but the expression being assigned to it has type [(Decorated extensibella:common:abstractSyntax:Metaterm with {}, [extensibella:toAbella:abstractSyntax:ProofCommand])]
+ExtensibleTheorem.sv:1117:6: error: Then and else branch must have the same type. Instead they are [(Decorated extensibella:common:abstractSyntax:Metaterm with {}, [extensibella:toAbella:abstractSyntax:ProofCommand])] and [(extensibella:common:abstractSyntax:Metaterm, [extensibella:toAbella:abstractSyntax:ProofCommand])]
+ExtensibleTheorem.sv:1120:11: error: Argument 2 of function 'silver:core:cons' expected [(Decorated extensibella:common:abstractSyntax:Metaterm with {}, [extensibella:toAbella:abstractSyntax:ProofCommand])] but argument is of type [(extensibella:common:abstractSyntax:Metaterm, [extensibella:toAbella:abstractSyntax:ProofCommand])]
+ExtensibleTheorem.sv:1134:2: error: Attribute thmNames has type [extensibella:common:abstractSyntax:QName] but the expression being assigned to it has type [Decorated extensibella:common:abstractSyntax:QName with {}]
+ExtensibleTheorem.sv:1134:17: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:common:abstractSyntax:QName with {}] but argument is of type [extensibella:common:abstractSyntax:QName]
+ExtensibleTheorem.sv:1363:2: error: Attribute premises has type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
+ExtensibleTheorem.sv:1363:17: error: Argument 2 of function 'silver:core:cons' expected [(silver:core:Maybe<String>, Decorated extensibella:common:abstractSyntax:Metaterm with {})] but argument is of type [(silver:core:Maybe<String>, extensibella:common:abstractSyntax:Metaterm)]
+ [grammars/extensibella/toAbella/abstractSyntax/ImportDefinitions.sv]
+ImportDefinitions.sv:61:2: error: Attribute commandList has type [extensibella:toAbella:abstractSyntax:AnyCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:AnyCommand with {}]
+ImportDefinitions.sv:61:20: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:AnyCommand with {}] but argument is of type [extensibella:toAbella:abstractSyntax:AnyCommand]
+ [grammars/extensibella/toAbella/abstractSyntax/ImportedElements.sv]
+ImportedElements.sv:54:2: error: Attribute thms has type [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(Decorated extensibella:common:abstractSyntax:QName with {}, extensibella:common:abstractSyntax:Metaterm)]
+ImportedElements.sv:71:2: error: Attribute thms has type [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(Decorated extensibella:common:abstractSyntax:QName with {}, Decorated extensibella:common:abstractSyntax:Metaterm with {})]
+ImportedElements.sv:86:6: error: Equality is not supported for Decorated types (arising from the instance for silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with {}, arising from the use of lookup)
+ImportedElements.sv:86:22: error: Argument 2 of function 'lookup' expected [silver:core:Pair<Decorated extensibella:common:abstractSyntax:QName with {} extensibella:common:abstractSyntax:Metaterm>] but argument is of type [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)]
+ [grammars/extensibella/toAbella/abstractSyntax/NoOpCommands.sv]
+NoOpCommands.sv:111:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:NoOpCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:NoOpCommand with {}]
+NoOpCommands.sv:164:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:NoOpCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:NoOpCommand with {}]
+ [grammars/extensibella/toAbella/abstractSyntax/ProjectionConstraint.sv]
+ProjectionConstraint.sv:88:2: error: Attribute downVarTys has type [(String, extensibella:common:abstractSyntax:Type)] but the expression being assigned to it has type []<(String, Decorated extensibella:common:abstractSyntax:Type with a)>
+ProjectionConstraint.sv:93:32: error: pattern expression should have type Decorated extensibella:common:abstractSyntax:Type with a instead it has type extensibella:common:abstractSyntax:Type
+ProjectionConstraint.sv:105:2: error: Attribute provingTheorems has type [(extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Metaterm)] but the expression being assigned to it has type [(Decorated extensibella:common:abstractSyntax:QName with {}, extensibella:common:abstractSyntax:Metaterm)]
+ProjectionConstraint.sv:126:6: error: Ambiguous type variable a (arising from the use of silver:core:eq) prevents the constraint silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with a from being solved.
+ProjectionConstraint.sv:135:2: error: Local obligation has type (extensibella:common:abstractSyntax:QName, extensibella:common:abstractSyntax:Bindings, extensibella:toAbella:abstractSyntax:ExtBody) but the expression being assigned to it has type (Decorated extensibella:common:abstractSyntax:QName with a, Decorated extensibella:common:abstractSyntax:Bindings with b, Decorated extensibella:toAbella:abstractSyntax:ExtBody with c)
+ [grammars/extensibella/toAbella/abstractSyntax/ProofCommands.sv]
+ProofCommands.sv:37:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:86:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:100:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:181:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:288:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:298:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:318:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:328:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:338:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:348:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:358:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:368:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:394:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:436:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:447:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:487:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:498:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:522:2: error: Attribute toAbella has type [extensibella:toAbella:abstractSyntax:ProofCommand] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ProofCommand with {}]
+ProofCommands.sv:671:2: error: Attribute toList has type [extensibella:toAbella:abstractSyntax:ApplyArg] but the expression being assigned to it has type [Decorated extensibella:toAbella:abstractSyntax:ApplyArg with {}]
+ProofCommands.sv:671:15: error: Argument 2 of function 'silver:core:cons' expected [Decorated extensibella:toAbella:abstractSyntax:ApplyArg with {}] but argument is of type [extensibella:toAbella:abstractSyntax:ApplyArg]
+ProofCommands.sv:698:11: error: Argument 2 of function 'silver:core:append' expected silver:langutil:pp:Document but argument is of type Decorated silver:langutil:pp:Document with {}
+ProofCommands.sv:716:24: error: Argument 2 of function 'silver:core:append' expected silver:langutil:pp:Document but argument is of type Decorated silver:langutil:pp:Document with {}
+ProofCommands.sv:759:2: error: Attribute toList has type [(String, extensibella:common:abstractSyntax:Term)] but the expression being assigned to it has type [(String, Decorated extensibella:common:abstractSyntax:Term with {})]
+ProofCommands.sv:759:15: error: Argument 2 of function 'silver:core:cons' expected [(String, Decorated extensibella:common:abstractSyntax:Term with {})] but argument is of type [(String, extensibella:common:abstractSyntax:Term)]
+ [grammars/extensibella/toAbella/abstractSyntax/ProverState.sv]
+ProverState.sv:179:6: error: Argument 2 of function 'silver:core:eq' expected Decorated extensibella:common:abstractSyntax:QName with a but argument is of type extensibella:common:abstractSyntax:QName
+ProverState.sv:179:6: error: Ambiguous type variable a (arising from the use of silver:core:eq) prevents the constraint silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with a from being solved.
+ProverState.sv:578:2: error: Local find has type [[extensibella:common:abstractSyntax:QName]] but the expression being assigned to it has type [[Decorated extensibella:common:abstractSyntax:QName with {}]]
+ProverState.sv:578:33: error: Equality is not supported for Decorated types (arising from the instance for silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with {}, arising from the use of contains)
+ProverState.sv:578:52: error: Argument 2 of function 'filter' expected [[Decorated extensibella:common:abstractSyntax:QName with {}]] but argument is of type [[extensibella:common:abstractSyntax:QName]]
+ProverState.sv:592:6: error: Argument 2 of function 'contains' expected [Decorated extensibella:common:abstractSyntax:QName with a] but argument is of type [extensibella:common:abstractSyntax:QName]
+ProverState.sv:592:11: error: Equality is not supported for Decorated types (arising from the instance for silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with {}, arising from the use of lookup)
+ProverState.sv:592:33: error: Argument 2 of function 'lookup' expected [silver:core:Pair<Decorated extensibella:common:abstractSyntax:QName with {} [extensibella:common:abstractSyntax:QName]>] but argument is of type [(extensibella:common:abstractSyntax:QName, [extensibella:common:abstractSyntax:QName])]
+ProverState.sv:593:19: error: Ambiguous type variable a (arising from the use of contains) prevents the constraint silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with a from being solved.
+ProverState.sv:604:2: error: Local find has type [[extensibella:common:abstractSyntax:QName]] but the expression being assigned to it has type [[Decorated extensibella:common:abstractSyntax:QName with {}]]
+ProverState.sv:605:13: error: Equality is not supported for Decorated types (arising from the instance for silver:core:Eq Decorated extensibella:common:abstractSyntax:QName with {}, arising from the use of contains)
+ProverState.sv:605:32: error: Argument 2 of function 'filter' expected [[Decorated extensibella:common:abstractSyntax:QName with {}]] but argument is of type [[extensibella:common:abstractSyntax:QName]]
+

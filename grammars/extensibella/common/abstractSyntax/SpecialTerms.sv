@@ -308,8 +308,8 @@ top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
   local lis::Type =
       listType(varType("__Append" ++ toString(genInt())));
   local unify1::TypeUnify = typeUnify(@lis, t1.type);
-  local unify2::TypeUnify = typeUnify(lis, t2.type);
-  local unify3::TypeUnify = typeUnify(lis, result.type);
+  local unify2::TypeUnify = typeUnify(^lis, t2.type);
+  local unify3::TypeUnify = typeUnify(^lis, result.type);
   t1.downSubst = top.downSubst;
   t2.downSubst = t1.upSubst;
   result.downSubst = t2.upSubst;

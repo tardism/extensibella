@@ -474,8 +474,8 @@ IOVal<(Integer, ProverState, FullDisplay)> ::=
                 setProofState(penultimateState,
                               proofState.fromAbella),
                 if shouldClean
-                then cleaned_display
-                else displayIn));
+                then ^cleaned_display
+                else ^displayIn));
 }
 
 

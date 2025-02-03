@@ -230,9 +230,9 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   top.mapSuccess =
       case top.mapTo of
       | relationMetaterm(rel2, _, r2) ->
-        args.mapSuccess && rel2 == rel && r2 == r
+        args.mapSuccess && ^rel2 == ^rel && ^r2 == ^r
       | projRelMetaterm(rel2, _, r2) ->
-        args.mapSuccess && rel2 == rel && r2 == r
+        args.mapSuccess && ^rel2 == ^rel && ^r2 == ^r
       | _ -> false
       end;
 }
@@ -360,7 +360,7 @@ top::Metaterm ::= b::Binder nameBindings::Bindings body::Metaterm
   top.mapSuccess =
       case top.mapTo of
       | bindingMetaterm(nb, nn, nbody) ->
-        b == nb &&
+        ^b == ^nb &&
         nameBindings.len == nn.len &&
         body.mapSuccess
       | _ -> false
@@ -431,7 +431,7 @@ top::Metaterm ::= args::TermList ty::QName orig::Term proj::Term
       case top.mapTo of
       | projectionMetaterm(a, t, o, r) ->
         args.mapSuccess && orig.mapSuccess && proj.mapSuccess &&
-        ty == t --no mapping types, only equality
+        ^ty == ^t --no mapping types, only equality
       | _ -> false
       end;
 }
@@ -714,7 +714,7 @@ top::Metaterm ::= t1::Term t2::Term result::Term r::Restriction
   top.mapSuccess =
       case top.mapTo of
       | appendMetaterm(_, _, _, r2) ->
-        t1.mapSuccess && t2.mapSuccess && result.mapSuccess && r == r2
+        t1.mapSuccess && t2.mapSuccess && result.mapSuccess && ^r == ^r2
       | _ -> false
       end;
 }
@@ -811,7 +811,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   top.mapSuccess =
       case top.mapTo of
       | extSizeMetaterm(rel2, _, r2) ->
-        rel == rel2 && args.mapSuccess && r == r2
+        ^rel == ^rel2 && args.mapSuccess && ^r == ^r2
       | _ -> false
       end;
 }
@@ -829,7 +829,7 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   top.mapSuccess =
       case top.mapTo of
       | projRelMetaterm(rel2, _, r2) ->
-        rel == rel2 && args.mapSuccess && r == r2
+        ^rel == ^rel2 && args.mapSuccess && ^r == ^r2
       | _ -> false
       end;
 }
@@ -877,7 +877,7 @@ top::Term ::= name::QName mty::MaybeType
   top.mapSuccess =
       if name.isQualified
       then case top.mapTo of --constructor, so need same one
-           | nameTerm(q, _) -> q == name
+           | nameTerm(q, _) -> ^q == ^name
            | _ -> false
            end
       else case lookedUp of --var case

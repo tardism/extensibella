@@ -339,12 +339,12 @@ top::TopCommand ::= theoremName::QName newTheoremNames::[QName]
   --   to read the interface and outerface files
   local thms::[(QName, Metaterm)] =
       case lookup(if theoremName.isQualified
-                  then theoremName
+                  then ^theoremName
                   else addQNameBase(top.currentModule,
                                     theoremName.shortName),
               top.knownThms) of
       | nothing() -> []
-      | just(m) -> zip(^newTheoremNames, m.splitConjunctions)
+      | just(m) -> zip(newTheoremNames, m.splitConjunctions)
       end;
 
   top.thmStrings = map(\ p::(QName, Metaterm) ->
@@ -429,7 +429,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
   top.defStrings = [];
 
   top.newThms =
-      [(name, bindingMetaterm(forallBinder(), ^binds, body.thm))];
+      [(^name, bindingMetaterm(forallBinder(), ^binds, body.thm))];
 }
 
 
@@ -528,6 +528,6 @@ top::ExtThms ::= name::QName bindings::Bindings body::ExtBody
                                                ^bindings, body.thm)
                    )::rest.thmStrings;
 
-  top.newThms = (fullName, bindingMetaterm(forallBinder(), ^bindings,
+  top.newThms = (^fullName, bindingMetaterm(forallBinder(), ^bindings,
                                            body.thm))::rest.newThms;
 }

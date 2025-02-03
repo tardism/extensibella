@@ -601,7 +601,7 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
   bodyC.boundNames = binds.usedNames;
 
   local tcMods::[(QName, DecCmds)] =
-      getAllOccurrences(top.incomingMods, [name]);
+      getAllOccurrences(top.incomingMods, [^name]);
   --first contains declaration and set-up
   local startPrf::String =
       case head(tcMods).2 of
@@ -620,10 +620,10 @@ top::ThmElement ::= name::QName binds::Bindings body::ExtBody
       "/*End " ++ justShow(name.pp) ++ "*/\n\n\n";
 
   --took these proofs, so drop them
-  top.outgoingMods = dropAllOccurrences(top.incomingMods, [name]);
+  top.outgoingMods = dropAllOccurrences(top.incomingMods, [^name]);
 
   top.newThms =
-      [(name, bindingMetaterm(forallBinder(), ^binds, body.thm))];
+      [(^name, bindingMetaterm(forallBinder(), ^binds, body.thm))];
 }
 
 
@@ -655,7 +655,7 @@ top::ThmElement ::= name::QName params::[String] stmt::Metaterm
       declaration ++ updatePair.2 ++ "\n" ++
       "/*End " ++ justShow(name.pp) ++ "*/\n\n\n";
 
-  top.newThms = [(name, stmt)];
+  top.newThms = [(^name, ^stmt)];
 }
 
 
@@ -671,7 +671,7 @@ top::ThmElement ::= toSplit::QName newNames::[QName]
 
   top.newThms =
       zip(newNames,
-          lookup(toSplit, top.allThms).fromJust.splitConjunctions);
+          lookup(^toSplit, top.allThms).fromJust.splitConjunctions);
 }
 
 
@@ -1096,9 +1096,9 @@ function buildDefInfo
       | ruleDef(rel, args,
                 bindingMetaterm(existsBinder(), binds, body)) ->
         (flatMap((.usedNames), args.toList),
-         map(fst, binds.toList), just(body))
+         map(fst, binds.toList), just(^body))
       | ruleDef(rel, args, body) ->
-        (flatMap((.usedNames), args.toList), [], just(body))
+        (flatMap((.usedNames), args.toList), [], just(^body))
       end;
 
   local first::(QName, ([String], [String], Maybe<Metaterm>),
@@ -1116,7 +1116,7 @@ Integer ::= q::QName l::[(QName, a)]
 {
   return case l of
          | [] -> error("not in list")
-         | (x, _)::_ when x == q -> 0
+         | (x, _)::_ when x == ^q -> 0
          | _::rest -> indexOfName(^q, rest) + 1
          end;
 }
@@ -1187,7 +1187,7 @@ top::ThmElement ::= rels::[(QName, [String])] tag::Tag
                        map(\ m::Metaterm ->
                              case m of
                              | relationMetaterm(q, _, _)
-                               when contains(q, map(fst, rels)) ->
+                               when contains(^q, map(fst, rels)) ->
                                indexOfName(^q, rels) --index of IH
                              | _ -> -1
                              end,
@@ -1520,7 +1520,7 @@ top::ThmElement ::= rels::[(QName, [String])] tag::Tag
                        map(\ m::Metaterm ->
                              case m of
                              | relationMetaterm(q, _, _)
-                               when contains(q, map(fst, rels)) ->
+                               when contains(^q, map(fst, rels)) ->
                                indexOfName(^q, rels) --index of IH
                              | _ -> -1
                              end,
@@ -1632,7 +1632,7 @@ function updateMod
 {
   return case mods of
          | [] -> error("Module not in module map")
-         | (q, c)::rest when q == mod ->
+         | (q, c)::rest when q == ^mod ->
            let p::(DecCmds, String) = update(c)
            in
              ((q, p.1)::rest, p.2)
@@ -2029,7 +2029,7 @@ top::TopCommand ::= names::[QName] newThms::ExtThms newAlsos::ExtThms
 aspect production projectionConstraint
 top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 {
-  top.matchesNames = \ l::[QName] -> head(l) == fullName;
+  top.matchesNames = \ l::[QName] -> head(l) == ^fullName;
 
   top.isNotProof = false;
 }
@@ -2038,7 +2038,7 @@ top::TopCommand ::= name::QName binds::Bindings body::ExtBody
 aspect production proveConstraint
 top::TopCommand ::= name::QName
 {
-  top.matchesNames = \ l::[QName] -> head(l) == name;
+  top.matchesNames = \ l::[QName] -> head(l) == ^name;
 
   top.isNotProof = false;
 }
@@ -2119,7 +2119,7 @@ top::TopCommand ::= oldRels::[QName] newRels::[(QName, [String])]
 aspect production theoremDeclaration
 top::TopCommand ::= name::QName params::[String] body::Metaterm
 {
-  top.matchesNames = \ l::[QName] -> head(l) == fullName;
+  top.matchesNames = \ l::[QName] -> head(l) == ^fullName;
 
   top.isNotProof = false;
 }

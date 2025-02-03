@@ -99,7 +99,7 @@ IOVal<[String]> ::=
                   let p::ProofState = head(head(l)).1 in
                       !p.containsUnknownK && !p.containsUnknownI
                   end,
-          case lookup(fstThmMod, firstPropProofs) of
+          case lookup(^fstThmMod, firstPropProofs) of
           | just(x) -> x
           | nothing() ->
             error("buildExtThmProofs.splitGeneric:  lookup(" ++
@@ -123,7 +123,7 @@ IOVal<[String]> ::=
   --known cases for all modules; drop generic from introducing module
   local knownCases::[[[(ProofState, [AnyCommand])]]] =
       flatMap(\ p::(QName, [[[(ProofState, [AnyCommand])]]]) ->
-                if p.1 == fstThmMod
+                if p.1 == ^fstThmMod
                 then splitGeneric.1
                 else p.2,
               firstPropProofs);
@@ -329,7 +329,7 @@ IOVal<([[String]], ProofState)> ::=
       if !incomingState.inProof ||
          !subgoalStartsWith(rootSubgoal,
                             incomingState.currentSubgoal)
-      then ioval(ioin, ([], incomingState))
+      then ioval(ioin, ([], ^incomingState))
       else {-
              Taking known proof cases whenever they fit guarantees we
              can build the proof.  All the host cases come first, and
@@ -409,7 +409,7 @@ IOVal<([String], ProofState)> ::=
 
   return
       case caseInfo of
-      | [] -> ioval(ioin, ([], incomingState))
+      | [] -> ioval(ioin, ([], ^incomingState))
       | _::_ ->
         ioval(sub.io, (run.iovalue.1 ++ sub.iovalue.1, sub.iovalue.2))
       end;
@@ -449,7 +449,7 @@ IOVal<([String], ProofState)> ::=
                    (rest.iovalue.1 ++ runThis.iovalue.1,
                     runThis.iovalue.2))
               end,
-            ioval(ioin, ([], incomingState)),
+            ioval(ioin, ([], ^incomingState)),
             head(preservabilityCase));
 
   --condition arguments to next bit on whether we run this part
@@ -466,7 +466,7 @@ IOVal<([String], ProofState)> ::=
 
   return
       case preservabilityCase of
-      | [] -> ioval(ioin, ([], incomingState))
+      | [] -> ioval(ioin, ([], ^incomingState))
       | _::_ ->
         if unifyMap.mapSuccess
         then ioval(sub.io, (run.iovalue.1 ++ sub.iovalue.1,
@@ -523,8 +523,8 @@ IOVal<([String], ProofState)> ::= cmd::(ProofState, [AnyCommand])
   --condition this on cmds being null because passing null cmds gives
   --   blank output back, interpreted as proof being done
   return if null(cmds)
-         then ioval(ioin, ([], incomingState))
-         else ioval(abellaOutput.io, (cmdStrings, newState));
+         then ioval(ioin, ([], ^incomingState))
+         else ioval(abellaOutput.io, (cmdStrings, ^newState));
 }
 
 

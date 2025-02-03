@@ -99,21 +99,21 @@ function dropP_for_all
 aspect production inductionTactic
 top::ProofCommand ::= h::HHint nl::[Integer]
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production coinductionTactic
 top::ProofCommand ::= h::HHint
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production introsTactic
 top::ProofCommand ::= names::[String]
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
@@ -182,14 +182,14 @@ top::ProofCommand ::= ew::EWitnesses
 aspect production searchTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = dropP_for_all(top.newHyps) ++ [top];
+  top.mappedCmds = dropP_for_all(top.newHyps) ++ [^top];
 }
 
 
 aspect production searchDepthTactic
 top::ProofCommand ::= n::Integer
 {
-  top.mappedCmds = dropP_for_all(top.newHyps) ++ [top];
+  top.mappedCmds = dropP_for_all(top.newHyps) ++ [^top];
 }
 
 
@@ -203,42 +203,42 @@ top::ProofCommand ::= sw::SearchWitness
 aspect production asyncTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production splitTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production splitStarTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production leftTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production rightTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production skipTactic
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
@@ -252,14 +252,14 @@ top::ProofCommand ::=
 aspect production abortCommand
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production undoCommand
 top::ProofCommand ::=
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
@@ -312,21 +312,21 @@ top::ProofCommand ::= names::[String] hyp::Maybe<String>
 aspect production unfoldStepsTactic
 top::ProofCommand ::= steps::Integer all::Boolean
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production unfoldIdentifierTactic
 top::ProofCommand ::= id::QName all::Boolean
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
 aspect production unfoldTactic
 top::ProofCommand ::= all::Boolean
 {
-  top.mappedCmds = [top];
+  top.mappedCmds = [^top];
 }
 
 
@@ -374,12 +374,11 @@ top::Clearable ::= star::Boolean hyp::QName instantiation::TypeList
   top.expectBasicKeyRel =
       map(\ m::Metaterm ->
             case m of
-            | relationMetaterm(q, _, _) -> contains(q, top.keyRels)
+            | relationMetaterm(q, _, _) -> contains(^q, top.keyRels)
             | _ -> false
             end, msplits);
-
   local thmM::Metaterm =
-      case lookup(hyp, top.allThms) of
+      case lookup(^hyp, top.allThms) of
       | just(m) -> m
       | nothing() -> error("No thm " ++ justShow(hyp.pp))
       end;
@@ -546,7 +545,7 @@ top::Withs ::= name::String term::Term rest::Withs
                   case lookup(name, top.mapBindingNames) of
                   | just(n) -> n
                   | nothing() -> name --no change
-                  end, term.mapped, rest.mapped);
+                  end, (term.mapped), rest.mapped);
 }
 
 
@@ -561,7 +560,7 @@ top::Term ::= name::QName mty::MaybeType
       then ^top
       else case lookup(name.shortName, top.mapVars) of
            | just(t) -> t
-           | _ -> top
+           | _ -> ^top
            end;
 }
 

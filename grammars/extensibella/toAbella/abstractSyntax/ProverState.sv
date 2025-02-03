@@ -185,7 +185,7 @@ function removeFinishedObligation
         else obligations
       | projectionConstraintTheorem(q, x, b, _)::rest ->
         case provenThms of
-        | [(q2, _)] when q == q2 -> rest
+        | [(q2, _)] when ^q == ^q2 -> rest
         | _ -> obligations
         end
       | extIndElement(rels, thms, alsos, _)::rest ->
@@ -538,7 +538,7 @@ function findTheorem
   return
      filter(
         if name.isQualified
-        then \ p::(QName, Metaterm) -> p.1 == name
+        then \ p::(QName, Metaterm) -> p.1 == ^name
         else \ p::(QName, Metaterm) -> p.1.shortName == name.shortName,
         state.knownTheorems);
 }
@@ -550,7 +550,7 @@ Maybe<[(QName, [String], Bindings, ExtIndPremiseList)]> ::=
 {
   local find::[[(QName, [String], Bindings, ExtIndPremiseList)]] =
       filter(\ l::[(QName, [String], Bindings, ExtIndPremiseList)] ->
-               contains(name, map(fst, l)),
+               contains(^name, map(fst, l)),
              state.knownExtInds);
   return case find of
          | [] -> nothing()
@@ -563,7 +563,7 @@ Maybe<[(QName, [String], Bindings, ExtIndPremiseList)]> ::=
 function findExtSizeGroup
 Maybe<[QName]> ::= name::QName state::ProverState
 {
-  local find::[[QName]] = filter(contains(name, _), state.knownExtSizes);
+  local find::[[QName]] = filter(contains(^name, _), state.knownExtSizes);
   return case find of
          | [] -> nothing()
          | [x] -> just(x)

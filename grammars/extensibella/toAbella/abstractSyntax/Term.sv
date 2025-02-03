@@ -48,9 +48,9 @@ top::Metaterm ::= rel::QName args::TermList r::Restriction
   --defined, but currently being proven, so not in ExtIndGroups yet
   local projRelInState::Boolean =
       contains(rel.fullRel.name, top.proverState.state.projRels) ||
-      contains(rel, top.proverState.state.projRels);
+      contains(^rel, top.proverState.state.projRels);
 
-  top.projRels := [rel];
+  top.projRels := [^rel];
 }
 
 
@@ -356,7 +356,7 @@ top::Term ::= name::QName mty::MaybeType
       then []
       else name.constrErrors;
 
-  top.headRel = just(name);
+  top.headRel = just(^name);
 }
 
 
